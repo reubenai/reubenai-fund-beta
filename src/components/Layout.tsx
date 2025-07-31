@@ -15,7 +15,7 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex h-full flex-col">
             <AppHeader />
             <main className="flex-1 overflow-auto">
-              <div className="p-8 max-w-7xl mx-auto">
+              <div className="pl-8 pr-8 pt-8 pb-8 max-w-7xl mx-auto">
                 {children}
               </div>
             </main>

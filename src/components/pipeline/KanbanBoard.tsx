@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { DropResult } from 'react-beautiful-dnd';
 import { usePipelineDeals, Deal } from '@/hooks/usePipelineDeals';
-import { PipelineHeader } from './PipelineHeader';
+import { EnhancedPipelineHeader } from './EnhancedPipelineHeader';
 import { CleanKanbanView } from './CleanKanbanView';
 import { EnhancedKanbanView } from './EnhancedKanbanView';
 import { AddDealModal } from './AddDealModal';
@@ -10,14 +10,11 @@ import { DealDetailsModal } from './DealDetailsModal';
 import { useToast } from '@/hooks/use-toast';
 
 interface KanbanBoardState {
-  currentView: 'kanban' | 'list' | 'table' | 'funnel';
-  viewDensity: 'compact' | 'comfortable' | 'detailed';
+  currentView: 'kanban' | 'list';
   showFilters: boolean;
   selectedDeal: Deal | null;
   showAddDeal: boolean;
   showBatchUpload: boolean;
-  showDealSourcing: boolean;
-  isCleanView: boolean; // New state for clean vs enhanced view
 }
 
 interface KanbanBoardProps {
@@ -38,13 +35,10 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
 
   const [state, setState] = useState<KanbanBoardState>({
     currentView: 'kanban',
-    viewDensity: 'comfortable',
     showFilters: false,
     selectedDeal: null,
     showAddDeal: false,
     showBatchUpload: false,
-    showDealSourcing: false,
-    isCleanView: true, // Default to clean view
   });
 
   const { toast } = useToast();
@@ -108,21 +102,16 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
 
   return (
     <div className="h-full bg-white">
-      <div className="border-b border-gray-200 bg-white">
+      <div className="border-b bg-white">
         <div className="px-8 py-6">
-          <PipelineHeader
+          <EnhancedPipelineHeader
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             onAddDeal={() => updateState({ showAddDeal: true })}
             onBatchUpload={() => updateState({ showBatchUpload: true })}
-            onDealSourcing={() => updateState({ showDealSourcing: true })}
-            currentView={state.currentView}
-            onViewChange={(view) => updateState({ currentView: view })}
-            viewDensity={state.viewDensity}
-            onDensityChange={(density) => updateState({ viewDensity: density })}
+            totalDeals={getTotalDeals()}
             showFilters={state.showFilters}
             onToggleFilters={() => updateState({ showFilters: !state.showFilters })}
-            totalDeals={getTotalDeals()}
           />
         </div>
       </div>
@@ -130,49 +119,22 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
       <div className="flex-1 bg-gray-50 overflow-hidden">
         {state.currentView === 'kanban' && (
           <div className="h-full p-8">
-            {state.isCleanView ? (
-              <CleanKanbanView
-                deals={filteredDeals}
-                stages={stages}
-                onDragEnd={handleDragEnd}
-                onDealClick={handleDealClick}
-                onStageEdit={handleStageEdit}
-                onAddDeal={handleAddDeal}
-              />
-            ) : (
-              <EnhancedKanbanView
-                deals={filteredDeals}
-                stages={stages}
-                onDragEnd={handleDragEnd}
-                onDealClick={handleDealClick}
-                onStageEdit={handleStageEdit}
-                onAddDeal={handleAddDeal}
-                viewDensity={state.viewDensity}
-              />
-            )}
+            <CleanKanbanView
+              deals={filteredDeals}
+              stages={stages}
+              onDragEnd={handleDragEnd}
+              onDealClick={handleDealClick}
+              onStageEdit={handleStageEdit}
+              onStageDelete={(stageId) => console.log('Delete stage:', stageId)}
+              onAddDeal={handleAddDeal}
+            />
           </div>
         )}
 
         {state.currentView === 'list' && (
           <div className="h-full flex items-center justify-center">
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-              <p className="text-gray-500">List view coming soon...</p>
-            </div>
-          </div>
-        )}
-
-        {state.currentView === 'table' && (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-              <p className="text-gray-500">Table view coming soon...</p>
-            </div>
-          </div>
-        )}
-
-        {state.currentView === 'funnel' && (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-              <p className="text-gray-500">Funnel view coming soon...</p>
+            <div className="text-center py-12 bg-white rounded-lg border">
+              <p className="text-muted-foreground">List view coming soon...</p>
             </div>
           </div>
         )}

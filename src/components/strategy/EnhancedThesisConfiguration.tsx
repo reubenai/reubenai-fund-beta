@@ -89,7 +89,7 @@ export function EnhancedThesisConfiguration({
               className="gap-2"
             >
               <Settings className="h-4 w-4" />
-              Quick Setup Wizard
+              Configure Thesis
             </Button>
           )}
           <Button 

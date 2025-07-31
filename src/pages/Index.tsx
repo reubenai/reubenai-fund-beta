@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Building2, TrendingUp, FileText, Users, Zap, Target, BarChart3 } from 'lucide-react';
+import { Building2, TrendingUp, FileText, Users, Zap, Target, BarChart3, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFund } from '@/contexts/FundContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
+import { FundCreationWizard } from '@/components/funds/FundCreationWizard';
 
 const Index = () => {
   const { user } = useAuth();
   const { funds } = useFund();
   const [profile, setProfile] = useState<any>(null);
+  const [showFundWizard, setShowFundWizard] = useState(false);
   const [stats, setStats] = useState({
     activeFunds: 0,
     activeDeals: 0,
@@ -87,62 +89,66 @@ const Index = () => {
       </div>
 
       {/* Your Funds */}
-      {funds.length > 0 && (
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium text-slate-900">Your Funds ({funds.length})</h2>
-            <Link to="/funds">
-              <Button variant="outline" size="sm" className="text-sm">
-                + Create New Fund
-              </Button>
-            </Link>
-          </div>
-          <div className="space-y-4">
-            {funds.map((fund) => (
-              <div key={fund.id} className="bg-white p-6 border border-slate-200 rounded-lg">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <h3 className="font-semibold text-slate-900">{fund.name}</h3>
-                      <span className="inline-flex items-center px-2 py-1 bg-emerald-50 border border-emerald-200 rounded text-xs font-medium text-emerald-700">
-                        {fund.fund_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">
-                      {fund.description || 'Investment fund focused on exceptional opportunities.'}
-                    </p>
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-medium text-slate-900">Your Funds ({funds.length})</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {funds.map((fund) => (
+            <div key={fund.id} className="bg-white p-6 border border-slate-200 rounded-lg hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="font-semibold text-slate-900">{fund.name}</h3>
+                    <span className="inline-flex items-center px-2 py-1 bg-emerald-50 border border-emerald-200 rounded text-xs font-medium text-emerald-700">
+                      {fund.fund_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </span>
                   </div>
-                </div>
-                
-                <div className="grid grid-cols-3 gap-8 mb-6 pb-6 border-b border-slate-100">
-                  <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Fund Size</p>
-                    <p className="text-lg font-semibold text-slate-900">
-                      {fund.target_size ? `$${(fund.target_size / 1000000).toFixed(0)}M` : 'TBD'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Currency</p>
-                    <p className="text-lg font-semibold text-slate-900">{fund.currency || 'USD'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Status</p>
-                    <p className="text-lg font-semibold text-slate-900">{fund.is_active ? 'Active' : 'Inactive'}</p>
-                  </div>
-                </div>
-                
-                <div className="flex justify-end">
-                  <Link to={`/pipeline?fund=${fund.id}`}>
-                    <Button variant="ghost" size="sm" className="text-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
-                      ✓ View Pipeline
-                    </Button>
-                  </Link>
+                  <p className="text-sm text-slate-600 mb-4 line-clamp-2">
+                    {fund.description || 'Investment fund focused on exceptional opportunities.'}
+                  </p>
                 </div>
               </div>
-            ))}
+              
+              <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-slate-100">
+                <div>
+                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Fund Size</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {fund.target_size ? `$${(fund.target_size / 1000000).toFixed(0)}M` : 'TBD'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Status</p>
+                  <p className="text-sm font-semibold text-slate-900">{fund.is_active ? 'Active' : 'Inactive'}</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Link to={`/pipeline?fund=${fund.id}`} className="flex-1">
+                  <Button variant="ghost" size="sm" className="w-full text-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
+                    View Pipeline
+                  </Button>
+                </Link>
+                <Link to={`/strategy?fund=${fund.id}`}>
+                  <Button variant="outline" size="sm" className="text-sm">
+                    Strategy
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ))}
+          
+          {/* Create New Fund Card */}
+          <div className="bg-white border-2 border-dashed border-slate-300 rounded-lg p-6 flex flex-col items-center justify-center hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors cursor-pointer" 
+               onClick={() => setShowFundWizard(true)}>
+            <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mb-3">
+              <Plus className="h-6 w-6 text-slate-400" />
+            </div>
+            <h3 className="font-medium text-slate-900 mb-1">Create New Fund</h3>
+            <p className="text-sm text-slate-600 text-center">Set up a new investment fund with AI-powered criteria</p>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Help & Support */}
       <div className="mb-8">
@@ -190,6 +196,11 @@ const Index = () => {
           </Button>
         </div>
       </div>
+
+      <FundCreationWizard 
+        isOpen={showFundWizard} 
+        onClose={() => setShowFundWizard(false)} 
+      />
     </div>
   );
 };

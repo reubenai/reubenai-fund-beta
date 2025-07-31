@@ -9,6 +9,7 @@ interface CleanKanbanViewProps {
   onDragEnd: (result: DropResult) => void;
   onDealClick?: (deal: Deal) => void;
   onStageEdit?: (stageId: string, newTitle: string) => void;
+  onStageDelete?: (stageId: string) => void;
   onAddDeal?: (stageId?: string) => void;
 }
 
@@ -18,6 +19,7 @@ export const CleanKanbanView: React.FC<CleanKanbanViewProps> = ({
   onDragEnd,
   onDealClick,
   onStageEdit,
+  onStageDelete,
   onAddDeal,
 }) => {
   return (
@@ -31,6 +33,7 @@ export const CleanKanbanView: React.FC<CleanKanbanViewProps> = ({
               deals={deals[stage.name.toLowerCase().replace(/\s+/g, '_')] || []}
               onDealClick={onDealClick}
               onStageEdit={onStageEdit}
+              onStageDelete={onStageDelete}
               onAddDeal={onAddDeal}
             />
           ))}

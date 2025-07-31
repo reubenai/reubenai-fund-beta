@@ -2,12 +2,14 @@ import React from 'react';
 import { Droppable } from 'react-beautiful-dnd';
 import { Deal, PipelineStage } from '@/hooks/usePipelineDeals';
 import { CleanDealCard } from './CleanDealCard';
+import { EditableStageHeader } from './EditableStageHeader';
 
 interface CleanKanbanColumnProps {
   stage: PipelineStage;
   deals: Deal[];
   onDealClick?: (deal: Deal) => void;
   onStageEdit?: (stageId: string, newTitle: string) => void;
+  onStageDelete?: (stageId: string) => void;
   onAddDeal?: (stageId: string) => void;
 }
 
@@ -15,24 +17,20 @@ export const CleanKanbanColumn: React.FC<CleanKanbanColumnProps> = ({
   stage,
   deals,
   onDealClick,
+  onStageEdit,
+  onStageDelete,
   onAddDeal,
 }) => {
   return (
-    <div className="flex-shrink-0 w-80">
-      {/* Column Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h3 className="text-base font-medium text-gray-900">{stage.name}</h3>
-            <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
-              {deals.length}
-            </span>
-          </div>
-        </div>
-        <div className="text-xs text-gray-500 mt-1">
-          {deals.length} {deals.length === 1 ? 'deal' : 'deals'}
-        </div>
-      </div>
+    <div className="flex-shrink-0 w-80 bg-gray-50 rounded-lg">
+      {/* Stage Header */}
+      <EditableStageHeader
+        stage={stage}
+        dealCount={deals.length}
+        onEdit={onStageEdit || (() => {})}
+        onDelete={onStageDelete}
+        onAddDeal={(stageId) => onAddDeal?.(stageId)}
+      />
 
       {/* Droppable Area */}
       <Droppable droppableId={stage.id}>
@@ -40,8 +38,8 @@ export const CleanKanbanColumn: React.FC<CleanKanbanColumnProps> = ({
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`min-h-96 transition-colors duration-200 ${
-              snapshot.isDraggingOver ? 'bg-blue-50' : ''
+            className={`min-h-96 p-4 transition-colors duration-200 ${
+              snapshot.isDraggingOver ? 'bg-blue-50' : 'bg-gray-50'
             }`}
           >
             <div className="space-y-3">
@@ -57,7 +55,7 @@ export const CleanKanbanColumn: React.FC<CleanKanbanColumnProps> = ({
               
               {/* Empty State */}
               {deals.length === 0 && !snapshot.isDraggingOver && (
-                <div className="text-center py-12 text-gray-400">
+                <div className="text-center py-12 text-muted-foreground">
                   <div className="text-sm">Drop deals here</div>
                 </div>
               )}

@@ -15,7 +15,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { StrategyQuickWizard } from './StrategyQuickWizard';
-import { EnhancedThesisConfiguration } from './EnhancedThesisConfiguration';
+import { CleanThesisConfiguration } from './CleanThesisConfiguration';
 
 interface StrategyConfigurationManagerProps {
   fundId: string;
@@ -84,7 +84,7 @@ export function StrategyConfigurationManager({ fundId, fundName }: StrategyConfi
   };
 
   return (
-    <EnhancedThesisConfiguration
+    <CleanThesisConfiguration
       strategy={strategyToEdit}
       onSave={() => {}} // Handle save within the component
       onCancel={() => {}} // No cancel needed since this is the main view
