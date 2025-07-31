@@ -24,16 +24,17 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Core Functions - Large Cards
 const coreFunctions = [
-  { title: "Investment Strategy", url: "/dashboard", icon: Target, description: "Define criteria & focus", badge: "Core" },
-  { title: "Deal Pipeline", url: "/deals", icon: TrendingUp, description: "Manage opportunities", badge: "Active" },
-  { title: "Investment Committee", url: "/investment-committee", icon: Users, description: "Run IC sessions", badge: "Core" },
+  { title: "Investment Strategy", url: "/dashboard", icon: Target, description: "Define criteria & focus" },
+  { title: "Deal Pipeline", url: "/deals", icon: TrendingUp, description: "Manage opportunities" },
+  { title: "Investment Committee", url: "/investment-committee", icon: Users, description: "Run IC sessions" },
 ];
 
 // Secondary Functions - Grid Cards
 const secondaryFunctions = [
-  { title: "AI Intelligence", url: "/founder-scoring", icon: Brain, description: "AI insights", badge: "AI" },
-  { title: "Deal Management", url: "/deals", icon: Briefcase, description: "Track deals", badge: "Active" },
-  { title: "Portfolio", url: "/portfolio", icon: PieChart, description: "Monitor investments", badge: "Soon" },
+  { title: "Due Diligence Hub", url: "/dd", icon: Brain, description: "DD workflows", badge: "Soon", disabled: true },
+  { title: "Fund Performance", url: "/performance", icon: BarChart3, description: "Track performance", badge: "Soon", disabled: true },
+  { title: "LP Reporting", url: "/lp-reporting", icon: Briefcase, description: "LP reports", badge: "Soon", disabled: true },
+  { title: "Founder Hub", url: "/founder-hub", icon: Users, description: "Founder portal", badge: "Soon", disabled: true },
 ];
 
 // Administration Items
@@ -199,12 +200,6 @@ export function AppSidebar() {
                     <p className="font-medium truncate">{item.title}</p>
                     <p className="text-xs text-muted-foreground truncate">{item.description}</p>
                   </div>
-                  <Badge 
-                    variant={isActive(item.url) ? "default" : "secondary"} 
-                    className="text-xs font-medium"
-                  >
-                    {item.badge}
-                  </Badge>
                 </div>
               </NavLink>
             ))}
@@ -214,24 +209,22 @@ export function AppSidebar() {
         {/* Secondary Functions - Compact Grid */}
         <SidebarGroup className="px-4 py-2">
           <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-            Tools
+            Coming Soon
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <div className="grid grid-cols-2 gap-2">
               {secondaryFunctions.map((item) => (
-                <NavLink key={item.title} to={item.url}>
-                  <div className="group relative rounded-lg border border-border/60 bg-background/80 p-3 text-center transition-all duration-200 hover:border-border hover:bg-background hover:shadow-sm">
-                    <div className="w-5 h-5 bg-muted/80 rounded-md flex items-center justify-center mx-auto mb-2 group-hover:bg-muted transition-colors">
-                      <item.icon className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium text-foreground">{item.title}</p>
-                      <Badge variant="outline" className="text-xs font-medium">
-                        {item.badge}
-                      </Badge>
-                    </div>
+                <div key={item.title} className={`group relative rounded-lg border border-border/60 p-3 text-center transition-all duration-200 ${item.disabled ? 'opacity-50 cursor-not-allowed bg-muted/20' : 'bg-background/80 hover:border-border hover:bg-background hover:shadow-sm cursor-pointer'}`}>
+                  <div className={`w-5 h-5 rounded-md flex items-center justify-center mx-auto mb-2 ${item.disabled ? 'bg-muted/50' : 'bg-muted/80 group-hover:bg-muted'} transition-colors`}>
+                    <item.icon className={`h-3 w-3 ${item.disabled ? 'text-muted-foreground/50' : 'text-muted-foreground group-hover:text-foreground'} transition-colors`} />
                   </div>
-                </NavLink>
+                  <div className="space-y-1">
+                    <p className={`text-xs font-medium ${item.disabled ? 'text-muted-foreground/50' : 'text-foreground'}`}>{item.title}</p>
+                    <Badge variant="outline" className={`text-xs font-medium ${item.disabled ? 'opacity-50' : ''}`}>
+                      {item.badge}
+                    </Badge>
+                  </div>
+                </div>
               ))}
             </div>
           </SidebarGroupContent>

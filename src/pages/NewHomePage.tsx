@@ -208,40 +208,42 @@ const NewHomePage = () => {
         <section className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-900">Your Funds</h2>
           
-          <div className="max-w-2xl">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-                      <Building2 className="h-6 w-6 text-emerald-600" />
+          <div className="flex gap-4">
+            <div className="w-64">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                      <Building2 className="h-5 w-5 text-emerald-600" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">{funds[0]?.name || 'Fund Name'}</h3>
-                      <p className="text-sm text-gray-600">{funds[0]?.description || 'Fund Description'}</p>
+                      <h3 className="font-semibold text-gray-900 text-sm">{funds[0]?.name || 'Fund Name'}</h3>
+                      <p className="text-xs text-gray-600">{funds[0]?.description || 'Fund Description'}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-center mb-3">
+                    <div className="text-xl font-bold text-gray-900">
                       ${funds[0]?.target_size ? (funds[0].target_size / 1000000).toFixed(0) : '25'}M
                     </div>
-                    <p className="text-sm text-gray-600">Target Size</p>
+                    <p className="text-xs text-gray-600">Target Size</p>
                   </div>
-                </div>
-                <div className="mt-6 flex gap-3">
-                  <Link to="/strategy">
-                    <Button className="bg-emerald-600 hover:bg-emerald-700">
+                  <Link to="/strategy" className="block">
+                    <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-sm py-2">
                       Fund Thesis
                     </Button>
                   </Link>
-                  <Link to="/funds/new">
-                    <Button variant="outline">
-                      Create New Fund
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="flex-1">
+              <Link to="/funds/new">
+                <Button variant="outline" className="h-full min-h-[140px] w-full border-dashed border-2 flex flex-col items-center justify-center gap-2 hover:bg-gray-50">
+                  <Plus className="h-6 w-6 text-gray-400" />
+                  <span className="text-sm font-medium text-gray-600">Create New Fund</span>
+                </Button>
+              </Link>
+            </div>
           </div>
         </section>
       )}
