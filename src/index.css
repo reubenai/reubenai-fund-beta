@@ -3,16 +3,20 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ReubenAI Design System - Minimalist & Polished
-All colors MUST be HSL. Emerald green primary with neutral palette.
+/* ReubenAI Design System - Emerald & Orange Brand Colors
+All colors MUST be HSL. Emerald green primary with orange accent.
 */
 
 @layer base {
   :root {
-    /* ReubenAI Brand Colors - Emerald Green Primary */
-    --primary: 158 64% 52%;
+    /* ReubenAI Brand Colors - Emerald Green Primary & Orange Accent */
+    --brand-emerald: 160 84% 39%;
+    --brand-orange: 25 95% 53%;
+    --primary: 160 84% 39%;
     --primary-foreground: 0 0% 98%;
-    --primary-muted: 158 30% 85%;
+    --primary-muted: 160 30% 85%;
+    --accent-orange: 25 95% 53%;
+    --accent-orange-foreground: 0 0% 98%;
     
     /* Clean Neutral Palette */
     --background: 0 0% 100%;
@@ -120,5 +124,13 @@ All colors MUST be HSL. Emerald green primary with neutral palette.
   
   .border-subtle {
     @apply border border-border/60;
+  }
+  
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-muted)));
+  }
+  
+  .gradient-accent {
+    background: linear-gradient(135deg, hsl(var(--accent-orange)), hsl(var(--primary)));
   }
 }
