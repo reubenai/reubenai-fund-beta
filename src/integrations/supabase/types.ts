@@ -494,7 +494,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_edit_fund_data: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      can_manage_funds: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      get_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      is_reuben_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       deal_score_level:
@@ -511,7 +526,7 @@ export type Database = {
         | "rejected"
         | "invested"
       fund_type: "venture_capital" | "private_equity"
-      user_role: "admin" | "fund_manager" | "analyst" | "viewer"
+      user_role: "admin" | "fund_manager" | "analyst" | "viewer" | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -655,7 +670,7 @@ export const Constants = {
         "invested",
       ],
       fund_type: ["venture_capital", "private_equity"],
-      user_role: ["admin", "fund_manager", "analyst", "viewer"],
+      user_role: ["admin", "fund_manager", "analyst", "viewer", "super_admin"],
     },
   },
 } as const
