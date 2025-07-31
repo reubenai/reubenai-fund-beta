@@ -12,12 +12,6 @@ const NewHomePage = () => {
   const [profile, setProfile] = useState<any>(null);
   const [funds, setFunds] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (user) {
-      fetchUserData();
-    }
-  }, [user]);
-
   const getRoleBasedWelcomeMessage = (role: string) => {
     switch (role) {
       case 'super_admin':
@@ -34,6 +28,13 @@ const NewHomePage = () => {
         return 'Ready to supercharge your investment workflow?';
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      fetchUserData();
+    }
+  }, [user]);
+
 
   const fetchUserData = async () => {
     // Fetch user profile

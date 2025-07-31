@@ -489,6 +489,50 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          dashboard_layout: Json | null
+          default_fund_id: string | null
+          id: string
+          notification_settings: Json | null
+          theme_preference: string | null
+          timezone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dashboard_layout?: Json | null
+          default_fund_id?: string | null
+          id?: string
+          notification_settings?: Json | null
+          theme_preference?: string | null
+          timezone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dashboard_layout?: Json | null
+          default_fund_id?: string | null
+          id?: string
+          notification_settings?: Json | null
+          theme_preference?: string | null
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_default_fund_id_fkey"
+            columns: ["default_fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
