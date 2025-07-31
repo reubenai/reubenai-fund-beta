@@ -46,32 +46,28 @@ const NewHomePage = () => {
       description: 'Define your investment criteria and focus areas',
       icon: Target,
       href: '/strategy',
-      color: 'bg-primary',
-      badge: 'Core'
+      color: 'bg-primary'
     },
     {
       title: 'Deal Pipeline',
       description: 'Manage deals from sourcing to investment',
       icon: TrendingUp,
       href: '/deals',
-      color: 'bg-accent-orange',
-      badge: 'Active'
+      color: 'bg-accent-orange'
     },
     {
       title: 'Investment Committee',
       description: 'Run IC sessions and track decisions',
       icon: Users,
       href: '/investment-committee',
-      color: 'bg-primary',
-      badge: 'Core'
+      color: 'bg-primary'
     },
     {
       title: 'AI Analysis',
       description: 'Get AI-powered insights and recommendations',
       icon: Brain,
       href: '/founder-scoring',
-      color: 'bg-accent-orange',
-      badge: 'AI'
+      color: 'bg-accent-orange'
     },
   ];
 
@@ -167,13 +163,8 @@ const NewHomePage = () => {
               <Link key={card.title} to={card.href}>
                 <Card className="h-full hover:shadow-lg transition-all duration-200 hover:-translate-y-1 cursor-pointer group">
                   <CardHeader className="text-center pb-4">
-                    <div className="relative">
-                      <div className={`w-16 h-16 ${card.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-200`}>
-                        <card.icon className="h-8 w-8 text-white" />
-                      </div>
-                      <Badge variant="secondary" className="absolute -top-2 -right-2">
-                        {card.badge}
-                      </Badge>
+                    <div className={`w-16 h-16 ${card.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-200`}>
+                      <card.icon className="h-8 w-8 text-white" />
                     </div>
                     <CardTitle className="text-lg">{card.title}</CardTitle>
                   </CardHeader>
