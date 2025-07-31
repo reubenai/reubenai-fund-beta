@@ -8,7 +8,7 @@ import { FundProvider } from "@/contexts/FundContext";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Layout } from "@/components/Layout";
-import NewHomePage from "./pages/NewHomePage";
+import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Funds from "./pages/Funds";
 import Pipeline from "./pages/Pipeline";
@@ -34,11 +34,11 @@ const App = () => (
             <Route path="/" element={
               <AuthGuard>
                 <Layout>
-                  <NewHomePage />
+                  <Index />
                 </Layout>
               </AuthGuard>
             } />
-            <Route path="/dashboard" element={
+            <Route path="/strategy" element={
               <AuthGuard>
                 <Layout>
                   <Strategy />
@@ -52,7 +52,14 @@ const App = () => (
                 </Layout>
               </AuthGuard>
             } />
-            <Route path="/investment-committee" element={
+            <Route path="/pipeline" element={
+              <AuthGuard>
+                <Layout>
+                  <Pipeline />
+                </Layout>
+              </AuthGuard>
+            } />
+            <Route path="/ic" element={
               <AuthGuard>
                 <Layout>
                   <IC />
@@ -85,27 +92,6 @@ const App = () => (
               <AuthGuard>
                 <Layout>
                   <Funds />
-                </Layout>
-              </AuthGuard>
-            } />
-            <Route path="/pipeline" element={
-              <AuthGuard>
-                <Layout>
-                  <Pipeline />
-                </Layout>
-              </AuthGuard>
-            } />
-            <Route path="/strategy" element={
-              <AuthGuard>
-                <Layout>
-                  <Strategy />
-                </Layout>
-              </AuthGuard>
-            } />
-            <Route path="/ic" element={
-              <AuthGuard>
-                <Layout>
-                  <IC />
                 </Layout>
               </AuthGuard>
             } />

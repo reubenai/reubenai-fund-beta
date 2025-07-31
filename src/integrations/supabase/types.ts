@@ -558,6 +558,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      set_user_role: {
+        Args: {
+          user_email: string
+          new_role: Database["public"]["Enums"]["user_role"]
+          org_id?: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       deal_score_level:

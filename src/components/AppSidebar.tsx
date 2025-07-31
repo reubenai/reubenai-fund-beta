@@ -25,9 +25,9 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Core Functions - Large Cards
 const coreFunctions = [
-  { title: "Investment Strategy", url: "/dashboard", icon: Target, description: "Define criteria & focus" },
+  { title: "Investment Strategy", url: "/strategy", icon: Target, description: "Define criteria & focus" },
   { title: "Deal Pipeline", url: "/deals", icon: TrendingUp, description: "Manage opportunities" },
-  { title: "Investment Committee", url: "/investment-committee", icon: Users, description: "Run IC sessions" },
+  { title: "Investment Committee", url: "/ic", icon: Users, description: "Run IC sessions" },
 ];
 
 // Secondary Functions - Grid Cards
