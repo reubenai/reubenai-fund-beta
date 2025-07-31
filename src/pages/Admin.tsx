@@ -202,7 +202,7 @@ export default function Admin() {
       };
 
       if (newFund.target_size) {
-        fundData.target_size = parseInt(newFund.target_size);
+        fundData.target_size = parseInt(newFund.target_size) * 1000000; // Convert millions to actual amount
       }
 
       const { data, error } = await supabase
