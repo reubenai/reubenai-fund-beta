@@ -109,6 +109,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
             onSearchChange={setSearchQuery}
             onAddDeal={() => updateState({ showAddDeal: true })}
             onBatchUpload={() => updateState({ showBatchUpload: true })}
+            onSourceDeals={() => {/* TODO: Implement source deals modal */}}
             totalDeals={getTotalDeals()}
             showFilters={state.showFilters}
             onToggleFilters={() => updateState({ showFilters: !state.showFilters })}

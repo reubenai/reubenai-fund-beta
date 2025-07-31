@@ -4,15 +4,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, FileText, Vote, Users, Plus, Clock } from 'lucide-react';
-import { useFund } from '@/contexts/FundContext'; // Updated import
+import { useFund } from '@/contexts/FundContext'; 
+import { ICMemoModal } from '@/components/ic/ICMemoModal';
 
 export default function IC() {
   const { selectedFund } = useFund();
   const [activeTab, setActiveTab] = useState('pipeline');
+  const [showMemoModal, setShowMemoModal] = useState(false);
 
   if (!selectedFund) {
     return (
-      <div className="space-y-6">
+      <div className="flex-1 space-y-6 p-6">
         <div>
           <h1 className="text-3xl font-bold">Investment Committee</h1>
           <p className="text-muted-foreground">Manage IC meetings, memos, and decisions</p>
@@ -28,7 +30,7 @@ export default function IC() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-bold">Investment Committee</h1>
         <p className="text-muted-foreground">
@@ -60,7 +62,7 @@ export default function IC() {
                 Deals ready for IC review and memo generation
               </p>
             </div>
-            <Button>
+            <Button onClick={() => setShowMemoModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Generate Memo
             </Button>
@@ -102,7 +104,11 @@ export default function IC() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">Memo Pending</Badge>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowMemoModal(true)}
+                    >
                       Generate IC Memo
                     </Button>
                   </div>
@@ -273,6 +279,12 @@ export default function IC() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <ICMemoModal
+        isOpen={showMemoModal}
+        onClose={() => setShowMemoModal(false)}
+        fundId={selectedFund.id}
+      />
     </div>
   );
 }

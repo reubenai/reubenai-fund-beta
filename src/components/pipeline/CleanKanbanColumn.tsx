@@ -25,7 +25,7 @@ export const CleanKanbanColumn: React.FC<CleanKanbanColumnProps> = ({
     <div className="flex-shrink-0 w-80 bg-gray-50 rounded-lg">
       {/* Stage Header */}
       <EditableStageHeader
-        stage={stage}
+        stage={stage as any}
         dealCount={deals.length}
         onEdit={onStageEdit || (() => {})}
         onDelete={onStageDelete}

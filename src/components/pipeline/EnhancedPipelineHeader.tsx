@@ -7,14 +7,13 @@ import {
   Plus, 
   Upload,
   Filter,
-  MoreHorizontal
+  ChevronDown
 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
 interface EnhancedPipelineHeaderProps {
@@ -22,6 +21,7 @@ interface EnhancedPipelineHeaderProps {
   onSearchChange: (query: string) => void;
   onAddDeal: () => void;
   onBatchUpload: () => void;
+  onSourceDeals?: () => void;
   totalDeals: number;
   showFilters?: boolean;
   onToggleFilters?: () => void;
@@ -32,6 +32,7 @@ export function EnhancedPipelineHeader({
   onSearchChange,
   onAddDeal,
   onBatchUpload,
+  onSourceDeals,
   totalDeals,
   showFilters,
   onToggleFilters,
@@ -55,12 +56,30 @@ export function EnhancedPipelineHeader({
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={onBatchUpload} className="gap-2">
             <Upload className="h-4 w-4" />
-            Import
+            Batch Upload
           </Button>
-          <Button onClick={onAddDeal} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Deal
-          </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add Deal
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onAddDeal}>
+                <Plus className="h-4 w-4 mr-2" />
+                Single Deal
+              </DropdownMenuItem>
+              {onSourceDeals && (
+                <DropdownMenuItem onClick={onSourceDeals}>
+                  <Search className="h-4 w-4 mr-2" />
+                  Source Deals (AI)
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
