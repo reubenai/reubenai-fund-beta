@@ -729,13 +729,6 @@ export function DealDetailsModal({
               <Edit className="w-4 h-4 mr-1" />
               Edit Deal
             </Button>
-            <Button 
-              size="sm" 
-              onClick={generateAnalysis}
-              disabled={isGeneratingAnalysis}
-            >
-              {isGeneratingAnalysis ? 'Generating...' : 'Regenerate Analysis'}
-            </Button>
           </div>
         </div>
       </DialogContent>
