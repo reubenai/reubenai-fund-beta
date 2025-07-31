@@ -64,6 +64,17 @@ export function AppSidebar() {
     }
   }, [user]);
 
+  // Refresh data periodically to catch fund updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (user) {
+        fetchUserData();
+      }
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [user]);
+
   const fetchUserData = async () => {
     const { data: profileData } = await supabase
       .from('profiles')

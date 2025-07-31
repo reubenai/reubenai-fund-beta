@@ -35,6 +35,18 @@ const NewHomePage = () => {
     }
   }, [user]);
 
+  // Refresh data when navigating back to home
+  useEffect(() => {
+    const handleFocus = () => {
+      if (user) {
+        fetchUserData();
+      }
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [user]);
+
 
   const fetchUserData = async () => {
     try {
