@@ -715,6 +715,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      has_document_management_access: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_admin_by_email: {
         Args: Record<PropertyKey, never>
         Returns: boolean
