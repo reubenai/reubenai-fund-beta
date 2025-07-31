@@ -122,7 +122,8 @@ export default function Help() {
   const [supportForm, setSupportForm] = useState({
     subject: '',
     description: '',
-    priority: 'medium'
+    priority: 'medium',
+    email: ''
   });
   const { toast } = useToast();
 
@@ -135,11 +136,20 @@ export default function Help() {
   })).filter(category => category.questions.length > 0);
 
   const handleSupportSubmit = () => {
+    if (!supportForm.subject || !supportForm.description || !supportForm.email) {
+      toast({
+        title: "Please fill in all fields",
+        description: "Subject, description, and email are required.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     toast({
       title: "Support request submitted",
       description: "We'll get back to you within 24 hours.",
     });
-    setSupportForm({ subject: '', description: '', priority: 'medium' });
+    setSupportForm({ subject: '', description: '', priority: 'medium', email: '' });
   };
 
   return (
@@ -375,6 +385,16 @@ export default function Help() {
                     onChange={(e) => setSupportForm(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Provide detailed information about your issue or question"
                     rows={6}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={supportForm.email}
+                    onChange={(e) => setSupportForm(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="your.email@company.com"
                   />
                 </div>
                 <div className="space-y-2">

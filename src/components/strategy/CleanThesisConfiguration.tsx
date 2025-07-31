@@ -76,14 +76,14 @@ export function CleanThesisConfiguration({
         <div className="flex gap-3">
           {onLaunchWizard && (
             <Button 
-              variant="outline" 
               onClick={onLaunchWizard}
-              className="h-9 px-4 text-sm"
+              className="h-9 px-4 text-sm bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               Configure Thesis
             </Button>
           )}
           <Button 
+            variant="outline"
             onClick={handleSave}
             disabled={loading}
             className="h-9 px-4 text-sm gap-2"

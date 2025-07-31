@@ -59,27 +59,17 @@ export function EnhancedPipelineHeader({
             Batch Upload
           </Button>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Add Deal
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onAddDeal}>
-                <Plus className="h-4 w-4 mr-2" />
-                Single Deal
-              </DropdownMenuItem>
-              {onSourceDeals && (
-                <DropdownMenuItem onClick={onSourceDeals}>
-                  <Search className="h-4 w-4 mr-2" />
-                  Source Deals (AI)
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button variant="outline" onClick={onAddDeal} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Deal
+          </Button>
+          
+          {onSourceDeals && (
+            <Button onClick={onSourceDeals} className="gap-2">
+              <Search className="h-4 w-4" />
+              Source Deals
+            </Button>
+          )}
         </div>
       </div>
 

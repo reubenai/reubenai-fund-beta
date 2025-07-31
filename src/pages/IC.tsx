@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,11 +6,40 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, FileText, Vote, Users, Plus, Clock } from 'lucide-react';
 import { useFund } from '@/contexts/FundContext'; 
 import { ICMemoModal } from '@/components/ic/ICMemoModal';
+import { icMemoService, ICSession, ICVotingDecision } from '@/services/ICMemoService';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function IC() {
   const { selectedFund } = useFund();
   const [activeTab, setActiveTab] = useState('pipeline');
   const [showMemoModal, setShowMemoModal] = useState(false);
+  const [sessions, setSessions] = useState<ICSession[]>([]);
+  const [votingDecisions, setVotingDecisions] = useState<ICVotingDecision[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch real IC data
+  useEffect(() => {
+    const fetchICData = async () => {
+      if (!selectedFund) return;
+      
+      try {
+        setLoading(true);
+        const [sessionsData, votingData] = await Promise.all([
+          icMemoService.getSessions(selectedFund.id),
+          icMemoService.getVotingDecisions(selectedFund.id)
+        ]);
+        
+        setSessions(sessionsData);
+        setVotingDecisions(votingData);
+      } catch (error) {
+        console.error('Error fetching IC data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchICData();
+  }, [selectedFund]);
 
   if (!selectedFund) {
     return (
@@ -132,66 +161,69 @@ export default function IC() {
           </div>
 
           <div className="space-y-4">
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-base font-medium text-foreground">Q1 2024 IC Meeting #3</h3>
-                      <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">Scheduled</Badge>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      March 15, 2024 at 2:00 PM EST
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    <span>5 participants</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-foreground mb-3">Agenda</h4>
-                    <div className="p-4 bg-muted/30 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm font-medium text-foreground">CleanTech Solutions Review</div>
-                          <div className="text-xs text-muted-foreground">Series A Investment Decision</div>
+            {sessions.length > 0 ? (
+              sessions.map((session) => (
+                <Card key={session.id} className="border-0 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-base font-medium text-foreground">{session.name}</h3>
+                          <Badge variant="secondary" className="text-xs">
+                            {session.status}
+                          </Badge>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          <span>30 mins</span>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          {new Date(session.session_date).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
                         </div>
                       </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Users className="h-4 w-4" />
+                        <span>{Array.isArray(session.participants) ? session.participants.length : 0} participants</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex justify-end gap-2 pt-2">
-                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
-                      Edit Session
+                    
+                    <div className="space-y-4">
+                      {session.notes && (
+                        <div>
+                          <h4 className="text-sm font-medium text-foreground mb-2">Notes</h4>
+                          <p className="text-sm text-muted-foreground">{session.notes}</p>
+                        </div>
+                      )}
+                      <div className="flex justify-end gap-2 pt-2">
+                        <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
+                          Edit Session
+                        </Button>
+                        <Button size="sm" className="h-8 px-3 text-xs">
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card className="border-0 shadow-sm border-dashed border-border">
+                <CardContent className="flex items-center justify-center py-16">
+                  <div className="text-center">
+                    <Calendar className="h-10 w-10 mx-auto text-muted-foreground/50 mb-4" />
+                    <p className="text-sm text-muted-foreground">
+                      No IC sessions scheduled
+                    </p>
+                    <Button variant="outline" className="mt-4 h-9 px-4 text-sm">
+                      Schedule Your First Session
                     </Button>
-                    <Button size="sm" className="h-8 px-3 text-xs">
-                      Join Meeting
-                    </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-sm border-dashed border-border">
-              <CardContent className="flex items-center justify-center py-16">
-                <div className="text-center">
-                  <Calendar className="h-10 w-10 mx-auto text-muted-foreground/50 mb-4" />
-                  <p className="text-sm text-muted-foreground">
-                    No upcoming IC sessions scheduled
-                  </p>
-                  <Button variant="outline" className="mt-4 h-9 px-4 text-sm">
-                    Schedule Your First Session
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
 
@@ -210,55 +242,69 @@ export default function IC() {
           </div>
 
           <div className="space-y-4">
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-base font-medium text-foreground">CleanTech Solutions Investment Decision</h3>
+            {votingDecisions.length > 0 ? (
+              votingDecisions.map((decision) => (
+                <Card key={decision.id} className="border-0 shadow-sm">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-base font-medium text-foreground">{decision.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {decision.description} - Voting deadline: {new Date(decision.voting_deadline).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {decision.status}
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {decision.vote_summary && typeof decision.vote_summary === 'object' && (
+                        <div className="grid grid-cols-3 gap-6">
+                          <div className="text-center p-4 bg-green-50/50 rounded-lg">
+                            <div className="text-xl font-semibold text-green-600">
+                              {decision.vote_summary.approve || 0}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Approve</div>
+                          </div>
+                          <div className="text-center p-4 bg-red-50/50 rounded-lg">
+                            <div className="text-xl font-semibold text-red-600">
+                              {decision.vote_summary.reject || 0}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Reject</div>
+                          </div>
+                          <div className="text-center p-4 bg-muted/30 rounded-lg">
+                            <div className="text-xl font-semibold text-muted-foreground">
+                              {decision.vote_summary.pending || 0}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Pending</div>
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex justify-end pt-2">
+                        <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card className="border-0 shadow-sm border-dashed border-border">
+                <CardContent className="flex items-center justify-center py-16">
+                  <div className="text-center">
+                    <Vote className="h-10 w-10 mx-auto text-muted-foreground/50 mb-4" />
                     <p className="text-sm text-muted-foreground">
-                      $2.5M Series A Investment - Voting deadline: March 20, 2024
+                      No voting decisions created
                     </p>
-                  </div>
-                  <Badge variant="secondary" className="text-xs bg-green-50 text-green-700 border-green-200">Active Voting</Badge>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-6">
-                    <div className="text-center p-4 bg-green-50/50 rounded-lg">
-                      <div className="text-xl font-semibold text-green-600">3</div>
-                      <div className="text-xs text-muted-foreground">Approve</div>
-                    </div>
-                    <div className="text-center p-4 bg-red-50/50 rounded-lg">
-                      <div className="text-xl font-semibold text-red-600">1</div>
-                      <div className="text-xs text-muted-foreground">Reject</div>
-                    </div>
-                    <div className="text-center p-4 bg-muted/30 rounded-lg">
-                      <div className="text-xl font-semibold text-muted-foreground">1</div>
-                      <div className="text-xs text-muted-foreground">Pending</div>
-                    </div>
-                  </div>
-                  <div className="flex justify-end pt-2">
-                    <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
-                      View Details
+                    <Button variant="outline" className="mt-4 h-9 px-4 text-sm">
+                      Create Voting Decision
                     </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-sm border-dashed border-border">
-              <CardContent className="flex items-center justify-center py-16">
-                <div className="text-center">
-                  <Vote className="h-10 w-10 mx-auto text-muted-foreground/50 mb-4" />
-                  <p className="text-sm text-muted-foreground">
-                    No active voting sessions
-                  </p>
-                  <Button variant="outline" className="mt-4 h-9 px-4 text-sm">
-                    Create Voting Decision
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
       </Tabs>
