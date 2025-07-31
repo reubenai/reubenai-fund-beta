@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X } from 'lucide-react';
+import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { AdminStats } from '@/components/admin/AdminStats';
+import { AdminUserTable } from '@/components/admin/AdminUserTable';
+import { AdminActivityFeed } from '@/components/admin/AdminActivityFeed';
 
 interface Organization {
   id: string;
@@ -71,6 +74,8 @@ export default function Admin() {
     totalUsers: 0,
     totalFunds: 0,
     activeDeals: 0,
+    recentActivity: 0,
+    pendingIssues: 0,
   });
 
   useEffect(() => {
@@ -125,6 +130,14 @@ export default function Admin() {
         .from('deals')
         .select('*', { count: 'exact', head: true });
 
+      // Fetch recent activity count (last 24 hours)
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const { count: recentActivityCount } = await supabase
+        .from('activity_events')
+        .select('*', { count: 'exact', head: true })
+        .gte('occurred_at', yesterday.toISOString());
+
       setOrganizations(orgsData || []);
       setProfiles(profilesData || []);
       setFunds(fundsData || []);
@@ -133,6 +146,8 @@ export default function Admin() {
         totalUsers: profilesData?.length || 0,
         totalFunds: fundsData?.length || 0,
         activeDeals: dealsCount || 0,
+        recentActivity: recentActivityCount || 0,
+        pendingIssues: 0, // TODO: Implement pending issues logic
       });
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -264,11 +279,41 @@ export default function Admin() {
       setProfiles(profiles.map(p => 
         p.user_id === userId ? { ...p, organization_id: orgId } : p
       ));
+      
+      // Log admin activity
+      await logAdminActivity('organization_assignment', 'User assigned to organization', {
+        userId,
+        organizationId: orgId,
+        organizationName: organizations.find(o => o.id === orgId)?.name
+      });
+      
       toast.success('User assigned to organization successfully');
     } catch (error) {
       console.error('Error assigning user to organization:', error);
       toast.error('Failed to assign user to organization');
     }
+  };
+
+  const logAdminActivity = async (type: string, description: string, context: any = {}) => {
+    try {
+      await supabase.from('activity_events').insert([{
+        activity_type: 'system_event',
+        title: 'Admin Action',
+        description,
+        user_id: user!.id,
+        fund_id: '1fbf40e1-9307-4399-b3c5-8034d7cdbfde', // Default fund for admin actions
+        context_data: { type, ...context },
+        tags: ['admin', type],
+        priority: 'medium'
+      }]);
+    } catch (error) {
+      console.error('Error logging admin activity:', error);
+    }
+  };
+
+  const handleInviteUser = () => {
+    // TODO: Implement user invitation modal
+    toast.info('User invitation feature coming soon');
   };
 
   if (loading) {
@@ -303,61 +348,32 @@ export default function Admin() {
 
   return (
     <div className="space-y-8 p-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Super Admin Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Platform administration and organization management</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <Shield className="h-8 w-8 text-primary" />
+            Super Admin Dashboard
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Platform administration and organization management
+          </p>
+        </div>
+        <Badge variant="destructive" className="px-3 py-1">
+          Super Admin Access
+        </Badge>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Organizations</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold">{stats.totalOrgs}</div>
-            <p className="text-xs text-muted-foreground">Total organizations</p>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold">{stats.totalUsers}</div>
-            <p className="text-xs text-muted-foreground">Platform users</p>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Funds</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold">{stats.totalFunds}</div>
-            <p className="text-xs text-muted-foreground">Investment funds</p>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Active Deals</CardTitle>
-            <Database className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold">{stats.activeDeals}</div>
-            <p className="text-xs text-muted-foreground">Deals in pipeline</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Enhanced Stats Overview */}
+      <AdminStats stats={stats} />
 
-      <Tabs defaultValue="organizations" className="space-y-6">
-        <TabsList className="h-12 w-auto bg-background border rounded-lg p-1">
-          <TabsTrigger value="organizations" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Organizations</TabsTrigger>
-          <TabsTrigger value="users" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Users</TabsTrigger>
-          <TabsTrigger value="funds" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Funds</TabsTrigger>
-        </TabsList>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <Tabs defaultValue="organizations" className="space-y-6">
+            <TabsList className="h-12 w-auto bg-background border rounded-lg p-1">
+              <TabsTrigger value="organizations" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Organizations</TabsTrigger>
+              <TabsTrigger value="users" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Users</TabsTrigger>
+              <TabsTrigger value="funds" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Funds</TabsTrigger>
+            </TabsList>
 
         <TabsContent value="organizations" className="space-y-6">
           <Card className="border-0 shadow-sm">
@@ -453,71 +469,17 @@ export default function Admin() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="users" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>Manage user roles and organization assignments</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {profiles.map((profile) => (
-                  <div key={profile.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <h3 className="font-semibold">
-                        {profile.first_name} {profile.last_name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">{profile.email}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="secondary">{profile.role}</Badge>
-                        {profile.organization_id && (
-                          <Badge variant="outline">
-                            {organizations.find(o => o.id === profile.organization_id)?.name || 'Unknown Org'}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Select
-                        value={profile.role}
-                        onValueChange={(value: 'super_admin' | 'admin' | 'fund_manager' | 'analyst' | 'viewer') => updateUserRole(profile.user_id, value)}
-                      >
-                        <SelectTrigger className="w-40">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="viewer">Viewer</SelectItem>
-                          <SelectItem value="analyst">Team Member</SelectItem>
-                          <SelectItem value="fund_manager">GP/Owner</SelectItem>
-                          <SelectItem value="admin">Fund Administrator</SelectItem>
-                          <SelectItem value="super_admin">Super Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Select
-                        value={profile.organization_id || ''}
-                        onValueChange={(value) => assignUserToOrg(profile.user_id, value)}
-                      >
-                        <SelectTrigger className="w-40">
-                          <SelectValue placeholder="Assign org" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">No Organization</SelectItem>
-                          {organizations.map((org) => (
-                            <SelectItem key={org.id} value={org.id}>
-                              {org.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            <TabsContent value="users" className="space-y-4">
+              <AdminUserTable 
+                profiles={profiles}
+                organizations={organizations}
+                onUpdateUserRole={updateUserRole}
+                onAssignUserToOrg={assignUserToOrg}
+                onInviteUser={handleInviteUser}
+              />
+            </TabsContent>
 
-        <TabsContent value="funds" className="space-y-4">
+            <TabsContent value="funds" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Create New Fund</CardTitle>
@@ -619,9 +581,16 @@ export default function Admin() {
                 ))}
               </div>
             </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+        
+        {/* Activity Feed Sidebar */}
+        <div className="lg:col-span-1">
+          <AdminActivityFeed />
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Target, TrendingUp, Users, Brain, BarChart3, Briefcase, PieChart, Settings, Plug, HelpCircle, BookOpen, LogOut, Building2 } from 'lucide-react';
+import { Target, TrendingUp, Users, Brain, BarChart3, Briefcase, PieChart, Settings, Plug, HelpCircle, BookOpen, LogOut, Building2, Shield } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -233,6 +233,24 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
+              {/* Show Admin Dashboard only for super_admin */}
+              {profile?.role === 'super_admin' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to="/admin" 
+                      className={`flex items-center space-x-3 rounded-md px-3 py-2 text-sm transition-all duration-200 ${
+                        isActive('/admin') 
+                          ? "bg-primary/10 text-primary border border-primary/20" 
+                          : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Shield className="h-4 w-4" />
+                      <span className="font-medium">Admin Dashboard</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               {[...adminItems, ...supportItems].map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
