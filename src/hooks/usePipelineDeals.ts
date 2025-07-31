@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
+import { useActivityTracking } from './useActivityTracking';
 
 export type Deal = Database['public']['Tables']['deals']['Row'] & {
   notes_count?: number;
@@ -32,6 +33,7 @@ export const usePipelineDeals = (fundId?: string) => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
+  const { logDealStageChanged, logDealCreated } = useActivityTracking();
 
   const fetchDeals = useCallback(async () => {
     if (!fundId) return;
@@ -87,15 +89,20 @@ export const usePipelineDeals = (fundId?: string) => {
 
   const moveDeal = useCallback(async (dealId: string, fromStage: string, toStage: string) => {
     try {
+      // Get deal info for activity logging
+      const deal = deals[fromStage]?.find(d => d.id === dealId);
+      const fromStageName = stages.find(s => s.id === fromStage)?.title || fromStage;
+      const toStageName = stages.find(s => s.id === toStage)?.title || toStage;
+
       // Optimistic update
       setDeals(prev => {
         const newDeals = { ...prev };
-        const deal = newDeals[fromStage]?.find(d => d.id === dealId);
+        const dealToMove = newDeals[fromStage]?.find(d => d.id === dealId);
         
-        if (deal) {
+        if (dealToMove) {
           newDeals[fromStage] = newDeals[fromStage].filter(d => d.id !== dealId);
           newDeals[toStage] = [...(newDeals[toStage] || []), { 
-            ...deal, 
+            ...dealToMove, 
             status: toStage as Database['public']['Enums']['deal_status']
           }];
         }
@@ -114,9 +121,14 @@ export const usePipelineDeals = (fundId?: string) => {
 
       if (error) throw error;
 
+      // Log activity
+      if (deal && fundId) {
+        await logDealStageChanged(dealId, deal.company_name, fromStageName, toStageName);
+      }
+
       toast({
         title: "Deal moved",
-        description: `Deal moved to ${stages.find(s => s.id === toStage)?.title}`,
+        description: `Deal moved to ${toStageName}`,
       });
     } catch (error) {
       console.error('Error moving deal:', error);
@@ -128,7 +140,7 @@ export const usePipelineDeals = (fundId?: string) => {
       // Revert optimistic update
       fetchDeals();
     }
-  }, [stages, toast, fetchDeals]);
+  }, [stages, toast, fetchDeals, deals, fundId, logDealStageChanged]);
 
   const addDeal = useCallback(async (dealData: Partial<Deal> & { company_name: string; created_by: string }) => {
     if (!fundId) return;
@@ -162,6 +174,14 @@ export const usePipelineDeals = (fundId?: string) => {
         sourced: [...(prev.sourced || []), data]
       }));
 
+      // Log activity
+      await logDealCreated(data.id, data.company_name, {
+        industry: data.industry,
+        location: data.location,
+        deal_size: data.deal_size,
+        valuation: data.valuation
+      });
+
       toast({
         title: "Deal added",
         description: `${data.company_name} added to pipeline`,
@@ -176,7 +196,7 @@ export const usePipelineDeals = (fundId?: string) => {
         variant: "destructive"
       });
     }
-  }, [fundId, toast]);
+  }, [fundId, toast, logDealCreated]);
 
   const filteredDeals = useCallback(() => {
     if (!searchQuery) return deals;

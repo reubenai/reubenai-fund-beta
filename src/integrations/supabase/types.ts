@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_events: {
+        Row: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          change_data: Json | null
+          context_data: Json | null
+          created_at: string
+          deal_id: string | null
+          description: string | null
+          fund_id: string
+          id: string
+          is_system_event: boolean
+          is_visible: boolean
+          occurred_at: string
+          priority: Database["public"]["Enums"]["activity_priority"]
+          resource_id: string | null
+          resource_type: string | null
+          retention_date: string | null
+          searchable_content: string | null
+          session_id: string | null
+          source_ip: unknown | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          change_data?: Json | null
+          context_data?: Json | null
+          created_at?: string
+          deal_id?: string | null
+          description?: string | null
+          fund_id: string
+          id?: string
+          is_system_event?: boolean
+          is_visible?: boolean
+          occurred_at?: string
+          priority?: Database["public"]["Enums"]["activity_priority"]
+          resource_id?: string | null
+          resource_type?: string | null
+          retention_date?: string | null
+          searchable_content?: string | null
+          session_id?: string | null
+          source_ip?: unknown | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: Database["public"]["Enums"]["activity_type"]
+          change_data?: Json | null
+          context_data?: Json | null
+          created_at?: string
+          deal_id?: string | null
+          description?: string | null
+          fund_id?: string
+          id?: string
+          is_system_event?: boolean
+          is_visible?: boolean
+          occurred_at?: string
+          priority?: Database["public"]["Enums"]["activity_priority"]
+          resource_id?: string | null
+          resource_type?: string | null
+          retention_date?: string | null
+          searchable_content?: string | null
+          session_id?: string | null
+          source_ip?: unknown | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       deal_analyses: {
         Row: {
           analyzed_at: string | null
@@ -607,6 +685,25 @@ export type Database = {
       }
     }
     Enums: {
+      activity_priority: "low" | "medium" | "high" | "critical"
+      activity_type:
+        | "deal_created"
+        | "deal_updated"
+        | "deal_stage_changed"
+        | "deal_deleted"
+        | "deal_note_added"
+        | "deal_analysis_started"
+        | "deal_analysis_completed"
+        | "document_uploaded"
+        | "pitch_deck_uploaded"
+        | "fund_created"
+        | "fund_updated"
+        | "criteria_updated"
+        | "team_member_invited"
+        | "team_member_joined"
+        | "meeting_scheduled"
+        | "investment_decision"
+        | "system_event"
       deal_score_level:
         | "exciting"
         | "promising"
@@ -749,6 +846,26 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      activity_priority: ["low", "medium", "high", "critical"],
+      activity_type: [
+        "deal_created",
+        "deal_updated",
+        "deal_stage_changed",
+        "deal_deleted",
+        "deal_note_added",
+        "deal_analysis_started",
+        "deal_analysis_completed",
+        "document_uploaded",
+        "pitch_deck_uploaded",
+        "fund_created",
+        "fund_updated",
+        "criteria_updated",
+        "team_member_invited",
+        "team_member_joined",
+        "meeting_scheduled",
+        "investment_decision",
+        "system_event",
+      ],
       deal_score_level: [
         "exciting",
         "promising",
