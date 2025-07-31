@@ -37,24 +37,36 @@ const NewHomePage = () => {
 
 
   const fetchUserData = async () => {
-    // Fetch user profile
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', user?.id)
-      .single();
-    
-    setProfile(profileData);
-
-    // Fetch user's funds
-    if (profileData?.organization_id) {
-      const { data: fundsData } = await supabase
-        .from('funds')
-        .select('*')
-        .eq('organization_id', profileData.organization_id)
-        .eq('is_active', true);
+    try {
+      console.log('Fetching user data for:', user?.id);
       
-      setFunds(fundsData || []);
+      // Fetch user profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single();
+      
+      console.log('Profile data:', profileData);
+      console.log('Profile error:', profileError);
+      
+      setProfile(profileData);
+
+      // Fetch user's funds
+      if (profileData?.organization_id) {
+        const { data: fundsData, error: fundsError } = await supabase
+          .from('funds')
+          .select('*')
+          .eq('organization_id', profileData.organization_id)
+          .eq('is_active', true);
+        
+        console.log('Funds data:', fundsData);
+        console.log('Funds error:', fundsError);
+        
+        setFunds(fundsData || []);
+      }
+    } catch (error) {
+      console.error('Error in fetchUserData:', error);
     }
   };
 
