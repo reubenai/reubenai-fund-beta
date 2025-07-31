@@ -1,0 +1,130 @@
+import { useState, useEffect } from 'react';
+import { unifiedStrategyService, EnhancedStrategy, EnhancedWizardData } from '@/services/unifiedStrategyService';
+import { useToast } from '@/hooks/use-toast';
+
+export function useUnifiedStrategy(fundId?: string) {
+  const [strategy, setStrategy] = useState<EnhancedStrategy | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Load strategy when fundId changes
+  useEffect(() => {
+    if (fundId) {
+      loadStrategy();
+    }
+  }, [fundId]);
+
+  const loadStrategy = async () => {
+    if (!fundId) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const data = await unifiedStrategyService.getFundStrategy(fundId);
+      setStrategy(data);
+    } catch (err) {
+      const errorMessage = 'Failed to load strategy';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createStrategy = async (fundType: 'vc' | 'pe', wizardData: EnhancedWizardData) => {
+    if (!fundId) return null;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Validate wizard data
+      const validation = unifiedStrategyService.validateStrategy(wizardData);
+      if (!validation.isValid) {
+        setError(validation.errors.join(', '));
+        toast({
+          title: 'Validation Error',
+          description: validation.errors.join(', '),
+          variant: 'destructive'
+        });
+        return null;
+      }
+
+      const newStrategy = await unifiedStrategyService.createFundStrategy(fundId, fundType, wizardData);
+      if (newStrategy) {
+        setStrategy(newStrategy);
+        toast({
+          title: 'Success',
+          description: 'Investment strategy created successfully'
+        });
+      }
+      return newStrategy;
+    } catch (err) {
+      const errorMessage = 'Failed to create strategy';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive'
+      });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateStrategy = async (updates: Partial<EnhancedStrategy>) => {
+    if (!strategy?.id) return null;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const updatedStrategy = await unifiedStrategyService.updateFundStrategy(strategy.id, updates);
+      if (updatedStrategy) {
+        setStrategy(updatedStrategy);
+        toast({
+          title: 'Success',
+          description: 'Strategy updated successfully'
+        });
+      }
+      return updatedStrategy;
+    } catch (err) {
+      const errorMessage = 'Failed to update strategy';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive'
+      });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getDefaultTemplate = (fundType: 'vc' | 'pe') => {
+    return unifiedStrategyService.getDefaultTemplate(fundType);
+  };
+
+  const validateWizardData = (wizardData: EnhancedWizardData) => {
+    return unifiedStrategyService.validateStrategy(wizardData);
+  };
+
+  return {
+    strategy,
+    loading,
+    error,
+    loadStrategy,
+    createStrategy,
+    updateStrategy,
+    getDefaultTemplate,
+    validateWizardData
+  };
+}
