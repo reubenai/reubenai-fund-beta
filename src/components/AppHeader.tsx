@@ -3,8 +3,8 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Building2 } from "lucide-react";
-import { useLocation } from 'react-router-dom';
+import { Search, Building2, Home } from "lucide-react";
+import { useLocation, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -99,9 +99,17 @@ export function AppHeader() {
         )}
       </div>
 
-      {/* Breadcrumbs */}
-      <Breadcrumb className="flex-1">
-        <BreadcrumbList>
+      {/* Home Button + Breadcrumbs */}
+      <div className="flex items-center gap-3">
+        <Link to="/">
+          <Button variant="ghost" size="sm" className="gap-2">
+            <Home className="h-4 w-4" />
+            Home
+          </Button>
+        </Link>
+        
+        <Breadcrumb className="flex-1">
+          <BreadcrumbList>
           {breadcrumbs.map((breadcrumb, index) => (
             <div key={breadcrumb.href} className="flex items-center">
               <BreadcrumbItem>
@@ -114,8 +122,9 @@ export function AppHeader() {
               {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
             </div>
           ))}
-        </BreadcrumbList>
-      </Breadcrumb>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
 
       {/* Right Side */}
       <div className="flex items-center gap-4">
