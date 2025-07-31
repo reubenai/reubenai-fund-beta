@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
+import { useFund } from '@/contexts/FundContext';
 import { supabase } from '@/integrations/supabase/client';
 
 // Core Functions - Large Cards
@@ -53,26 +54,14 @@ export function AppSidebar() {
   const { open, toggleSidebar } = useSidebar();
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { funds, selectedFund, setSelectedFund } = useFund();
   const currentPath = location.pathname;
   const [profile, setProfile] = useState<any>(null);
-  const [funds, setFunds] = useState<any[]>([]);
-  const [selectedFund, setSelectedFund] = useState<string>('');
 
   useEffect(() => {
     if (user) {
       fetchUserData();
     }
-  }, [user]);
-
-  // Refresh data periodically to catch fund updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (user) {
-        fetchUserData();
-      }
-    }, 30000); // Refresh every 30 seconds
-    
-    return () => clearInterval(interval);
   }, [user]);
 
   const fetchUserData = async () => {
@@ -83,16 +72,6 @@ export function AppSidebar() {
       .single();
     
     setProfile(profileData);
-
-    if (profileData?.organization_id) {
-      const { data: fundsData } = await supabase
-        .from('funds')
-        .select('*')
-        .eq('organization_id', profileData.organization_id)
-        .eq('is_active', true);
-      
-      setFunds(fundsData || []);
-    }
   };
 
   const isActive = (path: string) => currentPath === path;
@@ -169,7 +148,13 @@ export function AppSidebar() {
 
           {/* Fund Switcher */}
           {funds.length > 0 && (
-            <Select value={selectedFund} onValueChange={setSelectedFund}>
+            <Select 
+              value={selectedFund?.id || ''} 
+              onValueChange={(fundId) => {
+                const fund = funds.find(f => f.id === fundId);
+                setSelectedFund(fund || null);
+              }}
+            >
               <SelectTrigger className="w-full bg-background/80 border-border/60 h-10">
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-muted-foreground" />

@@ -5,9 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Search, Building2, Home } from "lucide-react";
 import { useLocation, Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useFund } from '@/contexts/FundContext';
 
 const getBreadcrumbs = (pathname: string) => {
   const paths = pathname.split('/').filter(Boolean);
@@ -39,65 +37,20 @@ const getBreadcrumbs = (pathname: string) => {
 
 export function AppHeader() {
   const location = useLocation();
-  const { user } = useAuth();
   const breadcrumbs = getBreadcrumbs(location.pathname);
-  const [organizations, setOrganizations] = useState<any[]>([]);
-  const [funds, setFunds] = useState<any[]>([]);
-  const [selectedOrg, setSelectedOrg] = useState<string>('');
-  const [selectedFund, setSelectedFund] = useState<string>('');
-
-  useEffect(() => {
-    if (user) {
-      fetchUserData();
-    }
-  }, [user]);
-
-  const fetchUserData = async () => {
-    // Fetch user's profile to get organization
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*, organization_id')
-      .eq('user_id', user?.id)
-      .single();
-
-    if (profile?.organization_id) {
-      setSelectedOrg(profile.organization_id);
-      
-      // Fetch funds for the organization
-      const { data: fundsData } = await supabase
-        .from('funds')
-        .select('*')
-        .eq('organization_id', profile.organization_id)
-        .eq('is_active', true);
-      
-      setFunds(fundsData || []);
-    }
-  };
+  const { selectedFund } = useFund();
 
   return (
     <header className="h-14 flex items-center border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/95 px-4 gap-4 relative">
       <SidebarTrigger className="h-8 w-8 hover:bg-muted rounded-md transition-colors z-50" />
       
-      {/* Organization/Fund Selector */}
-      <div className="flex items-center gap-2">
-        {funds.length > 0 && (
-          <Select value={selectedFund} onValueChange={setSelectedFund}>
-            <SelectTrigger className="w-48 h-8">
-              <div className="flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                <SelectValue placeholder="Select Fund" />
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              {funds.map((fund) => (
-                <SelectItem key={fund.id} value={fund.id}>
-                  {fund.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
+      {/* Current Fund Display */}
+      {selectedFund && (
+        <div className="flex items-center gap-2 px-3 py-1 bg-muted/50 rounded-md">
+          <Building2 className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">{selectedFund.name}</span>
+        </div>
+      )}
 
       {/* Home Button + Breadcrumbs */}
       <div className="flex items-center gap-3">

@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Building2, TrendingUp, FileText, Users, Zap, Target, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useFund } from '@/contexts/FundContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 
 const Index = () => {
   const { user } = useAuth();
+  const { funds } = useFund();
   const [profile, setProfile] = useState<any>(null);
-  const [funds, setFunds] = useState<any[]>([]);
   const [stats, setStats] = useState({
     activeFunds: 0,
     activeDeals: 0,
@@ -22,51 +23,23 @@ const Index = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    // Update stats when funds change
+    setStats(prev => ({
+      ...prev,
+      activeFunds: funds.length,
+    }));
+  }, [funds]);
+
   const fetchUserData = async () => {
-    console.log('=== FETCHING USER DATA ===');
-    console.log('User ID:', user?.id);
-    console.log('User object:', user);
-    
     // Fetch user profile
-    const { data: profileData, error: profileError } = await supabase
+    const { data: profileData } = await supabase
       .from('profiles')
       .select('*')
       .eq('user_id', user?.id)
       .single();
     
-    console.log('=== PROFILE FETCH RESULT ===');
-    console.log('Profile data:', profileData);
-    console.log('Profile error:', profileError);
-    
     setProfile(profileData);
-    console.log('Profile set in state:', profileData);
-
-    // Fetch user's funds
-    if (profileData?.organization_id) {
-      console.log('=== FETCHING FUNDS ===');
-      console.log('Organization ID:', profileData.organization_id);
-      
-      const { data: fundsData, error: fundsError } = await supabase
-        .from('funds')
-        .select('*')
-        .eq('organization_id', profileData.organization_id)
-        .eq('is_active', true);
-      
-      console.log('=== FUNDS FETCH RESULT ===');
-      console.log('Funds data:', fundsData);
-      console.log('Funds error:', fundsError);
-      
-      setFunds(fundsData || []);
-      console.log('Funds set in state:', fundsData);
-      
-      // Calculate stats
-      setStats({
-        activeFunds: fundsData?.length || 0,
-        activeDeals: 12,
-        aiAnalysis: 4,
-        investmentCommittee: 2,
-      });
-    }
   };
 
   const quickActions = [
@@ -117,52 +90,56 @@ const Index = () => {
       {funds.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium text-slate-900">Your Funds</h2>
+            <h2 className="text-lg font-medium text-slate-900">Your Funds ({funds.length})</h2>
             <Link to="/funds">
               <Button variant="outline" size="sm" className="text-sm">
                 + Create New Fund
               </Button>
             </Link>
           </div>
-          <div className="bg-white p-6 border border-slate-200 rounded-lg">
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <h3 className="font-semibold text-slate-900">{funds[0]?.name}</h3>
-                  <span className="inline-flex items-center px-2 py-1 bg-emerald-50 border border-emerald-200 rounded text-xs font-medium text-emerald-700">
-                    Active
-                  </span>
+          <div className="space-y-4">
+            {funds.map((fund) => (
+              <div key={fund.id} className="bg-white p-6 border border-slate-200 rounded-lg">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <h3 className="font-semibold text-slate-900">{fund.name}</h3>
+                      <span className="inline-flex items-center px-2 py-1 bg-emerald-50 border border-emerald-200 rounded text-xs font-medium text-emerald-700">
+                        {fund.fund_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">
+                      {fund.description || 'Investment fund focused on exceptional opportunities.'}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">
-                  {funds[0]?.description || 'We invest in exceptional founding teams pursuing massive opportunities enabled by AI, advanced technology, and unique insights.'}
-                </p>
+                
+                <div className="grid grid-cols-3 gap-8 mb-6 pb-6 border-b border-slate-100">
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Fund Size</p>
+                    <p className="text-lg font-semibold text-slate-900">
+                      {fund.target_size ? `$${(fund.target_size / 1000000).toFixed(0)}M` : 'TBD'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Currency</p>
+                    <p className="text-lg font-semibold text-slate-900">{fund.currency || 'USD'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Status</p>
+                    <p className="text-lg font-semibold text-slate-900">{fund.is_active ? 'Active' : 'Inactive'}</p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end">
+                  <Link to={`/pipeline?fund=${fund.id}`}>
+                    <Button variant="ghost" size="sm" className="text-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
+                      ✓ View Pipeline
+                    </Button>
+                  </Link>
+                </div>
               </div>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-8 mb-6 pb-6 border-b border-slate-100">
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Fund Size</p>
-                <p className="text-lg font-semibold text-slate-900">
-                  ${funds[0]?.target_size ? (funds[0].target_size / 1000000).toFixed(0) + 'M' : '25M'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Vintage</p>
-                <p className="text-lg font-semibold text-slate-900">2024</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Invested</p>
-                <p className="text-lg font-semibold text-slate-900">6 deals</p>
-              </div>
-            </div>
-            
-            <div className="flex justify-end">
-              <Link to="/funds">
-                <Button variant="ghost" size="sm" className="text-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
-                  ✓ View Dashboard
-                </Button>
-              </Link>
-            </div>
+            ))}
           </div>
         </div>
       )}
