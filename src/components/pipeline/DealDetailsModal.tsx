@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { 
   Dialog, 
@@ -6,6 +6,16 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -25,8 +35,13 @@ import {
   CheckCircle,
   Brain,
   Target,
-  User
+  User,
+  Edit,
+  Trash2
 } from 'lucide-react';
+import { EditDealModal } from './EditDealModal';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Deal {
   id: string;
@@ -63,9 +78,22 @@ interface DealDetailsModalProps {
   deal: Deal | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDealUpdated?: () => void;
+  onDealDeleted?: () => void;
 }
 
-export function DealDetailsModal({ deal, open, onOpenChange }: DealDetailsModalProps) {
+export function DealDetailsModal({ 
+  deal, 
+  open, 
+  onOpenChange, 
+  onDealUpdated, 
+  onDealDeleted 
+}: DealDetailsModalProps) {
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { toast } = useToast();
+
   if (!deal) return null;
 
   const formatAmount = (amount?: number, currency: string = 'USD') => {
@@ -101,6 +129,42 @@ export function DealDetailsModal({ deal, open, onOpenChange }: DealDetailsModalP
       case 'low': return 'bg-green-500';
       default: return 'bg-muted';
     }
+  };
+  const handleDeleteDeal = async () => {
+    if (!deal) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('deals')
+        .delete()
+        .eq('id', deal.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Deal deleted successfully",
+      });
+
+      onDealDeleted?.();
+      onOpenChange(false);
+      setShowDeleteDialog(false);
+    } catch (error) {
+      console.error('Error deleting deal:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete deal",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleEditComplete = () => {
+    onDealUpdated?.();
+    setShowEditModal(false);
   };
 
   return (
@@ -406,9 +470,23 @@ export function DealDetailsModal({ deal, open, onOpenChange }: DealDetailsModalP
             <Button variant="outline" size="sm">
               Schedule Follow-up
             </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowDeleteDialog(true)}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Delete
+            </Button>
           </div>
           <div className="space-x-2">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowEditModal(true)}
+            >
+              <Edit className="w-4 h-4 mr-1" />
               Edit Deal
             </Button>
             <Button size="sm">
@@ -417,6 +495,36 @@ export function DealDetailsModal({ deal, open, onOpenChange }: DealDetailsModalP
           </div>
         </div>
       </DialogContent>
+
+      {/* Edit Modal */}
+      <EditDealModal
+        deal={deal}
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onUpdateComplete={handleEditComplete}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Deal</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deal.company_name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteDeal}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete Deal'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

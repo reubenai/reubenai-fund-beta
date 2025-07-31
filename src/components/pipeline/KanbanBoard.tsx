@@ -167,6 +167,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
         deal={state.selectedDeal}
         open={!!state.selectedDeal}
         onOpenChange={(open) => !open && updateState({ selectedDeal: null })}
+        onDealUpdated={refreshDeals}
+        onDealDeleted={() => {
+          refreshDeals();
+          updateState({ selectedDeal: null });
+        }}
       />
     </div>
   );
