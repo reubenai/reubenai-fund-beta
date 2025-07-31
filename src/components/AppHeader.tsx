@@ -75,8 +75,8 @@ export function AppHeader() {
   };
 
   return (
-    <header className="h-14 flex items-center border-b border-border bg-background px-4 gap-4">
-      <SidebarTrigger className="h-6 w-6" />
+    <header className="h-14 flex items-center border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/95 px-4 gap-4">
+      <SidebarTrigger className="h-8 w-8 hover:bg-muted rounded-md transition-colors" />
       
       {/* Organization/Fund Selector */}
       <div className="flex items-center gap-2">
