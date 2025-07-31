@@ -365,6 +365,7 @@ export type Database = {
           priority: string | null
           rag_confidence: number | null
           rag_reasoning: Json | null
+          rag_status: string | null
           score_level: Database["public"]["Enums"]["deal_score_level"] | null
           source_confidence_score: number | null
           status: Database["public"]["Enums"]["deal_status"] | null
@@ -396,6 +397,7 @@ export type Database = {
           priority?: string | null
           rag_confidence?: number | null
           rag_reasoning?: Json | null
+          rag_status?: string | null
           score_level?: Database["public"]["Enums"]["deal_score_level"] | null
           source_confidence_score?: number | null
           status?: Database["public"]["Enums"]["deal_status"] | null
@@ -427,6 +429,7 @@ export type Database = {
           priority?: string | null
           rag_confidence?: number | null
           rag_reasoning?: Json | null
+          rag_status?: string | null
           score_level?: Database["public"]["Enums"]["deal_score_level"] | null
           source_confidence_score?: number | null
           status?: Database["public"]["Enums"]["deal_status"] | null
@@ -495,6 +498,42 @@ export type Database = {
           },
         ]
       }
+      ic_committee_members: {
+        Row: {
+          appointed_date: string
+          created_at: string
+          fund_id: string
+          id: string
+          is_active: boolean
+          role: string
+          updated_at: string
+          user_id: string
+          voting_weight: number | null
+        }
+        Insert: {
+          appointed_date?: string
+          created_at?: string
+          fund_id: string
+          id?: string
+          is_active?: boolean
+          role?: string
+          updated_at?: string
+          user_id: string
+          voting_weight?: number | null
+        }
+        Update: {
+          appointed_date?: string
+          created_at?: string
+          fund_id?: string
+          id?: string
+          is_active?: boolean
+          role?: string
+          updated_at?: string
+          user_id?: string
+          voting_weight?: number | null
+        }
+        Relationships: []
+      }
       ic_meeting_deals: {
         Row: {
           created_at: string
@@ -543,6 +582,42 @@ export type Database = {
           },
         ]
       }
+      ic_meeting_minutes: {
+        Row: {
+          action_items: Json | null
+          attendees: Json
+          content: Json
+          created_at: string
+          id: string
+          key_decisions: Json | null
+          recorded_by: string
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          action_items?: Json | null
+          attendees?: Json
+          content?: Json
+          created_at?: string
+          id?: string
+          key_decisions?: Json | null
+          recorded_by: string
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          action_items?: Json | null
+          attendees?: Json
+          content?: Json
+          created_at?: string
+          id?: string
+          key_decisions?: Json | null
+          recorded_by?: string
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ic_meetings: {
         Row: {
           agenda: string | null
@@ -583,6 +658,267 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ic_memo_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          fund_id: string | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          name: string
+          sections: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          fund_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name: string
+          sections?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          fund_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name?: string
+          sections?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ic_memo_votes: {
+        Row: {
+          confidence_level: number | null
+          created_at: string
+          decision_id: string
+          id: string
+          reasoning: string | null
+          updated_at: string
+          vote: string
+          voter_id: string
+        }
+        Insert: {
+          confidence_level?: number | null
+          created_at?: string
+          decision_id: string
+          id?: string
+          reasoning?: string | null
+          updated_at?: string
+          vote: string
+          voter_id: string
+        }
+        Update: {
+          confidence_level?: number | null
+          created_at?: string
+          decision_id?: string
+          id?: string
+          reasoning?: string | null
+          updated_at?: string
+          vote?: string
+          voter_id?: string
+        }
+        Relationships: []
+      }
+      ic_memos: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string
+          deal_id: string
+          executive_summary: string | null
+          fund_id: string
+          id: string
+          investment_recommendation: string | null
+          memo_content: Json
+          overall_score: number | null
+          rag_status: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by: string
+          deal_id: string
+          executive_summary?: string | null
+          fund_id: string
+          id?: string
+          investment_recommendation?: string | null
+          memo_content?: Json
+          overall_score?: number | null
+          rag_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          template_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string
+          deal_id?: string
+          executive_summary?: string | null
+          fund_id?: string
+          id?: string
+          investment_recommendation?: string | null
+          memo_content?: Json
+          overall_score?: number | null
+          rag_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ic_session_deals: {
+        Row: {
+          created_at: string
+          deal_id: string
+          id: string
+          memo_id: string | null
+          presentation_order: number | null
+          session_id: string
+          status: string | null
+          time_allocated: number | null
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          id?: string
+          memo_id?: string | null
+          presentation_order?: number | null
+          session_id: string
+          status?: string | null
+          time_allocated?: number | null
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          id?: string
+          memo_id?: string | null
+          presentation_order?: number | null
+          session_id?: string
+          status?: string | null
+          time_allocated?: number | null
+        }
+        Relationships: []
+      }
+      ic_sessions: {
+        Row: {
+          agenda: Json | null
+          created_at: string
+          created_by: string
+          fund_id: string
+          id: string
+          name: string
+          notes: string | null
+          participants: Json
+          session_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agenda?: Json | null
+          created_at?: string
+          created_by: string
+          fund_id: string
+          id?: string
+          name: string
+          notes?: string | null
+          participants?: Json
+          session_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agenda?: Json | null
+          created_at?: string
+          created_by?: string
+          fund_id?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          participants?: Json
+          session_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ic_voting_decisions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          decision_rationale: string | null
+          description: string | null
+          final_decision: string | null
+          id: string
+          memo_id: string
+          session_id: string | null
+          status: string
+          title: string
+          updated_at: string
+          vote_summary: Json | null
+          voting_deadline: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          decision_rationale?: string | null
+          description?: string | null
+          final_decision?: string | null
+          id?: string
+          memo_id: string
+          session_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          vote_summary?: Json | null
+          voting_deadline: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          decision_rationale?: string | null
+          description?: string | null
+          final_decision?: string | null
+          id?: string
+          memo_id?: string
+          session_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          vote_summary?: Json | null
+          voting_deadline?: string
+        }
+        Relationships: []
       }
       investment_strategies: {
         Row: {

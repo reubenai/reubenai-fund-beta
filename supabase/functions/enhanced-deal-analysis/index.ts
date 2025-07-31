@@ -107,6 +107,27 @@ serve(async (req) => {
       analysisResult = orchestratorResult.analysis;
     }
 
+    // Calculate overall score and RAG status based on fund strategy thresholds
+    const overallScore = Math.round((
+      analysisResult.founder_team_strength.score +
+      analysisResult.market_attractiveness.score +
+      analysisResult.product_strength_ip.score +
+      analysisResult.financial_feasibility.score +
+      analysisResult.investment_thesis_alignment.score
+    ) / 5);
+
+    // Determine RAG status based on fund strategy thresholds or defaults
+    let ragStatus = 'needs_development';
+    const strategy = fund?.investment_strategies?.[0];
+    const excitingThreshold = strategy?.exciting_threshold || 85;
+    const promisingThreshold = strategy?.promising_threshold || 70;
+    
+    if (overallScore >= excitingThreshold) {
+      ragStatus = 'exciting';
+    } else if (overallScore >= promisingThreshold) {
+      ragStatus = 'promising';
+    }
+
     // Store analysis in deal_analyses table
     const { data: existingAnalysis } = await supabase
       .from('deal_analyses')
@@ -154,6 +175,19 @@ serve(async (req) => {
         });
 
       if (insertError) throw insertError;
+    }
+
+    // Update deal with overall score and RAG status
+    const { error: dealUpdateError } = await supabase
+      .from('deals')
+      .update({
+        overall_score: overallScore,
+        rag_status: ragStatus
+      })
+      .eq('id', dealId);
+
+    if (dealUpdateError) {
+      console.warn('Could not update deal with analysis results:', dealUpdateError.message);
     }
 
     // Store comprehensive analysis as deal note
