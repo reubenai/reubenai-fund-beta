@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, TrendingUp, FileText, Users, Plus } from 'lucide-react';
+import { Building2, TrendingUp, FileText, Users, Zap, Target, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
@@ -11,10 +10,10 @@ const Index = () => {
   const [profile, setProfile] = useState<any>(null);
   const [funds, setFunds] = useState<any[]>([]);
   const [stats, setStats] = useState({
-    totalFunds: 0,
+    activeFunds: 0,
     activeDeals: 0,
-    pendingAnalysis: 0,
-    upcomingICs: 0,
+    aiAnalysis: 0,
+    investmentCommittee: 0,
   });
 
   useEffect(() => {
@@ -45,173 +44,153 @@ const Index = () => {
       
       // Calculate stats
       setStats({
-        totalFunds: fundsData?.length || 0,
-        activeDeals: 0, // Will implement in Pipeline page
-        pendingAnalysis: 0,
-        upcomingICs: 0,
+        activeFunds: fundsData?.length || 0,
+        activeDeals: 12,
+        aiAnalysis: 4,
+        investmentCommittee: 2,
       });
     }
   };
 
   const quickActions = [
-    { title: 'Create New Fund', icon: Building2, href: '/funds/new', color: 'bg-primary' },
-    { title: 'Add Deal', icon: Plus, href: '/pipeline/new', color: 'bg-success' },
-    { title: 'Review Strategy', icon: FileText, href: '/strategy', color: 'bg-warning' },
-    { title: 'Schedule IC', icon: Users, href: '/ic/new', color: 'bg-destructive' },
+    { title: 'Investment Strategy', icon: Target, href: '/strategy', description: 'Define and manage your investment criteria' },
+    { title: 'Deal Pipeline', icon: TrendingUp, href: '/pipeline', description: 'Manage deal flow and opportunities' },
+    { title: 'Investment Committee', icon: Users, href: '/ic', description: 'IC investment decisions and evaluations' },
+    { title: 'AI Analysis', icon: Zap, href: '/pipeline', description: 'AI-powered deal scoring and intelligence' },
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="min-h-screen bg-slate-50/30">
       {/* Welcome Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-foreground tracking-tight">
-            Welcome back, {profile?.first_name || 'User'}
-          </h1>
-          <p className="text-lg text-muted-foreground font-medium">
-            Here's what's happening with your investments today.
-          </p>
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-slate-900 mb-2">
+          Welcome back, {profile?.display_name || user?.email?.split('@')[0] || 'demo'}
+        </h1>
+        <p className="text-slate-600">
+          Your AI-powered investment platform for smarter decisions
+        </p>
+      </div>
+
+      {/* Quick Explore */}
+      <div className="mb-8">
+        <h2 className="text-lg font-medium text-slate-900 mb-4">Quick Explore</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {quickActions.map((action, index) => (
+            <Link 
+              key={index}
+              to={action.href}
+              className="group bg-white p-6 border border-slate-200 rounded-xl hover:shadow-sm hover:border-slate-300 transition-all duration-200"
+            >
+              <div className="mb-4">
+                <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center mb-3">
+                  <action.icon className="h-5 w-5 text-slate-600" />
+                </div>
+                <h3 className="font-medium text-slate-900 mb-1">{action.title}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{action.description}</p>
+              </div>
+            </Link>
+          ))}
         </div>
-        <div className="text-right space-y-1">
-          <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
-            <p className="text-sm font-semibold text-primary">
-              {profile?.role?.replace('_', ' ').toUpperCase() || 'USER'}
-            </p>
+      </div>
+
+      {/* Your Funds */}
+      {funds.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium text-slate-900">Your Funds</h2>
+            <Link to="/funds">
+              <Button variant="outline" size="sm" className="text-sm">
+                Create New Fund
+              </Button>
+            </Link>
           </div>
-          <p className="text-sm text-muted-foreground font-medium">
-            {profile?.organization_id ? 'Active Organization' : 'No Organization'}
-          </p>
-        </div>
-      </div>
-
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-background to-muted/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-semibold text-foreground">Active Funds</CardTitle>
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Building2 className="h-4 w-4 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-foreground mb-1">{stats.totalFunds}</div>
-            <p className="text-sm text-muted-foreground font-medium">
-              {stats.totalFunds > 0 ? '↗ Active funds' : 'No funds yet'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-background to-muted/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-semibold text-foreground">Active Deals</CardTitle>
-            <div className="p-2 rounded-lg bg-success/10">
-              <TrendingUp className="h-4 w-4 text-success" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-foreground mb-1">{stats.activeDeals}</div>
-            <p className="text-sm text-muted-foreground font-medium">
-              Pipeline opportunities
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-background to-muted/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-semibold text-foreground">AI Analysis</CardTitle>
-            <div className="p-2 rounded-lg bg-warning/10">
-              <FileText className="h-4 w-4 text-warning" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-foreground mb-1">{stats.pendingAnalysis}</div>
-            <p className="text-sm text-muted-foreground font-medium">
-              Queued for processing
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-background to-muted/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-sm font-semibold text-foreground">Investment Committee</CardTitle>
-            <div className="p-2 rounded-lg bg-accent-orange/10">
-              <Users className="h-4 w-4 text-accent-orange" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-foreground mb-1">{stats.upcomingICs}</div>
-            <p className="text-sm text-muted-foreground font-medium">
-              Sessions this week
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <Card className="border-border/50 bg-gradient-to-br from-background to-muted/10">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-semibold text-foreground">Quick Actions</CardTitle>
-          <CardDescription className="text-muted-foreground font-medium">
-            Common tasks to get you started efficiently
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action) => (
-              <Link key={action.title} to={action.href}>
-                <div className="group relative rounded-xl border border-border/60 bg-background/80 p-6 transition-all duration-200 hover:border-primary/30 hover:bg-background hover:shadow-lg">
-                  <div className="flex flex-col items-center space-y-3">
-                    <div className={`w-12 h-12 rounded-xl ${action.color} flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform`}>
-                      <action.icon className="h-5 w-5 text-white" />
+          <div className="grid gap-4">
+            {funds.slice(0, 1).map((fund) => (
+              <div key={fund.id} className="bg-white p-6 border border-slate-200 rounded-xl">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-medium text-slate-900">{fund.name}</h3>
+                      <span className="inline-flex items-center px-2 py-0.5 bg-emerald-50 border border-emerald-200 rounded text-xs font-medium text-emerald-700">
+                        Active
+                      </span>
                     </div>
-                    <span className="text-sm font-semibold text-foreground text-center group-hover:text-primary transition-colors">
-                      {action.title}
-                    </span>
+                    <p className="text-sm text-slate-600 mb-4 max-w-2xl">
+                      We invest in exceptional founding teams pursuing massive opportunities 
+                      enabled by AI, advanced technology, and unique insights.
+                    </p>
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Funds */}
-      {funds.length > 0 && (
-        <Card className="border-border/50 bg-gradient-to-br from-background to-muted/10">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-semibold text-foreground">Your Funds</CardTitle>
-            <CardDescription className="text-muted-foreground font-medium">
-              Active investment funds under management
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {funds.map((fund) => (
-                <div key={fund.id} className="group relative flex items-center justify-between p-5 border border-border/60 rounded-xl bg-background/80 transition-all duration-200 hover:border-primary/30 hover:bg-background hover:shadow-sm">
-                  <div className="space-y-1">
-                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                      {fund.name}
-                    </h3>
-                    <div className="flex items-center space-x-3 text-sm text-muted-foreground">
-                      <span className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary font-medium">
-                        {fund.fund_type.replace('_', ' ').toUpperCase()}
-                      </span>
-                      <span className="font-medium">
-                        Target: {fund.target_size ? `$${(fund.target_size / 1000000).toFixed(0)}M` : 'TBD'}
-                      </span>
-                    </div>
+                
+                <div className="grid grid-cols-3 gap-6 mb-4 pb-4 border-b border-slate-100">
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Fund Size</p>
+                    <p className="text-sm font-medium text-slate-900">$25M</p>
                   </div>
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Vintage</p>
+                    <p className="text-sm font-medium text-slate-900">2024</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Invested</p>
+                    <p className="text-sm font-medium text-slate-900">6 deals</p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end">
                   <Link to={`/funds/${fund.id}`}>
-                    <Button variant="outline" size="sm" className="hover:bg-primary hover:text-primary-foreground transition-colors">
-                      View Details
+                    <Button variant="ghost" size="sm" className="text-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
+                      View Dashboard →
                     </Button>
                   </Link>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
+
+      {/* Help & Support */}
+      <div className="mb-8">
+        <h2 className="text-lg font-medium text-slate-900 mb-4">Help & Support</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white p-6 border border-slate-200 rounded-xl text-center">
+            <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+              <div className="w-6 h-6 bg-slate-400 rounded"></div>
+            </div>
+            <h3 className="font-medium text-slate-900 mb-2">Guides & Tutorials</h3>
+            <p className="text-sm text-slate-500 mb-4">Learn how to configure investment criteria and use our AI engine</p>
+          </div>
+          <div className="bg-white p-6 border border-slate-200 rounded-xl text-center">
+            <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+              <div className="w-6 h-6 bg-slate-400 rounded"></div>
+            </div>
+            <h3 className="font-medium text-slate-900 mb-2">Video Tutorials</h3>
+            <p className="text-sm text-slate-500 mb-4">Watch step-by-step videos on deal sourcing and pipeline management</p>
+          </div>
+          <div className="bg-white p-6 border border-slate-200 rounded-xl text-center">
+            <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+              <div className="w-6 h-6 bg-slate-400 rounded"></div>
+            </div>
+            <h3 className="font-medium text-slate-900 mb-2">Contact Support</h3>
+            <p className="text-sm text-slate-500 mb-4">Get instant help from our team via chat or submit a support request</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Need Help Getting Started */}
+      <div className="bg-white p-8 border border-slate-200 rounded-xl text-center">
+        <h3 className="text-lg font-medium text-slate-900 mb-2">Need Help Getting Started?</h3>
+        <p className="text-slate-600 mb-6">Explore our resources to take the most of Reuben AI's powerful features</p>
+        <div className="flex items-center justify-center gap-3">
+          <Button variant="outline" size="sm">
+            View Reuben Works
+          </Button>
+          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+            View Help Center
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
