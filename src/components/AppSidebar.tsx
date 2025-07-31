@@ -41,7 +41,7 @@ const secondaryFunctions = [
 // Administration Items
 const adminItems = [
   { title: "Settings", url: "/settings", icon: Settings },
-  { title: "Integrations", url: "/integrations", icon: Plug },
+  { title: "Integrations", url: "/integrations", icon: Plug, badge: "Soon", disabled: true },
 ];
 
 // Support Items
@@ -236,17 +236,31 @@ export function AppSidebar() {
               {[...adminItems, ...supportItems].map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      className={`flex items-center space-x-3 rounded-md px-3 py-2 text-sm transition-all duration-200 ${
-                        isActive(item.url) 
-                          ? "bg-primary/10 text-primary border border-primary/20" 
-                          : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span className="font-medium">{item.title}</span>
-                    </NavLink>
+                    {(item as any).disabled ? (
+                      <div className={`flex items-center justify-between space-x-3 rounded-md px-3 py-2 text-sm opacity-50 cursor-not-allowed text-muted-foreground`}>
+                        <div className="flex items-center space-x-3">
+                          <item.icon className="h-4 w-4" />
+                          <span className="font-medium">{item.title}</span>
+                        </div>
+                        {(item as any).badge && (
+                          <Badge variant="outline" className="text-xs">
+                            {(item as any).badge}
+                          </Badge>
+                        )}
+                      </div>
+                    ) : (
+                      <NavLink 
+                        to={item.url} 
+                        className={`flex items-center space-x-3 rounded-md px-3 py-2 text-sm transition-all duration-200 ${
+                          isActive(item.url) 
+                            ? "bg-primary/10 text-primary border border-primary/20" 
+                            : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span className="font-medium">{item.title}</span>
+                      </NavLink>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

@@ -19,7 +19,8 @@ import {
   HelpCircle,
   Zap,
   Settings,
-  TrendingUp
+  TrendingUp,
+  Target
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -142,28 +143,28 @@ export default function Help() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 p-8">
       <div>
-        <h1 className="text-3xl font-bold">Help & Support</h1>
-        <p className="text-muted-foreground">Find answers and get assistance with the platform</p>
+        <h1 className="text-2xl font-semibold">Help & Support</h1>
+        <p className="text-sm text-muted-foreground">Learn how to use Reuben and get assistance when needed</p>
       </div>
 
       <Tabs defaultValue="faq" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="faq" className="flex items-center gap-2">
-            <HelpCircle className="h-4 w-4" />
+        <TabsList className="h-12 w-auto bg-background border rounded-lg p-1">
+          <TabsTrigger value="guides" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <BookOpen className="h-4 w-4 mr-2" />
+            How Reuben Works
+          </TabsTrigger>
+          <TabsTrigger value="faq" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <HelpCircle className="h-4 w-4 mr-2" />
             FAQ
           </TabsTrigger>
-          <TabsTrigger value="guides" className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4" />
-            Guides
-          </TabsTrigger>
-          <TabsTrigger value="contact" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
+          <TabsTrigger value="contact" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <MessageSquare className="h-4 w-4 mr-2" />
             Contact
           </TabsTrigger>
-          <TabsTrigger value="status" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
+          <TabsTrigger value="status" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <TrendingUp className="h-4 w-4 mr-2" />
             Status
           </TabsTrigger>
         </TabsList>
@@ -218,50 +219,131 @@ export default function Help() {
         </TabsContent>
 
         <TabsContent value="guides" className="space-y-6">
-          <Card>
+          {/* How Reuben Works */}
+          <Card className="border-0 shadow-sm">
             <CardHeader>
-              <CardTitle>Quick Start Guides</CardTitle>
-              <CardDescription>Step-by-step tutorials to get you up and running</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-primary" />
+                How Reuben Works
+              </CardTitle>
+              <CardDescription>Understanding our AI-powered investment platform</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {quickLinks.map((link, index) => (
-                  <div key={index} className="p-4 border rounded-lg hover:bg-accent cursor-pointer transition-colors">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <link.icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="space-y-1">
-                        <h4 className="font-medium">{link.title}</h4>
-                        <p className="text-sm text-muted-foreground">{link.description}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            <CardContent className="space-y-6">
+              <div className="prose prose-sm max-w-none">
+                <p className="text-muted-foreground">
+                  Reuben is an AI-powered investment platform that helps you source, analyze, and manage investment opportunities with unprecedented efficiency and insight.
+                </p>
+              </div>
+              
+              <div className="grid gap-4">
+                <div className="p-4 bg-blue-50/50 rounded-lg border border-blue-100">
+                  <h4 className="font-medium text-blue-900 mb-2">1. Intelligent Deal Sourcing</h4>
+                  <p className="text-sm text-blue-700">Our AI continuously monitors markets and identifies opportunities that match your investment criteria, bringing you high-quality deals before they hit the mainstream market.</p>
+                </div>
+                
+                <div className="p-4 bg-green-50/50 rounded-lg border border-green-100">
+                  <h4 className="font-medium text-green-900 mb-2">2. Reuben Orchestrator Analysis</h4>
+                  <p className="text-sm text-green-700">Our proprietary Reuben Orchestrator runs comprehensive analysis across 14+ data engines, evaluating market opportunity, product differentiation, team strength, financial health, and investment thesis alignment.</p>
+                </div>
+                
+                <div className="p-4 bg-purple-50/50 rounded-lg border border-purple-100">
+                  <h4 className="font-medium text-purple-900 mb-2">3. Investment Committee Support</h4>
+                  <p className="text-sm text-purple-700">Generate professional IC memos automatically, schedule sessions, track voting, and manage the entire investment decision process with AI-powered insights.</p>
+                </div>
+                
+                <div className="p-4 bg-amber-50/50 rounded-lg border border-amber-100">
+                  <h4 className="font-medium text-amber-900 mb-2">4. Portfolio Intelligence</h4>
+                  <p className="text-sm text-amber-700">Track portfolio performance, get early warning signals, and receive strategic recommendations to maximize your investment outcomes.</p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          {/* Strategy Setup Guide */}
+          <Card className="border-0 shadow-sm">
             <CardHeader>
-              <CardTitle>Video Tutorials</CardTitle>
-              <CardDescription>Watch detailed walkthroughs of key features</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                Strategy Thesis Setup Guide
+              </CardTitle>
+              <CardDescription>Step-by-step guide to configure your investment strategy</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                    <Video className="h-12 w-12 text-muted-foreground" />
+              <div className="space-y-4">
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                  <div>
+                    <h4 className="font-medium">Define Investment Focus</h4>
+                    <p className="text-sm text-muted-foreground">Set your target industries, geographic focus, deal size range, and investment stage preferences.</p>
                   </div>
-                  <h4 className="font-medium">Getting Started with Deal Pipeline</h4>
-                  <p className="text-sm text-muted-foreground">Learn the basics of managing your deal flow</p>
                 </div>
-                <div className="space-y-2">
-                  <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                    <Video className="h-12 w-12 text-muted-foreground" />
+                
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                  <div>
+                    <h4 className="font-medium">Configure AI Criteria</h4>
+                    <p className="text-sm text-muted-foreground">Weight different analysis categories (market, team, product, financials) based on your investment philosophy.</p>
                   </div>
-                  <h4 className="font-medium">AI Analysis Deep Dive</h4>
-                  <p className="text-sm text-muted-foreground">Understanding and using AI-powered insights</p>
+                </div>
+                
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                  <div>
+                    <h4 className="font-medium">Set Scoring Thresholds</h4>
+                    <p className="text-sm text-muted-foreground">Define what constitutes "Exciting" (85+), "Promising" (70+), and "Needs Development" (50+) deals for your fund.</p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-4">
+                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">4</div>
+                  <div>
+                    <h4 className="font-medium">Launch & Refine</h4>
+                    <p className="text-sm text-muted-foreground">Start analyzing deals and refine your criteria based on AI insights and actual deal outcomes.</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Reuben Orchestrator */}
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                Reuben Orchestrator
+              </CardTitle>
+              <CardDescription>Our proprietary AI analysis engine</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                The Reuben Orchestrator is our proprietary AI engine that runs comprehensive analysis on every deal, combining multiple data sources and analytical frameworks to provide you with actionable insights.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <h4 className="font-medium">Analysis Engines</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Market Research Engine</li>
+                    <li>• Product & IP Analysis Engine</li>
+                    <li>• Financial Health Engine</li>
+                    <li>• Team Research Engine</li>
+                    <li>• Competitive Landscape Engine</li>
+                    <li>• Thesis Alignment Engine</li>
+                    <li>• RAG Calculation Engine</li>
+                  </ul>
+                </div>
+                
+                <div className="space-y-3">
+                  <h4 className="font-medium">Data Sources</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Company websites & public filings</li>
+                    <li>• Patent databases & IP registries</li>
+                    <li>• Financial databases & records</li>
+                    <li>• LinkedIn & professional networks</li>
+                    <li>• News & market intelligence</li>
+                    <li>• Industry reports & analysis</li>
+                    <li>• Regulatory filings & compliance</li>
+                  </ul>
                 </div>
               </div>
             </CardContent>

@@ -90,8 +90,13 @@ export default function Admin() {
         .eq('user_id', user!.id)
         .single();
 
-      if (profileData?.role !== 'super_admin') {
-        toast.error('Access denied. Super Admin role required.');
+      // Allow access for super_admin role OR specific email addresses
+      const hasAccess = profileData?.role === 'super_admin' || 
+                       user?.email === 'kat@goreuben.com' || 
+                       user?.email === 'hello@goreuben.com';
+
+      if (!hasAccess) {
+        toast.error('Access denied. Super Admin privileges required.');
         return;
       }
 
@@ -277,101 +282,113 @@ export default function Admin() {
     );
   }
 
-  if (profile?.role !== 'super_admin') {
+  const hasAccess = profile?.role === 'super_admin' || 
+                   user?.email === 'kat@goreuben.com' || 
+                   user?.email === 'hello@goreuben.com';
+
+  if (!hasAccess) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Access Denied</CardTitle>
-          <CardDescription>
-            You need Super Admin privileges to access this panel.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="space-y-8 p-8">
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+            <CardDescription>
+              You need Super Admin privileges to access this panel.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 p-8">
       <div>
-        <h1 className="text-3xl font-bold">Admin Panel</h1>
-        <p className="text-muted-foreground">System administration and configuration</p>
+        <h1 className="text-2xl font-semibold">Super Admin Dashboard</h1>
+        <p className="text-sm text-muted-foreground">Platform administration and organization management</p>
       </div>
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Organizations</CardTitle>
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Organizations</CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalOrgs}</div>
+            <div className="text-2xl font-semibold">{stats.totalOrgs}</div>
+            <p className="text-xs text-muted-foreground">Total organizations</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Users</CardTitle>
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalUsers}</div>
+            <div className="text-2xl font-semibold">{stats.totalUsers}</div>
+            <p className="text-xs text-muted-foreground">Platform users</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Funds</CardTitle>
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Funds</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalFunds}</div>
+            <div className="text-2xl font-semibold">{stats.totalFunds}</div>
+            <p className="text-xs text-muted-foreground">Investment funds</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Deals</CardTitle>
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active Deals</CardTitle>
             <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeDeals}</div>
+            <div className="text-2xl font-semibold">{stats.activeDeals}</div>
+            <p className="text-xs text-muted-foreground">Deals in pipeline</p>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="organizations" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="organizations">Organizations</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="funds">Funds</TabsTrigger>
+      <Tabs defaultValue="organizations" className="space-y-6">
+        <TabsList className="h-12 w-auto bg-background border rounded-lg p-1">
+          <TabsTrigger value="organizations" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Organizations</TabsTrigger>
+          <TabsTrigger value="users" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Users</TabsTrigger>
+          <TabsTrigger value="funds" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Funds</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="organizations" className="space-y-4">
-          <Card>
+        <TabsContent value="organizations" className="space-y-6">
+          <Card className="border-0 shadow-sm">
             <CardHeader>
-              <CardTitle>Create New Organization</CardTitle>
+              <CardTitle className="text-lg font-medium">Create New Organization</CardTitle>
               <CardDescription>Add a new organization to the platform</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="org-name">Organization Name</Label>
+                  <Label htmlFor="org-name" className="text-sm font-medium">Organization Name</Label>
                   <Input
                     id="org-name"
                     value={newOrg.name}
                     onChange={(e) => setNewOrg({ ...newOrg, name: e.target.value })}
                     placeholder="Enter organization name"
+                    className="border-0 bg-muted/30"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="org-domain">Domain (Optional)</Label>
+                  <Label htmlFor="org-domain" className="text-sm font-medium">Domain (Optional)</Label>
                   <Input
                     id="org-domain"
                     value={newOrg.domain}
                     onChange={(e) => setNewOrg({ ...newOrg, domain: e.target.value })}
                     placeholder="company.com"
+                    className="border-0 bg-muted/30"
                   />
                 </div>
                 <div className="flex items-end">
-                  <Button onClick={createOrganization} className="w-full">
+                  <Button onClick={createOrganization} className="w-full h-9 text-sm">
                     <Plus className="h-4 w-4 mr-2" />
                     Create Organization
                   </Button>
@@ -380,31 +397,33 @@ export default function Admin() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-0 shadow-sm">
             <CardHeader>
-              <CardTitle>Organizations</CardTitle>
+              <CardTitle className="text-lg font-medium">Organizations</CardTitle>
               <CardDescription>Manage existing organizations</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {organizations.map((org) => (
-                  <div key={org.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={org.id} className="flex items-center justify-between p-4 bg-muted/20 rounded-lg">
                     {editingOrg?.id === org.id ? (
                       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Input
                           value={editingOrg.name}
                           onChange={(e) => setEditingOrg({ ...editingOrg, name: e.target.value })}
                           placeholder="Organization name"
+                          className="border-0 bg-background"
                         />
                         <Input
                           value={editingOrg.domain || ''}
                           onChange={(e) => setEditingOrg({ ...editingOrg, domain: e.target.value })}
                           placeholder="Domain"
+                          className="border-0 bg-background"
                         />
                       </div>
                     ) : (
                       <div className="flex-1">
-                        <h3 className="font-semibold">{org.name}</h3>
+                        <h3 className="font-medium">{org.name}</h3>
                         {org.domain && <p className="text-sm text-muted-foreground">{org.domain}</p>}
                         <p className="text-xs text-muted-foreground">
                           Created: {new Date(org.created_at).toLocaleDateString()}
@@ -414,15 +433,15 @@ export default function Admin() {
                     <div className="flex gap-2">
                       {editingOrg?.id === org.id ? (
                         <>
-                          <Button size="sm" onClick={() => updateOrganization(editingOrg)}>
+                          <Button size="sm" onClick={() => updateOrganization(editingOrg)} className="h-8 px-3">
                             <Save className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => setEditingOrg(null)}>
+                          <Button size="sm" variant="outline" onClick={() => setEditingOrg(null)} className="h-8 px-3">
                             <X className="h-4 w-4" />
                           </Button>
                         </>
                       ) : (
-                        <Button size="sm" variant="outline" onClick={() => setEditingOrg(org)}>
+                        <Button size="sm" variant="outline" onClick={() => setEditingOrg(org)} className="h-8 px-3">
                           <Edit className="h-4 w-4" />
                         </Button>
                       )}

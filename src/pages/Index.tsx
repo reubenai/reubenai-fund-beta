@@ -52,7 +52,7 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50/30">
+    <div className="min-h-screen bg-slate-50/30 ml-6">
       {/* Welcome Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
@@ -95,7 +95,9 @@ const Index = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {funds.map((fund) => (
-            <div key={fund.id} className="bg-white p-6 border border-slate-200 rounded-lg hover:shadow-md transition-shadow">
+            <div key={fund.id} className={`bg-white p-6 border rounded-lg hover:shadow-md transition-all ${
+              fund.is_active ? 'border-emerald-200 ring-2 ring-emerald-100 shadow-sm' : 'border-slate-200'
+            }`}>
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
