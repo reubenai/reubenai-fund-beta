@@ -67,9 +67,9 @@ const Index = () => {
           <div className="w-6 h-6 bg-emerald-500 rounded flex items-center justify-center">
             <span className="text-white text-xs font-bold">R</span>
           </div>
-          <h1 className="text-2xl font-semibold text-slate-900">
-            Welcome back, {profile?.display_name || user?.email?.split('@')[0] || 'demo'}
-          </h1>
+        <h1 className="text-2xl font-semibold text-slate-900">
+          Welcome back, {profile?.first_name || user?.email?.split('@')[0] || 'demo'}
+        </h1>
         </div>
         <p className="text-slate-600">
           Your AI-powered investment platform for smarter decisions
@@ -97,58 +97,58 @@ const Index = () => {
       </div>
 
       {/* Your Funds */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium text-slate-900">Your Funds</h2>
-          <Link to="/funds">
-            <Button variant="outline" size="sm" className="text-sm">
-              + Create New Fund
-            </Button>
-          </Link>
-        </div>
-        <div className="bg-white p-6 border border-slate-200 rounded-lg">
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-3">
-                <h3 className="font-semibold text-slate-900">Demo Technology Fund 1</h3>
-                <span className="inline-flex items-center px-2 py-1 bg-emerald-50 border border-emerald-200 rounded text-xs font-medium text-emerald-700">
-                  Active
-                </span>
-              </div>
-              <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">
-                We invest in exceptional founding teams pursuing massive opportunities. 
-                We provide capital, deep technology experience, and network connections. 
-                Our teams have direct operating experience in enterprise, 
-                consumer, and devtools categories focusing on AI-native, 
-                enterprise, and frontier technology.
-              </p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-8 mb-6 pb-6 border-b border-slate-100">
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Fund Size</p>
-              <p className="text-lg font-semibold text-slate-900">$25M</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Vintage</p>
-              <p className="text-lg font-semibold text-slate-900">2024</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Invested</p>
-              <p className="text-lg font-semibold text-slate-900">6 deals</p>
-            </div>
-          </div>
-          
-          <div className="flex justify-end">
+      {funds.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium text-slate-900">Your Funds</h2>
             <Link to="/funds">
-              <Button variant="ghost" size="sm" className="text-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
-                ✓ View Dashboard
+              <Button variant="outline" size="sm" className="text-sm">
+                + Create New Fund
               </Button>
             </Link>
           </div>
+          <div className="bg-white p-6 border border-slate-200 rounded-lg">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <h3 className="font-semibold text-slate-900">{funds[0]?.name}</h3>
+                  <span className="inline-flex items-center px-2 py-1 bg-emerald-50 border border-emerald-200 rounded text-xs font-medium text-emerald-700">
+                    Active
+                  </span>
+                </div>
+                <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">
+                  {funds[0]?.description || 'We invest in exceptional founding teams pursuing massive opportunities enabled by AI, advanced technology, and unique insights.'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-8 mb-6 pb-6 border-b border-slate-100">
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Fund Size</p>
+                <p className="text-lg font-semibold text-slate-900">
+                  ${funds[0]?.target_size ? (funds[0].target_size / 1000000).toFixed(0) + 'M' : '25M'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Vintage</p>
+                <p className="text-lg font-semibold text-slate-900">2024</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Invested</p>
+                <p className="text-lg font-semibold text-slate-900">6 deals</p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end">
+              <Link to="/funds">
+                <Button variant="ghost" size="sm" className="text-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
+                  ✓ View Dashboard
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Help & Support */}
       <div className="mb-8">
