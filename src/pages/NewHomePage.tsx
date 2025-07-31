@@ -206,46 +206,43 @@ const NewHomePage = () => {
       {/* Your Funds */}
       {funds.length > 0 && (
         <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Your Funds</h2>
-            <Link to="/funds">
-              <Button variant="outline" size="sm">View All</Button>
-            </Link>
-          </div>
+          <h2 className="text-xl font-semibold text-gray-900">Your Funds</h2>
           
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
-                    <Building2 className="h-6 w-6 text-emerald-600" />
+          <div className="max-w-2xl">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
+                      <Building2 className="h-6 w-6 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{funds[0]?.name || 'Fund Name'}</h3>
+                      <p className="text-sm text-gray-600">{funds[0]?.description || 'Fund Description'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{funds[0]?.name || 'Fund Name'}</h3>
-                    <p className="text-sm text-gray-600">{funds[0]?.description || 'Fund Description'}</p>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-gray-900">
+                      ${funds[0]?.target_size ? (funds[0].target_size / 1000000).toFixed(0) : '25'}M
+                    </div>
+                    <p className="text-sm text-gray-600">Target Size</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-gray-900">
-                    ${funds[0]?.target_size ? (funds[0].target_size / 1000000).toFixed(0) : '25'}M
-                  </div>
-                  <p className="text-sm text-gray-600">Target Size</p>
+                <div className="mt-6 flex gap-3">
+                  <Link to="/strategy">
+                    <Button className="bg-emerald-600 hover:bg-emerald-700">
+                      Fund Thesis
+                    </Button>
+                  </Link>
+                  <Link to="/funds/new">
+                    <Button variant="outline">
+                      Create New Fund
+                    </Button>
+                  </Link>
                 </div>
-              </div>
-              <div className="mt-6 flex gap-3">
-                <Link to={`/funds/${funds[0]?.id}`}>
-                  <Button className="bg-emerald-600 hover:bg-emerald-700">
-                    View Fund Dashboard
-                  </Button>
-                </Link>
-                <Link to="/funds/new">
-                  <Button variant="outline">
-                    Create New Fund
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </section>
       )}
 
