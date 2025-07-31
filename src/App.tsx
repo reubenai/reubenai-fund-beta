@@ -29,7 +29,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={
               <AuthGuard>
-                <NewHomePage />
+                <Layout>
+                  <NewHomePage />
+                </Layout>
               </AuthGuard>
             } />
             <Route path="/dashboard" element={
