@@ -26,6 +26,32 @@ export interface EnhancedWizardData {
   checkSizeRange: { min: number; max: number };
   keySignals: string[];
   
+  // Enhanced data for AI orchestrator
+  investmentPhilosophy?: string;
+  
+  // Research and Due Diligence Approach
+  researchApproach?: {
+    dueDiligenceDepth: 'light' | 'standard' | 'deep';
+    researchPriorities: string[];
+    informationSources: string[];
+    competitiveAnalysisFocus: string[];
+  };
+  
+  // Deal Sourcing Strategy
+  dealSourcingStrategy?: {
+    sourcingChannels: string[];
+    networkLeveraging: string;
+    targetCompanyProfiles: string[];
+    outreachStrategy: string;
+  };
+  
+  // Decision Making Process
+  decisionMakingProcess?: {
+    timelinePreferences: string;
+    stakeholderInvolvement: string;
+    riskTolerance: 'conservative' | 'moderate' | 'aggressive';
+  };
+  
   // Category Configs (Steps 4-9)
   teamLeadershipConfig: CategoryCustomization;
   marketOpportunityConfig: CategoryCustomization;
