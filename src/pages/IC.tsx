@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, FileText, Vote, Users, Plus, Clock } from 'lucide-react';
-import { useFund } from '@/contexts/FundContext';
+import { useFund } from '@/contexts/FundContext'; // Updated import
 
 export default function IC() {
   const { selectedFund } = useFund();
