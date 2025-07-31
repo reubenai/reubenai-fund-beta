@@ -23,6 +23,10 @@ interface StrategyConfigurationManagerProps {
 }
 
 export function StrategyConfigurationManager({ fundId, fundName }: StrategyConfigurationManagerProps) {
+  console.log('=== STRATEGY CONFIGURATION MANAGER ===');
+  console.log('Fund ID:', fundId);
+  console.log('Fund Name:', fundName);
+  
   const { strategy, loading, error } = useUnifiedStrategy(fundId);
   const [showWizard, setShowWizard] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -71,11 +75,23 @@ export function StrategyConfigurationManager({ fundId, fundName }: StrategyConfi
     );
   }
 
-  // Show advanced configuration if requested
-  if (showAdvanced && strategy) {
+  // Show advanced configuration if requested (even without existing strategy)
+  if (showAdvanced) {
+    // Create a default strategy object if none exists
+    const strategyToEdit = strategy || {
+      fund_id: fundId,
+      industries: [],
+      geography: [],
+      key_signals: [],
+      exciting_threshold: 85,
+      promising_threshold: 70,
+      needs_development_threshold: 50,
+      strategy_notes: ''
+    };
+    
     return (
       <EnhancedThesisConfiguration
-        strategy={strategy}
+        strategy={strategyToEdit}
         onSave={() => setShowAdvanced(false)}
         onCancel={() => setShowAdvanced(false)}
       />
@@ -129,10 +145,10 @@ export function StrategyConfigurationManager({ fundId, fundName }: StrategyConfi
               variant="outline" 
               size="lg"
               className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 px-8 py-3 gap-3"
-              onClick={handleAdvancedEdit}
+              onClick={() => setShowAdvanced(true)}
             >
               <Settings className="h-5 w-5" />
-              Advanced Configuration
+              Investment Criteria Configuration
             </Button>
           </div>
 

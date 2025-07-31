@@ -46,6 +46,8 @@ export default function Strategy() {
       setFunds(fundsData || []);
       
       if (fundsData && fundsData.length > 0) {
+        console.log('=== SELECTING FIRST FUND ===');
+        console.log('Selected fund:', fundsData[0]);
         setSelectedFund(fundsData[0]);
         
         // Get strategy for first fund
@@ -55,6 +57,8 @@ export default function Strategy() {
           .eq('fund_id', fundsData[0].id)
           .maybeSingle();
         
+        console.log('=== STRATEGY DATA FROM PAGE ===');
+        console.log('Strategy data:', strategyData);
         setStrategy(strategyData);
       }
     }

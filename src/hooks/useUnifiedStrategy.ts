@@ -18,13 +18,18 @@ export function useUnifiedStrategy(fundId?: string) {
   const loadStrategy = async () => {
     if (!fundId) return;
     
+    console.log('=== LOADING STRATEGY ===');
+    console.log('Fund ID:', fundId);
+    
     setLoading(true);
     setError(null);
     
     try {
       const data = await unifiedStrategyService.getFundStrategy(fundId);
+      console.log('Strategy data:', data);
       setStrategy(data);
     } catch (err) {
+      console.error('Strategy loading error:', err);
       const errorMessage = 'Failed to load strategy';
       setError(errorMessage);
       toast({

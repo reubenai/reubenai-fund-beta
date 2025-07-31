@@ -150,17 +150,23 @@ class UnifiedStrategyService {
   // Strategy retrieval with template fallback
   async getFundStrategy(fundId: string): Promise<EnhancedStrategy | null> {
     try {
+      console.log('=== FETCHING STRATEGY ===');
+      console.log('Fund ID:', fundId);
+      
       const { data, error } = await supabase
         .from('investment_strategies')
         .select('*')
         .eq('fund_id', fundId)
         .maybeSingle();
 
+      console.log('Strategy query result:', { data, error });
+
       if (error) {
         console.error('Error fetching strategy:', error);
         return null;
       }
 
+      console.log('Returning strategy data:', data);
       return data;
     } catch (error) {
       console.error('Unexpected error in getFundStrategy:', error);
