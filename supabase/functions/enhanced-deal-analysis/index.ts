@@ -93,8 +93,18 @@ serve(async (req) => {
       console.warn('Could not fetch fund strategy:', fundError.message);
     }
 
-    // Generate AI analysis
-    const analysisResult = await generateEnhancedAnalysis(deal, fund?.investment_strategies?.[0]);
+    // Call the new Reuben Orchestrator for comprehensive analysis
+    const { data: orchestratorResult, error: orchestratorError } = await supabase.functions.invoke('reuben-orchestrator', {
+      body: { dealId: deal.id }
+    });
+    
+    if (orchestratorError) {
+      console.error('Orchestrator error, falling back to basic analysis:', orchestratorError);
+      const analysisResult = await generateEnhancedAnalysis(deal, fund?.investment_strategies?.[0]);
+    } else {
+      // Use orchestrator results
+      const analysisResult = orchestratorResult.analysis;
+    }
 
     // Store analysis in deal_analyses table
     const { data: existingAnalysis } = await supabase

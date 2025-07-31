@@ -94,9 +94,13 @@ export type Database = {
       }
       deal_analyses: {
         Row: {
+          analysis_version: number | null
           analyzed_at: string | null
+          confidence_scores: Json | null
           created_at: string
+          data_sources: Json | null
           deal_id: string
+          engine_results: Json | null
           financial_notes: string | null
           financial_score: number | null
           id: string
@@ -111,11 +115,16 @@ export type Database = {
           traction_notes: string | null
           traction_score: number | null
           updated_at: string
+          validation_flags: Json | null
         }
         Insert: {
+          analysis_version?: number | null
           analyzed_at?: string | null
+          confidence_scores?: Json | null
           created_at?: string
+          data_sources?: Json | null
           deal_id: string
+          engine_results?: Json | null
           financial_notes?: string | null
           financial_score?: number | null
           id?: string
@@ -130,11 +139,16 @@ export type Database = {
           traction_notes?: string | null
           traction_score?: number | null
           updated_at?: string
+          validation_flags?: Json | null
         }
         Update: {
+          analysis_version?: number | null
           analyzed_at?: string | null
+          confidence_scores?: Json | null
           created_at?: string
+          data_sources?: Json | null
           deal_id?: string
+          engine_results?: Json | null
           financial_notes?: string | null
           financial_score?: number | null
           id?: string
@@ -149,6 +163,7 @@ export type Database = {
           traction_notes?: string | null
           traction_score?: number | null
           updated_at?: string
+          validation_flags?: Json | null
         }
         Relationships: [
           {
@@ -159,6 +174,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      deal_analysis_sources: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          data_retrieved: Json | null
+          deal_id: string
+          engine_name: string
+          id: string
+          retrieved_at: string
+          source_type: string
+          source_url: string | null
+          validated: boolean | null
+          validation_notes: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          data_retrieved?: Json | null
+          deal_id: string
+          engine_name: string
+          id?: string
+          retrieved_at?: string
+          source_type: string
+          source_url?: string | null
+          validated?: boolean | null
+          validation_notes?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          data_retrieved?: Json | null
+          deal_id?: string
+          engine_name?: string
+          id?: string
+          retrieved_at?: string
+          source_type?: string
+          source_url?: string | null
+          validated?: boolean | null
+          validation_notes?: string | null
+        }
+        Relationships: []
       }
       deal_documents: {
         Row: {
