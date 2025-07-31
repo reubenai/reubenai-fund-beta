@@ -162,34 +162,82 @@ export type Database = {
       }
       deal_documents: {
         Row: {
+          bucket_name: string | null
           content_type: string | null
           created_at: string
           deal_id: string
+          document_analysis_id: string | null
+          document_analysis_status:
+            | Database["public"]["Enums"]["document_analysis_status"]
+            | null
+          document_category:
+            | Database["public"]["Enums"]["document_category"]
+            | null
+          document_type: string | null
           file_path: string
           file_size: number | null
+          fund_id: string | null
           id: string
+          is_public: boolean | null
+          metadata: Json | null
           name: string
+          organization_id: string | null
+          storage_path: string | null
+          tags: string[] | null
           uploaded_by: string
+          version: number | null
         }
         Insert: {
+          bucket_name?: string | null
           content_type?: string | null
           created_at?: string
           deal_id: string
+          document_analysis_id?: string | null
+          document_analysis_status?:
+            | Database["public"]["Enums"]["document_analysis_status"]
+            | null
+          document_category?:
+            | Database["public"]["Enums"]["document_category"]
+            | null
+          document_type?: string | null
           file_path: string
           file_size?: number | null
+          fund_id?: string | null
           id?: string
+          is_public?: boolean | null
+          metadata?: Json | null
           name: string
+          organization_id?: string | null
+          storage_path?: string | null
+          tags?: string[] | null
           uploaded_by: string
+          version?: number | null
         }
         Update: {
+          bucket_name?: string | null
           content_type?: string | null
           created_at?: string
           deal_id?: string
+          document_analysis_id?: string | null
+          document_analysis_status?:
+            | Database["public"]["Enums"]["document_analysis_status"]
+            | null
+          document_category?:
+            | Database["public"]["Enums"]["document_category"]
+            | null
+          document_type?: string | null
           file_path?: string
           file_size?: number | null
+          fund_id?: string | null
           id?: string
+          is_public?: boolean | null
+          metadata?: Json | null
           name?: string
+          organization_id?: string | null
+          storage_path?: string | null
+          tags?: string[] | null
           uploaded_by?: string
+          version?: number | null
         }
         Relationships: [
           {
@@ -717,6 +765,21 @@ export type Database = {
         | "approved"
         | "rejected"
         | "invested"
+      document_analysis_status:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "skipped"
+      document_category:
+        | "pitch_deck"
+        | "financial_statement"
+        | "legal_document"
+        | "business_plan"
+        | "technical_documentation"
+        | "market_research"
+        | "due_diligence"
+        | "other"
       fund_type: "venture_capital" | "private_equity"
       user_role: "admin" | "fund_manager" | "analyst" | "viewer" | "super_admin"
     }
@@ -880,6 +943,23 @@ export const Constants = {
         "approved",
         "rejected",
         "invested",
+      ],
+      document_analysis_status: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "skipped",
+      ],
+      document_category: [
+        "pitch_deck",
+        "financial_statement",
+        "legal_document",
+        "business_plan",
+        "technical_documentation",
+        "market_research",
+        "due_diligence",
+        "other",
       ],
       fund_type: ["venture_capital", "private_equity"],
       user_role: ["admin", "fund_manager", "analyst", "viewer", "super_admin"],
