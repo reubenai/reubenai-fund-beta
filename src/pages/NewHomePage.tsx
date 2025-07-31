@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Building2, TrendingUp, Users, Brain, FileText, BookOpen, Video, MessageCircle, HelpCircle, Target, BarChart3, Lightbulb } from 'lucide-react';
+import { Building2, TrendingUp, Users, Brain, FileText, BookOpen, Video, MessageCircle, HelpCircle, Target, BarChart3, Lightbulb, Plus, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
@@ -17,6 +17,23 @@ const NewHomePage = () => {
       fetchUserData();
     }
   }, [user]);
+
+  const getRoleBasedWelcomeMessage = (role: string) => {
+    switch (role) {
+      case 'super_admin':
+        return 'Manage the entire platform and all organizations.';
+      case 'admin':
+        return 'Oversee your organization and manage fund operations.';
+      case 'fund_manager':
+        return 'Lead your investment strategies and portfolio management.';
+      case 'analyst':
+        return 'Analyze deals and contribute to investment decisions.';
+      case 'viewer':
+        return 'Stay updated with your investment portfolio insights.';
+      default:
+        return 'Ready to supercharge your investment workflow?';
+    }
+  };
 
   const fetchUserData = async () => {
     // Fetch user profile
@@ -126,13 +143,14 @@ const NewHomePage = () => {
                 What is ReubenAI?
               </Button>
               
-              {profile?.role === 'admin' && (
+              {(profile?.role === 'admin' || profile?.role === 'super_admin') && (
                 <Link to="/admin">
                   <Button variant="secondary">Admin Panel</Button>
                 </Link>
               )}
               
               <Button variant="ghost" onClick={signOut}>
+                <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
             </div>
@@ -144,11 +162,23 @@ const NewHomePage = () => {
         {/* Welcome Section */}
         <section className="text-center space-y-4">
           <h2 className="text-4xl font-bold text-foreground">
-            Welcome back, {profile?.first_name || 'User'}
+            {profile?.role === 'super_admin' ? 'ReubenAI Admin Dashboard' : `Welcome back, ${profile?.first_name || 'User'}`}
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Streamline your investment process with AI-powered insights, deal management, and portfolio tracking.
+            {profile ? getRoleBasedWelcomeMessage(profile.role) : 'Your intelligent investment platform for smarter deal sourcing and analysis.'}
           </p>
+          
+          {/* Fund Creation Button for Authorized Users */}
+          {(profile?.role === 'admin' || profile?.role === 'fund_manager' || profile?.role === 'super_admin') && (
+            <div className="pt-4">
+              <Link to="/funds/new">
+                <Button size="lg" className="bg-primary hover:bg-primary/90">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Create New Fund
+                </Button>
+              </Link>
+            </div>
+          )}
         </section>
 
         {/* Quick Explore */}

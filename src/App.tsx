@@ -13,6 +13,7 @@ import Pipeline from "./pages/Pipeline";
 import Strategy from "./pages/Strategy";
 import IC from "./pages/IC";
 import Settings from "./pages/Settings";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,15 +71,7 @@ const App = () => (
             <Route path="/admin" element={
               <AuthGuard>
                 <Layout>
-                  <div className="space-y-6">
-                    <div>
-                      <h1 className="text-3xl font-bold">Admin Panel</h1>
-                      <p className="text-muted-foreground">System administration and configuration</p>
-                    </div>
-                    <div className="text-center py-12">
-                      <p className="text-muted-foreground">Admin functionality coming soon...</p>
-                    </div>
-                  </div>
+                  <Admin />
                 </Layout>
               </AuthGuard>
             } />
