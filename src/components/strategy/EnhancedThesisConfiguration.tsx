@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Settings, 
   Target, 
@@ -16,10 +17,13 @@ import {
   CheckCircle,
   AlertTriangle,
   Save,
-  X
+  X,
+  Brain
 } from 'lucide-react';
 import { EnhancedStrategy } from '@/services/unifiedStrategyService';
 import { useUnifiedStrategy } from '@/hooks/useUnifiedStrategy';
+import { EnhancedInvestmentCriteria } from './EnhancedInvestmentCriteria';
+import { InvestmentCriteria, TargetParameter, DEFAULT_INVESTMENT_CRITERIA, DEFAULT_TARGET_PARAMETERS } from '@/types/investment-criteria';
 
 interface EnhancedThesisConfigurationProps {
   strategy: EnhancedStrategy;
@@ -33,6 +37,9 @@ export function EnhancedThesisConfiguration({
   onCancel 
 }: EnhancedThesisConfigurationProps) {
   const [editedStrategy, setEditedStrategy] = useState<Partial<EnhancedStrategy>>(strategy);
+  const [criteria, setCriteria] = useState<InvestmentCriteria[]>(DEFAULT_INVESTMENT_CRITERIA);
+  const [targetParameters, setTargetParameters] = useState<TargetParameter[]>(DEFAULT_TARGET_PARAMETERS);
+  const [isCriteriaEditing, setIsCriteriaEditing] = useState(false);
   const { updateStrategy, loading } = useUnifiedStrategy();
 
   const handleSave = async () => {
@@ -46,6 +53,17 @@ export function EnhancedThesisConfiguration({
 
   const updateField = (field: keyof EnhancedStrategy, value: any) => {
     setEditedStrategy(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCriteriaUpdate = (newCriteria: InvestmentCriteria[]) => {
+    setCriteria(newCriteria);
+    // Here you would also update the strategy with the new criteria
+    // This might involve converting the criteria to the format expected by the strategy
+  };
+
+  const handleTargetParametersUpdate = (newTargetParameters: TargetParameter[]) => {
+    setTargetParameters(newTargetParameters);
+    // Here you would also update the strategy with the new target parameters
   };
 
   return (
@@ -77,9 +95,17 @@ export function EnhancedThesisConfiguration({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Overview Section */}
-        <div className="lg:col-span-2 space-y-6">
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview">Strategy Overview</TabsTrigger>
+          <TabsTrigger value="criteria">Investment Criteria</TabsTrigger>
+          <TabsTrigger value="parameters">Configuration</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Overview Section */}
+            <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -284,6 +310,39 @@ export function EnhancedThesisConfiguration({
           </div>
         </div>
       </div>
+        </TabsContent>
+
+        <TabsContent value="criteria" className="mt-6">
+          <EnhancedInvestmentCriteria
+            criteria={criteria}
+            targetParameters={targetParameters}
+            isEditing={isCriteriaEditing}
+            onEdit={() => setIsCriteriaEditing(true)}
+            onSave={() => setIsCriteriaEditing(false)}
+            onCancel={() => setIsCriteriaEditing(false)}
+            onUpdateCriteria={handleCriteriaUpdate}
+            onUpdateTargetParameters={handleTargetParametersUpdate}
+            isSaving={loading}
+          />
+        </TabsContent>
+
+        <TabsContent value="parameters" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-emerald-600" />
+                Advanced Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Advanced configuration options will be available here, including AI integration settings, 
+                scoring algorithms, and automated workflows.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
