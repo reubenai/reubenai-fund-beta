@@ -131,6 +131,24 @@ export function useActivityTracking() {
     });
   }, [logActivity]);
 
+  const logDocumentAnalyzed = useCallback((dealId: string, companyName: string, fileName: string, analysisType: string) => {
+    return logActivity({
+      activity_type: 'deal_updated',
+      title: `Document analyzed for ${companyName}`,
+      description: `Completed ${analysisType} analysis of ${fileName}`,
+      deal_id: dealId,
+      resource_type: 'document',
+      resource_id: dealId,
+      context_data: { 
+        company_name: companyName,
+        file_name: fileName,
+        analysis_type: analysisType
+      },
+      priority: 'medium',
+      tags: ['deal', 'document', 'analysis', analysisType]
+    });
+  }, [logActivity]);
+
   return {
     logActivity,
     logDealCreated,
@@ -138,6 +156,7 @@ export function useActivityTracking() {
     logDealUpdated,
     logDealDeleted,
     logDealNoteAdded,
-    logDocumentUploaded
+    logDocumentUploaded,
+    logDocumentAnalyzed
   };
 }

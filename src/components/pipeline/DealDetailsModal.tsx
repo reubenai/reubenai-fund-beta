@@ -40,6 +40,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { EditDealModal } from './EditDealModal';
+import { DocumentManager } from '@/components/documents/DocumentManager';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -183,9 +184,10 @@ export function DealDetailsModal({
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="company">Company Details</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="analysis">AI Analysis</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
@@ -324,6 +326,13 @@ export function DealDetailsModal({
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="documents" className="space-y-6">
+            <DocumentManager
+              dealId={deal.id}
+              companyName={deal.company_name}
+            />
           </TabsContent>
 
           <TabsContent value="company" className="space-y-6">
