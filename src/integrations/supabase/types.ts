@@ -14,7 +14,481 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      deal_analyses: {
+        Row: {
+          analyzed_at: string | null
+          created_at: string
+          deal_id: string
+          financial_notes: string | null
+          financial_score: number | null
+          id: string
+          leadership_notes: string | null
+          leadership_score: number | null
+          market_notes: string | null
+          market_score: number | null
+          product_notes: string | null
+          product_score: number | null
+          thesis_alignment_notes: string | null
+          thesis_alignment_score: number | null
+          traction_notes: string | null
+          traction_score: number | null
+          updated_at: string
+        }
+        Insert: {
+          analyzed_at?: string | null
+          created_at?: string
+          deal_id: string
+          financial_notes?: string | null
+          financial_score?: number | null
+          id?: string
+          leadership_notes?: string | null
+          leadership_score?: number | null
+          market_notes?: string | null
+          market_score?: number | null
+          product_notes?: string | null
+          product_score?: number | null
+          thesis_alignment_notes?: string | null
+          thesis_alignment_score?: number | null
+          traction_notes?: string | null
+          traction_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          analyzed_at?: string | null
+          created_at?: string
+          deal_id?: string
+          financial_notes?: string | null
+          financial_score?: number | null
+          id?: string
+          leadership_notes?: string | null
+          leadership_score?: number | null
+          market_notes?: string | null
+          market_score?: number | null
+          product_notes?: string | null
+          product_score?: number | null
+          thesis_alignment_notes?: string | null
+          thesis_alignment_score?: number | null
+          traction_notes?: string | null
+          traction_score?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_analyses_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_documents: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          deal_id: string
+          file_path: string
+          file_size: number | null
+          id: string
+          name: string
+          uploaded_by: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          deal_id: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          name: string
+          uploaded_by: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          deal_id?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          name?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_documents_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_notes: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          deal_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          deal_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          deal_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_notes_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deals: {
+        Row: {
+          company_name: string
+          created_at: string
+          created_by: string
+          currency: string | null
+          deal_size: number | null
+          description: string | null
+          fund_id: string
+          id: string
+          industry: string | null
+          location: string | null
+          overall_score: number | null
+          score_level: Database["public"]["Enums"]["deal_score_level"] | null
+          status: Database["public"]["Enums"]["deal_status"] | null
+          updated_at: string
+          valuation: number | null
+          website: string | null
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          created_by: string
+          currency?: string | null
+          deal_size?: number | null
+          description?: string | null
+          fund_id: string
+          id?: string
+          industry?: string | null
+          location?: string | null
+          overall_score?: number | null
+          score_level?: Database["public"]["Enums"]["deal_score_level"] | null
+          status?: Database["public"]["Enums"]["deal_status"] | null
+          updated_at?: string
+          valuation?: number | null
+          website?: string | null
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          created_by?: string
+          currency?: string | null
+          deal_size?: number | null
+          description?: string | null
+          fund_id?: string
+          id?: string
+          industry?: string | null
+          location?: string | null
+          overall_score?: number | null
+          score_level?: Database["public"]["Enums"]["deal_score_level"] | null
+          status?: Database["public"]["Enums"]["deal_status"] | null
+          updated_at?: string
+          valuation?: number | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      funds: {
+        Row: {
+          created_at: string
+          created_by: string
+          currency: string | null
+          description: string | null
+          fund_type: Database["public"]["Enums"]["fund_type"]
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          target_size: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          currency?: string | null
+          description?: string | null
+          fund_type: Database["public"]["Enums"]["fund_type"]
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          target_size?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          currency?: string | null
+          description?: string | null
+          fund_type?: Database["public"]["Enums"]["fund_type"]
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          target_size?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funds_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ic_meeting_deals: {
+        Row: {
+          created_at: string
+          deal_id: string
+          decision: string | null
+          id: string
+          meeting_id: string
+          memo_content: string | null
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          decision?: string | null
+          id?: string
+          meeting_id: string
+          memo_content?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          decision?: string | null
+          id?: string
+          meeting_id?: string
+          memo_content?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ic_meeting_deals_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ic_meeting_deals_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "ic_meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ic_meetings: {
+        Row: {
+          agenda: string | null
+          created_at: string
+          created_by: string
+          fund_id: string
+          id: string
+          scheduled_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agenda?: string | null
+          created_at?: string
+          created_by: string
+          fund_id: string
+          id?: string
+          scheduled_date: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agenda?: string | null
+          created_at?: string
+          created_by?: string
+          fund_id?: string
+          id?: string
+          scheduled_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ic_meetings_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investment_strategies: {
+        Row: {
+          created_at: string
+          exciting_threshold: number | null
+          fund_id: string
+          geography: string[] | null
+          id: string
+          industries: string[] | null
+          key_signals: string[] | null
+          max_investment_amount: number | null
+          min_investment_amount: number | null
+          needs_development_threshold: number | null
+          promising_threshold: number | null
+          strategy_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exciting_threshold?: number | null
+          fund_id: string
+          geography?: string[] | null
+          id?: string
+          industries?: string[] | null
+          key_signals?: string[] | null
+          max_investment_amount?: number | null
+          min_investment_amount?: number | null
+          needs_development_threshold?: number | null
+          promising_threshold?: number | null
+          strategy_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exciting_threshold?: number | null
+          fund_id?: string
+          geography?: string[] | null
+          id?: string
+          industries?: string[] | null
+          key_signals?: string[] | null
+          max_investment_amount?: number | null
+          min_investment_amount?: number | null
+          needs_development_threshold?: number | null
+          promising_threshold?: number | null
+          strategy_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_strategies_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          domain: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          organization_id: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          organization_id?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          organization_id?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +497,21 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      deal_score_level:
+        | "exciting"
+        | "promising"
+        | "needs_development"
+        | "not_aligned"
+      deal_status:
+        | "sourced"
+        | "screening"
+        | "due_diligence"
+        | "investment_committee"
+        | "approved"
+        | "rejected"
+        | "invested"
+      fund_type: "venture_capital" | "private_equity"
+      user_role: "admin" | "fund_manager" | "analyst" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +638,24 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      deal_score_level: [
+        "exciting",
+        "promising",
+        "needs_development",
+        "not_aligned",
+      ],
+      deal_status: [
+        "sourced",
+        "screening",
+        "due_diligence",
+        "investment_committee",
+        "approved",
+        "rejected",
+        "invested",
+      ],
+      fund_type: ["venture_capital", "private_equity"],
+      user_role: ["admin", "fund_manager", "analyst", "viewer"],
+    },
   },
 } as const
