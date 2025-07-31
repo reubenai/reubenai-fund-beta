@@ -10,7 +10,15 @@ interface DealCardFooterProps {
 }
 
 const getPriorityIndicator = (deal: Deal) => {
-  // Mock priority logic - in real app, this would come from deal metadata
+  if (deal.priority === 'high') {
+    return { color: 'bg-red-500', label: 'High' };
+  } else if (deal.priority === 'medium') {
+    return { color: 'bg-yellow-500', label: 'Medium' };
+  } else if (deal.priority === 'low') {
+    return { color: 'bg-green-500', label: 'Low' };
+  }
+  
+  // Fallback to score-based priority if no explicit priority set
   if (deal.overall_score && deal.overall_score >= 85) {
     return { color: 'bg-red-500', label: 'High' };
   } else if (deal.overall_score && deal.overall_score >= 70) {
@@ -36,11 +44,11 @@ export const DealCardFooter: React.FC<DealCardFooterProps> = ({
         <div className="flex items-center gap-3 text-xs text-gray-500">
           <div className="flex items-center gap-1">
             <MessageSquare className="w-3 h-3" />
-            <span>3</span>
+            <span>{deal.notes_count || 0}</span>
           </div>
           <div className="flex items-center gap-1">
             <Users className="w-3 h-3" />
-            <span>2</span>
+            <span>0</span> {/* Placeholder for contacts count */}
           </div>
           <div className="flex items-center gap-1">
             <div className={`w-2 h-2 rounded-full ${priority.color}`} />
@@ -60,6 +68,10 @@ export const DealCardFooter: React.FC<DealCardFooterProps> = ({
         {deal.valuation && viewDensity !== 'compact' ? (
           <span className="text-gray-600">
             Val: {formatAmount(deal.valuation, deal.currency)}
+          </span>
+        ) : deal.next_action ? (
+          <span className="text-blue-600 text-xs">
+            Next: {deal.next_action}
           </span>
         ) : (
           <span className="text-blue-600 text-xs">

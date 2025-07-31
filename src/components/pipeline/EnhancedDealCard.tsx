@@ -23,6 +23,7 @@ import { Deal } from '@/hooks/usePipelineDeals';
 import { DealCardHeader } from './DealCardHeader';
 import { DealCardMetrics } from './DealCardMetrics';
 import { DealCardFooter } from './DealCardFooter';
+import { WebPresenceSection } from './WebPresenceSection';
 
 interface EnhancedDealCardProps {
   deal: Deal;
@@ -150,15 +151,20 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
             )}
 
             {/* Footer */}
-            <DealCardFooter 
-              deal={deal}
-              formatDate={formatDate}
-              formatAmount={formatAmount}
-              viewDensity={viewDensity}
-            />
-          </CardContent>
-        </Card>
-      )}
-    </Draggable>
-  );
-};
+              <WebPresenceSection 
+                deal={deal}
+                viewDensity={viewDensity}
+              />
+              
+              <DealCardFooter 
+                deal={deal}
+                formatDate={formatDate}
+                formatAmount={formatAmount}
+                viewDensity={viewDensity}
+              />
+            </CardContent>
+          </Card>
+        )}
+      </Draggable>
+    );
+  };

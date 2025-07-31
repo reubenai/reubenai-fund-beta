@@ -54,15 +54,36 @@ export const DealCardMetrics: React.FC<DealCardMetricsProps> = ({
         </div>
       )}
       
-      {/* Founder - Only show in detailed view */}
-      {viewDensity === 'detailed' && (
+      {/* Founder */}
+      {deal.founder && (
         <div className={`flex items-center gap-2 ${textSize}`}>
           <User className={`${iconSize} text-gray-400 flex-shrink-0`} />
           <span className="text-gray-600 truncate">
-            {/* Mock founder data - in real app, this would come from deal enrichment */}
-            John Smith, CEO
+            {deal.founder}
           </span>
         </div>
+      )}
+      
+      {/* Company Details - Only show in detailed view */}
+      {viewDensity === 'detailed' && (
+        <>
+          {deal.employee_count && (
+            <div className={`flex items-center gap-2 ${textSize}`}>
+              <User className={`${iconSize} text-gray-400 flex-shrink-0`} />
+              <span className="text-gray-600 truncate">
+                {deal.employee_count} employees
+              </span>
+            </div>
+          )}
+          
+          {deal.business_model && (
+            <div className={`flex items-center gap-2 ${textSize}`}>
+              <span className="text-gray-600 truncate text-xs">
+                {deal.business_model}
+              </span>
+            </div>
+          )}
+        </>
       )}
       
       {/* Description - Only show in detailed view */}

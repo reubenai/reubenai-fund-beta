@@ -160,57 +160,96 @@ export type Database = {
       }
       deals: {
         Row: {
+          business_model: string | null
           company_name: string
+          company_validation_status: string | null
           created_at: string
           created_by: string
+          crunchbase_url: string | null
           currency: string | null
           deal_size: number | null
           description: string | null
+          employee_count: number | null
+          founder: string | null
           fund_id: string
           id: string
           industry: string | null
+          linkedin_url: string | null
           location: string | null
+          next_action: string | null
           overall_score: number | null
+          primary_source: string | null
+          priority: string | null
+          rag_confidence: number | null
+          rag_reasoning: Json | null
           score_level: Database["public"]["Enums"]["deal_score_level"] | null
+          source_confidence_score: number | null
           status: Database["public"]["Enums"]["deal_status"] | null
           updated_at: string
           valuation: number | null
+          web_presence_confidence: number | null
           website: string | null
         }
         Insert: {
+          business_model?: string | null
           company_name: string
+          company_validation_status?: string | null
           created_at?: string
           created_by: string
+          crunchbase_url?: string | null
           currency?: string | null
           deal_size?: number | null
           description?: string | null
+          employee_count?: number | null
+          founder?: string | null
           fund_id: string
           id?: string
           industry?: string | null
+          linkedin_url?: string | null
           location?: string | null
+          next_action?: string | null
           overall_score?: number | null
+          primary_source?: string | null
+          priority?: string | null
+          rag_confidence?: number | null
+          rag_reasoning?: Json | null
           score_level?: Database["public"]["Enums"]["deal_score_level"] | null
+          source_confidence_score?: number | null
           status?: Database["public"]["Enums"]["deal_status"] | null
           updated_at?: string
           valuation?: number | null
+          web_presence_confidence?: number | null
           website?: string | null
         }
         Update: {
+          business_model?: string | null
           company_name?: string
+          company_validation_status?: string | null
           created_at?: string
           created_by?: string
+          crunchbase_url?: string | null
           currency?: string | null
           deal_size?: number | null
           description?: string | null
+          employee_count?: number | null
+          founder?: string | null
           fund_id?: string
           id?: string
           industry?: string | null
+          linkedin_url?: string | null
           location?: string | null
+          next_action?: string | null
           overall_score?: number | null
+          primary_source?: string | null
+          priority?: string | null
+          rag_confidence?: number | null
+          rag_reasoning?: Json | null
           score_level?: Database["public"]["Enums"]["deal_score_level"] | null
+          source_confidence_score?: number | null
           status?: Database["public"]["Enums"]["deal_status"] | null
           updated_at?: string
           valuation?: number | null
+          web_presence_confidence?: number | null
           website?: string | null
         }
         Relationships: [

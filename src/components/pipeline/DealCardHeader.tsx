@@ -26,11 +26,23 @@ const getRAGColor = (level?: string) => {
 };
 
 const getSourceBadge = (deal: Deal) => {
-  // Mock source detection - in real app, this would come from deal metadata
-  if (deal.company_name.includes('AI')) {
-    return <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">AI Sourced</Badge>;
-  }
-  return null;
+  if (!deal.primary_source) return null;
+  
+  const sourceLabels: Record<string, string> = {
+    'sourced': 'AI Sourced',
+    'batch_upload': 'Batch Upload',
+    'manual': 'Manual Entry',
+    'referral': 'Referral',
+    'inbound': 'Inbound'
+  };
+  
+  const label = sourceLabels[deal.primary_source] || deal.primary_source;
+  
+  return (
+    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+      {label}
+    </Badge>
+  );
 };
 
 export const DealCardHeader: React.FC<DealCardHeaderProps> = ({
@@ -62,8 +74,32 @@ export const DealCardHeader: React.FC<DealCardHeaderProps> = ({
           </p>
         )}
         
-        {/* Source Badge */}
-        {viewDensity === 'detailed' && getSourceBadge(deal)}
+        {/* Source Badge and AI Insight */}
+        <div className="space-y-1">
+          {viewDensity === 'detailed' && getSourceBadge(deal)}
+          
+          {/* AI-Generated Insight */}
+          {deal.rag_reasoning && typeof deal.rag_reasoning === 'object' && 
+           'reasoning' in deal.rag_reasoning && 
+           Array.isArray(deal.rag_reasoning.reasoning) && 
+           deal.rag_reasoning.reasoning[0] && 
+           typeof deal.rag_reasoning.reasoning[0] === 'string' && 
+           viewDensity !== 'compact' && (
+            <p className="text-xs text-gray-600 line-clamp-2 mt-1">
+              💡 {deal.rag_reasoning.reasoning[0]}
+            </p>
+          )}
+          
+          {/* Confidence Score */}
+          {deal.rag_confidence && viewDensity === 'detailed' && (
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-xs text-gray-500">Confidence:</span>
+              <Badge variant="outline" className="text-xs">
+                {deal.rag_confidence}%
+              </Badge>
+            </div>
+          )}
+        </div>
       </div>
       
       <div className="flex items-center gap-1 ml-2">

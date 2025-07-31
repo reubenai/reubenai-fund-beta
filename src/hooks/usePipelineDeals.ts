@@ -3,7 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
 
-export type Deal = Database['public']['Tables']['deals']['Row'];
+export type Deal = Database['public']['Tables']['deals']['Row'] & {
+  notes_count?: number;
+};
 
 export interface PipelineStage {
   id: string;
@@ -36,25 +38,37 @@ export const usePipelineDeals = (fundId?: string) => {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // First get deals with notes count
+      const { data: dealsWithNotes, error: dealsError } = await supabase
         .from('deals')
-        .select('*')
+        .select(`
+          *,
+          deal_notes(count)
+        `)
         .eq('fund_id', fundId)
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
+      if (dealsError) throw dealsError;
 
-      // Group deals by stage
+      // Group deals by stage and add computed fields
       const groupedDeals: Record<string, Deal[]> = {};
       stages.forEach(stage => {
         groupedDeals[stage.id] = [];
       });
 
-      data?.forEach(deal => {
-        const stage = deal.status || 'sourced';
+      dealsWithNotes?.forEach(dealData => {
+        const stage = dealData.status || 'sourced';
         if (!groupedDeals[stage]) {
           groupedDeals[stage] = [];
         }
+        
+        // Add notes count
+        const deal: Deal = {
+          ...dealData,
+          notes_count: Array.isArray(dealData.deal_notes) ? dealData.deal_notes.length : 0
+        };
+        
         groupedDeals[stage].push(deal);
       });
 
