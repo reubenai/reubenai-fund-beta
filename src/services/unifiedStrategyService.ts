@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { EnhancedCriteriaTemplate, getTemplateByFundType, validateCriteriaWeights } from '@/types/vc-pe-criteria';
 
 // Enhanced interfaces for strategy management
 export interface CategoryCustomization {
@@ -74,6 +75,7 @@ export interface EnhancedWizardData {
 export interface EnhancedStrategy {
   id?: string;
   fund_id: string;
+  fund_type?: 'vc' | 'pe';
   name?: string;
   description?: string;
   industries?: string[];
@@ -85,7 +87,7 @@ export interface EnhancedStrategy {
   promising_threshold?: number;
   needs_development_threshold?: number;
   strategy_notes?: string;
-  enhanced_criteria?: any;
+  enhanced_criteria?: any; // JSONB field in database
   created_at?: string;
   updated_at?: string;
 }
@@ -193,7 +195,7 @@ class UnifiedStrategyService {
       }
 
       console.log('Returning strategy data:', data);
-      return data;
+      return data as EnhancedStrategy;
     } catch (error) {
       console.error('Unexpected error in getFundStrategy:', error);
       return null;
@@ -203,10 +205,11 @@ class UnifiedStrategyService {
   // Create initial strategy with fund type templates
   async createFundStrategy(fundId: string, fundType: 'vc' | 'pe', wizardData: EnhancedWizardData): Promise<EnhancedStrategy | null> {
     try {
-      const enhancedCriteria = this.generateEnhancedCriteria(fundType, wizardData);
+      const enhancedCriteria = getTemplateByFundType(fundType);
       
       const strategyData = {
         fund_id: fundId,
+        fund_type: fundType,
         industries: wizardData.sectors,
         geography: wizardData.geographies,
         min_investment_amount: wizardData.checkSizeRange.min,
@@ -215,7 +218,8 @@ class UnifiedStrategyService {
         exciting_threshold: wizardData.dealThresholds.exciting,
         promising_threshold: wizardData.dealThresholds.promising,
         needs_development_threshold: wizardData.dealThresholds.needs_development,
-        strategy_notes: wizardData.strategyDescription
+        strategy_notes: wizardData.strategyDescription,
+        enhanced_criteria: JSON.parse(JSON.stringify(enhancedCriteria))
       };
 
       const { data, error } = await supabase
@@ -229,7 +233,7 @@ class UnifiedStrategyService {
         return null;
       }
 
-      return data;
+      return data as EnhancedStrategy;
     } catch (error) {
       console.error('Unexpected error in createFundStrategy:', error);
       return null;
@@ -251,7 +255,7 @@ class UnifiedStrategyService {
         return null;
       }
 
-      return data;
+      return data as EnhancedStrategy;
     } catch (error) {
       console.error('Unexpected error in updateFundStrategy:', error);
       return null;
@@ -347,7 +351,7 @@ class UnifiedStrategyService {
 
   // Get default template for fund type
   getDefaultTemplate(fundType: 'vc' | 'pe'): Partial<EnhancedWizardData> {
-    const template = fundType === 'vc' ? VC_TEMPLATE : PE_TEMPLATE;
+    const template = getTemplateByFundType(fundType);
     
     return {
       fundType,
@@ -370,6 +374,16 @@ class UnifiedStrategyService {
       financialHealthConfig: DEFAULT_CATEGORIES['Financial Health'],
       strategicFitConfig: DEFAULT_CATEGORIES['Strategic Fit']
     };
+  }
+
+  // Get enhanced criteria template for fund
+  getEnhancedCriteriaTemplate(fundType: 'vc' | 'pe'): EnhancedCriteriaTemplate {
+    return getTemplateByFundType(fundType);
+  }
+
+  // Validate enhanced criteria
+  validateEnhancedCriteria(criteria: EnhancedCriteriaTemplate): { isValid: boolean; errors: string[] } {
+    return validateCriteriaWeights(criteria);
   }
 }
 

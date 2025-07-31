@@ -923,8 +923,10 @@ export type Database = {
       investment_strategies: {
         Row: {
           created_at: string
+          enhanced_criteria: Json | null
           exciting_threshold: number | null
           fund_id: string
+          fund_type: string
           geography: string[] | null
           id: string
           industries: string[] | null
@@ -938,8 +940,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          enhanced_criteria?: Json | null
           exciting_threshold?: number | null
           fund_id: string
+          fund_type?: string
           geography?: string[] | null
           id?: string
           industries?: string[] | null
@@ -953,8 +957,10 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          enhanced_criteria?: Json | null
           exciting_threshold?: number | null
           fund_id?: string
+          fund_type?: string
           geography?: string[] | null
           id?: string
           industries?: string[] | null

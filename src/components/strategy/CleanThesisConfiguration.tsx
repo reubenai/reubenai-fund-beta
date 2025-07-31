@@ -4,17 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { 
   Target, 
   DollarSign, 
   Globe,
   Save,
-  BarChart3
+  BarChart3,
+  Settings
 } from 'lucide-react';
 import { EnhancedStrategy } from '@/services/unifiedStrategyService';
 import { useUnifiedStrategy } from '@/hooks/useUnifiedStrategy';
+import { EnhancedCriteriaEditor } from './EnhancedCriteriaEditor';
+import { getTemplateByFundType } from '@/types/vc-pe-criteria';
 
 interface CleanThesisConfigurationProps {
   strategy: EnhancedStrategy;
@@ -30,7 +33,12 @@ export function CleanThesisConfiguration({
   onLaunchWizard
 }: CleanThesisConfigurationProps) {
   const [editedStrategy, setEditedStrategy] = useState<Partial<EnhancedStrategy>>(strategy);
+  const [criteriaEditing, setCriteriaEditing] = useState(false);
   const { updateStrategy, loading } = useUnifiedStrategy();
+
+  // Get enhanced criteria or default template
+  const enhancedCriteria = strategy.enhanced_criteria || 
+    getTemplateByFundType(strategy.fund_type || 'vc');
 
   const handleSave = async () => {
     if (strategy.id) {
@@ -46,7 +54,19 @@ export function CleanThesisConfiguration({
   };
 
   return (
-    <div className="space-y-8">
+    <Tabs defaultValue="overview" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="overview" className="gap-2">
+          <Target className="h-4 w-4" />
+          Strategy Overview
+        </TabsTrigger>
+        <TabsTrigger value="criteria" className="gap-2">
+          <Settings className="h-4 w-4" />
+          Investment Criteria
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="overview" className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -288,6 +308,22 @@ export function CleanThesisConfiguration({
           </Card>
         </div>
       </div>
-    </div>
+      </TabsContent>
+
+      <TabsContent value="criteria">
+        <EnhancedCriteriaEditor
+          criteria={enhancedCriteria}
+          isEditing={criteriaEditing}
+          onEdit={() => setCriteriaEditing(true)}
+          onSave={(criteria) => {
+            updateField('enhanced_criteria', criteria);
+            setCriteriaEditing(false);
+            handleSave();
+          }}
+          onCancel={() => setCriteriaEditing(false)}
+          isSaving={loading}
+        />
+      </TabsContent>
+    </Tabs>
   );
 }
