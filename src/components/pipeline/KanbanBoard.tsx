@@ -5,6 +5,7 @@ import { PipelineHeader } from './PipelineHeader';
 import { EnhancedKanbanView } from './EnhancedKanbanView';
 import { AddDealModal } from './AddDealModal';
 import { BatchUploadModal } from './BatchUploadModal';
+import { DealDetailsModal } from './DealDetailsModal';
 import { useToast } from '@/hooks/use-toast';
 
 interface KanbanBoardState {
@@ -163,6 +164,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
         onClose={() => updateState({ showBatchUpload: false })}
         fundId={fundId}
         onUploadComplete={refreshDeals}
+      />
+
+      <DealDetailsModal
+        deal={state.selectedDeal}
+        open={!!state.selectedDeal}
+        onOpenChange={(open) => !open && updateState({ selectedDeal: null })}
       />
     </div>
   );
