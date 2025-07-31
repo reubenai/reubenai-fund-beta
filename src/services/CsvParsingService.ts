@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import * as XLSX from 'xlsx';
 
 interface ParseResult {
   id: string;
@@ -15,27 +16,42 @@ interface FieldMapping {
 export class CsvParsingService {
   private static fieldMapping: FieldMapping = {
     'company': ['company', 'company name', 'company_name', 'name'],
-    'founder': ['founder', 'founder name', 'founder_name', 'ceo'],
-    'founder_email': ['founder email', 'founder_email', 'email'],
+    'founder': ['founder', 'founder name', 'founder_name', 'ceo', 'founder/ceo'],
+    'founder_email': ['founder email', 'founder_email', 'email', 'contact email'],
     'sector': ['sector', 'industry', 'vertical', 'space'],
-    'stage': ['stage', 'round', 'funding stage'],
-    'amount': ['amount', 'funding amount', 'investment amount'],
-    'valuation': ['valuation', 'pre-money', 'pre_money'],
-    'location': ['location', 'city', 'country', 'headquarters'],
-    'description': ['description', 'summary', 'overview'],
-    'website': ['website', 'url', 'web', 'site'],
-    'linkedin_url': ['linkedin', 'linkedin_url', 'linkedin url'],
-    'employee_count': ['team size', 'employees', 'headcount']
+    'stage': ['stage', 'round', 'funding stage', 'funding round'],
+    'amount': ['amount', 'funding amount', 'investment amount', 'deal size'],
+    'valuation': ['valuation', 'pre-money', 'pre_money', 'company valuation'],
+    'location': ['location', 'city', 'country', 'headquarters', 'hq'],
+    'description': ['description', 'summary', 'overview', 'about'],
+    'website': ['website', 'url', 'web', 'site', 'company website'],
+    'linkedin_url': ['linkedin', 'linkedin_url', 'linkedin url', 'linkedin profile'],
+    'crunchbase_url': ['crunchbase', 'crunchbase_url', 'crunchbase url', 'crunchbase profile'],
+    'employee_count': ['team size', 'employees', 'headcount', 'employee count', 'team']
   };
 
   static async parseFile(file: File): Promise<ParseResult[]> {
+    const fileName = file.name.toLowerCase();
+    const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+    
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
       reader.onload = (e) => {
         try {
-          const csv = e.target?.result as string;
-          const results = this.parseCsvContent(csv);
+          const data = e.target?.result;
+          let results: ParseResult[];
+          
+          if (isExcel) {
+            const workbook = XLSX.read(data, { type: 'binary' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const csvData = XLSX.utils.sheet_to_csv(worksheet);
+            results = this.parseCsvContent(csvData);
+          } else {
+            results = this.parseCsvContent(data as string);
+          }
+          
           resolve(results);
         } catch (error) {
           reject(error);
@@ -43,7 +59,12 @@ export class CsvParsingService {
       };
       
       reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsText(file);
+      
+      if (isExcel) {
+        reader.readAsBinaryString(file);
+      } else {
+        reader.readAsText(file);
+      }
     });
   }
 
@@ -143,6 +164,8 @@ export class CsvParsingService {
       case 'employee_count':
         return parseInt(value) || null;
       case 'website':
+      case 'linkedin_url':
+      case 'crunchbase_url':
         return this.normalizeUrl(value);
       case 'founder_email':
         return this.validateEmail(value) ? value : null;
@@ -209,15 +232,20 @@ export class CsvParsingService {
     
     const dealInserts = validResults.map(result => ({
       company_name: result.data.company,
+      founder: result.data.founder,
       industry: result.data.sector,
       location: result.data.location,
       description: result.data.description,
       website: result.data.website,
+      linkedin_url: result.data.linkedin_url,
+      crunchbase_url: result.data.crunchbase_url,
+      employee_count: result.data.employee_count,
       deal_size: result.data.amount,
       valuation: result.data.valuation,
       fund_id: fundId,
       created_by: user.id,
       status: 'sourced' as const,
+      primary_source: 'batch_upload',
       currency: 'USD'
     }));
 

@@ -2,6 +2,12 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { 
   Plus, 
   Search, 
@@ -11,14 +17,18 @@ import {
   Table, 
   BarChart3,
   Download,
-  Settings
+  Settings,
+  Upload,
+  Zap,
+  ChevronDown
 } from 'lucide-react';
 
 interface PipelineHeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onAddDeal: () => void;
-  onBatchUpload?: () => void;
+  onBatchUpload: () => void;
+  onDealSourcing?: () => void;
   currentView: 'kanban' | 'list' | 'table' | 'funnel';
   onViewChange: (view: 'kanban' | 'list' | 'table' | 'funnel') => void;
   viewDensity?: 'compact' | 'comfortable' | 'detailed';
@@ -40,6 +50,7 @@ export const PipelineHeader: React.FC<PipelineHeaderProps> = ({
   onSearchChange,
   onAddDeal,
   onBatchUpload,
+  onDealSourcing,
   currentView,
   onViewChange,
   viewDensity = 'comfortable',
@@ -64,10 +75,36 @@ export const PipelineHeader: React.FC<PipelineHeaderProps> = ({
             {totalDeals} deals
           </Badge>
           
-          <Button onClick={onAddDeal} className="bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Deal
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="bg-emerald-600 hover:bg-emerald-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Deal
+                <ChevronDown className="w-4 h-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={onAddDeal}>
+                <Plus className="w-4 h-4 mr-2" />
+                Single Add
+                <span className="ml-auto text-xs text-gray-500">Manual entry</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onBatchUpload}>
+                <Upload className="w-4 h-4 mr-2" />
+                Batch Upload
+                <span className="ml-auto text-xs text-gray-500">CSV/Excel</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={onDealSourcing}
+                disabled={!onDealSourcing}
+                className="opacity-50"
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                Deal Sourcing
+                <span className="ml-auto text-xs text-gray-500">Coming soon</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

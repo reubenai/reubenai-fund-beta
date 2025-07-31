@@ -41,9 +41,10 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
   const { toast } = useToast();
 
   const downloadTemplate = () => {
-    const csvContent = `Company,Founder,Founder Email,Sector,Stage,Amount,Valuation,Location,Description,Website,LinkedIn URL,Employee Count
-TechFlow AI,John Smith,john@techflow.ai,AI/ML,Series A,$5M,$25M,San Francisco,AI platform for data analysis,https://techflow.ai,https://linkedin.com/company/techflow,25
-DataCorp,Sarah Johnson,sarah@datacorp.com,Analytics,Seed,$2M,$8M,New York,Business intelligence platform,https://datacorp.com,https://linkedin.com/company/datacorp,15`;
+    const csvContent = `Company,Founder,Founder Email,Sector,Stage,Amount,Valuation,Location,Description,Website,LinkedIn URL,Crunchbase URL,Employee Count
+TechFlow AI,John Smith,john@techflow.ai,AI/ML,Series A,$5M,$25M,San Francisco,AI platform for data analysis,https://techflow.ai,https://linkedin.com/company/techflow,https://crunchbase.com/organization/techflow-ai,25
+DataCorp,Sarah Johnson,sarah@datacorp.com,Analytics,Seed,$2M,$8M,New York,Business intelligence platform,https://datacorp.com,https://linkedin.com/company/datacorp,https://crunchbase.com/organization/datacorp,15
+CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,$2M,Austin,Solar energy optimization platform,https://cleantech.io,https://linkedin.com/company/cleantech-solutions,https://crunchbase.com/organization/cleantech-solutions,8`;
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -63,13 +64,21 @@ DataCorp,Sarah Johnson,sarah@datacorp.com,Analytics,Seed,$2M,$8M,New York,Busine
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
-    if (selectedFile && selectedFile.type === 'text/csv') {
+    const fileName = selectedFile?.name.toLowerCase();
+    const isValidFile = selectedFile && (
+      selectedFile.type === 'text/csv' ||
+      fileName?.endsWith('.csv') ||
+      fileName?.endsWith('.xlsx') ||
+      fileName?.endsWith('.xls')
+    );
+    
+    if (isValidFile) {
       setFile(selectedFile);
       setParseResults([]);
     } else {
       toast({
         title: "Invalid File",
-        description: "Please select a CSV file",
+        description: "Please select a CSV or Excel file (.csv, .xlsx, .xls)",
         variant: "destructive"
       });
     }
@@ -161,7 +170,7 @@ DataCorp,Sarah Johnson,sarah@datacorp.com,Analytics,Seed,$2M,$8M,New York,Busine
               <div className="flex-1">
                 <h3 className="font-medium text-blue-900">Download Template</h3>
                 <p className="text-sm text-blue-700 mb-3">
-                  Start with our CSV template to ensure proper formatting
+                  Start with our CSV template to ensure proper formatting. Includes all legacy data fields for complete deal import.
                 </p>
                 <Button 
                   variant="outline" 
@@ -181,7 +190,7 @@ DataCorp,Sarah Johnson,sarah@datacorp.com,Analytics,Seed,$2M,$8M,New York,Busine
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               <input
                 type="file"
-                accept=".csv"
+                accept=".csv,.xlsx,.xls"
                 onChange={handleFileChange}
                 className="hidden"
                 id="csv-upload"
@@ -193,7 +202,10 @@ DataCorp,Sarah Johnson,sarah@datacorp.com,Analytics,Seed,$2M,$8M,New York,Busine
               >
                 <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-600">
-                  {file ? file.name : 'Click to upload CSV file or drag and drop'}
+                  {file ? file.name : 'Click to upload CSV or Excel file (.csv, .xlsx, .xls)'}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Supports CSV and Excel formats with automatic field mapping
                 </p>
               </label>
             </div>

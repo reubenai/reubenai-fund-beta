@@ -68,11 +68,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
 
   const handleDealClick = useCallback((deal: Deal) => {
     updateState({ selectedDeal: deal });
-    toast({
-      title: "Deal Details",
-      description: `Clicked on ${deal.company_name}`,
-    });
-  }, [updateState, toast]);
+  }, [updateState]);
 
   const handleStageEdit = useCallback((stageId: string, newTitle: string) => {
     console.log('Edit stage:', stageId, newTitle);
@@ -114,6 +110,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
         onSearchChange={setSearchQuery}
         onAddDeal={() => updateState({ showAddDeal: true })}
         onBatchUpload={() => updateState({ showBatchUpload: true })}
+        onDealSourcing={() => updateState({ showDealSourcing: true })}
         currentView={state.currentView}
         onViewChange={(view) => updateState({ currentView: view })}
         viewDensity={state.viewDensity}
