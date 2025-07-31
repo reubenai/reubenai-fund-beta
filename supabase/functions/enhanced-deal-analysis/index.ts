@@ -222,27 +222,51 @@ ${analysisResult.next_steps.map(step => `• ${step}`).join('\n')}
 });
 
 async function generateEnhancedAnalysis(deal: any, strategy?: any): Promise<AnalysisResult> {
-  const prompt = `Analyze the following investment opportunity and provide a comprehensive assessment:
+  // Validate available data and mark missing fields
+  const validatedDeal = {
+    company_name: deal.company_name || 'N/A',
+    industry: deal.industry || 'N/A',
+    description: deal.description || 'N/A',
+    location: deal.location || 'N/A',
+    founder: deal.founder || 'N/A',
+    employee_count: deal.employee_count || 'N/A',
+    deal_size: deal.deal_size || 'N/A',
+    valuation: deal.valuation || 'N/A',
+    business_model: deal.business_model || 'N/A',
+    website: deal.website || 'N/A'
+  };
 
-COMPANY: ${deal.company_name}
-INDUSTRY: ${deal.industry || 'Not specified'}
-DESCRIPTION: ${deal.description || 'Not provided'}
-LOCATION: ${deal.location || 'Not specified'}
-FOUNDER: ${deal.founder || 'Not specified'}
-EMPLOYEE COUNT: ${deal.employee_count || 'Not specified'}
-DEAL SIZE: ${deal.deal_size ? `$${deal.deal_size.toLocaleString()}` : 'Not specified'}
-VALUATION: ${deal.valuation ? `$${deal.valuation.toLocaleString()}` : 'Not specified'}
-BUSINESS MODEL: ${deal.business_model || 'Not specified'}
-WEBSITE: ${deal.website || 'Not provided'}
+  const prompt = `CRITICAL INSTRUCTIONS - ZERO TOLERANCE FOR FABRICATION:
+- ONLY use information explicitly provided in the data below
+- If data is missing, incomplete, or not verifiable, use "N/A" or "Unable to validate"
+- DO NOT fabricate, assume, or infer missing information
+- DO NOT create fictional details about the company, market, or founders
+- Base ALL analysis ONLY on verified data provided
+
+COMPANY DATA (use only this information):
+COMPANY: ${validatedDeal.company_name}
+INDUSTRY: ${validatedDeal.industry}
+DESCRIPTION: ${validatedDeal.description}
+LOCATION: ${validatedDeal.location}
+FOUNDER: ${validatedDeal.founder}
+EMPLOYEE COUNT: ${validatedDeal.employee_count}
+DEAL SIZE: ${validatedDeal.deal_size !== 'N/A' ? `$${deal.deal_size.toLocaleString()}` : 'N/A'}
+VALUATION: ${validatedDeal.valuation !== 'N/A' ? `$${deal.valuation.toLocaleString()}` : 'N/A'}
+BUSINESS MODEL: ${validatedDeal.business_model}
+WEBSITE: ${validatedDeal.website}
 
 ${strategy ? `FUND STRATEGY CONTEXT:
-Industries: ${strategy.industries?.join(', ') || 'Not specified'}
-Geography: ${strategy.geography?.join(', ') || 'Not specified'}
-Key Signals: ${strategy.key_signals?.join(', ') || 'Not specified'}
-Min Investment: ${strategy.min_investment_amount ? `$${strategy.min_investment_amount.toLocaleString()}` : 'Not specified'}
-Max Investment: ${strategy.max_investment_amount ? `$${strategy.max_investment_amount.toLocaleString()}` : 'Not specified'}` : ''}
+Industries: ${strategy.industries?.join(', ') || 'N/A'}
+Geography: ${strategy.geography?.join(', ') || 'N/A'}
+Key Signals: ${strategy.key_signals?.join(', ') || 'N/A'}
+Min Investment: ${strategy.min_investment_amount ? `$${strategy.min_investment_amount.toLocaleString()}` : 'N/A'}
+Max Investment: ${strategy.max_investment_amount ? `$${strategy.max_investment_amount.toLocaleString()}` : 'N/A'}` : 'No fund strategy data available'}
 
-Please provide a structured analysis with scores (1-100) and detailed assessments for each category. Be comprehensive but concise.`;
+ANALYSIS REQUIREMENTS:
+- Provide conservative scores (30-70 range) when data is limited
+- State "Unable to validate" for claims that cannot be verified
+- Focus analysis on available data only
+- Be explicit about data limitations in your analysis`;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -251,17 +275,19 @@ Please provide a structured analysis with scores (1-100) and detailed assessment
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4.1-2025-04-14',
+      model: 'gpt-4o-mini', // Faster model for reduced latency
       messages: [
         {
           role: 'system',
-          content: `You are an expert venture capital analyst. Provide detailed investment analysis in the exact JSON format requested. Be thorough, analytical, and provide actionable insights. Scores should range from 1-100 with detailed justification.`
+          content: `You are a conservative investment analyst. CRITICAL: Only use provided data. Never fabricate information. Use "N/A" or "Unable to validate" when data is missing. Provide realistic scores based only on available information. Be explicit about data limitations.`
         },
         {
           role: 'user',
           content: prompt
         }
       ],
+      temperature: 0.1, // Lower temperature for more consistent, conservative responses
+      max_tokens: 3000, // Reduced for faster response
       functions: [{
         name: 'generate_analysis',
         description: 'Generate comprehensive investment analysis',
