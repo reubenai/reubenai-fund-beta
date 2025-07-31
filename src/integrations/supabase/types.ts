@@ -703,6 +703,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_create_funds: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      can_create_ic_meetings: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       can_edit_fund_data: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -711,7 +719,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      can_manage_users: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       get_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_user_role_simple: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
