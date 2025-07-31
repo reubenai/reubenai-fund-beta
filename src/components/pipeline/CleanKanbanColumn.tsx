@@ -23,7 +23,7 @@ export const CleanKanbanColumn: React.FC<CleanKanbanColumnProps> = ({
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h3 className="text-base font-medium text-gray-900">{stage.title}</h3>
+            <h3 className="text-base font-medium text-gray-900">{stage.name}</h3>
             <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
               {deals.length}
             </span>

@@ -98,12 +98,13 @@ serve(async (req) => {
       body: { dealId: deal.id }
     });
     
+    let analysisResult;
     if (orchestratorError) {
       console.error('Orchestrator error, falling back to basic analysis:', orchestratorError);
-      const analysisResult = await generateEnhancedAnalysis(deal, fund?.investment_strategies?.[0]);
+      analysisResult = await generateEnhancedAnalysis(deal, fund?.investment_strategies?.[0]);
     } else {
       // Use orchestrator results
-      const analysisResult = orchestratorResult.analysis;
+      analysisResult = orchestratorResult.analysis;
     }
 
     // Store analysis in deal_analyses table

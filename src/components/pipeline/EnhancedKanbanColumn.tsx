@@ -27,17 +27,17 @@ export const EnhancedKanbanColumn: React.FC<EnhancedKanbanColumnProps> = ({
   viewDensity
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState(stage.title);
+  const [editTitle, setEditTitle] = useState(stage.name);
 
   const handleSaveEdit = () => {
-    if (editTitle.trim() && editTitle !== stage.title) {
+    if (editTitle.trim() && editTitle !== stage.name) {
       onStageEdit?.(stage.id, editTitle.trim());
     }
     setIsEditing(false);
   };
 
   const handleCancelEdit = () => {
-    setEditTitle(stage.title);
+    setEditTitle(stage.name);
     setIsEditing(false);
   };
 
@@ -92,7 +92,7 @@ export const EnhancedKanbanColumn: React.FC<EnhancedKanbanColumnProps> = ({
                 style={{ backgroundColor: stage.color }}
               />
               <h3 className="font-semibold text-gray-900 truncate">
-                {stage.title}
+                {stage.name}
               </h3>
               
               <DropdownMenu>

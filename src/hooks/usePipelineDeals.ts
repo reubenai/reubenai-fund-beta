@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
 import { useActivityTracking } from './useActivityTracking';
+import { usePipelineStages } from './usePipelineStages';
 
 export type Deal = Database['public']['Tables']['deals']['Row'] & {
   notes_count?: number;
@@ -10,30 +11,23 @@ export type Deal = Database['public']['Tables']['deals']['Row'] & {
 
 export interface PipelineStage {
   id: string;
-  title: string;
+  name: string;
   color: string;
   position: number;
-  isCustom?: boolean;
+  is_default?: boolean;
   description?: string;
+  fund_id: string;
+  created_at: string;
+  updated_at: string;
 }
-
-const defaultStages: PipelineStage[] = [
-  { id: 'sourced', title: 'Sourced', color: '#6B7280', position: 0 },
-  { id: 'screening', title: 'Screening', color: '#F59E0B', position: 1 },
-  { id: 'due_diligence', title: 'Due Diligence', color: '#3B82F6', position: 2 },
-  { id: 'investment_committee', title: 'Investment Committee', color: '#8B5CF6', position: 3 },
-  { id: 'approved', title: 'Approved', color: '#10B981', position: 4 },
-  { id: 'invested', title: 'Invested', color: '#059669', position: 5 },
-  { id: 'rejected', title: 'Rejected', color: '#EF4444', position: 6 }
-];
 
 export const usePipelineDeals = (fundId?: string) => {
   const [deals, setDeals] = useState<Record<string, Deal[]>>({});
-  const [stages, setStages] = useState<PipelineStage[]>(defaultStages);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
   const { logDealStageChanged, logDealCreated } = useActivityTracking();
+  const { stages } = usePipelineStages(fundId);
 
   const fetchDeals = useCallback(async () => {
     if (!fundId) return;
@@ -56,7 +50,8 @@ export const usePipelineDeals = (fundId?: string) => {
       // Group deals by stage and add computed fields
       const groupedDeals: Record<string, Deal[]> = {};
       stages.forEach(stage => {
-        groupedDeals[stage.id] = [];
+        const stageKey = stage.name.toLowerCase().replace(/\s+/g, '_');
+        groupedDeals[stageKey] = [];
       });
 
       dealsWithNotes?.forEach(dealData => {
@@ -91,8 +86,8 @@ export const usePipelineDeals = (fundId?: string) => {
     try {
       // Get deal info for activity logging
       const deal = deals[fromStage]?.find(d => d.id === dealId);
-      const fromStageName = stages.find(s => s.id === fromStage)?.title || fromStage;
-      const toStageName = stages.find(s => s.id === toStage)?.title || toStage;
+      const fromStageName = stages.find(s => s.name.toLowerCase().replace(/\s+/g, '_') === fromStage)?.name || fromStage;
+      const toStageName = stages.find(s => s.name.toLowerCase().replace(/\s+/g, '_') === toStage)?.name || toStage;
 
       // Optimistic update
       setDeals(prev => {
