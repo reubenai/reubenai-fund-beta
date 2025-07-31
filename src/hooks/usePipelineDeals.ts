@@ -11,6 +11,7 @@ export interface PipelineStage {
   color: string;
   position: number;
   isCustom?: boolean;
+  description?: string;
 }
 
 const defaultStages: PipelineStage[] = [

@@ -23,24 +23,41 @@ const Index = () => {
   }, [user]);
 
   const fetchUserData = async () => {
+    console.log('=== FETCHING USER DATA ===');
+    console.log('User ID:', user?.id);
+    console.log('User object:', user);
+    
     // Fetch user profile
-    const { data: profileData } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('user_id', user?.id)
       .single();
     
+    console.log('=== PROFILE FETCH RESULT ===');
+    console.log('Profile data:', profileData);
+    console.log('Profile error:', profileError);
+    
     setProfile(profileData);
+    console.log('Profile set in state:', profileData);
 
     // Fetch user's funds
     if (profileData?.organization_id) {
-      const { data: fundsData } = await supabase
+      console.log('=== FETCHING FUNDS ===');
+      console.log('Organization ID:', profileData.organization_id);
+      
+      const { data: fundsData, error: fundsError } = await supabase
         .from('funds')
         .select('*')
         .eq('organization_id', profileData.organization_id)
         .eq('is_active', true);
       
+      console.log('=== FUNDS FETCH RESULT ===');
+      console.log('Funds data:', fundsData);
+      console.log('Funds error:', fundsError);
+      
       setFunds(fundsData || []);
+      console.log('Funds set in state:', fundsData);
       
       // Calculate stats
       setStats({

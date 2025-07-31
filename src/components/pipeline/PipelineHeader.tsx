@@ -18,8 +18,13 @@ interface PipelineHeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onAddDeal: () => void;
+  onBatchUpload?: () => void;
   currentView: 'kanban' | 'list' | 'table' | 'funnel';
   onViewChange: (view: 'kanban' | 'list' | 'table' | 'funnel') => void;
+  viewDensity?: 'compact' | 'comfortable' | 'detailed';
+  onDensityChange?: (density: 'compact' | 'comfortable' | 'detailed') => void;
+  showFilters?: boolean;
+  onToggleFilters?: () => void;
   totalDeals: number;
 }
 
@@ -34,8 +39,13 @@ export const PipelineHeader: React.FC<PipelineHeaderProps> = ({
   searchQuery,
   onSearchChange,
   onAddDeal,
+  onBatchUpload,
   currentView,
   onViewChange,
+  viewDensity = 'comfortable',
+  onDensityChange,
+  showFilters = false,
+  onToggleFilters,
   totalDeals
 }) => {
   return (
@@ -54,7 +64,7 @@ export const PipelineHeader: React.FC<PipelineHeaderProps> = ({
             {totalDeals} deals
           </Badge>
           
-          <Button onClick={onAddDeal} className="bg-brand-emerald hover:bg-brand-emerald-dark">
+          <Button onClick={onAddDeal} className="bg-emerald-600 hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-2" />
             Add Deal
           </Button>
@@ -86,7 +96,7 @@ export const PipelineHeader: React.FC<PipelineHeaderProps> = ({
                 onClick={() => onViewChange(view as any)}
                 className={`h-8 px-3 ${
                   currentView === view 
-                    ? 'bg-brand-emerald text-white' 
+                    ? 'bg-emerald-600 text-white' 
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
