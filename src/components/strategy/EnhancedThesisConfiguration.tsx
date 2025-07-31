@@ -29,12 +29,14 @@ interface EnhancedThesisConfigurationProps {
   strategy: EnhancedStrategy;
   onSave: () => void;
   onCancel: () => void;
+  onLaunchWizard?: () => void;
 }
 
 export function EnhancedThesisConfiguration({ 
   strategy, 
   onSave, 
-  onCancel 
+  onCancel,
+  onLaunchWizard
 }: EnhancedThesisConfigurationProps) {
   const [editedStrategy, setEditedStrategy] = useState<Partial<EnhancedStrategy>>(strategy);
   const [criteria, setCriteria] = useState<InvestmentCriteria[]>(DEFAULT_INVESTMENT_CRITERIA);
@@ -71,35 +73,40 @@ export function EnhancedThesisConfiguration({
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-200 pb-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-emerald-100 rounded-lg">
-            <Settings className="h-5 w-5 text-emerald-600" />
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Brain className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Advanced Strategy Configuration</h2>
-            <p className="text-gray-600">Detailed customization of your investment strategy</p>
+            <h2 className="text-xl font-bold text-gray-900">Investment Strategy Configuration</h2>
+            <p className="text-gray-600">Configure your investment criteria and strategy parameters</p>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onCancel}>
-            <X className="h-4 w-4 mr-2" />
-            Cancel
-          </Button>
+          {onLaunchWizard && (
+            <Button 
+              variant="outline" 
+              onClick={onLaunchWizard}
+              className="gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Quick Setup Wizard
+            </Button>
+          )}
           <Button 
             onClick={handleSave}
             disabled={loading}
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-emerald-600 hover:bg-emerald-700 gap-2"
           >
-            <Save className="h-4 w-4 mr-2" />
-            {loading ? 'Saving...' : 'Save Changes'}
+            <Save className="h-4 w-4" />
+            {loading ? 'Saving...' : 'Save Strategy'}
           </Button>
         </div>
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="overview">Strategy Overview</TabsTrigger>
           <TabsTrigger value="criteria">Investment Criteria</TabsTrigger>
-          <TabsTrigger value="parameters">Configuration</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
@@ -324,23 +331,6 @@ export function EnhancedThesisConfiguration({
             onUpdateTargetParameters={handleTargetParametersUpdate}
             isSaving={loading}
           />
-        </TabsContent>
-
-        <TabsContent value="parameters" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5 text-emerald-600" />
-                Advanced Configuration
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Advanced configuration options will be available here, including AI integration settings, 
-                scoring algorithms, and automated workflows.
-              </p>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
