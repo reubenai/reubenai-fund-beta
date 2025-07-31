@@ -38,35 +38,65 @@ const NewHomePage = () => {
 
   const fetchUserData = async () => {
     try {
-      console.log('Fetching user data for:', user?.id);
+      console.log('=== FETCHING USER DATA ===');
+      console.log('User ID:', user?.id);
+      console.log('User object:', user);
       
-      // Fetch user profile
+      if (!user?.id) {
+        console.log('No user ID available, skipping fetch');
+        return;
+      }
+      
+      // Fetch user profile with better error handling
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user?.id)
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
       
+      console.log('=== PROFILE FETCH RESULT ===');
       console.log('Profile data:', profileData);
       console.log('Profile error:', profileError);
       
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        return;
+      }
+      
+      if (!profileData) {
+        console.log('No profile found for user');
+        return;
+      }
+      
       setProfile(profileData);
+      console.log('Profile set in state:', profileData);
 
-      // Fetch user's funds
-      if (profileData?.organization_id) {
+      // Fetch user's funds if they have an organization
+      if (profileData.organization_id) {
+        console.log('=== FETCHING FUNDS ===');
+        console.log('Organization ID:', profileData.organization_id);
+        
         const { data: fundsData, error: fundsError } = await supabase
           .from('funds')
           .select('*')
           .eq('organization_id', profileData.organization_id)
           .eq('is_active', true);
         
+        console.log('=== FUNDS FETCH RESULT ===');
         console.log('Funds data:', fundsData);
         console.log('Funds error:', fundsError);
         
-        setFunds(fundsData || []);
+        if (fundsError) {
+          console.error('Funds fetch error:', fundsError);
+        } else {
+          setFunds(fundsData || []);
+          console.log('Funds set in state:', fundsData);
+        }
+      } else {
+        console.log('No organization ID, skipping funds fetch');
       }
     } catch (error) {
-      console.error('Error in fetchUserData:', error);
+      console.error('=== FATAL ERROR in fetchUserData ===', error);
     }
   };
 
