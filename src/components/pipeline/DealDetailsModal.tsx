@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { 
   Dialog, 
@@ -93,7 +93,44 @@ export function DealDetailsModal({
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isGeneratingAnalysis, setIsGeneratingAnalysis] = useState(false);
+  const [analysisData, setAnalysisData] = useState<any>(null);
   const { toast } = useToast();
+
+  // Auto-generate analysis when modal opens
+  useEffect(() => {
+    if (deal && open) {
+      generateAnalysis();
+    }
+  }, [deal?.id, open]);
+
+  const generateAnalysis = async () => {
+    if (!deal || isGeneratingAnalysis) return;
+
+    setIsGeneratingAnalysis(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('enhanced-deal-analysis', {
+        body: { dealId: deal.id }
+      });
+
+      if (error) throw error;
+
+      setAnalysisData(data);
+      toast({
+        title: "Analysis Generated",
+        description: "Enhanced deal analysis has been completed",
+      });
+    } catch (error) {
+      console.error('Error generating analysis:', error);
+      toast({
+        title: "Analysis Error",
+        description: "Failed to generate analysis. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingAnalysis(false);
+    }
+  };
 
   if (!deal) return null;
 
@@ -188,7 +225,7 @@ export function DealDetailsModal({
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="company">Company Details</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="analysis">AI Analysis</TabsTrigger>
+            <TabsTrigger value="analysis">Analysis</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
 
@@ -381,46 +418,240 @@ export function DealDetailsModal({
           </TabsContent>
 
           <TabsContent value="analysis" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5" />
-                  AI Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {deal.overall_score && (
-                  <div>
-                    <h4 className="font-medium mb-2">Overall AI Score</h4>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${getScoreColor(deal.overall_score)}`} />
-                      <span className="font-semibold">{deal.overall_score}/100</span>
-                    </div>
-                  </div>
-                )}
+            {isGeneratingAnalysis ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="h-5 w-5 animate-spin" />
+                    Generating Analysis...
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">AI is analyzing this deal opportunity...</p>
+                </CardContent>
+              </Card>
+            ) : analysisData ? (
+              <div className="space-y-6">
+                {/* Executive Summary */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5" />
+                      Executive Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm leading-relaxed">{analysisData.executive_summary}</p>
+                  </CardContent>
+                </Card>
 
-                {deal.rag_reasoning && (
-                  <div>
-                    <h4 className="font-medium mb-2">AI Reasoning</h4>
-                    <div className="bg-muted p-3 rounded-lg">
-                      <pre className="text-sm whitespace-pre-wrap">
-                        {typeof deal.rag_reasoning === 'string' 
-                          ? deal.rag_reasoning 
-                          : JSON.stringify(deal.rag_reasoning, null, 2)
-                        }
-                      </pre>
-                    </div>
-                  </div>
-                )}
+                {/* Analysis Categories */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Investment Thesis Alignment */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center justify-between">
+                        Investment Thesis Alignment
+                        <Badge className={`${getScoreColor(analysisData.investment_thesis_alignment.score)} text-white`}>
+                          {analysisData.investment_thesis_alignment.score}/100
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <p className="text-sm text-muted-foreground">{analysisData.investment_thesis_alignment.analysis}</p>
+                      {analysisData.investment_thesis_alignment.key_points?.length > 0 && (
+                        <div>
+                          <h5 className="text-sm font-medium mb-1">Key Points:</h5>
+                          <ul className="text-sm text-muted-foreground space-y-1">
+                            {analysisData.investment_thesis_alignment.key_points.map((point: string, i: number) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="text-primary">•</span>
+                                <span>{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
 
-                {deal.rag_confidence && (
-                  <div>
-                    <h4 className="font-medium mb-2">Analysis Confidence</h4>
-                    <Badge variant="outline">{deal.rag_confidence}%</Badge>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  {/* Market Attractiveness */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center justify-between">
+                        Market Attractiveness
+                        <Badge className={`${getScoreColor(analysisData.market_attractiveness.score)} text-white`}>
+                          {analysisData.market_attractiveness.score}/100
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <p className="text-sm text-muted-foreground">{analysisData.market_attractiveness.analysis}</p>
+                      <div className="space-y-2 text-sm">
+                        <div><span className="font-medium">Market Size:</span> {analysisData.market_attractiveness.market_size}</div>
+                        <div><span className="font-medium">Growth:</span> {analysisData.market_attractiveness.growth_potential}</div>
+                        <div><span className="font-medium">Competition:</span> {analysisData.market_attractiveness.competitive_landscape}</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Product Strength & IP */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center justify-between">
+                        Product Strength & IP
+                        <Badge className={`${getScoreColor(analysisData.product_strength_ip.score)} text-white`}>
+                          {analysisData.product_strength_ip.score}/100
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <p className="text-sm text-muted-foreground">{analysisData.product_strength_ip.analysis}</p>
+                      {analysisData.product_strength_ip.competitive_advantages?.length > 0 && (
+                        <div>
+                          <h5 className="text-sm font-medium mb-1">Competitive Advantages:</h5>
+                          <ul className="text-sm text-muted-foreground space-y-1">
+                            {analysisData.product_strength_ip.competitive_advantages.map((adv: string, i: number) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="text-primary">•</span>
+                                <span>{adv}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <div className="space-y-1 text-sm">
+                        <div><span className="font-medium">IP Assessment:</span> {analysisData.product_strength_ip.ip_assessment}</div>
+                        <div><span className="font-medium">Technology Moat:</span> {analysisData.product_strength_ip.technology_moat}</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Financial Feasibility */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center justify-between">
+                        Financial Feasibility
+                        <Badge className={`${getScoreColor(analysisData.financial_feasibility.score)} text-white`}>
+                          {analysisData.financial_feasibility.score}/100
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <p className="text-sm text-muted-foreground">{analysisData.financial_feasibility.analysis}</p>
+                      <div className="space-y-2 text-sm">
+                        <div><span className="font-medium">Revenue Model:</span> {analysisData.financial_feasibility.revenue_model}</div>
+                        <div><span className="font-medium">Unit Economics:</span> {analysisData.financial_feasibility.unit_economics}</div>
+                        <div><span className="font-medium">Funding Needs:</span> {analysisData.financial_feasibility.funding_requirements}</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Founder & Team Strength */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        Founder & Team Strength
+                      </span>
+                      <Badge className={`${getScoreColor(analysisData.founder_team_strength.score)} text-white`}>
+                        {analysisData.founder_team_strength.score}/100
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-muted-foreground">{analysisData.founder_team_strength.analysis}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <h5 className="font-medium mb-1">Experience</h5>
+                        <p className="text-muted-foreground">{analysisData.founder_team_strength.experience_assessment}</p>
+                      </div>
+                      <div>
+                        <h5 className="font-medium mb-1">Team Composition</h5>
+                        <p className="text-muted-foreground">{analysisData.founder_team_strength.team_composition}</p>
+                      </div>
+                      <div>
+                        <h5 className="font-medium mb-1">Execution Capability</h5>
+                        <p className="text-muted-foreground">{analysisData.founder_team_strength.execution_capability}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Recommendation & Risk Factors */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Overall Recommendation</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">{analysisData.overall_recommendation}</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4" />
+                        Risk Factors
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="text-sm text-muted-foreground space-y-1">
+                        {analysisData.risk_factors?.map((risk: string, i: number) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="text-red-500">•</span>
+                            <span>{risk}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Next Steps */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Recommended Next Steps</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      {analysisData.next_steps?.map((step: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-primary">•</span>
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="h-5 w-5" />
+                    Analysis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button onClick={generateAnalysis} disabled={isGeneratingAnalysis}>
+                    {isGeneratingAnalysis ? 'Generating...' : 'Generate Analysis'}
+                  </Button>
+                  {deal.overall_score && (
+                    <div>
+                      <h4 className="font-medium mb-2">Overall AI Score</h4>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${getScoreColor(deal.overall_score)}`} />
+                        <span className="font-semibold">{deal.overall_score}/100</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="activity" className="space-y-6">
@@ -498,8 +729,12 @@ export function DealDetailsModal({
               <Edit className="w-4 h-4 mr-1" />
               Edit Deal
             </Button>
-            <Button size="sm">
-              Run AI Analysis
+            <Button 
+              size="sm" 
+              onClick={generateAnalysis}
+              disabled={isGeneratingAnalysis}
+            >
+              {isGeneratingAnalysis ? 'Generating...' : 'Regenerate Analysis'}
             </Button>
           </div>
         </div>
