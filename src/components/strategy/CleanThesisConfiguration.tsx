@@ -39,6 +39,16 @@ export function CleanThesisConfiguration({
   // Get enhanced criteria or default template
   const enhancedCriteria = strategy.enhanced_criteria || 
     getTemplateByFundType(strategy.fund_type || 'vc');
+  
+  // Enhanced criteria display data from wizard
+  const wizardCriteriaConfig = strategy.enhanced_criteria ? [
+    { name: 'Team & Leadership', weight: strategy.enhanced_criteria.teamLeadershipWeight || 20, enabled: true },
+    { name: 'Market Opportunity', weight: strategy.enhanced_criteria.marketOpportunityWeight || 20, enabled: true },
+    { name: 'Product & Technology', weight: strategy.enhanced_criteria.productTechnologyWeight || 15, enabled: true },
+    { name: 'Business Traction', weight: strategy.enhanced_criteria.businessTractionWeight || 20, enabled: true },
+    { name: 'Financial Health', weight: strategy.enhanced_criteria.financialHealthWeight || 15, enabled: true },
+    { name: 'Strategic Fit', weight: strategy.enhanced_criteria.strategicFitWeight || 10, enabled: true }
+  ] : [];
 
   const handleSave = async () => {
     if (strategy.id) {
@@ -310,19 +320,66 @@ export function CleanThesisConfiguration({
       </div>
       </TabsContent>
 
-      <TabsContent value="criteria">
-        <EnhancedCriteriaEditor
-          criteria={enhancedCriteria}
-          isEditing={criteriaEditing}
-          onEdit={() => setCriteriaEditing(true)}
-          onSave={(criteria) => {
-            updateField('enhanced_criteria', criteria);
-            setCriteriaEditing(false);
-            handleSave();
-          }}
-          onCancel={() => setCriteriaEditing(false)}
-          isSaving={loading}
-        />
+      <TabsContent value="criteria" className="space-y-6">
+        {wizardCriteriaConfig.length > 0 ? (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">Investment Criteria Configuration</h3>
+                <p className="text-muted-foreground">Weights and evaluation criteria configured through the wizard</p>
+              </div>
+              <Button variant="outline" onClick={onLaunchWizard}>
+                <Settings className="h-4 w-4 mr-2" />
+                Reconfigure
+              </Button>
+            </div>
+            
+            <div className="grid gap-4">
+              {wizardCriteriaConfig.map((criterion, index) => (
+                <Card key={index} className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-primary"></div>
+                      <div>
+                        <h4 className="font-medium">{criterion.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Evaluation weight in deal scoring
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="px-3 py-1">
+                      {criterion.weight}%
+                    </Badge>
+                  </div>
+                </Card>
+              ))}
+            </div>
+            
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">Total Weight:</span>
+                <span className={`font-semibold ${
+                  wizardCriteriaConfig.reduce((sum, c) => sum + c.weight, 0) === 100 
+                    ? 'text-success' : 'text-warning'
+                }`}>
+                  {wizardCriteriaConfig.reduce((sum, c) => sum + c.weight, 0)}%
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <Settings className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Investment Criteria Configured</h3>
+            <p className="text-muted-foreground mb-6">
+              Use the strategy wizard to configure your investment criteria and weights
+            </p>
+            <Button onClick={onLaunchWizard}>
+              <Settings className="h-4 w-4 mr-2" />
+              Configure Investment Criteria
+            </Button>
+          </div>
+        )}
       </TabsContent>
     </Tabs>
   );

@@ -14,7 +14,7 @@ import {
   DollarSign,
   BarChart3
 } from 'lucide-react';
-import { StrategyQuickWizard } from './StrategyQuickWizard';
+import { EnhancedStrategyWizard } from './EnhancedStrategyWizard';
 import { CleanThesisConfiguration } from './CleanThesisConfiguration';
 
 interface StrategyConfigurationManagerProps {
@@ -70,13 +70,15 @@ export function StrategyConfigurationManager({ fundId, fundName }: StrategyConfi
   // Show wizard if requested
   if (showWizard) {
     return (
-      <StrategyQuickWizard
-        fundId={fundId}
-        fundName={fundName}
-        onComplete={handleWizardComplete}
-        onCancel={() => setShowWizard(false)}
-        existingStrategy={strategy}
-      />
+      <div className="h-full">
+        <EnhancedStrategyWizard
+          fundId={fundId}
+          fundName={fundName}
+          onComplete={handleWizardComplete}
+          onCancel={() => setShowWizard(false)}
+          existingStrategy={strategy}
+        />
+      </div>
     );
   }
 

@@ -37,9 +37,9 @@ All colors MUST be HSL. Emerald green primary with orange accent.
     /* Status & Feedback */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --warning: 38 92% 50%;
+    --warning: 48 96% 53%;
     --warning-foreground: 48 96% 89%;
-    --success: 158 64% 52%;
+    --success: 160 84% 39%;
     --success-foreground: 0 0% 98%;
     
     /* Interactive Elements */

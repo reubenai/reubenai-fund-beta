@@ -30,6 +30,14 @@ export interface EnhancedWizardData {
   // Enhanced data for AI orchestrator
   investmentPhilosophy?: string;
   
+  // Structured Philosophy Configuration
+  philosophyConfig?: {
+    investmentDrivers: string[];
+    riskTolerance: string;
+    investmentHorizon: string;
+    valueCreationApproach: string[];
+  };
+  
   // Research and Due Diligence Approach
   researchApproach?: {
     dueDiligenceDepth: 'light' | 'standard' | 'deep';
