@@ -55,9 +55,17 @@ export const usePipelineDeals = (fundId?: string) => {
       });
 
       dealsWithNotes?.forEach(dealData => {
-        const stage = dealData.status || 'sourced';
-        if (!groupedDeals[stage]) {
-          groupedDeals[stage] = [];
+        const dealStatus = dealData.status || 'sourced';
+        // Find the matching stage by status
+        const matchingStage = stages.find(stage => 
+          stage.name.toLowerCase().replace(/\s+/g, '_') === dealStatus
+        );
+        const stageKey = matchingStage 
+          ? matchingStage.name.toLowerCase().replace(/\s+/g, '_')
+          : dealStatus;
+        
+        if (!groupedDeals[stageKey]) {
+          groupedDeals[stageKey] = [];
         }
         
         // Add notes count
@@ -66,7 +74,7 @@ export const usePipelineDeals = (fundId?: string) => {
           notes_count: Array.isArray(dealData.deal_notes) ? dealData.deal_notes.length : 0
         };
         
-        groupedDeals[stage].push(deal);
+        groupedDeals[stageKey].push(deal);
       });
 
       setDeals(groupedDeals);
