@@ -92,6 +92,139 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_service_interactions: {
+        Row: {
+          created_at: string | null
+          deal_id: string | null
+          execution_metadata: Json | null
+          fund_id: string
+          id: string
+          input_data: Json | null
+          interaction_type: string
+          memory_context_used: Json | null
+          output_data: Json | null
+          service_name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deal_id?: string | null
+          execution_metadata?: Json | null
+          fund_id: string
+          id?: string
+          input_data?: Json | null
+          interaction_type: string
+          memory_context_used?: Json | null
+          output_data?: Json | null
+          service_name: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deal_id?: string | null
+          execution_metadata?: Json | null
+          fund_id?: string
+          id?: string
+          input_data?: Json | null
+          interaction_type?: string
+          memory_context_used?: Json | null
+          output_data?: Json | null
+          service_name?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_service_interactions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_service_interactions_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_service_performance: {
+        Row: {
+          accuracy_feedback: number | null
+          confidence_score: number | null
+          created_at: string | null
+          deal_id: string | null
+          execution_date: string | null
+          fund_id: string
+          id: string
+          input_context: Json | null
+          memory_entry_id: string | null
+          outcome_correlation: number | null
+          output_result: Json | null
+          processing_time_ms: number | null
+          service_name: string
+          service_version: string | null
+          user_rating: number | null
+        }
+        Insert: {
+          accuracy_feedback?: number | null
+          confidence_score?: number | null
+          created_at?: string | null
+          deal_id?: string | null
+          execution_date?: string | null
+          fund_id: string
+          id?: string
+          input_context?: Json | null
+          memory_entry_id?: string | null
+          outcome_correlation?: number | null
+          output_result?: Json | null
+          processing_time_ms?: number | null
+          service_name: string
+          service_version?: string | null
+          user_rating?: number | null
+        }
+        Update: {
+          accuracy_feedback?: number | null
+          confidence_score?: number | null
+          created_at?: string | null
+          deal_id?: string | null
+          execution_date?: string | null
+          fund_id?: string
+          id?: string
+          input_context?: Json | null
+          memory_entry_id?: string | null
+          outcome_correlation?: number | null
+          output_result?: Json | null
+          processing_time_ms?: number | null
+          service_name?: string
+          service_version?: string | null
+          user_rating?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_service_performance_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_service_performance_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_service_performance_memory_entry_id_fkey"
+            columns: ["memory_entry_id"]
+            isOneToOne: false
+            referencedRelation: "fund_memory_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_analyses: {
         Row: {
           analysis_version: number | null
@@ -450,6 +583,153 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "deals_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      decision_contexts: {
+        Row: {
+          ai_recommendations: Json | null
+          created_at: string | null
+          deal_id: string | null
+          decision_maker: string | null
+          decision_outcome: string | null
+          decision_rationale: string | null
+          decision_type: string
+          dissenting_opinions: Json | null
+          follow_up_date: string | null
+          follow_up_required: boolean | null
+          fund_id: string
+          id: string
+          supporting_evidence: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_recommendations?: Json | null
+          created_at?: string | null
+          deal_id?: string | null
+          decision_maker?: string | null
+          decision_outcome?: string | null
+          decision_rationale?: string | null
+          decision_type: string
+          dissenting_opinions?: Json | null
+          follow_up_date?: string | null
+          follow_up_required?: boolean | null
+          fund_id: string
+          id?: string
+          supporting_evidence?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_recommendations?: Json | null
+          created_at?: string | null
+          deal_id?: string | null
+          decision_maker?: string | null
+          decision_outcome?: string | null
+          decision_rationale?: string | null
+          decision_type?: string
+          dissenting_opinions?: Json | null
+          follow_up_date?: string | null
+          follow_up_required?: boolean | null
+          fund_id?: string
+          id?: string
+          supporting_evidence?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_contexts_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decision_contexts_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fund_memory_entries: {
+        Row: {
+          ai_service_name: string | null
+          confidence_score: number | null
+          contextual_tags: string[] | null
+          correlation_score: number | null
+          created_at: string | null
+          created_by: string
+          deal_id: string | null
+          description: string | null
+          expires_at: string | null
+          fund_id: string
+          ic_meeting_id: string | null
+          id: string
+          importance_level: string | null
+          is_active: boolean | null
+          memory_content: Json
+          memory_type: string
+          retention_period: unknown | null
+          title: string
+          validation_status: string | null
+        }
+        Insert: {
+          ai_service_name?: string | null
+          confidence_score?: number | null
+          contextual_tags?: string[] | null
+          correlation_score?: number | null
+          created_at?: string | null
+          created_by: string
+          deal_id?: string | null
+          description?: string | null
+          expires_at?: string | null
+          fund_id: string
+          ic_meeting_id?: string | null
+          id?: string
+          importance_level?: string | null
+          is_active?: boolean | null
+          memory_content?: Json
+          memory_type: string
+          retention_period?: unknown | null
+          title: string
+          validation_status?: string | null
+        }
+        Update: {
+          ai_service_name?: string | null
+          confidence_score?: number | null
+          contextual_tags?: string[] | null
+          correlation_score?: number | null
+          created_at?: string | null
+          created_by?: string
+          deal_id?: string | null
+          description?: string | null
+          expires_at?: string | null
+          fund_id?: string
+          ic_meeting_id?: string | null
+          id?: string
+          importance_level?: string | null
+          is_active?: boolean | null
+          memory_content?: Json
+          memory_type?: string
+          retention_period?: unknown | null
+          title?: string
+          validation_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fund_memory_entries_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fund_memory_entries_fund_id_fkey"
             columns: ["fund_id"]
             isOneToOne: false
             referencedRelation: "funds"
@@ -929,6 +1209,78 @@ export type Database = {
         }
         Relationships: []
       }
+      investment_outcomes: {
+        Row: {
+          actual_outcome: string | null
+          ai_accuracy_assessment: Json | null
+          ai_services_used: string[] | null
+          correlation_factors: Json | null
+          created_by: string
+          deal_id: string
+          fund_id: string
+          id: string
+          initial_analysis_score: number | null
+          initial_confidence_levels: Json | null
+          initial_recommendation: string | null
+          lessons_learned: string | null
+          outcome_date: string | null
+          outcome_metrics: Json | null
+          pattern_insights: Json | null
+          recorded_at: string | null
+        }
+        Insert: {
+          actual_outcome?: string | null
+          ai_accuracy_assessment?: Json | null
+          ai_services_used?: string[] | null
+          correlation_factors?: Json | null
+          created_by: string
+          deal_id: string
+          fund_id: string
+          id?: string
+          initial_analysis_score?: number | null
+          initial_confidence_levels?: Json | null
+          initial_recommendation?: string | null
+          lessons_learned?: string | null
+          outcome_date?: string | null
+          outcome_metrics?: Json | null
+          pattern_insights?: Json | null
+          recorded_at?: string | null
+        }
+        Update: {
+          actual_outcome?: string | null
+          ai_accuracy_assessment?: Json | null
+          ai_services_used?: string[] | null
+          correlation_factors?: Json | null
+          created_by?: string
+          deal_id?: string
+          fund_id?: string
+          id?: string
+          initial_analysis_score?: number | null
+          initial_confidence_levels?: Json | null
+          initial_recommendation?: string | null
+          lessons_learned?: string | null
+          outcome_date?: string | null
+          outcome_metrics?: Json | null
+          pattern_insights?: Json | null
+          recorded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_outcomes_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investment_outcomes_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       investment_strategies: {
         Row: {
           created_at: string
@@ -985,7 +1337,7 @@ export type Database = {
           {
             foreignKeyName: "investment_strategies_fund_id_fkey"
             columns: ["fund_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "funds"
             referencedColumns: ["id"]
           },
@@ -1014,6 +1366,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pattern_insights: {
+        Row: {
+          actionable_insights: string | null
+          confidence_level: number | null
+          discovered_at: string | null
+          fund_id: string
+          id: string
+          is_active: boolean | null
+          pattern_data: Json | null
+          pattern_description: string
+          pattern_type: string
+          recommended_actions: Json | null
+          statistical_significance: number | null
+          supporting_deals: string[] | null
+          validated_at: string | null
+        }
+        Insert: {
+          actionable_insights?: string | null
+          confidence_level?: number | null
+          discovered_at?: string | null
+          fund_id: string
+          id?: string
+          is_active?: boolean | null
+          pattern_data?: Json | null
+          pattern_description: string
+          pattern_type: string
+          recommended_actions?: Json | null
+          statistical_significance?: number | null
+          supporting_deals?: string[] | null
+          validated_at?: string | null
+        }
+        Update: {
+          actionable_insights?: string | null
+          confidence_level?: number | null
+          discovered_at?: string | null
+          fund_id?: string
+          id?: string
+          is_active?: boolean | null
+          pattern_data?: Json | null
+          pattern_description?: string
+          pattern_type?: string
+          recommended_actions?: Json | null
+          statistical_significance?: number | null
+          supporting_deals?: string[] | null
+          validated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pattern_insights_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pipeline_stages: {
         Row: {
