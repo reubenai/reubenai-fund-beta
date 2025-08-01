@@ -360,15 +360,15 @@ export function EnhancedStrategyWizard({
   const progress = ((currentStep + 1) / WIZARD_STEPS.length) * 100;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 p-6">
+    <div className="max-w-4xl mx-auto space-y-6 p-4">
       {/* Clean Header */}
-      <div className="text-center space-y-4">
-        <div className="w-16 h-16 mx-auto bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center">
-          <StepIcon className="h-8 w-8 text-primary-foreground" />
+      <div className="text-center space-y-3">
+        <div className="w-12 h-12 mx-auto bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center">
+          <StepIcon className="h-6 w-6 text-primary-foreground" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Strategy Configuration</h1>
-          <p className="text-muted-foreground mt-1">{step.title} • Step {currentStep + 1} of {WIZARD_STEPS.length}</p>
+          <h1 className="text-2xl font-bold text-foreground">Strategy Configuration</h1>
+          <p className="text-muted-foreground text-sm">{step.title} • Step {currentStep + 1} of {WIZARD_STEPS.length}</p>
         </div>
       </div>
 

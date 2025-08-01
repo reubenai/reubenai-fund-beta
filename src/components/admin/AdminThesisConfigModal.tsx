@@ -28,15 +28,16 @@ export function AdminThesisConfigModal({ fund, open, onOpenChange }: AdminThesis
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="max-w-6xl max-h-[95vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Configure Investment Strategy - {fund.name}</DialogTitle>
         </DialogHeader>
-        <div className="overflow-y-auto flex-1">
+        <div className="flex-1 overflow-y-auto min-h-0">
           <InvestmentStrategyManager
             fundId={fund.id}
             fundName={fund.name}
             fundType={fund.fund_type}
+            isModal={true}
           />
         </div>
       </DialogContent>

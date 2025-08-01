@@ -6,9 +6,19 @@ interface InvestmentStrategyManagerProps {
   fundId: string;
   fundName: string;
   fundType: 'vc' | 'pe';
+  isModal?: boolean;
 }
 
-export function InvestmentStrategyManager({ fundId, fundName, fundType }: InvestmentStrategyManagerProps) {
+export function InvestmentStrategyManager({ fundId, fundName, fundType, isModal = false }: InvestmentStrategyManagerProps) {
+  if (isModal) {
+    // Simplified layout for modal context
+    return (
+      <div className="space-y-4">
+        <StrategyConfigurationManager fundId={fundId} fundName={fundName} fundType={fundType} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Clean header */}
