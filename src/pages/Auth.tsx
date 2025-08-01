@@ -46,8 +46,7 @@ export default function Auth() {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4"
-         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+    <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-elegant">
         <CardHeader className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 bg-primary rounded-xl flex items-center justify-center">
