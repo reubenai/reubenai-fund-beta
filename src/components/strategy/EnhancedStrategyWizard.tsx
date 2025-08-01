@@ -21,6 +21,10 @@ import { useUnifiedStrategy } from '@/hooks/useUnifiedStrategy';
 import { EnhancedWizardData, EnhancedStrategy } from '@/services/unifiedStrategyService';
 import { DEFAULT_INVESTMENT_CRITERIA, InvestmentCriteria, validateCriteriaWeights } from '@/types/investment-criteria';
 import { SECTOR_OPTIONS, STAGE_OPTIONS } from '@/types/enhanced-strategy';
+import { VC_CRITERIA_TEMPLATE, PE_CRITERIA_TEMPLATE, EnhancedCriteriaCategory, EnhancedSubcategory, getTemplateByFundType } from '@/types/vc-pe-criteria';
+import { Switch } from '@/components/ui/switch';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface EnhancedStrategyWizardProps {
@@ -31,44 +35,61 @@ interface EnhancedStrategyWizardProps {
   existingStrategy?: EnhancedStrategy | null;
 }
 
-// Geographic regions with hierarchical structure
+// Comprehensive Geographic regions with startup ecosystem intelligence
 const GEOGRAPHIC_REGIONS = {
   'North America': {
-    countries: ['United States', 'Canada', 'Mexico'],
+    countries: ['United States', 'Canada', 'Mexico', 'Costa Rica'],
+    ecosystems: ['Silicon Valley', 'New York', 'Toronto', 'Austin', 'Seattle', 'Boston', 'Vancouver', 'Montreal'],
     jurisdictions: {
-      'United States': ['California', 'New York', 'Texas', 'Florida', 'Massachusetts', 'Washington'],
-      'Canada': ['Ontario', 'British Columbia', 'Quebec', 'Alberta'],
-      'Mexico': ['Mexico City', 'Guadalajara', 'Monterrey']
+      'United States': ['California', 'New York', 'Texas', 'Florida', 'Massachusetts', 'Washington', 'Illinois', 'Colorado', 'Georgia', 'North Carolina'],
+      'Canada': ['Ontario', 'British Columbia', 'Quebec', 'Alberta', 'Nova Scotia'],
+      'Mexico': ['Mexico City', 'Guadalajara', 'Monterrey', 'Tijuana'],
+      'Costa Rica': ['San José', 'Cartago']
     }
   },
   'Europe': {
-    countries: ['United Kingdom', 'Germany', 'France', 'Netherlands', 'Sweden', 'Switzerland', 'Spain', 'Italy'],
+    countries: ['United Kingdom', 'Germany', 'France', 'Netherlands', 'Sweden', 'Switzerland', 'Spain', 'Italy', 'Denmark', 'Norway', 'Finland', 'Estonia', 'Latvia', 'Lithuania', 'Poland', 'Czech Republic', 'Austria', 'Belgium', 'Ireland', 'Portugal', 'Greece', 'Romania', 'Bulgaria', 'Hungary', 'Slovenia', 'Slovakia', 'Croatia', 'Luxembourg', 'Malta', 'Cyprus'],
+    ecosystems: ['London', 'Berlin', 'Paris', 'Amsterdam', 'Stockholm', 'Zurich', 'Barcelona', 'Madrid', 'Milan', 'Copenhagen', 'Oslo', 'Helsinki', 'Tallinn', 'Warsaw', 'Prague', 'Vienna', 'Brussels', 'Dublin', 'Lisbon'],
     jurisdictions: {
-      'United Kingdom': ['England', 'Scotland', 'Wales'],
-      'Germany': ['Bavaria', 'Berlin', 'Baden-Württemberg'],
-      'France': ['Île-de-France', 'Provence-Alpes-Côte d\'Azur']
+      'United Kingdom': ['England', 'Scotland', 'Wales', 'Northern Ireland'],
+      'Germany': ['Bavaria', 'Berlin', 'Baden-Württemberg', 'North Rhine-Westphalia', 'Hamburg', 'Hesse'],
+      'France': ['Île-de-France', 'Provence-Alpes-Côte d\'Azur', 'Auvergne-Rhône-Alpes', 'Nouvelle-Aquitaine'],
+      'Netherlands': ['North Holland', 'South Holland', 'Utrecht', 'North Brabant'],
+      'Sweden': ['Stockholm', 'Gothenburg', 'Malmö'],
+      'Switzerland': ['Zurich', 'Geneva', 'Basel', 'Bern']
     }
   },
   'Asia Pacific': {
-    countries: ['Singapore', 'Australia', 'Japan', 'South Korea', 'China', 'India', 'Hong Kong'],
+    countries: ['Singapore', 'Australia', 'Japan', 'South Korea', 'China', 'India', 'Hong Kong', 'Taiwan', 'Thailand', 'Malaysia', 'Indonesia', 'Vietnam', 'Philippines', 'New Zealand', 'Bangladesh', 'Sri Lanka', 'Cambodia', 'Laos', 'Myanmar'],
+    ecosystems: ['Singapore', 'Sydney', 'Melbourne', 'Tokyo', 'Seoul', 'Beijing', 'Shanghai', 'Shenzhen', 'Bangalore', 'Mumbai', 'Delhi', 'Hong Kong', 'Taipei', 'Bangkok', 'Kuala Lumpur', 'Jakarta', 'Ho Chi Minh City', 'Manila', 'Auckland'],
     jurisdictions: {
-      'Australia': ['New South Wales', 'Victoria', 'Queensland'],
-      'China': ['Beijing', 'Shanghai', 'Shenzhen'],
-      'India': ['Karnataka', 'Maharashtra', 'Delhi']
+      'Australia': ['New South Wales', 'Victoria', 'Queensland', 'Western Australia', 'South Australia'],
+      'China': ['Beijing', 'Shanghai', 'Shenzhen', 'Guangzhou', 'Hangzhou', 'Chengdu', 'Nanjing'],
+      'India': ['Karnataka', 'Maharashtra', 'Delhi', 'Tamil Nadu', 'Telangana', 'Gujarat', 'West Bengal'],
+      'Japan': ['Tokyo', 'Osaka', 'Kyoto', 'Fukuoka'],
+      'South Korea': ['Seoul', 'Busan', 'Incheon']
     }
   },
   'Latin America': {
-    countries: ['Brazil', 'Argentina', 'Chile', 'Colombia', 'Peru'],
+    countries: ['Brazil', 'Argentina', 'Chile', 'Colombia', 'Peru', 'Mexico', 'Uruguay', 'Ecuador', 'Bolivia', 'Paraguay', 'Venezuela', 'Guatemala', 'Honduras', 'El Salvador', 'Nicaragua', 'Panama', 'Dominican Republic', 'Cuba', 'Haiti', 'Jamaica', 'Trinidad and Tobago', 'Barbados'],
+    ecosystems: ['São Paulo', 'Rio de Janeiro', 'Buenos Aires', 'Santiago', 'Bogotá', 'Lima', 'Mexico City', 'Montevideo', 'Medellín', 'Guadalajara'],
     jurisdictions: {
-      'Brazil': ['São Paulo', 'Rio de Janeiro', 'Minas Gerais'],
-      'Argentina': ['Buenos Aires', 'Córdoba']
+      'Brazil': ['São Paulo', 'Rio de Janeiro', 'Minas Gerais', 'Rio Grande do Sul', 'Paraná', 'Santa Catarina'],
+      'Argentina': ['Buenos Aires', 'Córdoba', 'Santa Fe', 'Mendoza'],
+      'Chile': ['Santiago', 'Valparaíso', 'Concepción'],
+      'Colombia': ['Bogotá', 'Medellín', 'Cali', 'Barranquilla']
     }
   },
   'Middle East & Africa': {
-    countries: ['Israel', 'UAE', 'South Africa', 'Kenya', 'Nigeria'],
+    countries: ['Israel', 'UAE', 'South Africa', 'Kenya', 'Nigeria', 'Egypt', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Bahrain', 'Oman', 'Jordan', 'Lebanon', 'Morocco', 'Tunisia', 'Algeria', 'Ghana', 'Ethiopia', 'Uganda', 'Tanzania', 'Rwanda', 'Botswana', 'Zambia', 'Zimbabwe', 'Namibia', 'Mauritius', 'Senegal', 'Ivory Coast', 'Cameroon', 'Angola', 'Mozambique'],
+    ecosystems: ['Tel Aviv', 'Dubai', 'Abu Dhabi', 'Cape Town', 'Johannesburg', 'Nairobi', 'Lagos', 'Cairo', 'Riyadh', 'Doha', 'Kuwait City', 'Casablanca', 'Tunis', 'Accra', 'Addis Ababa', 'Kampala', 'Dar es Salaam', 'Kigali'],
     jurisdictions: {
-      'UAE': ['Dubai', 'Abu Dhabi'],
-      'South Africa': ['Western Cape', 'Gauteng']
+      'UAE': ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman'],
+      'South Africa': ['Western Cape', 'Gauteng', 'KwaZulu-Natal', 'Eastern Cape'],
+      'Israel': ['Tel Aviv', 'Jerusalem', 'Haifa', 'Beer Sheva'],
+      'Saudi Arabia': ['Riyadh', 'Jeddah', 'Dammam', 'Mecca'],
+      'Nigeria': ['Lagos', 'Abuja', 'Kano', 'Port Harcourt'],
+      'Kenya': ['Nairobi', 'Mombasa', 'Kisumu']
     }
   }
 };
@@ -117,18 +138,26 @@ export function EnhancedStrategyWizard({
 }: EnhancedStrategyWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
-  const [criteria, setCriteria] = useState<InvestmentCriteria[]>(DEFAULT_INVESTMENT_CRITERIA);
+  const [enhancedCriteria, setEnhancedCriteria] = useState<EnhancedCriteriaCategory[]>(VC_CRITERIA_TEMPLATE.categories);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [wizardData, setWizardData] = useState<Partial<EnhancedWizardData>>({
     fundName: fundName,
-    fundType: 'vc',
-    strategyDescription: '',
+    fundType: existingStrategy?.fund_type || 'vc',
+    strategyDescription: existingStrategy?.strategy_notes || '',
     investmentPhilosophy: '',
-    sectors: [],
+    sectors: existingStrategy?.industries || [],
     stages: [],
-    geographies: [],
-    checkSizeRange: { min: 500000, max: 5000000 },
-    keySignals: [],
-    dealThresholds: { exciting: 85, promising: 70, needs_development: 50 },
+    geographies: existingStrategy?.geography || [],
+    checkSizeRange: { 
+      min: existingStrategy?.min_investment_amount || 500000, 
+      max: existingStrategy?.max_investment_amount || 5000000 
+    },
+    keySignals: existingStrategy?.key_signals || [],
+    dealThresholds: { 
+      exciting: existingStrategy?.exciting_threshold || 85, 
+      promising: existingStrategy?.promising_threshold || 70, 
+      needs_development: existingStrategy?.needs_development_threshold || 50 
+    },
     philosophyConfig: {
       investmentDrivers: [],
       riskTolerance: 'balanced',
@@ -137,7 +166,74 @@ export function EnhancedStrategyWizard({
     }
   });
   
-  const { createStrategy, loading, getDefaultTemplate } = useUnifiedStrategy(fundId);
+  const { createStrategy, updateStrategy, loading, getDefaultTemplate } = useUnifiedStrategy(fundId);
+
+  // Update enhanced criteria when fund type changes
+  const handleFundTypeChange = (fundType: 'vc' | 'pe') => {
+    const template = getTemplateByFundType(fundType);
+    setEnhancedCriteria([...template.categories]);
+    updateWizardData({ fundType });
+  };
+
+  // Enhanced criteria management
+  const updateCategoryWeight = (categoryIndex: number, weight: number) => {
+    const newCriteria = [...enhancedCriteria];
+    newCriteria[categoryIndex] = { ...newCriteria[categoryIndex], weight };
+    setEnhancedCriteria(newCriteria);
+  };
+
+  const updateSubcategoryWeight = (categoryIndex: number, subcategoryIndex: number, weight: number) => {
+    const newCriteria = [...enhancedCriteria];
+    const category = { ...newCriteria[categoryIndex] };
+    const subcategories = [...category.subcategories];
+    subcategories[subcategoryIndex] = { ...subcategories[subcategoryIndex], weight };
+    category.subcategories = subcategories;
+    newCriteria[categoryIndex] = category;
+    setEnhancedCriteria(newCriteria);
+  };
+
+  const toggleSubcategory = (categoryIndex: number, subcategoryIndex: number) => {
+    const newCriteria = [...enhancedCriteria];
+    const category = { ...newCriteria[categoryIndex] };
+    const subcategories = [...category.subcategories];
+    subcategories[subcategoryIndex] = { 
+      ...subcategories[subcategoryIndex], 
+      enabled: !subcategories[subcategoryIndex].enabled 
+    };
+    category.subcategories = subcategories;
+    newCriteria[categoryIndex] = category;
+    setEnhancedCriteria(newCriteria);
+  };
+
+  const toggleCategoryExpansion = (categoryName: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryName)) {
+      newExpanded.delete(categoryName);
+    } else {
+      newExpanded.add(categoryName);
+    }
+    setExpandedCategories(newExpanded);
+  };
+
+  // Validation for enhanced criteria
+  const validateEnhancedCriteria = (): boolean => {
+    const totalWeight = enhancedCriteria.reduce((sum, cat) => sum + (cat.enabled ? cat.weight : 0), 0);
+    
+    if (Math.abs(totalWeight - 100) > 0.1) return false;
+    
+    // Validate subcategory weights for each enabled category
+    for (const category of enhancedCriteria) {
+      if (category.enabled) {
+        const enabledSubcategories = category.subcategories.filter(sub => sub.enabled);
+        if (enabledSubcategories.length > 0) {
+          const subWeight = enabledSubcategories.reduce((sum, sub) => sum + sub.weight, 0);
+          if (Math.abs(subWeight - 100) > 0.1) return false;
+        }
+      }
+    }
+    
+    return true;
+  };
 
   const validateStep = (stepIndex: number): boolean => {
     switch (stepIndex) {
@@ -150,8 +246,7 @@ export function EnhancedStrategyWizard({
                   wizardData.philosophyConfig?.riskTolerance && 
                   wizardData.philosophyConfig?.valueCreationApproach?.length);
       case 3: // Investment Criteria
-        const validation = validateCriteriaWeights(criteria);
-        return validation.isValid;
+        return validateEnhancedCriteria();
       case 4: // Scoring Thresholds
         return !!(wizardData.dealThresholds?.exciting && wizardData.dealThresholds?.promising);
       default:
@@ -182,27 +277,37 @@ export function EnhancedStrategyWizard({
   const handleComplete = async () => {
     if (!wizardData.fundType) return;
     
-    const validation = validateCriteriaWeights(criteria);
-    if (!validation.isValid) {
+    if (!validateEnhancedCriteria()) {
       toast.error('Please fix criteria weight validation errors before completing');
       return;
     }
     
-    const template = getDefaultTemplate(wizardData.fundType);
-    const completeData: EnhancedWizardData = {
-      ...template,
-      ...wizardData,
-      fundName: wizardData.fundName || fundName,
-      strategyDescription: wizardData.strategyDescription || `Investment strategy for ${fundName}`,
-      teamLeadershipConfig: convertCriteriaToConfig(criteria.find(c => c.id === 'team-leadership')),
-      marketOpportunityConfig: convertCriteriaToConfig(criteria.find(c => c.id === 'market-opportunity')),
-      productTechnologyConfig: convertCriteriaToConfig(criteria.find(c => c.id === 'product-technology')),
-      businessTractionConfig: convertCriteriaToConfig(criteria.find(c => c.id === 'business-traction')),
-      financialHealthConfig: convertCriteriaToConfig(criteria.find(c => c.id === 'financial-health')),
-      strategicFitConfig: convertCriteriaToConfig(criteria.find(c => c.id === 'strategic-fit'))
-    } as EnhancedWizardData;
+    // Convert enhanced criteria to the format expected by the service
+    const enhancedCriteriaData = {
+      fundType: wizardData.fundType,
+      categories: enhancedCriteria,
+      totalWeight: enhancedCriteria.reduce((sum, cat) => sum + (cat.enabled ? cat.weight : 0), 0)
+    };
 
-    const result = await createStrategy(wizardData.fundType, completeData);
+    const strategyData = {
+      fund_id: fundId,
+      fund_type: wizardData.fundType,
+      industries: wizardData.sectors,
+      geography: wizardData.geographies,
+      min_investment_amount: wizardData.checkSizeRange?.min,
+      max_investment_amount: wizardData.checkSizeRange?.max,
+      key_signals: wizardData.keySignals,
+      exciting_threshold: wizardData.dealThresholds?.exciting,
+      promising_threshold: wizardData.dealThresholds?.promising,
+      needs_development_threshold: wizardData.dealThresholds?.needs_development,
+      strategy_notes: wizardData.strategyDescription,
+      enhanced_criteria: enhancedCriteriaData
+    };
+
+    const result = existingStrategy?.id 
+      ? await updateStrategy(strategyData)
+      : await createStrategy(wizardData.fundType, wizardData as EnhancedWizardData);
+      
     if (result) {
       onComplete();
     }
@@ -232,13 +337,11 @@ export function EnhancedStrategyWizard({
     setWizardData(prev => ({ ...prev, ...updates }));
   };
 
-  const addGeography = (type: 'region' | 'country' | 'jurisdiction', value: string, parent?: string) => {
+  const addGeography = (type: 'region' | 'country' | 'jurisdiction' | 'ecosystem', value: string, parent?: string) => {
     const currentGeos = wizardData.geographies || [];
     let newGeo = value;
     
-    if (type === 'country' && parent) {
-      newGeo = `${parent} > ${value}`;
-    } else if (type === 'jurisdiction' && parent) {
+    if ((type === 'country' || type === 'jurisdiction' || type === 'ecosystem') && parent) {
       newGeo = `${parent} > ${value}`;
     }
     
@@ -321,30 +424,49 @@ export function EnhancedStrategyWizard({
             <div className="max-w-2xl mx-auto">
               {currentStep === 0 && (
                 <div className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="fundName" className="text-base font-medium">Fund Name</Label>
-                    <Input
-                      id="fundName"
-                      value={wizardData.fundName || ''}
-                      onChange={(e) => updateWizardData({ fundName: e.target.value })}
-                      placeholder="Enter your fund name"
-                      className="h-12 text-base"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="description" className="text-base font-medium">Strategy Overview</Label>
-                    <Textarea
-                      id="description"
-                      value={wizardData.strategyDescription || ''}
-                      onChange={(e) => updateWizardData({ strategyDescription: e.target.value })}
-                      placeholder="Describe your investment strategy, focus areas, and approach..."
-                      rows={4}
-                      className="text-base"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-6">
+                   <div className="space-y-2">
+                     <Label className="text-base font-medium">Fund Type</Label>
+                     <RadioGroup
+                       value={wizardData.fundType || 'vc'}
+                       onValueChange={handleFundTypeChange}
+                     >
+                       <div className="flex gap-6">
+                         <div className="flex items-center space-x-2">
+                           <RadioGroupItem value="vc" />
+                           <Label>Venture Capital</Label>
+                         </div>
+                         <div className="flex items-center space-x-2">
+                           <RadioGroupItem value="pe" />
+                           <Label>Private Equity</Label>
+                         </div>
+                       </div>
+                     </RadioGroup>
+                   </div>
+
+                   <div className="space-y-2">
+                     <Label htmlFor="fundName" className="text-base font-medium">Fund Name</Label>
+                     <Input
+                       id="fundName"
+                       value={wizardData.fundName || ''}
+                       onChange={(e) => updateWizardData({ fundName: e.target.value })}
+                       placeholder="Enter your fund name"
+                       className="h-12 text-base"
+                     />
+                   </div>
+                   
+                   <div className="space-y-2">
+                     <Label htmlFor="description" className="text-base font-medium">Strategy Overview</Label>
+                     <Textarea
+                       id="description"
+                       value={wizardData.strategyDescription || ''}
+                       onChange={(e) => updateWizardData({ strategyDescription: e.target.value })}
+                       placeholder="Describe your investment strategy, focus areas, and approach..."
+                       rows={4}
+                       className="text-base"
+                     />
+                   </div>
+                   
+                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label className="text-base font-medium">Minimum Investment</Label>
                       <div className="relative">
@@ -441,62 +563,133 @@ export function EnhancedStrategyWizard({
                     </div>
                   </div>
 
-                  {/* Hierarchical Geography */}
-                  <div className="space-y-4">
-                    <Label className="text-base font-medium">Geographic Focus</Label>
-                    
-                    {/* Selected Geographies */}
-                    {wizardData.geographies && wizardData.geographies.length > 0 && (
-                      <div className="flex flex-wrap gap-2 p-4 bg-muted/50 rounded-lg">
-                        {wizardData.geographies.map(geo => (
-                          <Badge key={geo} variant="secondary" className="gap-2">
-                            {geo}
-                            <X 
-                              className="h-3 w-3 cursor-pointer" 
-                              onClick={() => removeGeography(geo)}
-                            />
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Geographic Regions */}
-                    <div className="space-y-6">
-                      {Object.entries(GEOGRAPHIC_REGIONS).map(([region, data]) => (
-                        <div key={region} className="space-y-3">
-                          <Button
-                            variant="outline"
-                            size="lg"
-                            className="w-full h-14 justify-start text-left"
-                            onClick={() => addGeography('region', region)}
-                          >
-                            <Globe className="h-5 w-5 mr-3" />
-                            <div>
-                              <div className="font-medium">{region}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {data.countries.length} countries available
-                              </div>
-                            </div>
-                          </Button>
-                          
-                          {/* Countries for this region */}
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 ml-6">
-                            {data.countries.map(country => (
-                              <Button
-                                key={country}
-                                variant="ghost"
-                                size="sm"
-                                className="justify-start text-sm h-10"
-                                onClick={() => addGeography('country', country, region)}
-                              >
-                                {country}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                   {/* Target Geographies - Hierarchical */}
+                   <div className="space-y-4">
+                     <Label className="text-base font-medium">Target Geographies</Label>
+                     <div className="space-y-4">
+                       {/* Current selections */}
+                       {wizardData.geographies && wizardData.geographies.length > 0 && (
+                         <div className="space-y-2">
+                           <Label className="text-sm text-muted-foreground">Selected Geographies</Label>
+                           <div className="flex flex-wrap gap-2">
+                             {wizardData.geographies.map((geo, index) => (
+                               <Badge key={index} variant="outline" className="px-3 py-1 gap-2">
+                                 {geo}
+                                 <X 
+                                   className="h-3 w-3 cursor-pointer" 
+                                   onClick={() => removeGeography(geo)}
+                                 />
+                               </Badge>
+                             ))}
+                           </div>
+                         </div>
+                       )}
+                       
+                       {/* Hierarchical selection */}
+                       <div className="space-y-6">
+                         {/* Regions */}
+                         <div className="space-y-3">
+                           <Label className="text-sm font-medium">Major Regions</Label>
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                             {Object.entries(GEOGRAPHIC_REGIONS).map(([region, data]) => (
+                               <Button
+                                 key={region}
+                                 variant={wizardData.geographies?.includes(region) ? "default" : "outline"}
+                                 className="h-auto p-4 justify-start flex-col items-start"
+                                 onClick={() => {
+                                   const current = wizardData.geographies || [];
+                                   if (current.includes(region)) {
+                                     removeGeography(region);
+                                   } else {
+                                     addGeography('region', region);
+                                   }
+                                 }}
+                               >
+                                 <span className="font-medium">{region}</span>
+                                 <span className="text-xs text-muted-foreground">
+                                   {data.countries.length} countries • {data.ecosystems.length} ecosystems
+                                 </span>
+                               </Button>
+                             ))}
+                           </div>
+                         </div>
+
+                         {/* Countries within selected regions */}
+                         {wizardData.geographies?.some(geo => Object.keys(GEOGRAPHIC_REGIONS).includes(geo)) && (
+                           <div className="space-y-3">
+                             <Label className="text-sm font-medium">Countries</Label>
+                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                               {Object.entries(GEOGRAPHIC_REGIONS)
+                                 .filter(([region]) => wizardData.geographies?.includes(region))
+                                 .flatMap(([region, data]) => 
+                                   data.countries.map(country => ({
+                                     country,
+                                     region,
+                                     fullName: `${region} > ${country}`
+                                   }))
+                                 )
+                                 .map(({ country, region, fullName }) => (
+                                   <Button
+                                     key={fullName}
+                                     variant={wizardData.geographies?.includes(fullName) ? "default" : "outline"}
+                                     size="sm"
+                                     className="justify-start text-xs"
+                                     onClick={() => {
+                                       const current = wizardData.geographies || [];
+                                       if (current.includes(fullName)) {
+                                         removeGeography(fullName);
+                                       } else {
+                                         addGeography('country', country, region);
+                                       }
+                                     }}
+                                   >
+                                     {country}
+                                   </Button>
+                                 ))
+                               }
+                             </div>
+                           </div>
+                         )}
+
+                         {/* Startup Ecosystems */}
+                         {wizardData.geographies?.some(geo => Object.keys(GEOGRAPHIC_REGIONS).includes(geo)) && (
+                           <div className="space-y-3">
+                             <Label className="text-sm font-medium">Key Startup Ecosystems</Label>
+                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                               {Object.entries(GEOGRAPHIC_REGIONS)
+                                 .filter(([region]) => wizardData.geographies?.includes(region))
+                                 .flatMap(([region, data]) => 
+                                   data.ecosystems.map(ecosystem => ({
+                                     ecosystem,
+                                     region,
+                                     fullName: `${region} > ${ecosystem}`
+                                   }))
+                                 )
+                                 .map(({ ecosystem, region, fullName }) => (
+                                   <Button
+                                     key={fullName}
+                                     variant={wizardData.geographies?.includes(fullName) ? "default" : "outline"}
+                                     size="sm"
+                                     className="justify-start text-xs"
+                                     onClick={() => {
+                                       const current = wizardData.geographies || [];
+                                       if (current.includes(fullName)) {
+                                         removeGeography(fullName);
+                                       } else {
+                                         addGeography('ecosystem', ecosystem, region);
+                                       }
+                                     }}
+                                   >
+                                     {ecosystem}
+                                   </Button>
+                                 ))
+                               }
+                             </div>
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                   </div>
                 </div>
               )}
 
@@ -597,47 +790,112 @@ export function EnhancedStrategyWizard({
               {currentStep === 3 && (
                 <div className="space-y-6">
                   <div className="text-center">
-                    <p className="text-muted-foreground">Configure the weight and importance of each evaluation criteria</p>
+                    <p className="text-muted-foreground">Configure detailed evaluation criteria and weights for {wizardData.fundType?.toUpperCase() || 'VC'} investments</p>
                   </div>
                   
-                  <div className="space-y-6">
-                    {criteria.map((criterion, index) => (
-                      <div key={criterion.id} className="p-6 border rounded-lg space-y-4">
-                         <div className="flex items-center justify-between">
-                           <div className="flex items-center gap-3">
-                             <div className="w-2 h-2 rounded-full bg-primary"></div>
-                             <div>
-                               <h3 className="font-medium">{criterion.name}</h3>
-                               <p className="text-sm text-muted-foreground">Weight: {criterion.weight}%</p>
-                             </div>
-                           </div>
-                           <Badge variant="outline">{criterion.weight}%</Badge>
-                         </div>
-                        
-                        <Slider
-                          value={[criterion.weight]}
-                          onValueChange={(values) => {
-                            const newCriteria = [...criteria];
-                            newCriteria[index] = { ...criterion, weight: values[0] };
-                            setCriteria(newCriteria);
-                          }}
-                          max={50}
-                          step={5}
-                          className="w-full"
-                        />
+                  <div className="space-y-4">
+                    {enhancedCriteria.map((category, categoryIndex) => (
+                      <div key={category.name} className="border rounded-lg overflow-hidden">
+                        <Collapsible
+                          open={expandedCategories.has(category.name)}
+                          onOpenChange={() => toggleCategoryExpansion(category.name)}
+                        >
+                          <CollapsibleTrigger asChild>
+                            <div className="p-4 hover:bg-muted/50 cursor-pointer">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <ChevronDown className={`h-4 w-4 transition-transform ${
+                                    expandedCategories.has(category.name) ? 'rotate-180' : ''
+                                  }`} />
+                                  <div>
+                                    <h3 className="font-medium">{category.name}</h3>
+                                    <p className="text-sm text-muted-foreground">{category.description}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <Badge variant="outline">{category.weight}%</Badge>
+                                  <Switch
+                                    checked={category.enabled}
+                                    onCheckedChange={(checked) => {
+                                      const newCriteria = [...enhancedCriteria];
+                                      newCriteria[categoryIndex] = { ...category, enabled: checked };
+                                      setEnhancedCriteria(newCriteria);
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </CollapsibleTrigger>
+                          
+                          <CollapsibleContent>
+                            <div className="p-4 border-t bg-muted/20 space-y-4">
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium">Category Weight</Label>
+                                <Slider
+                                  value={[category.weight]}
+                                  onValueChange={(values) => updateCategoryWeight(categoryIndex, values[0])}
+                                  max={50}
+                                  step={1}
+                                  className="w-full"
+                                  disabled={!category.enabled}
+                                />
+                              </div>
+                              
+                              <div className="space-y-3">
+                                <Label className="text-sm font-medium">Subcategories</Label>
+                                {category.subcategories.map((subcategory, subcategoryIndex) => (
+                                  <div key={subcategory.name} className="p-3 border rounded-lg bg-background">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <Switch
+                                          checked={subcategory.enabled}
+                                          onCheckedChange={() => toggleSubcategory(categoryIndex, subcategoryIndex)}
+                                          disabled={!category.enabled}
+                                        />
+                                        <div>
+                                          <h4 className="text-sm font-medium">{subcategory.name}</h4>
+                                          <p className="text-xs text-muted-foreground">{subcategory.requirements}</p>
+                                        </div>
+                                      </div>
+                                      <Badge variant="outline" className="text-xs">
+                                        {subcategory.weight}%
+                                      </Badge>
+                                    </div>
+                                    
+                                    {subcategory.enabled && (
+                                      <Slider
+                                        value={[subcategory.weight]}
+                                        onValueChange={(values) => updateSubcategoryWeight(categoryIndex, subcategoryIndex, values[0])}
+                                        max={100}
+                                        step={5}
+                                        className="w-full"
+                                        disabled={!category.enabled}
+                                      />
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
                       </div>
                     ))}
                   </div>
                   
-                  <div className="p-4 bg-muted/50 rounded-lg">
+                  <div className="p-4 bg-muted/50 rounded-lg space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Total Weight:</span>
+                      <span>Total Category Weight:</span>
                       <span className={`font-medium ${
-                        criteria.reduce((sum, c) => sum + c.weight, 0) === 100 ? 'text-success' : 'text-destructive'
+                        validateEnhancedCriteria() ? 'text-success' : 'text-destructive'
                       }`}>
-                        {criteria.reduce((sum, c) => sum + c.weight, 0)}%
+                        {enhancedCriteria.reduce((sum, c) => sum + (c.enabled ? c.weight : 0), 0)}%
                       </span>
                     </div>
+                    {!validateEnhancedCriteria() && (
+                      <p className="text-xs text-destructive">
+                        Category weights must sum to 100% and all subcategory weights within enabled categories must sum to 100%
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

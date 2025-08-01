@@ -210,25 +210,28 @@ class UnifiedStrategyService {
     }
   }
 
-  // Create initial strategy with fund type templates
+  // Create initial strategy with comprehensive enhanced criteria
   async createFundStrategy(fundId: string, fundType: 'vc' | 'pe', wizardData: EnhancedWizardData): Promise<EnhancedStrategy | null> {
     try {
-      const enhancedCriteria = getTemplateByFundType(fundType);
+      // Get the appropriate template and preserve any custom configurations
+      const enhancedCriteria = wizardData.enhancedCriteria || getTemplateByFundType(fundType);
       
       const strategyData = {
         fund_id: fundId,
         fund_type: fundType,
         industries: wizardData.sectors,
         geography: wizardData.geographies,
-        min_investment_amount: wizardData.checkSizeRange.min,
-        max_investment_amount: wizardData.checkSizeRange.max,
+        min_investment_amount: wizardData.checkSizeRange?.min,
+        max_investment_amount: wizardData.checkSizeRange?.max,
         key_signals: wizardData.keySignals,
-        exciting_threshold: wizardData.dealThresholds.exciting,
-        promising_threshold: wizardData.dealThresholds.promising,
-        needs_development_threshold: wizardData.dealThresholds.needs_development,
+        exciting_threshold: wizardData.dealThresholds?.exciting,
+        promising_threshold: wizardData.dealThresholds?.promising,
+        needs_development_threshold: wizardData.dealThresholds?.needs_development,
         strategy_notes: wizardData.strategyDescription,
-        enhanced_criteria: JSON.parse(JSON.stringify(enhancedCriteria))
+        enhanced_criteria: JSON.parse(JSON.stringify(enhancedCriteria)) as any
       };
+
+      console.log('Creating strategy with data:', strategyData);
 
       const { data, error } = await supabase
         .from('investment_strategies')
@@ -241,6 +244,7 @@ class UnifiedStrategyService {
         return null;
       }
 
+      console.log('Successfully created strategy:', data);
       return data as EnhancedStrategy;
     } catch (error) {
       console.error('Unexpected error in createFundStrategy:', error);
