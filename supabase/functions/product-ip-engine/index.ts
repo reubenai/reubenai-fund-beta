@@ -284,7 +284,8 @@ async function assessTechnology(dealData: any) {
     });
     
     // Assess technology based on industry patterns
-    assessment = await simulateTechnologyAssessment(dealData.industry, dealData.description);
+    const technologyResult = await simulateTechnologyAssessment(dealData.industry, dealData.description);
+    Object.assign(assessment, technologyResult);
   }
   
   return assessment;

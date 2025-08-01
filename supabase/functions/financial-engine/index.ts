@@ -151,7 +151,7 @@ async function analyzeFinancialDocuments(dealId: string) {
       .from('deal_documents')
       .select('*')
       .eq('deal_id', dealId)
-      .in('document_category', ['financial', 'pitch_deck', 'business_plan']);
+      .in('document_category', ['pitch_deck', 'business_plan', 'other']);
     
     if (error) {
       console.error('Error fetching documents:', error);
