@@ -64,13 +64,30 @@ serve(async (req) => {
     // Fetch document data for enhanced analysis
     const documentData = await fetchDocumentData(dealId);
     
-    // Run all 5 AI engines in parallel
+    // Prepare enhanced engine context with fund-specific data
+    const engineContext = {
+      dealData,
+      strategyData,
+      documentData,
+      fundType: strategyData?.fund_type || 'vc',
+      investmentPhilosophy: strategyData?.investment_philosophy || '',
+      enhancedCriteria: strategyData?.enhanced_criteria || null,
+      geography: strategyData?.geography || [],
+      keySignals: strategyData?.key_signals || [],
+      thresholds: {
+        exciting: strategyData?.exciting_threshold || 85,
+        promising: strategyData?.promising_threshold || 70,
+        needs_development: strategyData?.needs_development_threshold || 50
+      }
+    };
+
+    // Run all 5 AI engines in parallel with enhanced context
     const enginePromises = [
-      callEngine('thesis-alignment-engine', { dealData, strategyData, documentData }),
-      callEngine('market-research-engine', { dealData, strategyData, documentData }),
-      callEngine('product-ip-engine', { dealData, strategyData, documentData }),
-      callEngine('financial-engine', { dealData, strategyData, documentData }),
-      callEngine('team-research-engine', { dealData, strategyData, documentData })
+      callEngine('thesis-alignment-engine', engineContext),
+      callEngine('market-research-engine', engineContext),
+      callEngine('product-ip-engine', engineContext),
+      callEngine('financial-engine', engineContext),
+      callEngine('team-research-engine', engineContext)
     ];
     
     console.log('🚀 Running 5 AI engines in parallel...');

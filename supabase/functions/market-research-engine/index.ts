@@ -25,12 +25,34 @@ serve(async (req) => {
   }
 
   try {
-    const { dealData, strategyData, documentData }: MarketResearchRequest = await req.json();
+    const { 
+      dealData, 
+      strategyData, 
+      documentData, 
+      fundType, 
+      enhancedCriteria, 
+      geography, 
+      keySignals,
+      thresholds 
+    } = await req.json();
     
-    console.log('📊 Market Research Engine: Analyzing market for:', dealData.company_name);
+    console.log('📊 Market Research Engine: Enhanced analysis for:', dealData.company_name);
+    console.log('🎯 Fund Type:', fundType, '| Enhanced Criteria:', !!enhancedCriteria);
     
-    // Conduct comprehensive market research
-    const marketResult = await conductMarketResearch(dealData, strategyData, documentData);
+    // Extract enhanced market criteria
+    const marketCriteria = enhancedCriteria?.categories?.find((cat: any) => 
+      cat.name?.toLowerCase().includes('market') || 
+      cat.name?.toLowerCase().includes('opportunity')
+    );
+    
+    // Conduct comprehensive market research with enhanced context
+    const marketResult = await conductMarketResearch(dealData, strategyData, documentData, {
+      fundType,
+      marketCriteria,
+      geography,
+      keySignals,
+      thresholds
+    });
     
     // Store source tracking
     await storeSources(dealData.id, 'market-research-engine', marketResult.sources);
@@ -55,20 +77,20 @@ serve(async (req) => {
   }
 });
 
-async function conductMarketResearch(dealData: any, strategyData: any, documentData: any = null) {
+async function conductMarketResearch(dealData: any, strategyData: any, documentData: any = null, enhancedContext: any = null) {
   const validatedData = validateMarketData(dealData);
   
   // Enhanced document-driven market research
   const documentInsights = documentData ? await extractMarketInsightsFromDocuments(documentData) : null;
   
-  // Attempt real-time market research with document context
-  const marketIntelligence = await gatherMarketIntelligence(validatedData, documentInsights, strategyData);
+  // Attempt real-time market research with enhanced context
+  const marketIntelligence = await gatherMarketIntelligence(validatedData, documentInsights, strategyData, enhancedContext);
   
-  // Generate AI-powered market analysis
-  const aiAnalysis = await generateMarketAnalysis(validatedData, marketIntelligence);
+  // Generate AI-powered market analysis with enhanced criteria
+  const aiAnalysis = await generateMarketAnalysis(validatedData, marketIntelligence, enhancedContext);
   
-  // Calculate market attractiveness score
-  const marketScore = calculateMarketScore(marketIntelligence);
+  // Calculate market attractiveness score using enhanced weights
+  const marketScore = calculateMarketScore(marketIntelligence, enhancedContext);
   
   // Determine confidence based on data sources and validation
   const confidence = calculateMarketConfidence(marketIntelligence);
@@ -83,7 +105,9 @@ async function conductMarketResearch(dealData: any, strategyData: any, documentD
       growth_rate: marketIntelligence.growth_rate,
       competitive_landscape: marketIntelligence.competitive_landscape,
       market_trends: marketIntelligence.market_trends,
-      tam_sam_som: marketIntelligence.tam_sam_som
+      tam_sam_som: marketIntelligence.tam_sam_som,
+      geographic_alignment: marketIntelligence.geographic_focus,
+      fund_criteria_weight: enhancedContext?.marketCriteria?.weight || 20
     },
     validation_status: confidence >= 70 ? 'validated' : confidence >= 50 ? 'partial' : 'unvalidated'
   };
@@ -148,7 +172,7 @@ function validateMarketData(dealData: any) {
   };
 }
 
-async function gatherMarketIntelligence(dealData: any, documentInsights: any = null, strategyData: any = null) {
+async function gatherMarketIntelligence(dealData: any, documentInsights: any = null, strategyData: any = null, enhancedContext: any = null) {
   const intelligence = {
     market_size: 'N/A',
     growth_rate: 'N/A', 
@@ -157,17 +181,36 @@ async function gatherMarketIntelligence(dealData: any, documentInsights: any = n
     tam_sam_som: { tam: 'N/A', sam: 'N/A', som: 'N/A' },
     sources: [],
     data_quality: 'limited',
-    geographic_focus: null
+    geographic_focus: null,
+    fund_alignment: {
+      geographic_match: false,
+      sector_focus: false,
+      signals_present: []
+    }
   };
   
-  // Apply geographic filtering based on fund strategy
-  if (strategyData && strategyData.geography && strategyData.geography.length > 0) {
-    intelligence.geographic_focus = strategyData.geography;
+  // Apply enhanced geographic filtering
+  const geography = enhancedContext?.geography || strategyData?.geography || [];
+  if (geography.length > 0) {
+    intelligence.geographic_focus = geography;
+    intelligence.fund_alignment.geographic_match = checkGeographicAlignment(dealData.location, geography);
     intelligence.sources.push({
-      type: 'strategy_filter',
-      source: 'geographic_focus',
+      type: 'enhanced_strategy_filter',
+      source: 'geographic_focus_enhanced',
       validated: true,
-      confidence: 90
+      confidence: 95
+    });
+  }
+  
+  // Check for key signals in market analysis
+  const keySignals = enhancedContext?.keySignals || [];
+  if (keySignals.length > 0) {
+    intelligence.fund_alignment.signals_present = findMarketSignals(dealData, keySignals);
+    intelligence.sources.push({
+      type: 'key_signals_analysis',
+      source: 'fund_signals_matching',
+      validated: true,
+      confidence: 85
     });
   }
   
@@ -270,7 +313,7 @@ async function simulateMarketTrends(industry: string): Promise<string[]> {
   return industryKey ? trends[industryKey as keyof typeof trends] : ['Market trends data unavailable'];
 }
 
-function calculateMarketScore(intelligence: any): number {
+function calculateMarketScore(intelligence: any, enhancedContext: any = null): number {
   let score = 50; // Base score
   
   // Adjust based on available data quality
@@ -278,28 +321,52 @@ function calculateMarketScore(intelligence: any): number {
     return 45; // Low score for insufficient data
   }
   
-  // Simulate scoring based on market characteristics
+  // Enhanced scoring using fund criteria weights
+  const marketWeight = enhancedContext?.marketCriteria?.weight || 20;
+  const weightMultiplier = marketWeight / 20; // Normalize to base weight of 20
+  
+  // Simulate scoring based on market characteristics with enhanced weights
   if (intelligence.growth_rate && intelligence.growth_rate.includes('CAGR')) {
     const cagrMatch = intelligence.growth_rate.match(/(\d+\.?\d*)%/);
     if (cagrMatch) {
       const cagr = parseFloat(cagrMatch[1]);
-      if (cagr >= 20) score += 25;
-      else if (cagr >= 15) score += 20;
-      else if (cagr >= 10) score += 15;
-      else if (cagr >= 5) score += 10;
+      const growthBonus = cagr >= 20 ? 25 : cagr >= 15 ? 20 : cagr >= 10 ? 15 : cagr >= 5 ? 10 : 0;
+      score += Math.round(growthBonus * weightMultiplier);
     }
   }
   
-  // Adjust for market size (simplified)
-  if (intelligence.market_size && intelligence.market_size.includes('T')) {
-    score += 15; // Large market bonus
-  } else if (intelligence.market_size && intelligence.market_size.includes('B')) {
-    score += 10; // Medium market bonus
+  // Adjust for market size with enhanced weighting
+  const sizeBonus = intelligence.market_size?.includes('T') ? 15 : 
+                   intelligence.market_size?.includes('B') ? 10 : 0;
+  score += Math.round(sizeBonus * weightMultiplier);
+  
+  // Enhanced fund alignment scoring
+  if (intelligence.fund_alignment) {
+    if (intelligence.fund_alignment.geographic_match) score += 15;
+    if (intelligence.fund_alignment.signals_present.length > 0) {
+      score += intelligence.fund_alignment.signals_present.length * 5;
+    }
   }
   
   // Bonus for document-driven insights
   if (intelligence.sources.some((s: any) => s.source === 'extracted_documents')) {
     score += 10; // Document analysis bonus
+  }
+  
+  // VC vs PE adjustments
+  if (enhancedContext?.fundType === 'pe') {
+    // PE focuses more on market maturity and stability
+    if (intelligence.competitive_landscape?.includes('mature') || 
+        intelligence.competitive_landscape?.includes('established')) {
+      score += 5;
+    }
+  } else if (enhancedContext?.fundType === 'vc') {
+    // VC focuses more on growth and emerging markets
+    if (intelligence.market_trends.some((trend: string) => 
+        trend.toLowerCase().includes('emerging') || 
+        trend.toLowerCase().includes('innovation'))) {
+      score += 5;
+    }
   }
   
   // Cap at 100
@@ -319,12 +386,20 @@ function calculateMarketConfidence(intelligence: any): number {
   return 65;
 }
 
-async function generateMarketAnalysis(dealData: any, intelligence: any): Promise<string> {
+async function generateMarketAnalysis(dealData: any, intelligence: any, enhancedContext: any = null): Promise<string> {
   const geographicContext = intelligence.geographic_focus 
     ? `Geographic Focus: ${intelligence.geographic_focus.join(', ')}\n`
     : '';
   
-  const prompt = `Generate a concise market attractiveness analysis for this investment opportunity:
+  const fundContext = enhancedContext ? `
+Fund Type: ${enhancedContext.fundType?.toUpperCase() || 'VC'}
+Market Criteria Weight: ${enhancedContext.marketCriteria?.weight || 20}%
+Key Signals: ${enhancedContext.keySignals?.join(', ') || 'None specified'}
+Geographic Alignment: ${intelligence.fund_alignment?.geographic_match ? 'MATCHED' : 'REVIEW NEEDED'}
+Signals Present: ${intelligence.fund_alignment?.signals_present?.join(', ') || 'None detected'}
+` : '';
+  
+  const prompt = `Generate a concise market attractiveness analysis for this ${enhancedContext?.fundType?.toUpperCase() || 'VC'} investment opportunity:
 
 COMPANY: ${dealData.company_name}
 INDUSTRY: ${dealData.industry}
@@ -384,6 +459,31 @@ Instructions:
     
     return `Market shows ${intelligence.growth_rate || 'unknown growth'} in ${dealData.industry} sector. Market size estimated at ${intelligence.market_size || 'N/A'}. Competitive landscape: ${intelligence.competitive_landscape || 'requires further analysis'}.`;
   }
+}
+
+function checkGeographicAlignment(dealLocation: string, fundGeography: string[]): boolean {
+  if (!dealLocation || dealLocation === 'N/A' || fundGeography.length === 0) {
+    return false;
+  }
+  
+  const location = dealLocation.toLowerCase();
+  return fundGeography.some(geo => 
+    location.includes(geo.toLowerCase()) || 
+    geo.toLowerCase().includes(location.split(',')[0].trim())
+  );
+}
+
+function findMarketSignals(dealData: any, keySignals: string[]): string[] {
+  const foundSignals: string[] = [];
+  const searchText = `${dealData.description} ${dealData.industry} ${dealData.business_model}`.toLowerCase();
+  
+  keySignals.forEach(signal => {
+    if (searchText.includes(signal.toLowerCase())) {
+      foundSignals.push(signal);
+    }
+  });
+  
+  return foundSignals;
 }
 
 async function storeSources(dealId: string, engineName: string, sources: any[]) {
