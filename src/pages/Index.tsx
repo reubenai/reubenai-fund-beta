@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Building2, TrendingUp, FileText, Users, Zap, Target, BarChart3, Plus, BookOpen, Video, MessageSquare } from 'lucide-react';
+import { Building2, TrendingUp, FileText, Users, Zap, Target, BarChart3, Plus, BookOpen, Video, MessageSquare, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFund } from '@/contexts/FundContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,6 +53,16 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-slate-50/30 ml-6">
+      {/* Top Bar with What is ReubenAI Button */}
+      <div className="flex justify-end mb-6">
+        <Link to="/what-is-reubenai">
+          <Button variant="outline" size="sm" className="gap-2 bg-white hover:bg-slate-50">
+            <HelpCircle className="h-4 w-4" />
+            What is ReubenAI?
+          </Button>
+        </Link>
+      </div>
+
       {/* Welcome Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">

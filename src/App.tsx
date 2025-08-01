@@ -17,6 +17,7 @@ import IC from "./pages/IC";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import Admin from "./pages/Admin";
+import WhatIsReubenAI from "./pages/WhatIsReubenAI";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -106,6 +107,11 @@ const App = () => (
             <Route path="/help" element={
               <AuthGuard>
                 <Help />
+              </AuthGuard>
+            } />
+            <Route path="/what-is-reubenai" element={
+              <AuthGuard>
+                <WhatIsReubenAI />
               </AuthGuard>
             } />
             <Route path="*" element={<NotFound />} />
