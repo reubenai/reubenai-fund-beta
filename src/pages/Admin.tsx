@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield, Archive, ArchiveRestore, Filter, Target } from 'lucide-react';
+import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield, Archive, ArchiveRestore, Filter, Target, Upload } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ import { AdminStats } from '@/components/admin/AdminStats';
 import { AdminUserTable } from '@/components/admin/AdminUserTable';
 import { AdminActivityFeed } from '@/components/admin/AdminActivityFeed';
 import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModal';
+import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
 
 interface Organization {
   id: string;
@@ -91,6 +92,7 @@ export default function Admin() {
   });
   const [showArchivedFunds, setShowArchivedFunds] = useState(false);
   const [thesisConfigFund, setThesisConfigFund] = useState<Fund | null>(null);
+  const [bulkUploadFund, setBulkUploadFund] = useState<Fund | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -677,6 +679,15 @@ export default function Admin() {
                         <Target className="h-4 w-4 mr-2" />
                         Configure Thesis
                       </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setBulkUploadFund(fund)}
+                        className="text-primary hover:text-primary"
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Bulk Upload
+                      </Button>
                       {fund.is_active ? (
                         <Dialog>
                           <DialogTrigger asChild>
@@ -739,6 +750,13 @@ export default function Admin() {
         fund={thesisConfigFund}
         open={!!thesisConfigFund}
         onOpenChange={(open) => !open && setThesisConfigFund(null)}
+      />
+
+      {/* Bulk Upload Modal */}
+      <AdminBulkUploadModal
+        fund={bulkUploadFund}
+        open={!!bulkUploadFund}
+        onOpenChange={(open) => !open && setBulkUploadFund(null)}
       />
     </div>
   );
