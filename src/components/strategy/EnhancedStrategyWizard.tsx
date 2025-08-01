@@ -20,7 +20,8 @@ import {
 import { useUnifiedStrategy } from '@/hooks/useUnifiedStrategy';
 import { EnhancedWizardData, EnhancedStrategy } from '@/services/unifiedStrategyService';
 import { DEFAULT_INVESTMENT_CRITERIA, InvestmentCriteria, validateCriteriaWeights } from '@/types/investment-criteria';
-import { SECTOR_OPTIONS, STAGE_OPTIONS } from '@/types/enhanced-strategy';
+import { SECTOR_OPTIONS } from '@/types/enhanced-strategy';
+import { getStageOptionsByFundType } from '@/types/enhanced-fund-specialization';
 import { VC_CRITERIA_TEMPLATE, PE_CRITERIA_TEMPLATE, EnhancedCriteriaCategory, EnhancedSubcategory, getTemplateByFundType } from '@/types/vc-pe-criteria';
 import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -532,7 +533,7 @@ export function EnhancedStrategyWizard({
                   <div className="space-y-4">
                     <Label className="text-base font-medium">Investment Stages</Label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {STAGE_OPTIONS.map(stage => {
+                      {getStageOptionsByFundType(fundType).map(stage => {
                         const isSelected = wizardData.stages?.includes(stage);
                         return (
                           <Button

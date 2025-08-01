@@ -53,6 +53,23 @@ export interface SizeSpecialization {
   };
 }
 
+// Fund-type specific stage options
+export const VC_STAGE_OPTIONS = [
+  'Pre-Seed', 'Seed', 'Series A', 'Series B', 'Series C', 'Series D+',
+  'Growth', 'Late Stage', 'Pre-IPO'
+];
+
+export const PE_STAGE_OPTIONS = [
+  'Growth Equity', 'Buyout', 'Expansion Capital', 'Distressed', 
+  'Secondary', 'Recapitalization', 'Management Buyout (MBO)', 
+  'Leveraged Buyout (LBO)', 'Late Stage'
+];
+
+// Helper function to get stage options based on fund type
+export const getStageOptionsByFundType = (fundType: 'vc' | 'pe'): string[] => {
+  return fundType === 'vc' ? VC_STAGE_OPTIONS : PE_STAGE_OPTIONS;
+};
+
 // VC Stage Specializations
 export const VC_STAGE_SPECIALIZATIONS: StageSpecialization[] = [
   {
