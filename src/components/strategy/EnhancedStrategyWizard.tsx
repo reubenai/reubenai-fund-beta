@@ -140,11 +140,13 @@ export function EnhancedStrategyWizard({
 }: EnhancedStrategyWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
-  const [enhancedCriteria, setEnhancedCriteria] = useState<EnhancedCriteriaCategory[]>(VC_CRITERIA_TEMPLATE.categories);
+  const [enhancedCriteria, setEnhancedCriteria] = useState<EnhancedCriteriaCategory[]>(
+    getTemplateByFundType(fundType).categories
+  );
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [wizardData, setWizardData] = useState<Partial<EnhancedWizardData>>({
     fundName: fundName,
-    fundType: existingStrategy?.fund_type || 'vc',
+    fundType: fundType, // Auto-populated from selected fund
     strategyDescription: existingStrategy?.strategy_notes || '',
     investmentPhilosophy: '',
     sectors: existingStrategy?.industries || [],
@@ -170,12 +172,7 @@ export function EnhancedStrategyWizard({
   
   const { createStrategy, updateStrategy, loading, getDefaultTemplate } = useUnifiedStrategy(fundId);
 
-  // Update enhanced criteria when fund type changes
-  const handleFundTypeChange = (fundType: 'vc' | 'pe') => {
-    const template = getTemplateByFundType(fundType);
-    setEnhancedCriteria([...template.categories]);
-    updateWizardData({ fundType });
-  };
+  // Enhanced criteria are initialized based on fund type - no manual fund type changes allowed
 
   // Enhanced criteria management
   const updateCategoryWeight = (categoryIndex: number, weight: number) => {
@@ -425,24 +422,17 @@ export function EnhancedStrategyWizard({
             {/* Step Content */}
             <div className="max-w-2xl mx-auto">
               {currentStep === 0 && (
-                <div className="space-y-6">
+                 <div className="space-y-6">
                    <div className="space-y-2">
                      <Label className="text-base font-medium">Fund Type</Label>
-                     <RadioGroup
-                       value={wizardData.fundType || 'vc'}
-                       onValueChange={handleFundTypeChange}
-                     >
-                       <div className="flex gap-6">
-                         <div className="flex items-center space-x-2">
-                           <RadioGroupItem value="vc" />
-                           <Label>Venture Capital</Label>
-                         </div>
-                         <div className="flex items-center space-x-2">
-                           <RadioGroupItem value="pe" />
-                           <Label>Private Equity</Label>
-                         </div>
-                       </div>
-                     </RadioGroup>
+                     <div className="p-3 bg-muted rounded-lg">
+                       <Badge variant="secondary" className="text-sm">
+                         {fundType === 'vc' ? 'Venture Capital' : 'Private Equity'}
+                       </Badge>
+                       <p className="text-sm text-muted-foreground mt-1">
+                         Auto-populated from your selected fund configuration
+                       </p>
+                     </div>
                    </div>
 
                    <div className="space-y-2">
