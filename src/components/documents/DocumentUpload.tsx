@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, X, File, AlertCircle } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Upload, X, File, AlertCircle, Settings, Trash2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,14 @@ interface DocumentUploadProps {
   companyName: string;
   onUploadComplete?: (document: any) => void;
   onUploadStart?: () => void;
+}
+
+interface SelectedFile {
+  file: File;
+  id: string;
+  documentType: string;
+  documentCategory: Database['public']['Enums']['document_category'];
+  tags: string;
 }
 
 interface UploadingFile {
@@ -38,68 +46,24 @@ const DOCUMENT_CATEGORIES: { value: Database['public']['Enums']['document_catego
 ];
 
 export function DocumentUpload({ dealId, companyName, onUploadComplete, onUploadStart }: DocumentUploadProps) {
+  const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
-  const [documentType, setDocumentType] = useState('');
-  const [documentCategory, setDocumentCategory] = useState<Database['public']['Enums']['document_category']>('other');
-  const [tags, setTags] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { logDocumentUploaded } = useActivityTracking();
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+  const onDrop = useCallback((acceptedFiles: File[]) => {
     setError(null);
-    onUploadStart?.();
-
-    const newUploads: UploadingFile[] = acceptedFiles.map(file => ({
+    
+    const newFiles: SelectedFile[] = acceptedFiles.map(file => ({
       file,
-      progress: { progress: 0, status: 'uploading' as const },
-      id: Math.random().toString(36).substring(7)
+      id: Math.random().toString(36).substring(7),
+      documentType: '',
+      documentCategory: 'other' as Database['public']['Enums']['document_category'],
+      tags: ''
     }));
 
-    setUploadingFiles(prev => [...prev, ...newUploads]);
-
-    for (const upload of newUploads) {
-      try {
-        const uploadInput: UploadDocumentInput = {
-          dealId,
-          file: upload.file,
-          documentType: documentType || undefined,
-          documentCategory,
-          tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : undefined
-        };
-
-        const result = await documentService.uploadDocument(
-          uploadInput,
-          (progress) => {
-            setUploadingFiles(prev => prev.map(u => 
-              u.id === upload.id ? { ...u, progress } : u
-            ));
-          }
-        );
-
-        if (result) {
-          // Log activity
-          await logDocumentUploaded(dealId, companyName, upload.file.name, documentType);
-          
-          // Remove from uploading list
-          setUploadingFiles(prev => prev.filter(u => u.id !== upload.id));
-          
-          onUploadComplete?.(result);
-        } else {
-          setUploadingFiles(prev => prev.map(u => 
-            u.id === upload.id 
-              ? { ...u, progress: { progress: 0, status: 'error', message: 'Upload failed' } }
-              : u
-          ));
-        }
-      } catch (err) {
-        setUploadingFiles(prev => prev.map(u => 
-          u.id === upload.id 
-            ? { ...u, progress: { progress: 0, status: 'error', message: 'Upload failed' } }
-            : u
-        ));
-      }
-    }
-  }, [dealId, companyName, documentType, documentCategory, tags, onUploadComplete, onUploadStart, logDocumentUploaded]);
+    setSelectedFiles(prev => [...prev, ...newFiles]);
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -120,52 +84,90 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
     multiple: true
   });
 
+  const removeSelectedFile = (id: string) => {
+    setSelectedFiles(prev => prev.filter(f => f.id !== id));
+  };
+
   const removeUploadingFile = (id: string) => {
     setUploadingFiles(prev => prev.filter(u => u.id !== id));
   };
 
-  return (
-    <div className="space-y-4">
-      {/* Upload Configuration */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="document-type">Document Type</Label>
-          <Input
-            id="document-type"
-            placeholder="e.g. Q1 2024 Financials"
-            value={documentType}
-            onChange={(e) => setDocumentType(e.target.value)}
-          />
-        </div>
-        <div>
-          <Label htmlFor="document-category">Category</Label>
-          <Select value={documentCategory} onValueChange={(value) => setDocumentCategory(value as Database['public']['Enums']['document_category'])}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {DOCUMENT_CATEGORIES.map(cat => (
-                <SelectItem key={cat.value} value={cat.value}>
-                  {cat.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="tags">Tags (comma-separated)</Label>
-          <Input
-            id="tags"
-            placeholder="urgent, confidential, review"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-          />
-        </div>
-      </div>
+  const updateFileConfig = (id: string, field: string, value: string) => {
+    setSelectedFiles(prev => prev.map(f => 
+      f.id === id ? { ...f, [field]: value } : f
+    ));
+  };
 
-      {/* Drop Zone */}
+  const uploadSelectedFiles = async () => {
+    if (selectedFiles.length === 0) return;
+    
+    setError(null);
+    onUploadStart?.();
+
+    const newUploads: UploadingFile[] = selectedFiles.map(sf => ({
+      file: sf.file,
+      progress: { progress: 0, status: 'uploading' as const },
+      id: sf.id
+    }));
+
+    setUploadingFiles(newUploads);
+    setSelectedFiles([]); // Clear selected files
+
+    for (const selectedFile of selectedFiles) {
+      try {
+        const uploadInput: UploadDocumentInput = {
+          dealId,
+          file: selectedFile.file,
+          documentType: selectedFile.documentType || undefined,
+          documentCategory: selectedFile.documentCategory,
+          tags: selectedFile.tags ? selectedFile.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined
+        };
+
+        const result = await documentService.uploadDocument(
+          uploadInput,
+          (progress) => {
+            setUploadingFiles(prev => prev.map(u => 
+              u.id === selectedFile.id ? { ...u, progress } : u
+            ));
+          }
+        );
+
+        if (result) {
+          // Log activity
+          await logDocumentUploaded(dealId, companyName, selectedFile.file.name, selectedFile.documentType);
+          
+          // Remove from uploading list
+          setUploadingFiles(prev => prev.filter(u => u.id !== selectedFile.id));
+          
+          onUploadComplete?.(result);
+        } else {
+          setUploadingFiles(prev => prev.map(u => 
+            u.id === selectedFile.id 
+              ? { ...u, progress: { progress: 0, status: 'error', message: 'Upload failed' } }
+              : u
+          ));
+        }
+      } catch (err) {
+        setUploadingFiles(prev => prev.map(u => 
+          u.id === selectedFile.id 
+            ? { ...u, progress: { progress: 0, status: 'error', message: 'Upload failed' } }
+            : u
+        ));
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Step 1: File Selection */}
       <Card>
-        <CardContent className="p-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Step 1: Select Files
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           <div
             {...getRootProps()}
             className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
@@ -195,6 +197,88 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
           </div>
         </CardContent>
       </Card>
+
+      {/* Step 2: Configure Selected Files */}
+      {selectedFiles.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Step 2: Configure Documents ({selectedFiles.length} files)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {selectedFiles.map((selectedFile) => (
+              <Card key={selectedFile.id} className="p-4">
+                <div className="flex items-start gap-4">
+                  <File className="h-5 w-5 text-muted-foreground mt-1" />
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">{selectedFile.file.name}</h4>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeSelectedFile(selectedFile.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <Label>Document Type</Label>
+                        <Input
+                          placeholder="e.g. Q1 2024 Financials"
+                          value={selectedFile.documentType}
+                          onChange={(e) => updateFileConfig(selectedFile.id, 'documentType', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label>Category</Label>
+                        <Select 
+                          value={selectedFile.documentCategory} 
+                          onValueChange={(value) => updateFileConfig(selectedFile.id, 'documentCategory', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {DOCUMENT_CATEGORIES.map(cat => (
+                              <SelectItem key={cat.value} value={cat.value}>
+                                {cat.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Tags (comma-separated)</Label>
+                        <Input
+                          placeholder="urgent, confidential, review"
+                          value={selectedFile.tags}
+                          onChange={(e) => updateFileConfig(selectedFile.id, 'tags', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+            
+            {/* Step 3: Upload Button */}
+            <div className="pt-4 border-t">
+              <Button 
+                onClick={uploadSelectedFiles}
+                className="w-full"
+                size="lg"
+                disabled={selectedFiles.length === 0}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Upload {selectedFiles.length} Document{selectedFiles.length !== 1 ? 's' : ''}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Error Display */}
       {error && (

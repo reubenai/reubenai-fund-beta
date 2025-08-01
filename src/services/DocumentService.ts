@@ -106,6 +106,20 @@ class DocumentService {
 
       onProgress?.({ progress: 100, status: 'complete', message: 'Upload complete!' });
 
+      // Trigger document processing
+      try {
+        await supabase.functions.invoke('document-processor', {
+          body: {
+            documentId: documentRecord.id,
+            analysisType: 'quick'
+          }
+        });
+        console.log(`Document processing triggered for ${documentRecord.id}`);
+      } catch (processingError) {
+        console.warn('Failed to trigger document processing:', processingError);
+        // Don't fail the upload if processing trigger fails
+      }
+
       return documentRecord;
     } catch (error) {
       onProgress?.({ 
