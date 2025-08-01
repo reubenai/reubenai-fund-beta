@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Building2, TrendingUp, FileText, Users, Zap, Target, BarChart3, Plus, BookOpen, Video, MessageSquare, HelpCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Building2, TrendingUp, FileText, Users, Zap, Target, BarChart3, Plus, BookOpen, Video, MessageSquare, HelpCircle, Search } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFund } from '@/contexts/FundContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +13,9 @@ const Index = () => {
   const { funds } = useFund();
   const [profile, setProfile] = useState<any>(null);
   const [showFundWizard, setShowFundWizard] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [stats, setStats] = useState({
     activeFunds: 0,
     activeDeals: 0,
@@ -44,6 +48,40 @@ const Index = () => {
     setProfile(profileData);
   };
 
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    
+    setIsSearching(true);
+    try {
+      // Search across deals, companies, and documents
+      const { data: deals } = await supabase
+        .from('deals')
+        .select('id, company_name, description, industry, stage')
+        .ilike('company_name', `%${query}%`)
+        .limit(5);
+      
+      const { data: documents } = await supabase
+        .from('deal_documents')
+        .select('id, file_name, document_type, deal_id')
+        .ilike('file_name', `%${query}%`)
+        .limit(5);
+      
+      const results = [
+        ...(deals || []).map((deal: any) => ({ ...deal, type: 'deal' })),
+        ...(documents || []).map((doc: any) => ({ ...doc, type: 'document' }))
+      ];
+      
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const quickActions = [
     { title: 'Investment Strategy', icon: Target, href: '/strategy', description: 'Define and manage your investment criteria' },
     { title: 'Deal Pipeline', icon: TrendingUp, href: '/pipeline', description: 'Manage deal flow and opportunities' },
@@ -61,6 +99,63 @@ const Index = () => {
             What is ReubenAI?
           </Button>
         </Link>
+      </div>
+
+      {/* Search Section */}
+      <div className="mb-8">
+        <div className="relative max-w-2xl">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Input
+            placeholder="Search deals, companies, documents..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              handleSearch(e.target.value);
+            }}
+            className="pl-10 h-12 bg-white border-slate-200 focus:border-emerald-300 focus:ring-emerald-100"
+          />
+          {isSearching && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <div className="animate-spin h-4 w-4 border-2 border-emerald-500 border-t-transparent rounded-full"></div>
+            </div>
+          )}
+        </div>
+        
+        {/* Search Results */}
+        {searchResults.length > 0 && (
+          <div className="mt-4 bg-white border border-slate-200 rounded-lg shadow-sm max-w-2xl">
+            <div className="p-4 border-b border-slate-100">
+              <h3 className="font-medium text-slate-900">Search Results</h3>
+            </div>
+            <div className="max-h-64 overflow-y-auto">
+              {searchResults.map((result, index) => (
+                <Link
+                  key={index}
+                  to={result.type === 'deal' ? `/pipeline?deal=${result.id}` : `/pipeline?deal=${result.deal_id}`}
+                  className="block p-4 hover:bg-slate-50 border-b border-slate-100 last:border-b-0"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
+                      {result.type === 'deal' ? (
+                        <Building2 className="h-4 w-4 text-slate-600" />
+                      ) : (
+                        <FileText className="h-4 w-4 text-slate-600" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-slate-900">
+                        {result.type === 'deal' ? result.company_name : result.file_name}
+                      </h4>
+                      <p className="text-sm text-slate-600">
+                        {result.type === 'deal' ? `${result.industry} • ${result.stage}` : `Document • ${result.document_type}`}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Welcome Header */}
