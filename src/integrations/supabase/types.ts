@@ -231,6 +231,7 @@ export type Database = {
             | Database["public"]["Enums"]["document_category"]
             | null
           document_type: string | null
+          extracted_text: string | null
           file_path: string
           file_size: number | null
           fund_id: string | null
@@ -239,6 +240,8 @@ export type Database = {
           metadata: Json | null
           name: string
           organization_id: string | null
+          parsed_data: Json | null
+          parsing_status: string | null
           storage_path: string | null
           tags: string[] | null
           uploaded_by: string
@@ -257,6 +260,7 @@ export type Database = {
             | Database["public"]["Enums"]["document_category"]
             | null
           document_type?: string | null
+          extracted_text?: string | null
           file_path: string
           file_size?: number | null
           fund_id?: string | null
@@ -265,6 +269,8 @@ export type Database = {
           metadata?: Json | null
           name: string
           organization_id?: string | null
+          parsed_data?: Json | null
+          parsing_status?: string | null
           storage_path?: string | null
           tags?: string[] | null
           uploaded_by: string
@@ -283,6 +289,7 @@ export type Database = {
             | Database["public"]["Enums"]["document_category"]
             | null
           document_type?: string | null
+          extracted_text?: string | null
           file_path?: string
           file_size?: number | null
           fund_id?: string | null
@@ -291,6 +298,8 @@ export type Database = {
           metadata?: Json | null
           name?: string
           organization_id?: string | null
+          parsed_data?: Json | null
+          parsing_status?: string | null
           storage_path?: string | null
           tags?: string[] | null
           uploaded_by?: string
