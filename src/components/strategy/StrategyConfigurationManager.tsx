@@ -20,9 +20,10 @@ import { CleanThesisConfiguration } from './CleanThesisConfiguration';
 interface StrategyConfigurationManagerProps {
   fundId: string;
   fundName: string;
+  fundType: 'vc' | 'pe';
 }
 
-export function StrategyConfigurationManager({ fundId, fundName }: StrategyConfigurationManagerProps) {
+export function StrategyConfigurationManager({ fundId, fundName, fundType }: StrategyConfigurationManagerProps) {
   console.log('=== STRATEGY CONFIGURATION MANAGER ===');
   console.log('Fund ID:', fundId);
   console.log('Fund Name:', fundName);
@@ -74,6 +75,7 @@ export function StrategyConfigurationManager({ fundId, fundName }: StrategyConfi
         <EnhancedStrategyWizard
           fundId={fundId}
           fundName={fundName}
+          fundType={fundType}
           onComplete={handleWizardComplete}
           onCancel={() => setShowWizard(false)}
           existingStrategy={strategy}

@@ -62,7 +62,7 @@ async function conductMarketResearch(dealData: any, strategyData: any, documentD
   const documentInsights = documentData ? await extractMarketInsightsFromDocuments(documentData) : null;
   
   // Attempt real-time market research with document context
-  const marketIntelligence = await gatherMarketIntelligence(validatedData, documentInsights);
+  const marketIntelligence = await gatherMarketIntelligence(validatedData, documentInsights, strategyData);
   
   // Generate AI-powered market analysis
   const aiAnalysis = await generateMarketAnalysis(validatedData, marketIntelligence);
@@ -148,7 +148,7 @@ function validateMarketData(dealData: any) {
   };
 }
 
-async function gatherMarketIntelligence(dealData: any, documentInsights: any = null) {
+async function gatherMarketIntelligence(dealData: any, documentInsights: any = null, strategyData: any = null) {
   const intelligence = {
     market_size: 'N/A',
     growth_rate: 'N/A', 
@@ -156,8 +156,20 @@ async function gatherMarketIntelligence(dealData: any, documentInsights: any = n
     market_trends: [],
     tam_sam_som: { tam: 'N/A', sam: 'N/A', som: 'N/A' },
     sources: [],
-    data_quality: 'limited'
+    data_quality: 'limited',
+    geographic_focus: null
   };
+  
+  // Apply geographic filtering based on fund strategy
+  if (strategyData && strategyData.geography && strategyData.geography.length > 0) {
+    intelligence.geographic_focus = strategyData.geography;
+    intelligence.sources.push({
+      type: 'strategy_filter',
+      source: 'geographic_focus',
+      validated: true,
+      confidence: 90
+    });
+  }
   
   // Try to gather market data through web research simulation
   // In a production environment, this would integrate with:
@@ -308,6 +320,10 @@ function calculateMarketConfidence(intelligence: any): number {
 }
 
 async function generateMarketAnalysis(dealData: any, intelligence: any): Promise<string> {
+  const geographicContext = intelligence.geographic_focus 
+    ? `Geographic Focus: ${intelligence.geographic_focus.join(', ')}\n`
+    : '';
+  
   const prompt = `Generate a concise market attractiveness analysis for this investment opportunity:
 
 COMPANY: ${dealData.company_name}
@@ -319,12 +335,13 @@ MARKET INTELLIGENCE:
 - Growth Rate: ${intelligence.growth_rate}
 - Competition: ${intelligence.competitive_landscape}
 - Key Trends: ${intelligence.market_trends.join(', ')}
-
+${geographicContext}
 DATA QUALITY: ${intelligence.data_quality}
 
 Instructions:
 - Focus on market attractiveness for investment purposes
 - Highlight growth opportunities and market dynamics
+- Consider geographic alignment if specified
 - Note any data limitations explicitly
 - Keep to 2-3 sentences
 - Use "N/A" or "Unable to validate" for missing information`;

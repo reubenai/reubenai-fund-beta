@@ -110,6 +110,7 @@ export default function Strategy() {
           <InvestmentStrategyManager 
             fundId={selectedFund.id} 
             fundName={selectedFund.name}
+            fundType={selectedFund.fund_type === 'venture_capital' ? 'vc' : 'pe'}
             key={selectedFund.id} // Force re-render when fund changes
           />
         </Card>

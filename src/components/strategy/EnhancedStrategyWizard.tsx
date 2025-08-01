@@ -30,6 +30,7 @@ import { toast } from 'sonner';
 interface EnhancedStrategyWizardProps {
   fundId: string;
   fundName: string;
+  fundType: 'vc' | 'pe';  // Auto-populated from fund
   onComplete: () => void;
   onCancel: () => void;
   existingStrategy?: EnhancedStrategy | null;
@@ -132,6 +133,7 @@ const PHILOSOPHY_PROMPTS = {
 export function EnhancedStrategyWizard({ 
   fundId, 
   fundName, 
+  fundType,
   onComplete, 
   onCancel, 
   existingStrategy 

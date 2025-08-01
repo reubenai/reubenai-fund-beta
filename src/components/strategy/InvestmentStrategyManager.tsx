@@ -5,9 +5,10 @@ import { StrategyConfigurationManager } from './StrategyConfigurationManager';
 interface InvestmentStrategyManagerProps {
   fundId: string;
   fundName: string;
+  fundType: 'vc' | 'pe';
 }
 
-export function InvestmentStrategyManager({ fundId, fundName }: InvestmentStrategyManagerProps) {
+export function InvestmentStrategyManager({ fundId, fundName, fundType }: InvestmentStrategyManagerProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Clean header */}
@@ -23,7 +24,7 @@ export function InvestmentStrategyManager({ fundId, fundName }: InvestmentStrate
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         <Card className="shadow-sm border-0">
-          <StrategyConfigurationManager fundId={fundId} fundName={fundName} />
+          <StrategyConfigurationManager fundId={fundId} fundName={fundName} fundType={fundType} />
         </Card>
       </div>
     </div>

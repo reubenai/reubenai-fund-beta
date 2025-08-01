@@ -299,10 +299,48 @@ function calculateDynamicWeights(strategyData: any) {
     founder_team_strength: 0.15
   };
   
-  if (!strategyData) return defaultWeights;
+  if (!strategyData || !strategyData.enhanced_criteria) return defaultWeights;
   
-  // Adjust weights based on fund strategy preferences
-  // This could be enhanced with fund-specific weight configurations
+  // Extract weights from enhanced criteria configuration
+  const enhancedCriteria = strategyData.enhanced_criteria;
+  if (enhancedCriteria.categories && Array.isArray(enhancedCriteria.categories)) {
+    const totalWeight = enhancedCriteria.categories.reduce((sum: number, cat: any) => sum + (cat.weight || 0), 0);
+    
+    if (totalWeight > 0) {
+      const adjustedWeights = { ...defaultWeights };
+      
+      // Map enhanced criteria categories to engine weights
+      enhancedCriteria.categories.forEach((category: any) => {
+        const normalizedWeight = category.weight / totalWeight;
+        
+        switch (category.name.toLowerCase()) {
+          case 'strategic fit':
+          case 'investment thesis alignment':
+            adjustedWeights.investment_thesis_alignment = normalizedWeight;
+            break;
+          case 'market opportunity':
+          case 'market attractiveness':
+            adjustedWeights.market_attractiveness = normalizedWeight;
+            break;
+          case 'product & technology':
+          case 'product strength':
+            adjustedWeights.product_strength_ip = normalizedWeight;
+            break;
+          case 'financial health':
+          case 'financial feasibility':
+            adjustedWeights.financial_feasibility = normalizedWeight;
+            break;
+          case 'team & leadership':
+          case 'founder team':
+            adjustedWeights.founder_team_strength = normalizedWeight;
+            break;
+        }
+      });
+      
+      return adjustedWeights;
+    }
+  }
+  
   return defaultWeights;
 }
 
@@ -321,21 +359,25 @@ function calculateWeightedScore(engineResults: any, weights: any): number {
   return totalWeight > 0 ? Math.round(totalScore / totalWeight) : 50;
 }
 
-async function generateExecutiveSummary(dealData: any, engineResults: any, overallScore: number): Promise<string> {
+async function generateExecutiveSummary(dealData: any, engineResults: any, overallScore: number, strategyData: any = null): Promise<string> {
+  const investmentPhilosophy = strategyData?.investment_philosophy 
+    ? `Investment Philosophy: ${strategyData.investment_philosophy}\n`
+    : '';
+  
   const prompt = `Generate a concise executive summary (2-3 sentences) for this investment opportunity:
 
 Company: ${dealData.company_name}
 Industry: ${dealData.industry || 'N/A'}
 Overall Score: ${overallScore}/100
 
-Engine Analysis Results:
+${investmentPhilosophy}Engine Analysis Results:
 - Investment Thesis Alignment: ${engineResults.investment_thesis_alignment?.score || 'N/A'}/100
 - Market Attractiveness: ${engineResults.market_attractiveness?.score || 'N/A'}/100  
 - Product & IP Strength: ${engineResults.product_strength_ip?.score || 'N/A'}/100
 - Financial Feasibility: ${engineResults.financial_feasibility?.score || 'N/A'}/100
 - Founder & Team Strength: ${engineResults.founder_team_strength?.score || 'N/A'}/100
 
-Focus on the key investment thesis and overall attractiveness. Be concise and actionable.`;
+Focus on the key investment thesis and overall attractiveness. Be concise and actionable. ${investmentPhilosophy ? 'Consider the fund\'s investment philosophy in your assessment.' : ''}`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

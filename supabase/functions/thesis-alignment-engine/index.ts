@@ -296,6 +296,21 @@ function extractKeyAlignmentPoints(alignmentScores: any): string[] {
 
 async function generateAIAnalysis(dealData: any, strategyData: any, alignmentScores: any): Promise<string> {
   const hasStrategy = strategyData.hasStrategy;
+  const enhancedCriteria = strategyData.enhanced_criteria || {};
+  
+  // Extract subcategory requirements for deeper analysis
+  const strategicRequirements: string[] = [];
+  if (enhancedCriteria.categories) {
+    enhancedCriteria.categories.forEach((category: any) => {
+      if (category.subcategories) {
+        category.subcategories.forEach((sub: any) => {
+          if (sub.requirements && sub.enabled) {
+            strategicRequirements.push(`${category.name} - ${sub.name}: ${sub.requirements}`);
+          }
+        });
+      }
+    });
+  }
   
   const prompt = `Analyze investment thesis alignment for this deal:
 
@@ -310,7 +325,11 @@ ${hasStrategy ? `FUND STRATEGY:
 - Target Industries: ${strategyData.industries.join(', ') || 'N/A'}
 - Target Geography: ${strategyData.geography.join(', ') || 'N/A'}
 - Investment Range: ${strategyData.min_investment_amount ? formatCurrency(strategyData.min_investment_amount) : 'N/A'} - ${strategyData.max_investment_amount ? formatCurrency(strategyData.max_investment_amount) : 'N/A'}
-- Key Signals: ${strategyData.key_signals.join(', ') || 'N/A'}` : 'No fund strategy defined - using general investment criteria'}
+- Key Signals: ${strategyData.key_signals.join(', ') || 'N/A'}
+- Investment Philosophy: ${strategyData.investment_philosophy || 'N/A'}
+
+DETAILED INVESTMENT CRITERIA:
+${strategicRequirements.length > 0 ? strategicRequirements.join('\n') : 'No detailed criteria requirements defined'}` : 'No fund strategy defined - using general investment criteria'}
 
 ALIGNMENT ANALYSIS:
 - Sector Alignment: ${alignmentScores.sectorAlignment.score}/100
@@ -318,7 +337,7 @@ ALIGNMENT ANALYSIS:
 - Size Alignment: ${alignmentScores.sizeAlignment.score}/100
 - Stage Alignment: ${alignmentScores.stageAlignment.score}/100
 
-Provide a focused analysis (2-3 sentences) on how well this deal aligns with the ${hasStrategy ? 'fund strategy' : 'general investment criteria'}. Include specific alignment strengths or concerns.`;
+Provide a focused analysis (2-3 sentences) on how well this deal aligns with the ${hasStrategy ? 'fund strategy and detailed investment criteria' : 'general investment criteria'}. Include specific alignment strengths or concerns based on the detailed requirements.`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
