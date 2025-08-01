@@ -83,32 +83,46 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
     }
   }, [isOpen, fundId, toast]);
 
-  const handleGenerateMemo = async (deal: Deal) => {
+  const handleViewEditMemo = async (deal: Deal) => {
     setIsGenerating(true);
     try {
-      toast({
-        title: "Generating IC Memo",
-        description: "Creating comprehensive memo with AI analysis...",
-      });
-
-      // Call the ICMemoService to generate memo
-      const result = await icMemoService.generateMemo(deal.id);
+      // First check if memo already exists for this deal
+      const existingMemos = await icMemoService.getMemos(fundId);
+      const existingMemo = existingMemos.find(memo => memo.deal_id === deal.id);
       
-      if (result.success && result.memo) {
-        setGeneratedMemo(result.memo);
+      if (existingMemo) {
+        // Load existing memo for editing
+        setGeneratedMemo(existingMemo);
         setShowMemoEditor(true);
         toast({
-          title: "Memo Generated",
-          description: "AI-powered memo has been created successfully",
+          title: "Memo Loaded",
+          description: "Existing memo loaded for editing",
         });
       } else {
-        throw new Error(result.error || 'Failed to generate memo');
+        // Auto-generate new memo for investment committee deals
+        toast({
+          title: "Generating IC Memo",
+          description: "Auto-generating comprehensive memo with RAG and thesis integration...",
+        });
+
+        const result = await icMemoService.generateMemo(deal.id);
+        
+        if (result.success && result.memo) {
+          setGeneratedMemo(result.memo);
+          setShowMemoEditor(true);
+          toast({
+            title: "Memo Auto-Generated",
+            description: "Investment memo created with validated data sources",
+          });
+        } else {
+          throw new Error(result.error || 'Failed to generate memo');
+        }
       }
     } catch (error) {
-      console.error('Error generating memo:', error);
+      console.error('Error handling memo:', error);
       toast({
-        title: "Generation Failed",
-        description: "Failed to generate memo. Please try again.",
+        title: "Memo Error",
+        description: "Failed to load/generate memo. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -199,19 +213,19 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
                       </div>
                       
                       <Button
-                        onClick={() => handleGenerateMemo(deal)}
+                        onClick={() => handleViewEditMemo(deal)}
                         disabled={isGenerating}
                         className="gap-2"
                       >
                         {isGenerating ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            Generating...
+                            Loading...
                           </>
                         ) : (
                           <>
-                            <Brain className="w-4 h-4" />
-                            Generate Memo
+                            <FileText className="w-4 h-4" />
+                            View / Edit Memo
                           </>
                         )}
                       </Button>
