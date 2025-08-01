@@ -8,6 +8,7 @@ import { useDropzone } from 'react-dropzone';
 
 interface ParseResult {
   id: string;
+  dealId?: string; // Added to store created deal ID
   data: any;
   status: 'success' | 'error' | 'warning';
   message: string;

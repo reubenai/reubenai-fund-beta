@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Upload, Download, FileSpreadsheet, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { CsvParsingService } from '@/services/CsvParsingService';
+import { EnhancedCsvParsingService as CsvParsingService } from '@/services/EnhancedCsvParsingService';
 import { DealPreviewTable } from './DealPreviewTable';
 import { BatchAnalysisProgress } from './BatchAnalysisProgress';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,13 +18,14 @@ interface EnhancedBatchUploadModalProps {
 }
 
 interface UploadProgress {
-  step: 'parsing' | 'preview' | 'processing' | 'saving' | 'analyzing' | 'complete';
+  step: 'parsing' | 'creating' | 'preview' | 'processing' | 'analyzing' | 'complete';
   progress: number;
   message: string;
 }
 
 interface ParseResult {
   id: string;
+  dealId?: string; // Added to store created deal ID
   data: any;
   status: 'success' | 'error' | 'warning';
   message: string;
@@ -56,7 +57,7 @@ export const EnhancedBatchUploadModal: React.FC<EnhancedBatchUploadModalProps> =
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [parseResults, setParseResults] = useState<ParseResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'upload' | 'preview' | 'processing' | 'analysis' | 'complete'>('upload');
+  const [currentStep, setCurrentStep] = useState<'upload' | 'creating' | 'preview' | 'processing' | 'analysis' | 'complete'>('upload');
   const [analysisResults, setAnalysisResults] = useState<BatchAnalysisResult[]>([]);
   const { toast } = useToast();
 
@@ -112,20 +113,36 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
     setUploadProgress({ step: 'parsing', progress: 0, message: 'Parsing CSV file...' });
 
     try {
+      // Step 1: Parse the file
       const results = await CsvParsingService.parseFile(file);
-      setParseResults(results);
-      setUploadProgress({ step: 'preview', progress: 100, message: 'File parsed successfully' });
+      setUploadProgress({ step: 'creating', progress: 30, message: 'Creating deals in database...' });
+      setCurrentStep('creating');
+      
+      // Step 2: Create deals in database immediately
+      const validResults = results.filter(r => r.status === 'success');
+      const dealIds = await CsvParsingService.saveToDatabaseBatch(validResults, fundId);
+      
+      // Associate deal IDs with parse results
+      const resultsWithDealIds = results.map((result, index) => {
+        if (result.status === 'success' && index < dealIds.length) {
+          return { ...result, dealId: dealIds[index] };
+        }
+        return result;
+      });
+      
+      setParseResults(resultsWithDealIds);
+      setUploadProgress({ step: 'preview', progress: 100, message: 'Deals created successfully' });
       setCurrentStep('preview');
       
       toast({
-        title: "File Parsed",
-        description: `Found ${results.length} deals. Review and add pitch decks if needed.`,
+        title: "Deals Created",
+        description: `Created ${dealIds.length} deals. Now you can add pitch decks.`,
       });
     } catch (error) {
       console.error('Parse error:', error);
       toast({
-        title: "Parse Failed",
-        description: "Failed to parse the file. Please check the format.",
+        title: "Process Failed",
+        description: "Failed to parse file or create deals. Please check the format.",
         variant: "destructive"
       });
     } finally {
@@ -146,7 +163,7 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
   };
 
   const processDeals = async () => {
-    const validDeals = parseResults.filter(r => r.status === 'success' && !r.removed);
+    const validDeals = parseResults.filter(r => r.status === 'success' && !r.removed && r.dealId);
     
     if (validDeals.length === 0) {
       toast({
@@ -162,46 +179,25 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
     setUploadProgress({ step: 'processing', progress: 0, message: 'Processing pitch decks...' });
 
     try {
-      // Step 1: Process pitch decks (0-30%)
+      // Step 1: Upload pitch decks (0-60%)
       const dealsWithPitchDecks = validDeals.filter(d => d.pitchDeckFile);
+      
       for (let i = 0; i < dealsWithPitchDecks.length; i++) {
         const deal = dealsWithPitchDecks[i];
         setUploadProgress({ 
           step: 'processing', 
-          progress: (i / dealsWithPitchDecks.length) * 30, 
-          message: `Processing pitch deck for ${deal.data.company}...` 
+          progress: (i / dealsWithPitchDecks.length) * 60, 
+          message: `Uploading pitch deck for ${deal.data.company}...` 
         });
         
-        // Process pitch deck using document-processor edge function
-        // This will be handled by the batch processing service
-      }
-
-      setUploadProgress({ step: 'saving', progress: 30, message: 'Creating deals in database...' });
-      
-      // Step 2: Create deals in database (30-60%)
-      const dealIds = await CsvParsingService.saveToDatabaseBatch(validDeals, fundId);
-      
-      // Upload pitch decks for created deals
-      for (let i = 0; i < validDeals.length; i++) {
-        const deal = validDeals[i];
-        const dealId = dealIds[i];
-        
-        if (deal.pitchDeckFile) {
-          setUploadProgress({ 
-            step: 'saving', 
-            progress: 30 + (i / validDeals.length) * 30, 
-            message: `Uploading pitch deck for ${deal.data.company}...` 
-          });
-          
-          // Upload pitch deck using document service
-          await uploadPitchDeck(dealId, deal.pitchDeckFile, deal.data.company);
-        }
+        await uploadPitchDeck(deal.dealId!, deal.pitchDeckFile!, deal.data.company);
       }
 
       setUploadProgress({ step: 'analyzing', progress: 60, message: 'Starting comprehensive analysis...' });
       setCurrentStep('analysis');
 
-      // Step 3: Trigger comprehensive analysis (60-100%)
+      // Step 2: Trigger comprehensive analysis (60-100%)
+      const dealIds = validDeals.map(d => d.dealId!);
       const analysisPromises = dealIds.map(async (dealId, index) => {
         const result: BatchAnalysisResult = {
           dealId,
@@ -285,16 +281,35 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
   };
 
   const uploadPitchDeck = async (dealId: string, file: File, companyName: string) => {
-    // Use document service to upload pitch deck
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('dealId', dealId);
-    formData.append('documentType', 'Pitch Deck');
-    formData.append('documentCategory', 'pitch_deck');
-
-    // This would be handled by the DocumentService
-    // For now, we'll simulate the upload
-    console.log(`Uploading pitch deck for ${companyName}:`, file.name);
+    try {
+      // Clean company name for file naming
+      const cleanCompanyName = companyName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+      const fileExt = file.name.split('.').pop();
+      const newFileName = `${cleanCompanyName}_Pitch_Deck.${fileExt}`;
+      
+      // Create a new file with the renamed filename
+      const renamedFile = new File([file], newFileName, { type: file.type });
+      
+      // Upload using DocumentService
+      const { documentService } = await import('@/services/DocumentService');
+      
+      const result = await documentService.uploadDocument({
+        dealId,
+        file: renamedFile,
+        documentType: 'Pitch Deck',
+        documentCategory: 'pitch_deck',
+        tags: ['batch_upload', 'pitch_deck']
+      });
+      
+      if (!result) {
+        throw new Error('Failed to upload pitch deck');
+      }
+      
+      console.log(`Successfully uploaded pitch deck for ${companyName}: ${newFileName}`);
+    } catch (error) {
+      console.error(`Failed to upload pitch deck for ${companyName}:`, error);
+      throw error;
+    }
   };
 
   const resetModal = () => {
@@ -328,28 +343,34 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
 
         <div className="space-y-6">
           {/* Progress Steps */}
-          <div className="flex items-center gap-4 text-sm">
-            <div className={`flex items-center gap-2 ${currentStep === 'upload' ? 'text-primary font-medium' : currentStep === 'preview' || currentStep === 'processing' || currentStep === 'analysis' || currentStep === 'complete' ? 'text-green-600' : 'text-muted-foreground'}`}>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${currentStep === 'upload' ? 'bg-primary text-white' : currentStep === 'preview' || currentStep === 'processing' || currentStep === 'analysis' || currentStep === 'complete' ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+          <div className="flex items-center gap-2 text-sm">
+            <div className={`flex items-center gap-2 ${currentStep === 'upload' ? 'text-primary font-medium' : (currentStep === 'creating' || currentStep === 'preview' || currentStep === 'processing' || currentStep === 'analysis' || currentStep === 'complete') ? 'text-green-600' : 'text-muted-foreground'}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${currentStep === 'upload' ? 'bg-primary text-white' : (currentStep === 'creating' || currentStep === 'preview' || currentStep === 'processing' || currentStep === 'analysis' || currentStep === 'complete') ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}>
                 1
               </div>
-              Upload CSV
+              Parse CSV
             </div>
-            <div className={`flex items-center gap-2 ${currentStep === 'preview' ? 'text-primary font-medium' : currentStep === 'processing' || currentStep === 'analysis' || currentStep === 'complete' ? 'text-green-600' : 'text-muted-foreground'}`}>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${currentStep === 'preview' ? 'bg-primary text-white' : currentStep === 'processing' || currentStep === 'analysis' || currentStep === 'complete' ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+            <div className={`flex items-center gap-2 ${currentStep === 'creating' ? 'text-primary font-medium' : (currentStep === 'preview' || currentStep === 'processing' || currentStep === 'analysis' || currentStep === 'complete') ? 'text-green-600' : 'text-muted-foreground'}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${currentStep === 'creating' ? 'bg-primary text-white' : (currentStep === 'preview' || currentStep === 'processing' || currentStep === 'analysis' || currentStep === 'complete') ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}>
                 2
               </div>
-              Review & Add Pitch Decks
+              Create Deals
             </div>
-            <div className={`flex items-center gap-2 ${currentStep === 'processing' ? 'text-primary font-medium' : currentStep === 'analysis' || currentStep === 'complete' ? 'text-green-600' : 'text-muted-foreground'}`}>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${currentStep === 'processing' ? 'bg-primary text-white' : currentStep === 'analysis' || currentStep === 'complete' ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+            <div className={`flex items-center gap-2 ${currentStep === 'preview' ? 'text-primary font-medium' : (currentStep === 'processing' || currentStep === 'analysis' || currentStep === 'complete') ? 'text-green-600' : 'text-muted-foreground'}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${currentStep === 'preview' ? 'bg-primary text-white' : (currentStep === 'processing' || currentStep === 'analysis' || currentStep === 'complete') ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}>
                 3
+              </div>
+              Upload Pitch Decks
+            </div>
+            <div className={`flex items-center gap-2 ${currentStep === 'processing' ? 'text-primary font-medium' : (currentStep === 'analysis' || currentStep === 'complete') ? 'text-green-600' : 'text-muted-foreground'}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${currentStep === 'processing' ? 'bg-primary text-white' : (currentStep === 'analysis' || currentStep === 'complete') ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}>
+                4
               </div>
               Process Documents
             </div>
             <div className={`flex items-center gap-2 ${currentStep === 'analysis' ? 'text-primary font-medium' : currentStep === 'complete' ? 'text-green-600' : 'text-muted-foreground'}`}>
               <div className={`w-6 h-6 rounded-full flex items-center justify-center ${currentStep === 'analysis' ? 'bg-primary text-white' : currentStep === 'complete' ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}>
-                4
+                5
               </div>
               AI Analysis
             </div>
@@ -435,7 +456,21 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
             </>
           )}
 
-          {/* Step 2: Deal Preview */}
+          {/* Step 2: Creating Deals */}
+          {currentStep === 'creating' && (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-sm text-muted-foreground">Creating deals in database...</p>
+              {uploadProgress && (
+                <div className="mt-4">
+                  <Progress value={uploadProgress.progress} className="w-full" />
+                  <p className="text-xs text-muted-foreground mt-2">{uploadProgress.message}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 3: Deal Preview */}
           {currentStep === 'preview' && (
             <DealPreviewTable
               deals={parseResults}
@@ -466,7 +501,7 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
             </>
           )}
 
-          {/* Step 5: Complete */}
+          {/* Step 6: Complete */}
           {currentStep === 'complete' && (
             <div className="text-center py-8">
               <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />

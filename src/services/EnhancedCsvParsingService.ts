@@ -258,46 +258,57 @@ export class EnhancedCsvParsingService {
 
   static async uploadPitchDeck(dealId: string, file: File, companyName: string): Promise<void> {
     try {
-      // Create FormData for document upload
-      const formData = new FormData();
-      formData.append('file', file);
+      // Clean company name for file naming
+      const cleanCompanyName = companyName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${cleanCompanyName}_Pitch_Deck.${fileExt}`;
+      const filePath = `${dealId}/${fileName}`;
       
       // Upload to Supabase storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${dealId}/pitch-deck-${Date.now()}.${fileExt}`;
-      
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('deal-documents')
-        .upload(fileName, file);
+        .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       // Store document metadata
-      const { error: dbError } = await supabase
+      const { data: documentRecord, error: dbError } = await supabase
         .from('deal_documents')
         .insert({
           deal_id: dealId,
-          name: file.name,
+          name: fileName,
           file_path: uploadData.path,
           file_size: file.size,
           content_type: file.type,
           document_type: 'Pitch Deck',
           document_category: 'pitch_deck',
-          uploaded_by: (await supabase.auth.getUser()).data.user?.id || '',
-          storage_path: uploadData.path
-        });
+          uploaded_by: user.id,
+          storage_path: uploadData.path,
+          bucket_name: 'deal-documents',
+          metadata: {
+            originalName: file.name,
+            uploadedAt: new Date().toISOString(),
+            batchUpload: true
+          }
+        })
+        .select('id')
+        .single();
 
       if (dbError) throw dbError;
 
       // Trigger document processing
       await supabase.functions.invoke('document-processor', {
         body: {
-          dealId,
-          documentPath: uploadData.path,
-          documentType: 'pitch_deck'
+          documentId: documentRecord.id,
+          analysisType: 'quick'
         }
       });
 
+      console.log(`Successfully uploaded pitch deck for ${companyName}: ${fileName}`);
     } catch (error) {
       console.error(`Failed to upload pitch deck for ${companyName}:`, error);
       throw error;
