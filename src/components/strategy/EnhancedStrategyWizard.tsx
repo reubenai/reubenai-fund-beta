@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -174,6 +174,25 @@ export function EnhancedStrategyWizard({
   const { createStrategy, updateStrategy, loading, getDefaultTemplate } = useUnifiedStrategy(fundId);
 
   // Enhanced criteria are initialized based on fund type - no manual fund type changes allowed
+  useEffect(() => {
+    console.log('=== Initializing Enhanced Criteria ===');
+    const template = getTemplateByFundType(fundType);
+    console.log('Template loaded:', template);
+    console.log('Template categories:', template.categories);
+    
+    // Ensure all categories and subcategories are properly enabled
+    const enabledCriteria = template.categories.map(category => ({
+      ...category,
+      enabled: true, // Force enable all categories
+      subcategories: category.subcategories.map(sub => ({
+        ...sub,
+        enabled: true // Force enable all subcategories
+      }))
+    }));
+    
+    console.log('Enabled criteria set:', enabledCriteria);
+    setEnhancedCriteria(enabledCriteria);
+  }, [fundType]);
 
   // Enhanced criteria management
   const updateCategoryWeight = (categoryIndex: number, weight: number) => {
@@ -219,7 +238,15 @@ export function EnhancedStrategyWizard({
   const validateEnhancedCriteria = (): boolean => {
     const totalWeight = enhancedCriteria.reduce((sum, cat) => sum + (cat.enabled ? cat.weight : 0), 0);
     
-    if (Math.abs(totalWeight - 100) > 0.1) return false;
+    console.log('=== Enhanced Criteria Validation ===');
+    console.log('Enhanced criteria:', enhancedCriteria);
+    console.log('Total weight calculation:', totalWeight);
+    console.log('Enabled categories:', enhancedCriteria.filter(cat => cat.enabled));
+    
+    if (Math.abs(totalWeight - 100) > 0.1) {
+      console.log(`Total weight invalid: ${totalWeight}% (should be 100%)`);
+      return false;
+    }
     
     // Validate subcategory weights for each enabled category
     for (const category of enhancedCriteria) {
@@ -227,11 +254,16 @@ export function EnhancedStrategyWizard({
         const enabledSubcategories = category.subcategories.filter(sub => sub.enabled);
         if (enabledSubcategories.length > 0) {
           const subWeight = enabledSubcategories.reduce((sum, sub) => sum + sub.weight, 0);
-          if (Math.abs(subWeight - 100) > 0.1) return false;
+          console.log(`Category "${category.name}" subcategory weight: ${subWeight}%`);
+          if (Math.abs(subWeight - 100) > 0.1) {
+            console.log(`Category "${category.name}" subcategory weights invalid: ${subWeight}%`);
+            return false;
+          }
         }
       }
     }
     
+    console.log('Enhanced criteria validation passed');
     return true;
   };
 
@@ -257,7 +289,15 @@ export function EnhancedStrategyWizard({
   const handleNext = () => {
     if (!validateStep(currentStep)) {
       const step = WIZARD_STEPS[currentStep];
-      toast.error(`Please complete all required fields in ${step.title}`);
+      let errorMessage = `Please complete all required fields in ${step.title}`;
+      
+      // Provide specific error message for criteria step
+      if (currentStep === 3) {
+        const totalWeight = enhancedCriteria.reduce((sum, cat) => sum + (cat.enabled ? cat.weight : 0), 0);
+        errorMessage = `Category weights must sum to 100% (currently ${totalWeight.toFixed(1)}%)`;
+      }
+      
+      toast.error(errorMessage);
       return;
     }
 
@@ -996,6 +1036,30 @@ export function EnhancedStrategyWizard({
                       <div>
                         <span className="font-medium">Geographies:</span>
                         <p className="text-muted-foreground">{wizardData.geographies?.length || 0} selected</p>
+                      </div>
+                    </div>
+                    
+                    {/* Enhanced Criteria Validation Summary */}
+                    <div className="mt-4 pt-4 border-t">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium">Investment Criteria:</span>
+                        <Badge variant={validateEnhancedCriteria() ? "default" : "destructive"}>
+                          {enhancedCriteria.reduce((sum, cat) => sum + (cat.enabled ? cat.weight : 0), 0).toFixed(1)}% 
+                          {validateEnhancedCriteria() ? " ✓" : " ✗"}
+                        </Badge>
+                      </div>
+                      {!validateEnhancedCriteria() && (
+                        <div className="text-sm text-destructive">
+                          Category weights must sum to 100% (currently {enhancedCriteria.reduce((sum, cat) => sum + (cat.enabled ? cat.weight : 0), 0).toFixed(1)}%)
+                        </div>
+                      )}
+                      <div className="space-y-1 text-xs text-muted-foreground mt-2">
+                        {enhancedCriteria.map(cat => (
+                          <div key={cat.name} className="flex justify-between">
+                            <span>{cat.name}{cat.enabled ? '' : ' (disabled)'}</span>
+                            <span>{cat.enabled ? cat.weight : 0}%</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
