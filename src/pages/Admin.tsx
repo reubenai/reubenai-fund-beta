@@ -113,13 +113,12 @@ export default function Admin() {
         .eq('user_id', user!.id)
         .single();
 
-      // Allow access for super_admin role OR specific email addresses
-      const hasAccess = profileData?.role === 'super_admin' || 
-                       user?.email === 'kat@goreuben.com' || 
-                       user?.email === 'hello@goreuben.com';
+      // Check if user has admin privileges using the same logic as database RLS
+      const isReubenAdmin = user?.email?.includes('@goreuben.com') || user?.email?.includes('@reuben.com');
+      const hasAccess = isReubenAdmin || profileData?.role === 'super_admin' || profileData?.role === 'admin';
 
       if (!hasAccess) {
-        toast.error('Access denied. Super Admin privileges required.');
+        toast.error(`Access denied. Admin privileges required. Current user: ${user?.email}, Role: ${profileData?.role || 'none'}`);
         return;
       }
 
@@ -192,13 +191,12 @@ export default function Admin() {
       return;
     }
 
-    // Check user permissions
-    const hasCreateAccess = profile?.role === 'super_admin' || 
-                           user?.email === 'kat@goreuben.com' || 
-                           user?.email === 'hello@goreuben.com';
+    // Check user permissions (align with database RLS policy)
+    const isReubenAdmin = user?.email?.includes('@goreuben.com') || user?.email?.includes('@reuben.com');
+    const hasCreateAccess = isReubenAdmin || profile?.role === 'super_admin' || profile?.role === 'admin';
 
     if (!hasCreateAccess) {
-      toast.error('Insufficient permissions. Super Admin access required to create organizations.');
+      toast.error(`Insufficient permissions. Admin access required. Current role: ${profile?.role || 'none'}, Email: ${user?.email}`);
       return;
     }
 
