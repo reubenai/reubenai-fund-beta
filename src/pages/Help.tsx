@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { 
   Search, 
   MessageSquare, 
@@ -20,105 +20,116 @@ import {
   Zap,
   Settings,
   TrendingUp,
-  Target
+  Target,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  ChevronRight,
+  ExternalLink
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const faqData = [
   {
     category: "Getting Started",
+    icon: Target,
     questions: [
       {
         question: "How do I add a new deal to the pipeline?",
-        answer: "You can add deals in several ways: 1) Click the '+' button in any pipeline stage, 2) Use the 'Add Deal' button in the pipeline header, 3) Upload multiple deals via CSV using the batch upload feature. Fill in the company details and the deal will be added to the 'Sourced' stage by default."
+        answer: "Navigate to the Deal Pipeline page and click the '+' button in any stage, or use the 'Add Deal' button in the header. You can also upload multiple deals via CSV using the batch upload feature."
       },
       {
         question: "How do I move deals between pipeline stages?",
-        answer: "Simply drag and drop deals between stages in the Kanban view. You can also use the deal details modal to change the status. All stage changes are automatically tracked in the activity log."
+        answer: "Simply drag and drop deals between stages in the Kanban view. You can also edit the deal status in the deal details modal. All changes are automatically tracked."
       },
       {
         question: "What information should I include when adding a deal?",
-        answer: "At minimum, include the company name. Additional helpful information includes: industry, location, website, deal size, valuation, founder information, and a brief description of the business."
+        answer: "Company name is required. Include industry, location, website, deal size, valuation, and founder information for better AI analysis."
       }
     ]
   },
   {
     category: "AI Analysis",
+    icon: Zap,
     questions: [
       {
         question: "How does the AI deal analysis work?",
-        answer: "Our AI system analyzes deals across 5 key dimensions: Investment Thesis Alignment, Market Research, Product & IP Analysis, Financial Analysis, and Team Research. It pulls data from multiple sources including company websites, public databases, and financial records to provide comprehensive insights."
+        answer: "Our Reuben Orchestrator analyzes deals across 5 dimensions: Thesis Alignment, Market Research, Product & IP, Financial Health, and Team Analysis using 14+ specialized engines."
       },
       {
-        question: "Why is my deal analysis not working?",
-        answer: "Analysis requires sufficient company information. Ensure you've provided at least the company name and website. If analysis still fails, the company might be too early-stage or private to have sufficient public data available."
+        question: "Why isn't my deal analysis working?",
+        answer: "Ensure you've provided company name and website. Early-stage or very private companies may have limited public data for analysis."
       },
       {
         question: "How accurate is the AI scoring?",
-        answer: "AI scores are based on available data and should be used as a starting point for your analysis. They're most accurate for companies with substantial public presence. Always combine AI insights with your own due diligence."
-      }
-    ]
-  },
-  {
-    category: "Pipeline Management",
-    questions: [
-      {
-        question: "Can I customize pipeline stages?",
-        answer: "Yes! Fund managers can rename existing stages, reorder them, and add custom stages. Go to Pipeline Settings to configure stages for your fund's specific workflow."
-      },
-      {
-        question: "How do I track deal progress?",
-        answer: "Each deal shows its current stage, last update time, and has an activity log tracking all changes. You can add notes, upload documents, and set next actions to track progress."
-      },
-      {
-        question: "What's the difference between pipeline views?",
-        answer: "Kanban view shows deals as cards in columns by stage. List view shows a compact list format. Table view provides detailed information in rows. Funnel view shows conversion rates between stages."
+        answer: "AI scores provide directional insights based on available data. Combine with your own due diligence for investment decisions."
       }
     ]
   },
   {
     category: "Investment Strategy",
+    icon: Settings,
     questions: [
       {
-        question: "How do I set up my investment strategy?",
-        answer: "Go to the Strategy page to configure your investment thesis, criteria weights, target industries, geographic focus, and deal size parameters. This helps the AI provide more relevant analysis and recommendations."
+        question: "How do I configure my investment strategy?",
+        answer: "Go to Strategy → Investment Criteria to set your thesis, industry focus, geography, deal size parameters, and scoring weights."
       },
       {
-        question: "Can I have different strategies for different funds?",
-        answer: "Yes, each fund can have its own investment strategy configuration. Switch between funds to see strategy-specific insights and deal scoring."
+        question: "Can different funds have different strategies?",
+        answer: "Yes, each fund maintains its own strategy configuration. Switch funds to access fund-specific strategies and scoring."
       }
     ]
   },
   {
     category: "Data & Security",
+    icon: Users,
     questions: [
       {
         question: "How secure is my deal data?",
-        answer: "All data is encrypted in transit and at rest. We use enterprise-grade security measures and comply with SOC 2 standards. Your deal data is only accessible to users in your organization."
+        answer: "All data is encrypted in transit and at rest with enterprise-grade security. We comply with SOC 2 standards and your data is organization-specific."
       },
       {
         question: "Can I export my deal data?",
-        answer: "Yes, you can export deals and analysis data from the Settings page. Exports include deal details, notes, analysis results, and activity history."
-      },
-      {
-        question: "How do I manage user access?",
-        answer: "Admins can manage user roles and permissions from the Admin page. Different roles (Viewer, Analyst, Fund Manager, Admin) have different levels of access to deals and features."
+        answer: "Yes, export functionality is available in Settings. Exports include deal details, notes, analysis results, and activity history."
       }
     ]
   }
 ];
 
-const quickLinks = [
-  { title: "Pipeline Tutorial", icon: Video, description: "5-minute video walkthrough" },
-  { title: "AI Analysis Guide", icon: Zap, description: "Understanding AI insights" },
-  { title: "Strategy Setup", icon: Settings, description: "Configure investment criteria" },
-  { title: "Team Management", icon: Users, description: "Add and manage users" },
-  { title: "Data Export", icon: FileText, description: "Export your deals" },
-  { title: "API Documentation", icon: BookOpen, description: "Developer resources" }
+const quickGuides = [
+  {
+    title: "Pipeline Setup",
+    description: "Get your deal pipeline configured",
+    icon: TrendingUp,
+    time: "5 min",
+    steps: ["Create your first fund", "Configure pipeline stages", "Add your first deal", "Set up team access"]
+  },
+  {
+    title: "AI Analysis",
+    description: "Understanding AI insights",
+    icon: Zap,
+    time: "8 min",
+    steps: ["Configure investment strategy", "Add deal with website", "Run AI analysis", "Interpret scores"]
+  },
+  {
+    title: "Team Collaboration",
+    description: "Set up your investment team",
+    icon: Users,
+    time: "10 min",
+    steps: ["Invite team members", "Set user roles", "Configure permissions", "Create IC workflow"]
+  }
+];
+
+const systemStatus = [
+  { service: "Deal Pipeline", status: "operational", lastCheck: "2 min ago" },
+  { service: "AI Analysis Engine", status: "operational", lastCheck: "1 min ago" },
+  { service: "Data Sync", status: "operational", lastCheck: "5 min ago" },
+  { service: "Authentication", status: "operational", lastCheck: "1 min ago" }
 ];
 
 export default function Help() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [supportForm, setSupportForm] = useState({
     subject: '',
     description: '',
@@ -133,7 +144,7 @@ export default function Help() {
       q => q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
            q.answer.toLowerCase().includes(searchQuery.toLowerCase())
     )
-  })).filter(category => category.questions.length > 0);
+  })).filter(category => selectedCategory ? category.category === selectedCategory : category.questions.length > 0);
 
   const handleSupportSubmit = () => {
     if (!supportForm.subject || !supportForm.description || !supportForm.email) {
@@ -152,392 +163,246 @@ export default function Help() {
     setSupportForm({ subject: '', description: '', priority: 'medium', email: '' });
   };
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'operational': return <CheckCircle className="h-4 w-4 text-emerald-500" />;
+      case 'degraded': return <AlertCircle className="h-4 w-4 text-amber-500" />;
+      case 'down': return <AlertCircle className="h-4 w-4 text-red-500" />;
+      default: return <Clock className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
   return (
-    <div className="space-y-8 p-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Help & Support</h1>
-        <p className="text-sm text-muted-foreground">Learn how to use Reuben and get assistance when needed</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="flex">
+        {/* Sidebar Navigation */}
+        <div className="w-72 border-r border-border/50 bg-sidebar/30 min-h-screen">
+          <div className="p-6 border-b border-border/50">
+            <h2 className="font-semibold text-lg">Help & Support</h2>
+            <p className="text-sm text-muted-foreground mt-1">Find answers and get assistance</p>
+          </div>
+          
+          <div className="p-4">
+            {/* Search */}
+            <div className="relative mb-6">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search help articles..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-background border-border/60"
+              />
+            </div>
 
-      <Tabs defaultValue="faq" className="space-y-6">
-        <TabsList className="h-12 w-auto bg-background border rounded-lg p-1">
-          <TabsTrigger value="guides" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
-            <BookOpen className="h-4 w-4 mr-2" />
-            How Reuben Works
-          </TabsTrigger>
-          <TabsTrigger value="faq" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
-            <HelpCircle className="h-4 w-4 mr-2" />
-            FAQ
-          </TabsTrigger>
-          <TabsTrigger value="contact" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Contact
-          </TabsTrigger>
-          <TabsTrigger value="status" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
-            <TrendingUp className="h-4 w-4 mr-2" />
-            Status
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="faq" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Frequently Asked Questions</CardTitle>
-              <CardDescription>Search our knowledge base for quick answers</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search FAQ..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              <div className="space-y-6">
-                {filteredFAQ.map((category, categoryIndex) => (
-                  <div key={categoryIndex} className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold">{category.category}</h3>
-                      <Badge variant="secondary">{category.questions.length}</Badge>
+            {/* Quick Guides */}
+            <div className="space-y-3 mb-6">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Quick Start</h3>
+              {quickGuides.map((guide, index) => (
+                <button
+                  key={index}
+                  className="w-full text-left p-3 rounded-lg border border-border/50 hover:border-border hover:bg-background/50 transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-1.5 rounded-md bg-primary/10">
+                      <guide.icon className="h-4 w-4 text-primary" />
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-sm truncate">{guide.title}</p>
+                        <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{guide.description}</p>
+                      <p className="text-xs text-primary mt-1">{guide.time} read</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Categories */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Categories</h3>
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`w-full text-left p-2.5 rounded-md text-sm transition-all ${
+                  !selectedCategory ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'
+                }`}
+              >
+                All Topics
+              </button>
+              {faqData.map((category) => (
+                <button
+                  key={category.category}
+                  onClick={() => setSelectedCategory(category.category)}
+                  className={`w-full text-left p-2.5 rounded-md text-sm transition-all flex items-center gap-2 ${
+                    selectedCategory === category.category ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'
+                  }`}
+                >
+                  <category.icon className="h-4 w-4" />
+                  {category.category}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 p-8">
+          <div className="max-w-4xl mx-auto space-y-8">
+            {/* Header */}
+            <div>
+              <h1 className="text-2xl font-semibold">
+                {selectedCategory || 'Frequently Asked Questions'}
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                {selectedCategory 
+                  ? `Common questions about ${selectedCategory.toLowerCase()}`
+                  : 'Find answers to common questions about using ReubenAI'
+                }
+              </p>
+            </div>
+
+            {/* FAQ Content */}
+            <div className="space-y-6">
+              {filteredFAQ.map((category, categoryIndex) => (
+                <Card key={categoryIndex} className="border-0 shadow-sm">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <category.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{category.category}</CardTitle>
+                        <CardDescription>{category.questions.length} articles</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
                     <Accordion type="single" collapsible className="w-full">
                       {category.questions.map((item, index) => (
-                        <AccordionItem key={index} value={`${categoryIndex}-${index}`}>
-                          <AccordionTrigger className="text-left">
-                            {item.question}
+                        <AccordionItem key={index} value={`${categoryIndex}-${index}`} className="border-b border-border/50 last:border-0">
+                          <AccordionTrigger className="text-left hover:no-underline py-4">
+                            <span className="font-medium">{item.question}</span>
                           </AccordionTrigger>
-                          <AccordionContent className="text-muted-foreground">
-                            {item.answer}
+                          <AccordionContent className="pb-4">
+                            <p className="text-muted-foreground leading-relaxed">{item.answer}</p>
                           </AccordionContent>
                         </AccordionItem>
                       ))}
                     </Accordion>
-                  </div>
-                ))}
-              </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-              {filteredFAQ.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No FAQ items match your search.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="guides" className="space-y-6">
-          {/* How Reuben Works */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-primary" />
-                How Reuben Works
-              </CardTitle>
-              <CardDescription>Understanding our AI-powered investment platform</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="prose prose-sm max-w-none">
-                <p className="text-muted-foreground">
-                  Reuben is an AI-powered investment platform that helps you source, analyze, and manage investment opportunities with unprecedented efficiency and insight.
-                </p>
-              </div>
-              
-              <div className="grid gap-4">
-                <div className="p-4 bg-blue-50/50 rounded-lg border border-blue-100">
-                  <h4 className="font-medium text-blue-900 mb-2">1. Intelligent Deal Sourcing</h4>
-                  <p className="text-sm text-blue-700">Our AI continuously monitors markets and identifies opportunities that match your investment criteria, bringing you high-quality deals before they hit the mainstream market.</p>
-                </div>
-                
-                <div className="p-4 bg-green-50/50 rounded-lg border border-green-100">
-                  <h4 className="font-medium text-green-900 mb-2">2. Reuben Orchestrator Analysis</h4>
-                  <p className="text-sm text-green-700">Our proprietary Reuben Orchestrator runs comprehensive analysis across 14+ data engines, evaluating market opportunity, product differentiation, team strength, financial health, and investment thesis alignment.</p>
-                </div>
-                
-                <div className="p-4 bg-purple-50/50 rounded-lg border border-purple-100">
-                  <h4 className="font-medium text-purple-900 mb-2">3. Investment Committee Support</h4>
-                  <p className="text-sm text-purple-700">Generate professional IC memos automatically, schedule sessions, track voting, and manage the entire investment decision process with AI-powered insights.</p>
-                </div>
-                
-                <div className="p-4 bg-amber-50/50 rounded-lg border border-amber-100">
-                  <h4 className="font-medium text-amber-900 mb-2">4. Portfolio Intelligence</h4>
-                  <p className="text-sm text-amber-700">Track portfolio performance, get early warning signals, and receive strategic recommendations to maximize your investment outcomes.</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Strategy Setup Guide */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-primary" />
-                Strategy Thesis Setup Guide
-              </CardTitle>
-              <CardDescription>Step-by-step guide to configure your investment strategy</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex gap-4">
-                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">1</div>
-                  <div>
-                    <h4 className="font-medium">Define Investment Focus</h4>
-                    <p className="text-sm text-muted-foreground">Set your target industries, geographic focus, deal size range, and investment stage preferences.</p>
-                  </div>
-                </div>
-                
-                <div className="flex gap-4">
-                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">2</div>
-                  <div>
-                    <h4 className="font-medium">Configure AI Criteria</h4>
-                    <p className="text-sm text-muted-foreground">Weight different analysis categories (market, team, product, financials) based on your investment philosophy.</p>
-                  </div>
-                </div>
-                
-                <div className="flex gap-4">
-                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">3</div>
-                  <div>
-                    <h4 className="font-medium">Set Scoring Thresholds</h4>
-                    <p className="text-sm text-muted-foreground">Define what constitutes "Exciting" (85+), "Promising" (70+), and "Needs Development" (50+) deals for your fund.</p>
-                  </div>
-                </div>
-                
-                <div className="flex gap-4">
-                  <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">4</div>
-                  <div>
-                    <h4 className="font-medium">Launch & Refine</h4>
-                    <p className="text-sm text-muted-foreground">Start analyzing deals and refine your criteria based on AI insights and actual deal outcomes.</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Reuben Orchestrator */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5 text-primary" />
-                Reuben Orchestrator
-              </CardTitle>
-              <CardDescription>Our proprietary AI analysis engine</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                The Reuben Orchestrator is our proprietary AI engine that runs comprehensive analysis on every deal, combining multiple data sources and analytical frameworks to provide you with actionable insights.
-              </p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <h4 className="font-medium">Analysis Engines</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Market Research Engine</li>
-                    <li>• Product & IP Analysis Engine</li>
-                    <li>• Financial Health Engine</li>
-                    <li>• Team Research Engine</li>
-                    <li>• Competitive Landscape Engine</li>
-                    <li>• Thesis Alignment Engine</li>
-                    <li>• RAG Calculation Engine</li>
-                  </ul>
-                </div>
-                
-                <div className="space-y-3">
-                  <h4 className="font-medium">Data Sources</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Company websites & public filings</li>
-                    <li>• Patent databases & IP registries</li>
-                    <li>• Financial databases & records</li>
-                    <li>• LinkedIn & professional networks</li>
-                    <li>• News & market intelligence</li>
-                    <li>• Industry reports & analysis</li>
-                    <li>• Regulatory filings & compliance</li>
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="contact" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
+            {/* System Status */}
+            <Card className="border-0 shadow-sm">
               <CardHeader>
-                <CardTitle>Contact Support</CardTitle>
-                <CardDescription>Get help with technical issues or questions</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  System Status
+                </CardTitle>
+                <CardDescription>Current status of ReubenAI services</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="subject">Subject</Label>
-                  <Input
-                    id="subject"
-                    value={supportForm.subject}
-                    onChange={(e) => setSupportForm(prev => ({ ...prev, subject: e.target.value }))}
-                    placeholder="Brief description of your issue"
-                  />
+              <CardContent>
+                <div className="space-y-3">
+                  {systemStatus.map((service, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(service.status)}
+                        <span className="font-medium">{service.service}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm capitalize text-emerald-600 font-medium">{service.status}</p>
+                        <p className="text-xs text-muted-foreground">Updated {service.lastCheck}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={supportForm.description}
-                    onChange={(e) => setSupportForm(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Provide detailed information about your issue or question"
-                    rows={6}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={supportForm.email}
-                    onChange={(e) => setSupportForm(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="your.email@company.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Priority</Label>
-                  <div className="flex gap-2">
-                    {['low', 'medium', 'high', 'urgent'].map((priority) => (
-                      <Button
-                        key={priority}
-                        variant={supportForm.priority === priority ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSupportForm(prev => ({ ...prev, priority }))}
-                      >
-                        {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                <Button onClick={handleSupportSubmit} className="w-full">
-                  Submit Support Request
-                </Button>
               </CardContent>
             </Card>
 
-            <Card>
+            {/* Contact Support */}
+            <Card className="border-0 shadow-sm">
               <CardHeader>
-                <CardTitle>Other Ways to Reach Us</CardTitle>
-                <CardDescription>Alternative contact methods</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-primary" />
+                  Contact Support
+                </CardTitle>
+                <CardDescription>Need help? Get in touch with our team</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center gap-3 p-4 border rounded-lg">
-                  <Mail className="h-6 w-6 text-primary" />
-                  <div>
-                    <h4 className="font-medium">Email Support</h4>
-                    <p className="text-sm text-muted-foreground">support@reuben.com</p>
-                    <p className="text-xs text-muted-foreground">Response within 24 hours</p>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Contact Methods */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-4 rounded-lg border border-border/50">
+                      <Mail className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">Email Support</p>
+                        <p className="text-sm text-muted-foreground">support@goreuben.com</p>
+                        <p className="text-xs text-muted-foreground mt-1">Response within 24 hours</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 p-4 rounded-lg border border-border/50">
+                      <BookOpen className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">Documentation</p>
+                        <p className="text-sm text-muted-foreground">Comprehensive guides and API docs</p>
+                        <button className="text-xs text-primary hover:underline mt-1 flex items-center gap-1">
+                          View Documentation <ExternalLink className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-3 p-4 border rounded-lg">
-                  <Phone className="h-6 w-6 text-primary" />
-                  <div>
-                    <h4 className="font-medium">Phone Support</h4>
-                    <p className="text-sm text-muted-foreground">+1 (555) 123-4567</p>
-                    <p className="text-xs text-muted-foreground">Mon-Fri 9AM-6PM EST</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-4 border rounded-lg">
-                  <MessageSquare className="h-6 w-6 text-primary" />
-                  <div>
-                    <h4 className="font-medium">Live Chat</h4>
-                    <p className="text-sm text-muted-foreground">Available during business hours</p>
-                    <Button variant="outline" size="sm" className="mt-2">
-                      Start Chat
+                  {/* Support Form */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Your Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={supportForm.email}
+                        onChange={(e) => setSupportForm({...supportForm, email: e.target.value})}
+                        placeholder="your@email.com"
+                        className="bg-background border-border/60"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">Subject</Label>
+                      <Input
+                        id="subject"
+                        value={supportForm.subject}
+                        onChange={(e) => setSupportForm({...supportForm, subject: e.target.value})}
+                        placeholder="Brief description of your issue"
+                        className="bg-background border-border/60"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={supportForm.description}
+                        onChange={(e) => setSupportForm({...supportForm, description: e.target.value})}
+                        placeholder="Detailed description of your issue..."
+                        rows={4}
+                        className="bg-background border-border/60"
+                      />
+                    </div>
+                    
+                    <Button onClick={handleSupportSubmit} className="w-full">
+                      Submit Support Request
                     </Button>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <h4 className="font-medium">Enterprise Support</h4>
-                  <p className="text-sm text-muted-foreground">
-                    For enterprise customers, contact your dedicated account manager or reach out to enterprise@reuben.com for priority support.
-                  </p>
                 </div>
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-
-        <TabsContent value="status" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Status</CardTitle>
-              <CardDescription>Real-time status of our services and recent updates</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <div>
-                      <h4 className="font-medium">Core Platform</h4>
-                      <p className="text-sm text-muted-foreground">All systems operational</p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary">Operational</Badge>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <div>
-                      <h4 className="font-medium">AI Analysis Engine</h4>
-                      <p className="text-sm text-muted-foreground">Processing normally</p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary">Operational</Badge>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                    <div>
-                      <h4 className="font-medium">Data Sync</h4>
-                      <p className="text-sm text-muted-foreground">Minor delays in external data</p>
-                    </div>
-                  </div>
-                  <Badge variant="outline">Degraded</Badge>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <div>
-                      <h4 className="font-medium">File Storage</h4>
-                      <p className="text-sm text-muted-foreground">Upload and download working</p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary">Operational</Badge>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="font-medium">Recent Updates</h4>
-                <div className="space-y-3">
-                  <div className="p-3 border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950/20">
-                    <p className="text-sm font-medium">Enhanced AI Analysis Released</p>
-                    <p className="text-xs text-muted-foreground">Jan 30, 2025 - New multi-engine analysis system deployed</p>
-                  </div>
-                  <div className="p-3 border-l-4 border-green-500 bg-green-50 dark:bg-green-950/20">
-                    <p className="text-sm font-medium">Performance Improvements</p>
-                    <p className="text-xs text-muted-foreground">Jan 28, 2025 - Pipeline loading speed increased by 40%</p>
-                  </div>
-                  <div className="p-3 border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-950/20">
-                    <p className="text-sm font-medium">Scheduled Maintenance</p>
-                    <p className="text-xs text-muted-foreground">Jan 25, 2025 - Database optimization completed</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
     </div>
   );
 }
