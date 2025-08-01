@@ -23,6 +23,7 @@ import { AdminUserTable } from '@/components/admin/AdminUserTable';
 import { AdminActivityFeed } from '@/components/admin/AdminActivityFeed';
 import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModal';
 import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
+import { AdminInviteUserModal } from '@/components/admin/AdminInviteUserModal';
 
 interface Organization {
   id: string;
@@ -93,6 +94,7 @@ export default function Admin() {
   const [showArchivedFunds, setShowArchivedFunds] = useState(false);
   const [thesisConfigFund, setThesisConfigFund] = useState<Fund | null>(null);
   const [bulkUploadFund, setBulkUploadFund] = useState<Fund | null>(null);
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -372,8 +374,7 @@ export default function Admin() {
   };
 
   const handleInviteUser = () => {
-    // TODO: Implement user invitation modal
-    toast.info('User invitation feature coming soon');
+    setShowInviteModal(true);
   };
 
   const archiveFund = async (fundId: string, fundName: string, reason: string = '') => {
@@ -791,6 +792,14 @@ export default function Admin() {
         fund={bulkUploadFund}
         open={!!bulkUploadFund}
         onOpenChange={(open) => !open && setBulkUploadFund(null)}
+      />
+
+      {/* User Invitation Modal */}
+      <AdminInviteUserModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        organizations={organizations}
+        onInviteSuccess={fetchData}
       />
     </div>
   );
