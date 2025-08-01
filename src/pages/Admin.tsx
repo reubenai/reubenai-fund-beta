@@ -191,14 +191,7 @@ export default function Admin() {
       return;
     }
 
-    // Check user permissions (align with database RLS policy)
-    const isReubenAdmin = user?.email?.includes('@goreuben.com') || user?.email?.includes('@reuben.com');
-    const hasCreateAccess = isReubenAdmin || profile?.role === 'super_admin' || profile?.role === 'admin';
-
-    if (!hasCreateAccess) {
-      toast.error(`Insufficient permissions. Admin access required. Current role: ${profile?.role || 'none'}, Email: ${user?.email}`);
-      return;
-    }
+    // All authenticated users can create organizations
 
     try {
       const { data, error } = await supabase
