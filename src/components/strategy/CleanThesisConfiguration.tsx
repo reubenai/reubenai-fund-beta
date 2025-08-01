@@ -44,7 +44,8 @@ export function CleanThesisConfiguration({
     if (strategy.id) {
       const result = await updateStrategy(editedStrategy);
       if (result) {
-        onSave();
+        // Force page refresh to show updated strategy immediately
+        window.location.reload();
       }
     }
   };

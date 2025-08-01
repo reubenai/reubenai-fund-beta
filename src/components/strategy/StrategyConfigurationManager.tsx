@@ -27,12 +27,15 @@ export function StrategyConfigurationManager({ fundId, fundName }: StrategyConfi
   console.log('Fund ID:', fundId);
   console.log('Fund Name:', fundName);
   
-  const { strategy, loading, error } = useUnifiedStrategy(fundId);
+  const { strategy, loading, error, refreshStrategy } = useUnifiedStrategy(fundId);
   const [showWizard, setShowWizard] = useState(false);
 
   const handleWizardComplete = () => {
     setShowWizard(false);
-    // Strategy will be reloaded by the hook
+    // Force refresh the strategy after configuration
+    if (refreshStrategy) {
+      refreshStrategy();
+    }
   };
 
   if (loading) {

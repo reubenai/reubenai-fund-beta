@@ -122,11 +122,16 @@ export function useUnifiedStrategy(fundId?: string) {
     return unifiedStrategyService.validateStrategy(wizardData);
   };
 
+  const refreshStrategy = async () => {
+    await loadStrategy();
+  };
+
   return {
     strategy,
     loading,
     error,
     loadStrategy,
+    refreshStrategy,
     createStrategy,
     updateStrategy,
     getDefaultTemplate,
