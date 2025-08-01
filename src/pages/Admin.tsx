@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield, Archive, ArchiveRestore, Filter } from 'lucide-react';
+import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield, Archive, ArchiveRestore, Filter, Target } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ import {
 import { AdminStats } from '@/components/admin/AdminStats';
 import { AdminUserTable } from '@/components/admin/AdminUserTable';
 import { AdminActivityFeed } from '@/components/admin/AdminActivityFeed';
+import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModal';
 
 interface Organization {
   id: string;
@@ -46,7 +47,18 @@ interface Fund {
   id: string;
   name: string;
   organization_id: string;
-  fund_type: string;
+  fund_type: 'vc' | 'pe';
+  target_size: number | null;
+  currency: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+interface DbFund {
+  id: string;
+  name: string;
+  organization_id: string;
+  fund_type: 'venture_capital' | 'private_equity';
   target_size: number | null;
   currency: string;
   is_active: boolean;
@@ -78,6 +90,7 @@ export default function Admin() {
     pendingIssues: 0,
   });
   const [showArchivedFunds, setShowArchivedFunds] = useState(false);
+  const [thesisConfigFund, setThesisConfigFund] = useState<Fund | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -141,7 +154,12 @@ export default function Admin() {
 
       setOrganizations(orgsData || []);
       setProfiles(profilesData || []);
-      setFunds(fundsData || []);
+      // Transform fund types from database format to component format
+      const transformedFunds = (fundsData || []).map((fund: DbFund): Fund => ({
+        ...fund,
+        fund_type: fund.fund_type === 'venture_capital' ? 'vc' : 'pe'
+      }));
+      setFunds(transformedFunds);
       setStats({
         totalOrgs: orgsData?.length || 0,
         totalUsers: profilesData?.length || 0,
@@ -234,7 +252,12 @@ export default function Admin() {
 
       if (error) throw error;
 
-      setFunds([data, ...funds]);
+      // Transform the created fund type and add to list
+      const transformedFund: Fund = {
+        ...data,
+        fund_type: data.fund_type === 'venture_capital' ? 'vc' : 'pe'
+      };
+      setFunds([transformedFund, ...funds]);
       setNewFund({
         name: '',
         organization_id: '',
@@ -645,6 +668,15 @@ export default function Admin() {
                       </div>
                     </div>
                     <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setThesisConfigFund(fund)}
+                        className="text-primary hover:text-primary"
+                      >
+                        <Target className="h-4 w-4 mr-2" />
+                        Configure Thesis
+                      </Button>
                       {fund.is_active ? (
                         <Dialog>
                           <DialogTrigger asChild>
@@ -701,6 +733,13 @@ export default function Admin() {
           <AdminActivityFeed />
         </div>
       </div>
+
+      {/* Thesis Configuration Modal */}
+      <AdminThesisConfigModal
+        fund={thesisConfigFund}
+        open={!!thesisConfigFund}
+        onOpenChange={(open) => !open && setThesisConfigFund(null)}
+      />
     </div>
   );
 }
