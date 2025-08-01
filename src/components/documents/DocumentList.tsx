@@ -210,6 +210,11 @@ export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTri
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium truncate">{document.name}</span>
+                      {document.document_type && (
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                          {document.document_type}
+                        </Badge>
+                      )}
                       {document.document_category && (
                         <Badge 
                           variant="secondary" 
@@ -225,9 +230,6 @@ export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTri
                       <span>
                         Uploaded {formatDistanceToNow(new Date(document.created_at), { addSuffix: true })}
                       </span>
-                      {document.document_type && (
-                        <span>{document.document_type}</span>
-                      )}
                     </div>
                     
                     {document.tags && document.tags.length > 0 && (
