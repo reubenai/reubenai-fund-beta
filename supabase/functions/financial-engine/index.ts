@@ -16,6 +16,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 interface FinancialAnalysisRequest {
   dealData: any;
   strategyData: any;
+  documentData?: any;
 }
 
 serve(async (req) => {
@@ -24,12 +25,12 @@ serve(async (req) => {
   }
 
   try {
-    const { dealData, strategyData }: FinancialAnalysisRequest = await req.json();
+    const { dealData, strategyData, documentData }: FinancialAnalysisRequest = await req.json();
     
     console.log('💰 Financial Engine: Analyzing financial feasibility for:', dealData.company_name);
     
     // Conduct comprehensive financial analysis
-    const financialResult = await analyzeFinancialFeasibility(dealData, strategyData);
+    const financialResult = await analyzeFinancialFeasibility(dealData, strategyData, documentData);
     
     // Store source tracking
     await storeSources(dealData.id, 'financial-engine', financialResult.sources);
@@ -54,11 +55,11 @@ serve(async (req) => {
   }
 });
 
-async function analyzeFinancialFeasibility(dealData: any, strategyData: any) {
+async function analyzeFinancialFeasibility(dealData: any, strategyData: any, documentData: any = null) {
   const validatedData = validateFinancialData(dealData);
   
-  // Analyze available financial documents
-  const documentAnalysis = await analyzeFinancialDocuments(dealData.id);
+  // Analyze available financial documents with enhanced document processing
+  const documentAnalysis = await analyzeFinancialDocuments(dealData.id, documentData);
   
   // Assess business model and revenue streams
   const businessModelAnalysis = await analyzeBusinessModel(validatedData);
@@ -132,30 +133,39 @@ function validateFinancialData(dealData: any) {
   };
 }
 
-async function analyzeFinancialDocuments(dealId: string) {
+async function analyzeFinancialDocuments(dealId: string, documentData: any = null) {
   const analysis = {
     documents_found: false,
     financial_data: {
       revenue: 'N/A',
       growth_rate: 'N/A',
       burn_rate: 'N/A',
-      runway: 'N/A'
+      runway: 'N/A',
+      funding_usage: 'N/A',
+      unit_economics: 'N/A'
     },
     sources: [],
-    quality: 'no_documents'
+    quality: 'no_documents',
+    pitch_deck_analysis: null
   };
   
   try {
-    // Check for uploaded financial documents
-    const { data: documents, error } = await supabase
-      .from('deal_documents')
-      .select('*')
-      .eq('deal_id', dealId)
-      .in('document_category', ['pitch_deck', 'business_plan', 'other']);
-    
-    if (error) {
-      console.error('Error fetching documents:', error);
-      return analysis;
+    // Use provided document data if available, otherwise fetch from database
+    let documents = [];
+    if (documentData && documentData.documents) {
+      documents = documentData.documents;
+    } else {
+      const { data: dbDocuments, error } = await supabase
+        .from('deal_documents')
+        .select('*')
+        .eq('deal_id', dealId)
+        .in('document_category', ['pitch_deck', 'business_plan', 'other']);
+      
+      if (error) {
+        console.error('Error fetching documents:', error);
+        return analysis;
+      }
+      documents = dbDocuments || [];
     }
     
     if (documents && documents.length > 0) {
@@ -167,9 +177,25 @@ async function analyzeFinancialDocuments(dealId: string) {
         confidence: 80
       });
       
-      // In production, this would process documents using document-processor
-      analysis.financial_data = await simulateDocumentExtraction(documents);
-      analysis.quality = 'documents_available';
+      // Process extracted text from documents, especially pitch decks
+      if (documentData && documentData.extractedTexts && documentData.extractedTexts.length > 0) {
+        analysis.financial_data = await extractFinancialDataFromText(documentData.extractedTexts);
+        analysis.quality = 'text_extracted';
+        
+        // Special handling for pitch deck
+        if (documentData.pitchDeck && documentData.pitchDeck.extracted_text) {
+          analysis.pitch_deck_analysis = await analyzePitchDeckFinancials(documentData.pitchDeck.extracted_text);
+          analysis.sources.push({
+            type: 'pitch_deck_analysis',
+            source: 'extracted_pitch_deck_content',
+            validated: true,
+            confidence: 90
+          });
+        }
+      } else {
+        analysis.financial_data = await simulateDocumentExtraction(documents);
+        analysis.quality = 'documents_available';
+      }
     }
   } catch (error) {
     console.error('Error analyzing financial documents:', error);
@@ -178,14 +204,112 @@ async function analyzeFinancialDocuments(dealId: string) {
   return analysis;
 }
 
+async function extractFinancialDataFromText(extractedTexts: any[]) {
+  const allText = extractedTexts.map(doc => `${doc.name}:\n${doc.extracted_text}`).join('\n\n');
+  
+  try {
+    // Use OpenAI to extract financial data from documents
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'Extract financial metrics from the provided document text. Look for revenue, growth rates, burn rate, funding usage, unit economics, and business model details. Return only factual information found in the documents.'
+          },
+          {
+            role: 'user',
+            content: `Extract financial data from these documents:\n\n${allText.substring(0, 15000)}`
+          }
+        ],
+        max_tokens: 1000
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const extractedInfo = data.choices[0].message.content;
+      
+      return {
+        revenue: extractMetricFromText(extractedInfo, 'revenue'),
+        growth_rate: extractMetricFromText(extractedInfo, 'growth'),
+        burn_rate: extractMetricFromText(extractedInfo, 'burn'),
+        runway: extractMetricFromText(extractedInfo, 'runway'),
+        funding_usage: extractMetricFromText(extractedInfo, 'funding usage'),
+        unit_economics: extractMetricFromText(extractedInfo, 'unit economics')
+      };
+    }
+  } catch (error) {
+    console.error('Error extracting financial data:', error);
+  }
+  
+  return {
+    revenue: 'Extraction in progress',
+    growth_rate: 'Extraction in progress',
+    burn_rate: 'Extraction in progress',
+    runway: 'Extraction in progress',
+    funding_usage: 'Document text processed',
+    unit_economics: 'Document text processed'
+  };
+}
+
+async function analyzePitchDeckFinancials(pitchDeckText: string) {
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'Analyze this pitch deck for financial information. Extract revenue projections, business model, funding requirements, market size, and key financial metrics. Focus on concrete numbers and projections.'
+          },
+          {
+            role: 'user',
+            content: pitchDeckText.substring(0, 12000)
+          }
+        ],
+        max_tokens: 800
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.choices[0].message.content;
+    }
+  } catch (error) {
+    console.error('Error analyzing pitch deck:', error);
+  }
+  
+  return 'Pitch deck financial analysis in progress';
+}
+
+function extractMetricFromText(text: string, metric: string): string {
+  const lines = text.split('\n');
+  const metricLine = lines.find(line => 
+    line.toLowerCase().includes(metric.toLowerCase()) && 
+    (line.includes('$') || line.includes('%') || line.includes('month'))
+  );
+  return metricLine ? metricLine.trim() : `${metric} information not found in documents`;
+}
+
 async function simulateDocumentExtraction(documents: any[]) {
-  // This would integrate with the document-processor edge function
-  // to extract financial metrics from uploaded documents
   return {
     revenue: 'Document analysis required',
     growth_rate: 'Document analysis required',
     burn_rate: 'Document analysis required',
-    runway: 'Document analysis required'
+    runway: 'Document analysis required',
+    funding_usage: 'Document analysis required',
+    unit_economics: 'Document analysis required'
   };
 }
 

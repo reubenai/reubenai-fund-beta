@@ -16,6 +16,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 interface ThesisAnalysisRequest {
   dealData: any;
   strategyData: any;
+  documentData?: any;
 }
 
 serve(async (req) => {
@@ -24,12 +25,12 @@ serve(async (req) => {
   }
 
   try {
-    const { dealData, strategyData }: ThesisAnalysisRequest = await req.json();
+    const { dealData, strategyData, documentData }: ThesisAnalysisRequest = await req.json();
     
     console.log('🎯 Investment Thesis Alignment Engine: Analyzing deal:', dealData.company_name);
     
     // Analyze alignment with fund strategy
-    const alignmentResult = await analyzeThesisAlignment(dealData, strategyData);
+    const alignmentResult = await analyzeThesisAlignment(dealData, strategyData, documentData);
     
     // Store source tracking
     await storeSources(dealData.id, 'thesis-alignment-engine', alignmentResult.sources);
@@ -54,7 +55,7 @@ serve(async (req) => {
   }
 });
 
-async function analyzeThesisAlignment(dealData: any, strategyData: any) {
+async function analyzeThesisAlignment(dealData: any, strategyData: any, documentData: any = null) {
   // Validate available data
   const validatedDeal = validateDealData(dealData);
   const validatedStrategy = validateStrategyData(strategyData);

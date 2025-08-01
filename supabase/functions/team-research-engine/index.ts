@@ -16,6 +16,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 interface TeamResearchRequest {
   dealData: any;
   strategyData: any;
+  documentData?: any;
 }
 
 serve(async (req) => {
@@ -24,12 +25,12 @@ serve(async (req) => {
   }
 
   try {
-    const { dealData, strategyData }: TeamResearchRequest = await req.json();
+    const { dealData, strategyData, documentData }: TeamResearchRequest = await req.json();
     
     console.log('👥 Team Research Engine: Analyzing founder & team for:', dealData.company_name);
     
     // Conduct comprehensive team research
-    const teamResult = await analyzeFounderAndTeam(dealData, strategyData);
+    const teamResult = await analyzeFounderAndTeam(dealData, strategyData, documentData);
     
     // Store source tracking
     await storeSources(dealData.id, 'team-research-engine', teamResult.sources);
@@ -54,8 +55,11 @@ serve(async (req) => {
   }
 });
 
-async function analyzeFounderAndTeam(dealData: any, strategyData: any) {
+async function analyzeFounderAndTeam(dealData: any, strategyData: any, documentData: any = null) {
   const validatedData = validateTeamData(dealData);
+  
+  // Enhanced document-driven team analysis
+  const documentInsights = documentData ? await extractTeamInsightsFromDocuments(documentData) : null;
   
   // Research founder background
   const founderResearch = await conductFounderResearch(validatedData);
@@ -121,6 +125,55 @@ async function analyzeFounderAndTeam(dealData: any, strategyData: any) {
       })
     },
     validation_status: confidence >= 70 ? 'validated' : confidence >= 50 ? 'partial' : 'unvalidated'
+  };
+}
+
+async function extractTeamInsightsFromDocuments(documentData: any) {
+  if (!documentData || !documentData.extractedTexts || documentData.extractedTexts.length === 0) {
+    return null;
+  }
+  
+  const allText = documentData.extractedTexts.map(doc => `${doc.name}:\n${doc.extracted_text}`).join('\n\n');
+  
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'Extract team and founder information from these documents. Look for: founder backgrounds, team composition, advisory board, previous experience, achievements, and leadership roles.'
+          },
+          {
+            role: 'user',
+            content: allText.substring(0, 15000)
+          }
+        ],
+        max_tokens: 1000
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        team_info: data.choices[0].message.content,
+        source: 'extracted_documents',
+        confidence: 85
+      };
+    }
+  } catch (error) {
+    console.error('Error extracting team insights:', error);
+  }
+  
+  return {
+    team_info: 'Document analysis in progress',
+    source: 'extracted_documents',
+    confidence: 50
   };
 }
 

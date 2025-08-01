@@ -61,13 +61,16 @@ serve(async (req) => {
     const dealData = await fetchDealData(dealId);
     const strategyData = await fetchFundStrategy(dealData.fund_id);
     
+    // Fetch document data for enhanced analysis
+    const documentData = await fetchDocumentData(dealId);
+    
     // Run all 5 AI engines in parallel
     const enginePromises = [
-      callEngine('thesis-alignment-engine', { dealData, strategyData }),
-      callEngine('market-research-engine', { dealData, strategyData }),
-      callEngine('product-ip-engine', { dealData, strategyData }),
-      callEngine('financial-engine', { dealData, strategyData }),
-      callEngine('team-research-engine', { dealData, strategyData })
+      callEngine('thesis-alignment-engine', { dealData, strategyData, documentData }),
+      callEngine('market-research-engine', { dealData, strategyData, documentData }),
+      callEngine('product-ip-engine', { dealData, strategyData, documentData }),
+      callEngine('financial-engine', { dealData, strategyData, documentData }),
+      callEngine('team-research-engine', { dealData, strategyData, documentData })
     ];
     
     console.log('🚀 Running 5 AI engines in parallel...');
@@ -121,6 +124,47 @@ async function fetchDealData(dealId: string) {
   }
   
   return deal;
+}
+
+async function fetchDocumentData(dealId: string) {
+  const { data: documents, error } = await supabase
+    .from('deal_documents')
+    .select('*')
+    .eq('deal_id', dealId)
+    .order('created_at', { ascending: false });
+    
+  if (error) {
+    console.warn('Warning: Could not fetch documents:', error.message);
+    return { documents: [], pitchDeck: null, extractedTexts: [], documentSummary: {} };
+  }
+  
+  const pitchDeck = documents?.find(doc => 
+    doc.document_category === 'pitch_deck' || 
+    doc.name?.toLowerCase().includes('pitch') ||
+    doc.name?.toLowerCase().includes('deck')
+  ) || null;
+  
+  const extractedTexts = documents?.filter(doc => doc.extracted_text && doc.extracted_text.trim().length > 0)
+    .map(doc => ({ 
+      name: doc.name,
+      category: doc.document_category,
+      extracted_text: doc.extracted_text,
+      parsing_status: doc.parsing_status 
+    })) || [];
+    
+  const documentSummary = {
+    total_documents: documents?.length || 0,
+    pitch_deck_available: !!pitchDeck,
+    documents_with_text: extractedTexts.length,
+    categories: documents?.map(d => d.document_category).filter(Boolean) || []
+  };
+  
+  return { 
+    documents: documents || [], 
+    pitchDeck, 
+    extractedTexts, 
+    documentSummary 
+  };
 }
 
 async function fetchFundStrategy(fundId: string) {

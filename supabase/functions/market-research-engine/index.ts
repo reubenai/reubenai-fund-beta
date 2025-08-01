@@ -16,6 +16,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 interface MarketResearchRequest {
   dealData: any;
   strategyData: any;
+  documentData?: any;
 }
 
 serve(async (req) => {
@@ -24,12 +25,12 @@ serve(async (req) => {
   }
 
   try {
-    const { dealData, strategyData }: MarketResearchRequest = await req.json();
+    const { dealData, strategyData, documentData }: MarketResearchRequest = await req.json();
     
     console.log('📊 Market Research Engine: Analyzing market for:', dealData.company_name);
     
     // Conduct comprehensive market research
-    const marketResult = await conductMarketResearch(dealData, strategyData);
+    const marketResult = await conductMarketResearch(dealData, strategyData, documentData);
     
     // Store source tracking
     await storeSources(dealData.id, 'market-research-engine', marketResult.sources);
@@ -54,11 +55,14 @@ serve(async (req) => {
   }
 });
 
-async function conductMarketResearch(dealData: any, strategyData: any) {
+async function conductMarketResearch(dealData: any, strategyData: any, documentData: any = null) {
   const validatedData = validateMarketData(dealData);
   
-  // Attempt real-time market research
-  const marketIntelligence = await gatherMarketIntelligence(validatedData);
+  // Enhanced document-driven market research
+  const documentInsights = documentData ? await extractMarketInsightsFromDocuments(documentData) : null;
+  
+  // Attempt real-time market research with document context
+  const marketIntelligence = await gatherMarketIntelligence(validatedData, documentInsights);
   
   // Generate AI-powered market analysis
   const aiAnalysis = await generateMarketAnalysis(validatedData, marketIntelligence);
@@ -85,6 +89,55 @@ async function conductMarketResearch(dealData: any, strategyData: any) {
   };
 }
 
+async function extractMarketInsightsFromDocuments(documentData: any) {
+  if (!documentData || !documentData.extractedTexts || documentData.extractedTexts.length === 0) {
+    return null;
+  }
+  
+  const allText = documentData.extractedTexts.map(doc => `${doc.name}:\n${doc.extracted_text}`).join('\n\n');
+  
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'Extract market and business information from these documents. Look for: market size data, target customers, competitive analysis, market validation, growth opportunities, and business model details.'
+          },
+          {
+            role: 'user',
+            content: allText.substring(0, 15000)
+          }
+        ],
+        max_tokens: 1000
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        market_info: data.choices[0].message.content,
+        source: 'extracted_documents',
+        confidence: 85
+      };
+    }
+  } catch (error) {
+    console.error('Error extracting market insights:', error);
+  }
+  
+  return {
+    market_info: 'Document analysis in progress',
+    source: 'extracted_documents',
+    confidence: 50
+  };
+}
+
 function validateMarketData(dealData: any) {
   return {
     company_name: dealData.company_name || 'N/A',
@@ -95,7 +148,7 @@ function validateMarketData(dealData: any) {
   };
 }
 
-async function gatherMarketIntelligence(dealData: any) {
+async function gatherMarketIntelligence(dealData: any, documentInsights: any = null) {
   const intelligence = {
     market_size: 'N/A',
     growth_rate: 'N/A', 
@@ -230,6 +283,11 @@ function calculateMarketScore(intelligence: any): number {
     score += 15; // Large market bonus
   } else if (intelligence.market_size && intelligence.market_size.includes('B')) {
     score += 10; // Medium market bonus
+  }
+  
+  // Bonus for document-driven insights
+  if (intelligence.sources.some((s: any) => s.source === 'extracted_documents')) {
+    score += 10; // Document analysis bonus
   }
   
   // Cap at 100
