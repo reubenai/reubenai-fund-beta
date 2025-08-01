@@ -834,8 +834,8 @@ export function StrategyQuickWizard({
             // Deal Definition
             <div className="space-y-6">
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-lg mb-2">Deal Scoring Thresholds</h3>
-                <p className="text-muted-foreground">Set the score thresholds that determine how deals are classified.</p>
+                <h3 className="font-semibold text-lg mb-2">Scoring Thresholds</h3>
+                <p className="text-muted-foreground">Set the score thresholds that determine how deals are classified as Exciting, Promising, or Needs Development in your pipeline.</p>
               </div>
 
               <div className="grid grid-cols-3 gap-4">

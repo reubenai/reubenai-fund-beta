@@ -44,8 +44,7 @@ export function CleanThesisConfiguration({
     if (strategy.id) {
       const result = await updateStrategy(editedStrategy);
       if (result) {
-        // Force page refresh to show updated strategy immediately
-        window.location.reload();
+        onSave(); // Use the parent callback instead of forcing page reload
       }
     }
   };
@@ -210,12 +209,12 @@ export function CleanThesisConfiguration({
             </CardContent>
           </Card>
 
-          {/* AI Scoring Configuration */}
+          {/* Scoring Configuration */}
           <Card className="border-0 shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base font-medium">
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                AI Scoring Thresholds
+                Scoring Thresholds
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -233,7 +232,7 @@ export function CleanThesisConfiguration({
                     onChange={(e) => updateField('exciting_threshold', parseInt(e.target.value))}
                     className="mt-2 border-0 bg-muted/30"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Score threshold for exciting deals</p>
+                  <p className="text-xs text-muted-foreground mt-1">Deals scoring above this threshold are categorized as "Exciting"</p>
                 </div>
                 <div>
                   <Label htmlFor="promising-threshold" className="text-sm font-medium">
@@ -248,7 +247,7 @@ export function CleanThesisConfiguration({
                     onChange={(e) => updateField('promising_threshold', parseInt(e.target.value))}
                     className="mt-2 border-0 bg-muted/30"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Score threshold for promising deals</p>
+                  <p className="text-xs text-muted-foreground mt-1">Deals scoring above this threshold are categorized as "Promising"</p>
                 </div>
                 <div>
                   <Label htmlFor="needs-development-threshold" className="text-sm font-medium">
@@ -263,7 +262,7 @@ export function CleanThesisConfiguration({
                     onChange={(e) => updateField('needs_development_threshold', parseInt(e.target.value))}
                     className="mt-2 border-0 bg-muted/30"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Score threshold for deals needing work</p>
+                  <p className="text-xs text-muted-foreground mt-1">Deals scoring above this threshold are categorized as "Needs Development"</p>
                 </div>
               </div>
             </CardContent>

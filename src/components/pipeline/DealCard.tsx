@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Building2, DollarSign, MapPin, Calendar } from 'lucide-react';
 import { Deal } from '@/hooks/usePipelineDeals';
+import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 
 interface DealCardProps {
   deal: Deal;
@@ -11,12 +12,6 @@ interface DealCardProps {
   onDealClick?: (deal: Deal) => void;
 }
 
-const getScoreColor = (score?: number) => {
-  if (!score) return 'bg-gray-100 text-gray-600';
-  if (score >= 85) return 'bg-green-100 text-green-700 border-green-200';
-  if (score >= 70) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-  return 'bg-red-100 text-red-700 border-red-200';
-};
 
 const getRAGColor = (level?: string) => {
   switch (level) {
@@ -29,6 +24,8 @@ const getRAGColor = (level?: string) => {
 };
 
 export const DealCard: React.FC<DealCardProps> = ({ deal, index, onDealClick }) => {
+  const { getRAGCategory } = useStrategyThresholds();
+  
   const formatAmount = (amount?: number, currency = 'USD') => {
     if (!amount) return 'N/A';
     return new Intl.NumberFormat('en-US', {
@@ -101,12 +98,17 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, index, onDealClick }) 
               )}
             </div>
 
-            {/* AI Score */}
+            {/* RAG Score */}
             {deal.overall_score && (
               <div className="mb-3">
-                <Badge variant="outline" className={getScoreColor(deal.overall_score)}>
-                  AI Score: {deal.overall_score}
-                </Badge>
+                {(() => {
+                  const rag = getRAGCategory(deal.overall_score);
+                  return (
+                    <Badge variant="outline" className={rag.color}>
+                      {rag.label}
+                    </Badge>
+                  );
+                })()}
               </div>
             )}
 

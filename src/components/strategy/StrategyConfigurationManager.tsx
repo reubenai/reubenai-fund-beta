@@ -38,6 +38,13 @@ export function StrategyConfigurationManager({ fundId, fundName }: StrategyConfi
     }
   };
 
+  const handleStrategySave = () => {
+    // Refresh strategy data when saved from configuration
+    if (refreshStrategy) {
+      refreshStrategy();
+    }
+  };
+
   if (loading) {
     return (
       <CardContent className="py-12">
@@ -89,7 +96,7 @@ export function StrategyConfigurationManager({ fundId, fundName }: StrategyConfi
   return (
     <CleanThesisConfiguration
       strategy={strategyToEdit}
-      onSave={() => {}} // Handle save within the component
+      onSave={handleStrategySave}
       onCancel={() => {}} // No cancel needed since this is the main view
       onLaunchWizard={() => setShowWizard(true)}
     />

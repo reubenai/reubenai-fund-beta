@@ -20,6 +20,7 @@ import {
   Star
 } from 'lucide-react';
 import { Deal } from '@/hooks/usePipelineDeals';
+import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 import { DealCardHeader } from './DealCardHeader';
 import { DealCardMetrics } from './DealCardMetrics';
 import { DealCardFooter } from './DealCardFooter';
@@ -32,12 +33,6 @@ interface EnhancedDealCardProps {
   viewDensity: 'compact' | 'comfortable' | 'detailed';
 }
 
-const getScoreColor = (score?: number) => {
-  if (!score) return 'bg-gray-100 text-gray-600';
-  if (score >= 85) return 'bg-green-100 text-green-700 border-green-200';
-  if (score >= 70) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-  return 'bg-red-100 text-red-700 border-red-200';
-};
 
 const getRAGColor = (level?: string) => {
   switch (level) {
@@ -64,9 +59,10 @@ const getAnalysisStatus = (deal: Deal) => {
 export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({ 
   deal, 
   index, 
-  onDealClick, 
+  onDealClick,
   viewDensity 
 }) => {
+  const { getRAGCategory } = useStrategyThresholds();
   const formatAmount = (amount?: number, currency = 'USD') => {
     if (!amount) return 'N/A';
     
@@ -141,12 +137,17 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
               viewDensity={viewDensity}
             />
 
-            {/* AI Score */}
+            {/* RAG Score */}
             {deal.overall_score && viewDensity !== 'compact' && (
               <div className="mb-3">
-                <Badge variant="outline" className={getScoreColor(deal.overall_score)}>
-                  AI Score: {deal.overall_score}
-                </Badge>
+                {(() => {
+                  const rag = getRAGCategory(deal.overall_score);
+                  return (
+                    <Badge variant="outline" className={rag.color}>
+                      {rag.label}
+                    </Badge>
+                  );
+                })()}
               </div>
             )}
 
