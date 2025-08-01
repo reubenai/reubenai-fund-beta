@@ -15,6 +15,7 @@ import Pipeline from "./pages/Pipeline";
 import Strategy from "./pages/Strategy";
 import IC from "./pages/IC";
 import Settings from "./pages/Settings";
+import Help from "./pages/Help";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -100,6 +101,11 @@ const App = () => (
                 <Layout>
                   <Settings />
                 </Layout>
+              </AuthGuard>
+            } />
+            <Route path="/help" element={
+              <AuthGuard>
+                <Help />
               </AuthGuard>
             } />
             <Route path="*" element={<NotFound />} />

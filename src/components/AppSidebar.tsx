@@ -47,7 +47,7 @@ const adminItems = [
 // Support Items
 const supportItems = [
   { title: "Help & Support", url: "/help", icon: HelpCircle },
-  { title: "Documentation", url: "/docs", icon: BookOpen },
+  { title: "Documentation", url: "/docs", icon: BookOpen, badge: "Soon", disabled: true },
 ];
 
 export function AppSidebar() {
