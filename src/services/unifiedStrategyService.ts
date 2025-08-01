@@ -1,5 +1,15 @@
 import { supabase } from '@/integrations/supabase/client';
 import { EnhancedCriteriaTemplate, getTemplateByFundType, validateCriteriaWeights } from '@/types/vc-pe-criteria';
+import { 
+  applySpecializations, 
+  getStageSpecialization, 
+  getIndustryOverlay, 
+  getGeographicRiskProfile, 
+  getSizeSpecialization,
+  INDUSTRY_OVERLAYS,
+  GEOGRAPHIC_RISK_PROFILES,
+  SIZE_SPECIALIZATIONS
+} from '@/types/enhanced-fund-specialization';
 
 // Enhanced interfaces for strategy management
 export interface CategoryCustomization {
@@ -213,8 +223,11 @@ class UnifiedStrategyService {
   // Create initial strategy with comprehensive enhanced criteria
   async createFundStrategy(fundId: string, fundType: 'vc' | 'pe', wizardData: EnhancedWizardData): Promise<EnhancedStrategy | null> {
     try {
-      // Get the appropriate template and preserve any custom configurations
-      const enhancedCriteria = wizardData.enhancedCriteria || getTemplateByFundType(fundType);
+      // Get the appropriate template and apply specializations
+      let baseTemplate = getTemplateByFundType(fundType);
+      
+      // Apply fund-specific specializations
+      const enhancedCriteria = this.applyFundSpecializations(baseTemplate, wizardData);
       
       const strategyData = {
         fund_id: fundId,
@@ -361,14 +374,72 @@ class UnifiedStrategyService {
     return Math.floor(Math.random() * 100);
   }
 
+  // Apply fund-specific specializations to criteria
+  private applyFundSpecializations(template: EnhancedCriteriaTemplate, wizardData: EnhancedWizardData): EnhancedCriteriaTemplate {
+    // Determine primary stage for VC/PE specialization
+    const primaryStage = wizardData.stages?.[0];
+    
+    // Determine primary industry
+    const primaryIndustry = wizardData.sectors?.[0];
+    
+    // Determine primary geography
+    const primaryGeography = wizardData.geographies?.[0];
+    
+    // Calculate average investment size for size specialization
+    const avgInvestmentSize = wizardData.checkSizeRange ? 
+      (wizardData.checkSizeRange.min + wizardData.checkSizeRange.max) / 2 : undefined;
+
+    return applySpecializations(
+      template,
+      primaryStage,
+      wizardData.sectors,
+      wizardData.geographies,
+      avgInvestmentSize
+    );
+  }
+
+  // Get specialized template for fund type with options
+  getSpecializedTemplate(
+    fundType: 'vc' | 'pe', 
+    stage?: string, 
+    industries?: string[], 
+    geographies?: string[], 
+    investmentSize?: number
+  ): EnhancedCriteriaTemplate {
+    const baseTemplate = getTemplateByFundType(fundType);
+    return applySpecializations(baseTemplate, stage, industries, geographies, investmentSize);
+  }
+
+  // Get available specialization options
+  getSpecializationOptions() {
+    return {
+      industries: INDUSTRY_OVERLAYS.map(overlay => ({
+        name: overlay.industry,
+        fundType: overlay.fundType,
+        description: `Specialized criteria for ${overlay.industry} investments`
+      })),
+      geographies: GEOGRAPHIC_RISK_PROFILES.map(profile => ({
+        name: profile.region,
+        riskLevel: profile.adjustments.riskWeightModifier,
+        description: `Risk assessment and adjustments for ${profile.region}`
+      })),
+      sizeRanges: SIZE_SPECIALIZATIONS.map(spec => ({
+        range: spec.sizeRange,
+        fundType: spec.fundType,
+        dueDiligenceDepth: spec.adjustments.dueDiligenceDepth,
+        description: `Optimized criteria for ${spec.sizeRange.min.toLocaleString()} - ${spec.sizeRange.max.toLocaleString()} investments`
+      }))
+    };
+  }
+
   // Get default template for fund type
   getDefaultTemplate(fundType: 'vc' | 'pe'): Partial<EnhancedWizardData> {
     const template = getTemplateByFundType(fundType);
     
     return {
       fundType,
-      sectors: fundType === 'vc' ? ['Technology', 'Healthcare', 'Fintech'] : ['Manufacturing', 'Services', 'Technology'],
-      stages: fundType === 'vc' ? ['Seed', 'Series A', 'Series B'] : ['Growth', 'Buyout'],
+      sectors: fundType === 'vc' ? ['SaaS/Software', 'Healthcare/Biotech', 'FinTech'] : ['Manufacturing', 'Services', 'Technology'],
+      stages: fundType === 'vc' ? ['Seed', 'Series A', 'Series B'] : ['Growth Equity', 'Buyout'],
       geographies: ['North America', 'Europe'],
       checkSizeRange: { 
         min: fundType === 'vc' ? 500000 : 5000000, 

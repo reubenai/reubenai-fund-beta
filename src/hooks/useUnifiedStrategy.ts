@@ -118,6 +118,20 @@ export function useUnifiedStrategy(fundId?: string) {
     return unifiedStrategyService.getDefaultTemplate(fundType);
   };
 
+  const getSpecializedTemplate = (
+    fundType: 'vc' | 'pe', 
+    stage?: string, 
+    industries?: string[], 
+    geographies?: string[], 
+    investmentSize?: number
+  ) => {
+    return unifiedStrategyService.getSpecializedTemplate(fundType, stage, industries, geographies, investmentSize);
+  };
+
+  const getSpecializationOptions = () => {
+    return unifiedStrategyService.getSpecializationOptions();
+  };
+
   const validateWizardData = (wizardData: EnhancedWizardData) => {
     return unifiedStrategyService.validateStrategy(wizardData);
   };
@@ -135,6 +149,8 @@ export function useUnifiedStrategy(fundId?: string) {
     createStrategy,
     updateStrategy,
     getDefaultTemplate,
+    getSpecializedTemplate,
+    getSpecializationOptions,
     validateWizardData
   };
 }
