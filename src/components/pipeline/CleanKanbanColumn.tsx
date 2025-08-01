@@ -33,7 +33,7 @@ export const CleanKanbanColumn: React.FC<CleanKanbanColumnProps> = ({
       />
 
       {/* Droppable Area */}
-      <Droppable droppableId={stage.id}>
+      <Droppable droppableId={stage.name.toLowerCase().replace(/\s+/g, '_')}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
