@@ -347,10 +347,11 @@ async function extractDocumentText(documentUrl: string, document: any): Promise<
     formData.append('parsing_instruction', 'Extract all text content including tables, charts, and structured data. Preserve formatting and hierarchy.');
     
     console.log('Uploading document to LlamaParse...');
-    const uploadResponse = await fetch('https://api.cloud.llamaindex.ai/api/parsing/upload', {
+    const uploadResponse = await fetch('https://api.cloud.llamaindex.ai/api/v1/parsing/upload', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${llamaParseApiKey}`,
+        'accept': 'application/json',
       },
       body: formData,
     });
@@ -371,9 +372,10 @@ async function extractDocumentText(documentUrl: string, document: any): Promise<
     while (attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
       
-      const statusResponse = await fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}`, {
+      const statusResponse = await fetch(`https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}`, {
         headers: {
           'Authorization': `Bearer ${llamaParseApiKey}`,
+          'accept': 'application/json',
         },
       });
 
@@ -386,9 +388,10 @@ async function extractDocumentText(documentUrl: string, document: any): Promise<
       
       if (statusResult.status === 'SUCCESS') {
         // Get the parsed results
-        const resultResponse = await fetch(`https://api.cloud.llamaindex.ai/api/parsing/job/${jobId}/result/markdown`, {
+        const resultResponse = await fetch(`https://api.cloud.llamaindex.ai/api/v1/parsing/job/${jobId}/result/markdown`, {
           headers: {
             'Authorization': `Bearer ${llamaParseApiKey}`,
+            'accept': 'application/json',
           },
         });
 
