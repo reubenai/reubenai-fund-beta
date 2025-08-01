@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Upload, Download, CheckCircle, AlertCircle, XCircle, FileSpreadsheet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { CsvParsingService } from '@/services/CsvParsingService';
+import { EnhancedBatchUploadModal } from './EnhancedBatchUploadModal';
 
 interface BatchUploadModalProps {
   open: boolean;
@@ -29,6 +30,24 @@ interface ParseResult {
 }
 
 export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
+  open,
+  onClose,
+  fundId,
+  onUploadComplete
+}) => {
+  // Use enhanced version for new workflow
+  return (
+    <EnhancedBatchUploadModal
+      open={open}
+      onClose={onClose}
+      fundId={fundId}
+      onUploadComplete={onUploadComplete}
+    />
+  );
+};
+
+// Legacy component for reference
+const LegacyBatchUploadModal: React.FC<BatchUploadModalProps> = ({
   open,
   onClose,
   fundId,
