@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Building2, TrendingUp, FileText, Users, Zap, Target, BarChart3, Plus } from 'lucide-react';
+import { Building2, TrendingUp, FileText, Users, Zap, Target, BarChart3, Plus, BookOpen, Video, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFund } from '@/contexts/FundContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -161,27 +161,29 @@ const Index = () => {
           <h2 className="text-lg font-medium text-slate-900">Help & Support</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-6 border border-slate-200 rounded-lg text-center">
+          <Link to="/help" className="bg-white p-6 border border-slate-200 rounded-lg text-center hover:shadow-sm hover:border-slate-300 transition-all duration-200">
             <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <div className="w-6 h-6 border-2 border-slate-400 rounded"></div>
+              <BookOpen className="h-6 w-6 text-slate-600" />
             </div>
             <h3 className="font-semibold text-slate-900 mb-2">Guides & Tutorials</h3>
             <p className="text-sm text-slate-600">Learn how to configure investment criteria and use our AI engine</p>
-          </div>
-          <div className="bg-white p-6 border border-slate-200 rounded-lg text-center">
+          </Link>
+          
+          <Link to="/help" className="bg-white p-6 border border-slate-200 rounded-lg text-center hover:shadow-sm hover:border-slate-300 transition-all duration-200">
             <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <div className="w-6 h-6 bg-slate-400 rounded-sm"></div>
+              <Video className="h-6 w-6 text-slate-600" />
             </div>
             <h3 className="font-semibold text-slate-900 mb-2">Video Tutorials</h3>
             <p className="text-sm text-slate-600">Watch step-by-step videos on deal sourcing and pipeline management</p>
-          </div>
-          <div className="bg-white p-6 border border-slate-200 rounded-lg text-center">
+          </Link>
+          
+          <Link to="/help" className="bg-white p-6 border border-slate-200 rounded-lg text-center hover:shadow-sm hover:border-slate-300 transition-all duration-200">
             <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <div className="w-6 h-6 border border-slate-400 rounded"></div>
+              <MessageSquare className="h-6 w-6 text-slate-600" />
             </div>
             <h3 className="font-semibold text-slate-900 mb-2">Contact Support</h3>
             <p className="text-sm text-slate-600">Get instant help from our team via chat or submit a support request</p>
-          </div>
+          </Link>
         </div>
       </div>
 
@@ -190,12 +192,16 @@ const Index = () => {
         <h3 className="text-lg font-semibold text-slate-900 mb-2">Need Help Getting Started?</h3>
         <p className="text-slate-600 mb-6">Explore our resources to take the most of Reuben AI's powerful features</p>
         <div className="flex items-center justify-center gap-3">
-          <Button variant="outline" size="sm">
-            View Reuben Works
-          </Button>
-          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
-            View Help Center
-          </Button>
+          <Link to="/help">
+            <Button variant="outline" size="sm">
+              View How Reuben Works
+            </Button>
+          </Link>
+          <Link to="/help">
+            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              View Help Center
+            </Button>
+          </Link>
         </div>
       </div>
 

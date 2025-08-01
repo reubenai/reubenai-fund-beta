@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { 
   Search, 
   MessageSquare, 
@@ -25,9 +27,14 @@ import {
   Clock,
   AlertCircle,
   ChevronRight,
-  ExternalLink
+  ExternalLink,
+  Home,
+  Send
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 
 const faqData = [
   {
@@ -136,7 +143,16 @@ export default function Help() {
     priority: 'medium',
     email: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Pre-populate email when user loads
+  React.useEffect(() => {
+    if (user?.email && !supportForm.email) {
+      setSupportForm(prev => ({ ...prev, email: user.email }));
+    }
+  }, [user?.email, supportForm.email]);
 
   const filteredFAQ = faqData.map(category => ({
     ...category,
@@ -146,7 +162,7 @@ export default function Help() {
     )
   })).filter(category => selectedCategory ? category.category === selectedCategory : category.questions.length > 0);
 
-  const handleSupportSubmit = () => {
+  const handleSupportSubmit = async () => {
     if (!supportForm.subject || !supportForm.description || !supportForm.email) {
       toast({
         title: "Please fill in all fields",
@@ -156,11 +172,48 @@ export default function Help() {
       return;
     }
     
-    toast({
-      title: "Support request submitted",
-      description: "We'll get back to you within 24 hours.",
-    });
-    setSupportForm({ subject: '', description: '', priority: 'medium', email: '' });
+    setIsSubmitting(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('send-support-email', {
+        body: {
+          email: supportForm.email,
+          subject: supportForm.subject,
+          description: supportForm.description,
+          priority: supportForm.priority,
+          userInfo: {
+            userId: user?.id,
+            name: user?.email
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Support email error:', error);
+        throw new Error(error.message || 'Failed to send support request');
+      }
+
+      toast({
+        title: "Support request submitted!",
+        description: `We'll get back to you within 24 hours at ${supportForm.email}`,
+      });
+      
+      setSupportForm({ 
+        subject: '', 
+        description: '', 
+        priority: 'medium', 
+        email: user?.email || '' 
+      });
+    } catch (error: any) {
+      console.error('Error submitting support request:', error);
+      toast({
+        title: "Failed to submit request",
+        description: error.message || "Please try again or email us directly at support@goreuben.com",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -174,6 +227,28 @@ export default function Help() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Breadcrumb Navigation */}
+      <div className="border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto px-6 py-4">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/" className="flex items-center gap-2 hover:text-primary transition-colors">
+                    <Home className="h-4 w-4" />
+                    Dashboard
+                  </Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Help & Support</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </div>
+
       <div className="flex">
         {/* Sidebar Navigation */}
         <div className="w-72 border-r border-border/50 bg-sidebar/30 min-h-screen">
@@ -365,7 +440,7 @@ export default function Help() {
                         type="email"
                         value={supportForm.email}
                         onChange={(e) => setSupportForm({...supportForm, email: e.target.value})}
-                        placeholder="your@email.com"
+                        placeholder={user?.email || "your@email.com"}
                         className="bg-background border-border/60"
                       />
                     </div>
@@ -380,6 +455,24 @@ export default function Help() {
                         className="bg-background border-border/60"
                       />
                     </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="priority">Priority</Label>
+                      <Select 
+                        value={supportForm.priority} 
+                        onValueChange={(value) => setSupportForm({...supportForm, priority: value})}
+                      >
+                        <SelectTrigger className="bg-background border-border/60">
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low - General question</SelectItem>
+                          <SelectItem value="medium">Medium - Standard issue</SelectItem>
+                          <SelectItem value="high">High - Important issue</SelectItem>
+                          <SelectItem value="urgent">Urgent - Critical problem</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     
                     <div className="space-y-2">
                       <Label htmlFor="description">Description</Label>
@@ -387,14 +480,28 @@ export default function Help() {
                         id="description"
                         value={supportForm.description}
                         onChange={(e) => setSupportForm({...supportForm, description: e.target.value})}
-                        placeholder="Detailed description of your issue..."
+                        placeholder="Please describe your issue in detail..."
                         rows={4}
                         className="bg-background border-border/60"
                       />
                     </div>
                     
-                    <Button onClick={handleSupportSubmit} className="w-full">
-                      Submit Support Request
+                    <Button 
+                      onClick={handleSupportSubmit} 
+                      disabled={isSubmitting}
+                      className="w-full"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Clock className="h-4 w-4 mr-2 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Submit Support Request
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
