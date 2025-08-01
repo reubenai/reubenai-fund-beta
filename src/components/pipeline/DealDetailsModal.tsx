@@ -97,12 +97,46 @@ export function DealDetailsModal({
   const [analysisData, setAnalysisData] = useState<any>(null);
   const { toast } = useToast();
 
-  // Auto-generate analysis when modal opens
+  // Check for existing analysis and only generate if needed
   useEffect(() => {
     if (deal && open) {
-      generateAnalysis();
+      checkAndGenerateAnalysis();
     }
   }, [deal?.id, open]);
+
+  const checkAndGenerateAnalysis = async () => {
+    if (!deal || isGeneratingAnalysis) return;
+
+    try {
+      // Check if recent analysis exists (within last 24 hours)
+      const { data: existingAnalysis, error } = await supabase
+        .from('deal_analyses')
+        .select('*')
+        .eq('deal_id', deal.id)
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error('Error checking existing analysis:', error);
+        return;
+      }
+
+      if (existingAnalysis && existingAnalysis.length > 0) {
+        // Use existing analysis - directly use engine results if available
+        const analysis = existingAnalysis[0];
+        if (analysis.engine_results && typeof analysis.engine_results === 'object') {
+          setAnalysisData(analysis.engine_results);
+        }
+        return;
+      }
+
+      // No recent analysis found, generate new one
+      generateAnalysis();
+    } catch (error) {
+      console.error('Error checking analysis:', error);
+    }
+  };
 
   const generateAnalysis = async () => {
     if (!deal || isGeneratingAnalysis) return;
@@ -221,11 +255,26 @@ export function DealDetailsModal({
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="company">Company Details</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="analysis">Analysis</TabsTrigger>
+            <TabsTrigger value="analysis">
+              Analysis
+              {!analysisData && !isGeneratingAnalysis && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="ml-2 h-6 px-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    generateAnalysis();
+                  }}
+                >
+                  Generate
+                </Button>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
 

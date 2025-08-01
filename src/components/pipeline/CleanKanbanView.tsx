@@ -1,5 +1,5 @@
 import React from 'react';
-import { DragDropContext, DropResult } from 'react-beautiful-dnd';
+import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { Deal, PipelineStage } from '@/hooks/usePipelineDeals';
 import { CleanKanbanColumn } from './CleanKanbanColumn';
 

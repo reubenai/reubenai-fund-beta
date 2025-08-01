@@ -1,5 +1,5 @@
 import React from 'react';
-import { Draggable } from 'react-beautiful-dnd';
+import { Draggable } from '@hello-pangea/dnd';
 import { Badge } from '@/components/ui/badge';
 import { 
   MapPin, 
@@ -82,6 +82,7 @@ export const CleanDealCard: React.FC<CleanDealCardProps> = ({
             transition-all duration-200 hover:shadow-md hover:border-gray-300
             ${snapshot.isDragging ? 'shadow-lg rotate-2' : ''}
           `}
+          style={provided.draggableProps.style}
         >
           {/* Company Name & Score */}
           <div className="flex items-start justify-between mb-3">
