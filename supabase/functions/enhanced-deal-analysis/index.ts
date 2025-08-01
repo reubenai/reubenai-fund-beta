@@ -66,7 +66,7 @@ serve(async (req) => {
   try {
     const { dealId }: DealAnalysisRequest = await req.json();
 
-    console.log('Generating enhanced analysis for deal:', dealId);
+    console.log('🔍 Enhanced Deal Analysis: Starting analysis for deal:', dealId);
 
     // Fetch deal data
     const { data: deal, error: dealError } = await supabase
@@ -91,6 +91,29 @@ serve(async (req) => {
 
     if (fundError) {
       console.warn('Could not fetch fund strategy:', fundError.message);
+    }
+
+    // Query Fund Memory Engine for contextual intelligence
+    let memoryContext = {};
+    if (deal.fund_id) {
+      try {
+        const memoryResponse = await supabase.functions.invoke('fund-memory-engine', {
+          body: {
+            action: 'query_contextual_memory',
+            fundId: deal.fund_id,
+            dealId,
+            serviceType: 'enhanced-deal-analysis',
+            analysisType: 'comprehensive_analysis'
+          }
+        });
+        
+        if (memoryResponse.data?.success) {
+          memoryContext = memoryResponse.data.contextualMemory;
+          console.log('🧠 Enhanced Deal Analysis: Retrieved contextual memory', Object.keys(memoryContext));
+        }
+      } catch (error) {
+        console.warn('⚠️ Enhanced Deal Analysis: Failed to retrieve memory context:', error);
+      }
     }
 
     // Call the new Reuben Orchestrator for comprehensive analysis
@@ -319,6 +342,34 @@ ${analysisResult.next_steps.map(step => `• ${step}`).join('\n')}
 
     if (noteError) {
       console.warn('Could not save analysis note:', noteError.message);
+    }
+
+    // Store insights in Fund Memory Engine
+    if (deal.fund_id) {
+      try {
+        await supabase.functions.invoke('fund-memory-engine', {
+          body: {
+            action: 'store_memory',
+            fundId: deal.fund_id,
+            dealId,
+            memoryType: 'ai_service_interaction',
+            title: 'Enhanced Deal Analysis Complete',
+            description: `Comprehensive deal analysis for ${deal.company_name}`,
+            memoryContent: {
+              analysisResult,
+              overallScore,
+              ragStatus,
+              memoryContext: Object.keys(memoryContext).length > 0 ? memoryContext : null,
+              orchestratorUsed: !orchestratorError && orchestratorResult?.analysis
+            },
+            aiServiceName: 'enhanced-deal-analysis',
+            confidenceScore: overallScore || 70
+          }
+        });
+        console.log('🧠 Enhanced Deal Analysis: Stored analysis insights in fund memory');
+      } catch (error) {
+        console.warn('⚠️ Enhanced Deal Analysis: Failed to store memory:', error);
+      }
     }
 
     return new Response(JSON.stringify(analysisResult), {

@@ -26,6 +26,29 @@ serve(async (req) => {
 
     const { dealId, templateId, fundId }: MemoGenerationRequest = await req.json();
     console.log('🤖 AI Memo Generator: Starting memo generation for deal:', dealId);
+    
+    // Query Fund Memory Engine for contextual intelligence
+    let memoryContext = {};
+    if (fundId && dealId) {
+      try {
+        const memoryResponse = await supabase.functions.invoke('fund-memory-engine', {
+          body: {
+            action: 'query_contextual_memory',
+            fundId,
+            dealId,
+            serviceType: 'ai-memo-generator',
+            analysisType: 'memo_generation'
+          }
+        });
+        
+        if (memoryResponse.data?.success) {
+          memoryContext = memoryResponse.data.contextualMemory;
+          console.log('🧠 AI Memo Generator: Retrieved contextual memory', Object.keys(memoryContext));
+        }
+      } catch (error) {
+        console.warn('⚠️ AI Memo Generator: Failed to retrieve memory context:', error);
+      }
+    }
 
     // 1. Fetch comprehensive deal data with analysis and notes
     const { data: dealData, error: dealError } = await supabase
@@ -168,6 +191,38 @@ serve(async (req) => {
     }
 
     console.log('✅ AI Memo Generator: Memo generated successfully for:', dealData.company_name);
+
+    // Store insights in Fund Memory Engine
+    if (fundId) {
+      try {
+        await supabase.functions.invoke('fund-memory-engine', {
+          body: {
+            action: 'store_memory',
+            fundId,
+            dealId,
+            memoryType: 'ai_service_interaction',
+            title: 'IC Memo Generated',
+            description: `Investment committee memo generated for ${dealData.company_name}`,
+            memoryContent: {
+              memo,
+              templateUsed: templateId,
+              dataQuality: {
+                ragStatus: finalRagStatus,
+                dataCompleteness: ragData?.confidence || dealData.rag_confidence || 0,
+                sourcesValidated: ragData?.sources?.length || 0,
+                thesisAlignment: thesisData?.alignment_score || 0
+              },
+              memoryContext: Object.keys(memoryContext).length > 0 ? memoryContext : null
+            },
+            aiServiceName: 'ai-memo-generator',
+            confidenceScore: memo.overall_score || 75
+          }
+        });
+        console.log('🧠 AI Memo Generator: Stored memo insights in fund memory');
+      } catch (error) {
+        console.warn('⚠️ AI Memo Generator: Failed to store memory:', error);
+      }
+    }
 
     return new Response(JSON.stringify({ 
       success: true, 

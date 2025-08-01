@@ -40,6 +40,29 @@ serve(async (req) => {
     
     const { action, data, dealId, fundId }: AIRequest = await req.json();
     
+    // Query Fund Memory Engine for contextual intelligence
+    let memoryContext = {};
+    if (fundId && dealId) {
+      try {
+        const memoryResponse = await supabase.functions.invoke('fund-memory-engine', {
+          body: {
+            action: 'query_contextual_memory',
+            fundId,
+            dealId,
+            serviceType: 'ai-orchestrator',
+            analysisType: action
+          }
+        });
+        
+        if (memoryResponse.data?.success) {
+          memoryContext = memoryResponse.data.contextualMemory;
+          console.log('AI Orchestrator: Retrieved contextual memory', Object.keys(memoryContext));
+        }
+      } catch (error) {
+        console.warn('AI Orchestrator: Failed to retrieve memory context:', error);
+      }
+    }
+    
     console.log(`AI Orchestrator: Action=${action}, DealId=${dealId}, FundId=${fundId}`);
 
     let response;
@@ -84,6 +107,33 @@ serve(async (req) => {
         break;
       default:
         throw new Error(`Unknown action: ${action}`);
+    }
+
+    // Store insights in Fund Memory Engine
+    if (fundId && response && (dealId || action === 'market_intelligence_chat')) {
+      try {
+        await supabase.functions.invoke('fund-memory-engine', {
+          body: {
+            action: 'store_memory',
+            fundId,
+            dealId,
+            memoryType: 'ai_service_interaction',
+            title: `AI Orchestrator: ${action}`,
+            description: `${action.replace(/_/g, ' ')} analysis completed`,
+            memoryContent: {
+              action,
+              input: data,
+              output: response,
+              memoryContext: Object.keys(memoryContext).length > 0 ? memoryContext : null
+            },
+            aiServiceName: 'ai-orchestrator',
+            confidenceScore: response.confidence_score || response.confidence_level === 'high' ? 85 : 70
+          }
+        });
+        console.log('AI Orchestrator: Stored analysis insights in fund memory');
+      } catch (error) {
+        console.warn('AI Orchestrator: Failed to store memory:', error);
+      }
     }
 
     return new Response(JSON.stringify({
