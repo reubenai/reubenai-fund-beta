@@ -179,8 +179,24 @@ export default function Admin() {
   };
 
   const createOrganization = async () => {
+    // Check authentication state first
+    if (!user) {
+      toast.error('Authentication required. Please sign in first.');
+      return;
+    }
+
     if (!newOrg.name.trim()) {
       toast.error('Organization name is required');
+      return;
+    }
+
+    // Check user permissions
+    const hasCreateAccess = profile?.role === 'super_admin' || 
+                           user?.email === 'kat@goreuben.com' || 
+                           user?.email === 'hello@goreuben.com';
+
+    if (!hasCreateAccess) {
+      toast.error('Insufficient permissions. Super Admin access required to create organizations.');
       return;
     }
 
@@ -194,14 +210,32 @@ export default function Admin() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        
+        // Provide more specific error messages
+        if (error.code === '42501') {
+          toast.error('Permission denied. Please check your authentication status and try again.');
+        } else if (error.code === '23505') {
+          toast.error('An organization with this name already exists.');
+        } else {
+          toast.error(`Failed to create organization: ${error.message}`);
+        }
+        return;
+      }
 
       setOrganizations([data, ...organizations]);
       setNewOrg({ name: '', domain: '' });
       toast.success('Organization created successfully');
+      
+      // Log the successful creation
+      await logAdminActivity('organization_created', `Organization "${data.name}" created`, {
+        organizationId: data.id,
+        organizationName: data.name
+      });
     } catch (error) {
       console.error('Error creating organization:', error);
-      toast.error('Failed to create organization');
+      toast.error('Failed to create organization. Please try again.');
     }
   };
 
