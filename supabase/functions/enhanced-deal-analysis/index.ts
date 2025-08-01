@@ -105,128 +105,156 @@ serve(async (req) => {
     } else {
       // Map orchestrator results to expected structure
       const orchestratorAnalysis = orchestratorResult.analysis;
+      console.log('Orchestrator analysis structure:', JSON.stringify(orchestratorAnalysis, null, 2));
+      
       analysisResult = {
         founder_team_strength: {
-          score: orchestratorAnalysis.scores?.team_score || 50,
-          analysis: orchestratorAnalysis.team_analysis || 'Team analysis from orchestrator',
+          score: orchestratorAnalysis.engine_results?.founder_team_strength?.score || 50,
+          analysis: orchestratorAnalysis.engine_results?.founder_team_strength?.analysis || 'Team analysis from orchestrator',
           experience_assessment: 'Based on comprehensive analysis',
           team_composition: 'Analysis completed',
           execution_capability: 'Assessed via orchestrator'
         },
         market_attractiveness: {
-          score: orchestratorAnalysis.scores?.market_score || 50,
-          analysis: orchestratorAnalysis.market_analysis || 'Market analysis from orchestrator',
+          score: orchestratorAnalysis.engine_results?.market_attractiveness?.score || 50,
+          analysis: orchestratorAnalysis.engine_results?.market_attractiveness?.analysis || 'Market analysis from orchestrator',
           market_size: 'Analyzed via orchestrator',
           growth_potential: 'Assessed',
           competitive_landscape: 'Evaluated'
         },
         product_strength_ip: {
-          score: orchestratorAnalysis.scores?.product_score || 50,
-          analysis: orchestratorAnalysis.product_analysis || 'Product analysis from orchestrator',
+          score: orchestratorAnalysis.engine_results?.product_strength_ip?.score || 50,
+          analysis: orchestratorAnalysis.engine_results?.product_strength_ip?.analysis || 'Product analysis from orchestrator',
           competitive_advantages: ['Assessed via comprehensive analysis'],
           ip_assessment: 'Evaluated',
           technology_moat: 'Analyzed'
         },
         financial_feasibility: {
-          score: orchestratorAnalysis.scores?.financial_score || 50,
-          analysis: orchestratorAnalysis.financial_analysis || 'Financial analysis from orchestrator',
+          score: orchestratorAnalysis.engine_results?.financial_feasibility?.score || 50,
+          analysis: orchestratorAnalysis.engine_results?.financial_feasibility?.analysis || 'Financial analysis from orchestrator',
           revenue_model: 'Analyzed',
           unit_economics: 'Assessed',
           funding_requirements: 'Evaluated'
         },
         investment_thesis_alignment: {
-          score: orchestratorAnalysis.scores?.thesis_score || 50,
-          analysis: orchestratorAnalysis.thesis_analysis || 'Thesis alignment from orchestrator',
+          score: orchestratorAnalysis.engine_results?.investment_thesis_alignment?.score || 50,
+          analysis: orchestratorAnalysis.engine_results?.investment_thesis_alignment?.analysis || 'Thesis alignment from orchestrator',
           key_points: ['Comprehensive analysis completed']
         },
         executive_summary: orchestratorAnalysis.executive_summary || 'Analysis completed via Reuben Orchestrator',
-        overall_recommendation: orchestratorAnalysis.recommendation || 'See detailed analysis',
+        overall_recommendation: orchestratorAnalysis.overall_recommendation || 'See detailed analysis',
         risk_factors: orchestratorAnalysis.risk_factors || ['See detailed analysis'],
         next_steps: orchestratorAnalysis.next_steps || ['Review comprehensive analysis']
       };
     }
 
-    // Calculate overall score and RAG status based on fund strategy thresholds
-    const overallScore = Math.round((
-      (analysisResult.founder_team_strength?.score || 50) +
-      (analysisResult.market_attractiveness?.score || 50) +
-      (analysisResult.product_strength_ip?.score || 50) +
-      (analysisResult.financial_feasibility?.score || 50) +
-      (analysisResult.investment_thesis_alignment?.score || 50)
-    ) / 5);
-
-    // Determine RAG status based on fund strategy thresholds or defaults
+    // Use overall score from orchestrator if available, otherwise calculate manually
+    let overallScore;
     let ragStatus = 'needs_development';
-    const strategy = fund?.investment_strategies?.[0];
-    const excitingThreshold = strategy?.exciting_threshold || 85;
-    const promisingThreshold = strategy?.promising_threshold || 70;
     
-    if (overallScore >= excitingThreshold) {
-      ragStatus = 'exciting';
-    } else if (overallScore >= promisingThreshold) {
-      ragStatus = 'promising';
-    }
-
-    // Store analysis in deal_analyses table
-    const { data: existingAnalysis } = await supabase
-      .from('deal_analyses')
-      .select('id')
-      .eq('deal_id', dealId)
-      .single();
-
-    if (existingAnalysis) {
-      // Update existing analysis
-      const { error: updateError } = await supabase
-        .from('deal_analyses')
-        .update({
-          leadership_score: analysisResult.founder_team_strength.score,
-          leadership_notes: analysisResult.founder_team_strength.analysis,
-          market_score: analysisResult.market_attractiveness.score,
-          market_notes: analysisResult.market_attractiveness.analysis,
-          product_score: analysisResult.product_strength_ip.score,
-          product_notes: analysisResult.product_strength_ip.analysis,
-          financial_score: analysisResult.financial_feasibility.score,
-          financial_notes: analysisResult.financial_feasibility.analysis,
-          thesis_alignment_score: analysisResult.investment_thesis_alignment.score,
-          thesis_alignment_notes: analysisResult.investment_thesis_alignment.analysis,
-          analyzed_at: new Date().toISOString()
-        })
-        .eq('id', existingAnalysis.id);
-
-      if (updateError) throw updateError;
+    if (orchestratorResult?.analysis?.overall_score) {
+      // Use the orchestrator's calculated score for consistency
+      overallScore = orchestratorResult.analysis.overall_score;
+      
+      // Determine RAG status based on fund strategy thresholds or defaults
+      const strategy = fund?.investment_strategies?.[0];
+      const excitingThreshold = strategy?.exciting_threshold || 85;
+      const promisingThreshold = strategy?.promising_threshold || 70;
+      
+      if (overallScore >= excitingThreshold) {
+        ragStatus = 'exciting';
+      } else if (overallScore >= promisingThreshold) {
+        ragStatus = 'promising';
+      }
     } else {
-      // Create new analysis
-      const { error: insertError } = await supabase
-        .from('deal_analyses')
-        .insert({
-          deal_id: dealId,
-          leadership_score: analysisResult.founder_team_strength.score,
-          leadership_notes: analysisResult.founder_team_strength.analysis,
-          market_score: analysisResult.market_attractiveness.score,
-          market_notes: analysisResult.market_attractiveness.analysis,
-          product_score: analysisResult.product_strength_ip.score,
-          product_notes: analysisResult.product_strength_ip.analysis,
-          financial_score: analysisResult.financial_feasibility.score,
-          financial_notes: analysisResult.financial_feasibility.analysis,
-          thesis_alignment_score: analysisResult.investment_thesis_alignment.score,
-          thesis_alignment_notes: analysisResult.investment_thesis_alignment.analysis,
-          analyzed_at: new Date().toISOString()
-        });
+      // Fallback calculation if orchestrator didn't provide overall score
+      overallScore = Math.round((
+        (analysisResult.founder_team_strength?.score || 50) +
+        (analysisResult.market_attractiveness?.score || 50) +
+        (analysisResult.product_strength_ip?.score || 50) +
+        (analysisResult.financial_feasibility?.score || 50) +
+        (analysisResult.investment_thesis_alignment?.score || 50)
+      ) / 5);
 
-      if (insertError) throw insertError;
+      // Determine RAG status based on fund strategy thresholds or defaults
+      const strategy = fund?.investment_strategies?.[0];
+      const excitingThreshold = strategy?.exciting_threshold || 85;
+      const promisingThreshold = strategy?.promising_threshold || 70;
+      
+      if (overallScore >= excitingThreshold) {
+        ragStatus = 'exciting';
+      } else if (overallScore >= promisingThreshold) {
+        ragStatus = 'promising';
+      }
     }
 
-    // Update deal with overall score and RAG status
-    const { error: dealUpdateError } = await supabase
-      .from('deals')
-      .update({
-        overall_score: overallScore,
-        rag_status: ragStatus
-      })
-      .eq('id', dealId);
+    // Only store analysis if orchestrator failed and we used fallback analysis
+    if (orchestratorError || !orchestratorResult?.analysis) {
+      console.log('Storing fallback analysis results since orchestrator failed');
+      
+      // Store analysis in deal_analyses table
+      const { data: existingAnalysis } = await supabase
+        .from('deal_analyses')
+        .select('id')
+        .eq('deal_id', dealId)
+        .single();
 
-    if (dealUpdateError) {
-      console.warn('Could not update deal with analysis results:', dealUpdateError.message);
+      if (existingAnalysis) {
+        // Update existing analysis
+        const { error: updateError } = await supabase
+          .from('deal_analyses')
+          .update({
+            leadership_score: analysisResult.founder_team_strength.score,
+            leadership_notes: analysisResult.founder_team_strength.analysis,
+            market_score: analysisResult.market_attractiveness.score,
+            market_notes: analysisResult.market_attractiveness.analysis,
+            product_score: analysisResult.product_strength_ip.score,
+            product_notes: analysisResult.product_strength_ip.analysis,
+            financial_score: analysisResult.financial_feasibility.score,
+            financial_notes: analysisResult.financial_feasibility.analysis,
+            thesis_alignment_score: analysisResult.investment_thesis_alignment.score,
+            thesis_alignment_notes: analysisResult.investment_thesis_alignment.analysis,
+            analyzed_at: new Date().toISOString()
+          })
+          .eq('id', existingAnalysis.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new analysis
+        const { error: insertError } = await supabase
+          .from('deal_analyses')
+          .insert({
+            deal_id: dealId,
+            leadership_score: analysisResult.founder_team_strength.score,
+            leadership_notes: analysisResult.founder_team_strength.analysis,
+            market_score: analysisResult.market_attractiveness.score,
+            market_notes: analysisResult.market_attractiveness.analysis,
+            product_score: analysisResult.product_strength_ip.score,
+            product_notes: analysisResult.product_strength_ip.analysis,
+            financial_score: analysisResult.financial_feasibility.score,
+            financial_notes: analysisResult.financial_feasibility.analysis,
+            thesis_alignment_score: analysisResult.investment_thesis_alignment.score,
+            thesis_alignment_notes: analysisResult.investment_thesis_alignment.analysis,
+            analyzed_at: new Date().toISOString()
+          });
+
+        if (insertError) throw insertError;
+      }
+
+      // Update deal with overall score and RAG status
+      const { error: dealUpdateError } = await supabase
+        .from('deals')
+        .update({
+          overall_score: overallScore,
+          rag_status: ragStatus
+        })
+        .eq('id', dealId);
+
+      if (dealUpdateError) {
+        console.warn('Could not update deal with analysis results:', dealUpdateError.message);
+      }
+    } else {
+      console.log('Orchestrator succeeded - analysis already stored by orchestrator');
     }
 
     // Store comprehensive analysis as deal note
