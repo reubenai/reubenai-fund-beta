@@ -49,21 +49,24 @@ export function AdminInviteUserModal({ isOpen, onClose, organizations, onInviteS
     setIsInviting(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/auth`;
-      
-      const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-        redirectTo: redirectUrl,
-        data: {
-          invited_role: role,
-          invited_organization_id: organizationId,
-          custom_message: customMessage,
-          invited_by: 'Admin'
+      const { data, error } = await supabase.functions.invoke('send-user-invitation', {
+        body: {
+          email: email.trim(),
+          role,
+          organizationId,
+          customMessage: customMessage.trim() || undefined
         }
       });
 
       if (error) {
         console.error('Invitation error:', error);
         toast.error(`Failed to send invitation: ${error.message}`);
+        return;
+      }
+
+      if (data?.error) {
+        console.error('Invitation service error:', data.error);
+        toast.error(`Failed to send invitation: ${data.error}`);
         return;
       }
 
