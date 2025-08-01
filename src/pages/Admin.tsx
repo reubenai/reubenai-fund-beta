@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield } from 'lucide-react';
+import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield, Archive, ArchiveRestore, Filter } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -77,6 +77,7 @@ export default function Admin() {
     recentActivity: 0,
     pendingIssues: 0,
   });
+  const [showArchivedFunds, setShowArchivedFunds] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -316,6 +317,57 @@ export default function Admin() {
     toast.info('User invitation feature coming soon');
   };
 
+  const archiveFund = async (fundId: string, fundName: string, reason: string = '') => {
+    try {
+      const { error } = await supabase
+        .from('funds')
+        .update({ is_active: false })
+        .eq('id', fundId);
+
+      if (error) throw error;
+
+      setFunds(funds.map(f => f.id === fundId ? { ...f, is_active: false } : f));
+      
+      // Log admin activity
+      await logAdminActivity('fund_archived', `Fund "${fundName}" has been archived`, {
+        fundId,
+        fundName,
+        reason,
+        organizationId: funds.find(f => f.id === fundId)?.organization_id
+      });
+
+      toast.success(`Fund "${fundName}" has been archived`);
+    } catch (error) {
+      console.error('Error archiving fund:', error);
+      toast.error('Failed to archive fund');
+    }
+  };
+
+  const unarchiveFund = async (fundId: string, fundName: string) => {
+    try {
+      const { error } = await supabase
+        .from('funds')
+        .update({ is_active: true })
+        .eq('id', fundId);
+
+      if (error) throw error;
+
+      setFunds(funds.map(f => f.id === fundId ? { ...f, is_active: true } : f));
+      
+      // Log admin activity
+      await logAdminActivity('fund_unarchived', `Fund "${fundName}" has been unarchived`, {
+        fundId,
+        fundName,
+        organizationId: funds.find(f => f.id === fundId)?.organization_id
+      });
+
+      toast.success(`Fund "${fundName}" has been reactivated`);
+    } catch (error) {
+      console.error('Error unarchiving fund:', error);
+      toast.error('Failed to unarchive fund');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -553,12 +605,27 @@ export default function Admin() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Existing Funds</CardTitle>
-              <CardDescription>All funds across organizations</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Existing Funds</CardTitle>
+                  <CardDescription>All funds across organizations</CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowArchivedFunds(!showArchivedFunds)}
+                  className="flex items-center gap-2"
+                >
+                  <Filter className="h-4 w-4" />
+                  {showArchivedFunds ? 'Hide Archived' : 'Show Archived'}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {funds.map((fund) => (
+                {funds
+                  .filter(fund => showArchivedFunds || fund.is_active)
+                  .map((fund) => (
                   <div key={fund.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex-1">
                       <h3 className="font-semibold">{fund.name}</h3>
@@ -566,8 +633,8 @@ export default function Admin() {
                         {organizations.find(o => o.id === fund.organization_id)?.name || 'Unknown Organization'}
                       </p>
                       <div className="flex items-center gap-2 mt-2">
-                        <Badge variant={fund.is_active ? 'default' : 'secondary'}>
-                          {fund.is_active ? 'Active' : 'Inactive'}
+                        <Badge variant={fund.is_active ? 'default' : 'destructive'}>
+                          {fund.is_active ? 'Active' : 'Archived'}
                         </Badge>
                         <Badge variant="outline">{fund.fund_type.replace('_', ' ')}</Badge>
                         {fund.target_size && (
@@ -576,6 +643,49 @@ export default function Admin() {
                           </Badge>
                         )}
                       </div>
+                    </div>
+                    <div className="flex gap-2">
+                      {fund.is_active ? (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                              <Archive className="h-4 w-4 mr-2" />
+                              Archive
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Archive Fund</DialogTitle>
+                              <DialogDescription>
+                                Are you sure you want to archive "{fund.name}"? This will make it unavailable for new deals and hide it from normal fund selection.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="flex justify-end gap-2 mt-6">
+                              <DialogTrigger asChild>
+                                <Button variant="outline">Cancel</Button>
+                              </DialogTrigger>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  variant="destructive"
+                                  onClick={() => archiveFund(fund.id, fund.name)}
+                                >
+                                  Archive Fund
+                                </Button>
+                              </DialogTrigger>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      ) : (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => unarchiveFund(fund.id, fund.name)}
+                          className="text-primary hover:text-primary"
+                        >
+                          <ArchiveRestore className="h-4 w-4 mr-2" />
+                          Unarchive
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
