@@ -47,11 +47,21 @@ export function CleanThesisConfiguration({
   const hasDetailedCriteria = wizardCriteriaConfig.length > 0;
 
   const handleSave = async () => {
+    console.log('=== HANDLING SAVE ===');
+    console.log('Strategy object:', strategy);
+    console.log('Strategy ID:', strategy.id);
+    console.log('Edited strategy:', editedStrategy);
+    
     if (strategy.id) {
+      console.log('Updating existing strategy...');
       const result = await updateStrategy(editedStrategy);
       if (result) {
         onSave(); // Use the parent callback instead of forcing page reload
       }
+    } else {
+      console.log('No strategy ID found - strategy needs to be created first');
+      // Strategy doesn't exist, inform user to use the wizard
+      alert('No investment strategy found. Please use the "Configure Thesis" wizard to create your strategy first.');
     }
   };
 

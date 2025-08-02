@@ -180,24 +180,48 @@ export function EnhancedStrategyWizard({
     console.log('Template loaded:', template);
     console.log('Template categories:', template.categories);
     
-    // Ensure all categories and subcategories are properly enabled
+    // Ensure all categories and subcategories are properly enabled WITH DEFAULT WEIGHTS
     const enabledCriteria = template.categories.map(category => ({
       ...category,
       enabled: true, // Force enable all categories
+      weight: category.weight || 25, // Ensure each category has a default weight
       subcategories: category.subcategories.map(sub => ({
         ...sub,
-        enabled: true // Force enable all subcategories
+        enabled: true, // Force enable all subcategories
+        weight: sub.weight || 25 // Ensure each subcategory has a default weight
       }))
     }));
     
-    console.log('Enabled criteria set:', enabledCriteria);
-    setEnhancedCriteria(enabledCriteria);
+    // Verify that total weight sums to 100%
+    const totalWeight = enabledCriteria.reduce((sum, cat) => sum + (cat.enabled ? cat.weight : 0), 0);
+    console.log('Total category weight after initialization:', totalWeight);
     
-    // Save enhanced criteria to wizard data for step persistence
-    setWizardData(prev => ({
-      ...prev,
-      enhancedCriteria: enabledCriteria
-    }));
+    if (Math.abs(totalWeight - 100) > 0.1) {
+      console.log('Weight distribution not 100%, adjusting to equal distribution...');
+      // Adjust weights to equal distribution (25% each for 4 categories)
+      const equalWeight = 100 / enabledCriteria.length;
+      const adjustedCriteria = enabledCriteria.map(cat => ({
+        ...cat,
+        weight: equalWeight
+      }));
+      console.log('Adjusted criteria with equal weights:', adjustedCriteria);
+      setEnhancedCriteria(adjustedCriteria);
+      
+      // Save to wizard data
+      setWizardData(prev => ({
+        ...prev,
+        enhancedCriteria: adjustedCriteria
+      }));
+    } else {
+      console.log('Enabled criteria set with correct weights:', enabledCriteria);
+      setEnhancedCriteria(enabledCriteria);
+      
+      // Save enhanced criteria to wizard data for step persistence
+      setWizardData(prev => ({
+        ...prev,
+        enhancedCriteria: enabledCriteria
+      }));
+    }
   }, [fundType]);
 
   // Restore enhanced criteria when navigating back to criteria step
