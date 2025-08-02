@@ -6,14 +6,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from '@/hooks/use-toast';
+import { useValidation, commonSchemas } from '@/hooks/useValidation';
+import { z } from 'zod';
+import { LoadingSpinner } from '@/components/ui/loading-states';
+
+const authSchema = z.object({
+  email: commonSchemas.email,
+  password: z.string().min(1, 'Password is required')
+});
 
 export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { signIn, user } = useAuth();
+  const { signIn, user, loading: authLoading, error: authError } = useAuth();
   const navigate = useNavigate();
+  
+  const { validate, getFieldError, errors } = useValidation({
+    schema: authSchema
+  });
 
   // Redirect if already logged in
   useEffect(() => {
@@ -24,7 +36,12 @@ export default function Auth() {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    
+    // Validate form data
+    const formData = { email, password };
+    if (!validate(formData)) {
+      return;
+    }
 
     const { error } = await signIn(email, password);
     
@@ -41,8 +58,6 @@ export default function Auth() {
       });
       navigate('/');
     }
-    
-    setLoading(false);
   };
 
 
@@ -79,6 +94,12 @@ export default function Auth() {
           <CardDescription>Investment Intelligence Platform</CardDescription>
         </CardHeader>
         <CardContent>
+          {authError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{authError}</AlertDescription>
+            </Alert>
+          )}
+          
           <form onSubmit={handleSignIn} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -89,8 +110,12 @@ export default function Auth() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-background border-border/60"
+                className={`bg-background border-border/60 ${getFieldError('email') ? 'border-destructive' : ''}`}
+                disabled={authLoading}
               />
+              {getFieldError('email') && (
+                <p className="text-sm text-destructive">{getFieldError('email')}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -101,11 +126,22 @@ export default function Auth() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-background border-border/60"
+                className={`bg-background border-border/60 ${getFieldError('password') ? 'border-destructive' : ''}`}
+                disabled={authLoading}
               />
+              {getFieldError('password') && (
+                <p className="text-sm text-destructive">{getFieldError('password')}</p>
+              )}
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Sign In"}
+            <Button type="submit" className="w-full" disabled={authLoading || !email || !password}>
+              {authLoading ? (
+                <div className="flex items-center gap-2">
+                  <LoadingSpinner size="sm" />
+                  Signing in...
+                </div>
+              ) : (
+                "Sign In"
+              )}
             </Button>
           </form>
           
