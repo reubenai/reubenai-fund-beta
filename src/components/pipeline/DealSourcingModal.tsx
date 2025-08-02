@@ -77,7 +77,7 @@ const SOURCING_STEPS = [
   { id: 'thesis', title: 'Configure Thesis', icon: Target },
   { id: 'sourcing', title: 'Source Companies', icon: Search },
   { id: 'review', title: 'Review Companies', icon: Eye },
-  { id: 'analysis', title: 'AI Analysis', icon: BarChart3 },
+  { id: 'analysis', title: 'ReubenAI Analysis', icon: BarChart3 },
   { id: 'complete', title: 'Complete', icon: CheckCircle }
 ];
 
@@ -570,7 +570,7 @@ export function DealSourcingModal({ open, onClose, fundId, fundName }: DealSourc
                         <p>{company.funding_stage}</p>
                       </div>
                       <div>
-                        <span className="font-medium">AI Score:</span>
+                        <span className="font-medium">ReubenAI Score:</span>
                         <p>{company.ai_analysis_score}/100</p>
                       </div>
                     </div>
@@ -613,7 +613,7 @@ export function DealSourcingModal({ open, onClose, fundId, fundName }: DealSourc
     return (
       <div className="space-y-6">
         <div className="text-center">
-          <h3 className="text-lg font-semibold mb-2">Comprehensive AI Analysis</h3>
+          <h3 className="text-lg font-semibold mb-2">Comprehensive ReubenAI Analysis</h3>
           <p className="text-muted-foreground">
             Run detailed analysis on {activeCompanies.length} selected companies
           </p>

@@ -165,7 +165,7 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
               <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">AI-Powered Investment Memo Generation</h3>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Select a deal below to generate a comprehensive Investment Committee memo using our AI analysis engine. 
+                Select a deal below to generate a comprehensive Investment Committee memo using our ReubenAI analysis engine. 
                 The memo will include all 14 standard sections with insights from our deal analysis.
               </p>
             </div>
@@ -198,7 +198,7 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm text-muted-foreground">AI Score</div>
+                        <div className="text-sm text-muted-foreground">ReubenAI Score</div>
                         <div className="text-2xl font-bold">{deal.overall_score || '--'}</div>
                       </div>
                     </div>

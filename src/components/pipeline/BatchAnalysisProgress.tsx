@@ -87,7 +87,7 @@ export const BatchAnalysisProgress: React.FC<BatchAnalysisProgressProps> = ({ re
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>AI Analysis Progress</span>
+            <span>ReubenAI Analysis Progress</span>
             <div className="flex gap-2">
               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                 <CheckCircle className="w-3 h-3 mr-1" />

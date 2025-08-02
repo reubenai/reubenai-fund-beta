@@ -123,8 +123,8 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
       
       setUploadProgress({ step: 'saving', progress: 60, message: `${dealIds.length} deals saved` });
 
-      // Step 3: Trigger AI analysis (60-100%)
-      setUploadProgress({ step: 'analyzing', progress: 70, message: 'Triggering AI analysis...' });
+      // Step 3: Trigger ReubenAI analysis (60-100%)
+      setUploadProgress({ step: 'analyzing', progress: 70, message: 'Triggering ReubenAI analysis...' });
       
       await CsvParsingService.triggerBatchAIAnalysis(dealIds);
       

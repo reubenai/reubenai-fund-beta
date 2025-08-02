@@ -230,7 +230,7 @@ export const DealPreviewTable: React.FC<DealPreviewTableProps> = ({
           <div className="mt-4 text-sm text-muted-foreground">
             <ul className="list-disc list-inside space-y-1">
               <li>Review each deal and remove any you don't want to process</li>
-              <li>Upload pitch decks to improve AI analysis quality (optional)</li>
+              <li>Upload pitch decks to improve ReubenAI analysis quality (optional)</li>
               <li>Only deals with "Valid" status will be processed</li>
               <li>Pitch decks will be analyzed for financial projections, team info, and market data</li>
             </ul>

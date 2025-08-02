@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 
 interface DocumentAnalysisProps {
   dealId: string;
@@ -41,10 +42,11 @@ interface AnalysisResult {
 }
 
 export function EnhancedDocumentAnalysis({ dealId, documentId, companyName }: DocumentAnalysisProps) {
+  const { toast } = useToast();
+  const { getRAGCategory } = useStrategyThresholds();
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [documentInsights, setDocumentInsights] = useState<any>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
     loadExistingAnalysis();
@@ -67,8 +69,11 @@ export function EnhancedDocumentAnalysis({ dealId, documentId, companyName }: Do
         setAnalysis(latestAnalysis);
         
         // Extract document-specific insights if available
-        if (latestAnalysis.engine_results && latestAnalysis.engine_results.document_analysis) {
-          setDocumentInsights(latestAnalysis.engine_results.document_analysis);
+        if (latestAnalysis.engine_results && typeof latestAnalysis.engine_results === 'object') {
+          const engineResults = latestAnalysis.engine_results as any;
+          if (engineResults.document_analysis) {
+            setDocumentInsights(engineResults.document_analysis);
+          }
         }
       }
     } catch (error) {
@@ -153,7 +158,7 @@ export function EnhancedDocumentAnalysis({ dealId, documentId, companyName }: Do
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Brain className="h-5 w-5" />
-              AI Document Analysis
+              ReubenAI Document Analysis
             </CardTitle>
             <div className="flex gap-2">
               {!isAnalyzing && (
@@ -227,8 +232,8 @@ export function EnhancedDocumentAnalysis({ dealId, documentId, companyName }: Do
                       <metric.icon className="h-4 w-4 text-muted-foreground mr-1" />
                       <span className="text-sm font-medium">{metric.label}</span>
                     </div>
-                    <div className={`text-2xl font-bold ${getScoreColor(metric.score)}`}>
-                      {metric.score || 'N/A'}
+                    <div className="text-lg font-bold text-foreground">
+                      {metric.score ? getRAGCategory(metric.score).label : 'N/A'}
                     </div>
                     {metric.score && (
                       <div className="w-full bg-muted rounded-full h-2 mt-2">
@@ -367,7 +372,7 @@ export function EnhancedDocumentAnalysis({ dealId, documentId, companyName }: Do
             <Brain className="h-12 w-12 text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-medium text-foreground mb-2">No Analysis Available</h3>
             <p className="text-sm text-muted-foreground text-center mb-4">
-              Run AI analysis to extract insights from documents and assess {companyName}
+              Run ReubenAI analysis to extract insights from documents and assess {companyName}
             </p>
             <Button onClick={performDocumentAnalysis}>
               <Zap className="h-4 w-4 mr-2" />

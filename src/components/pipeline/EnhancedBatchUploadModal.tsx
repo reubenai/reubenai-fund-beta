@@ -340,7 +340,7 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5" />
-            Enhanced Batch Upload with AI Analysis
+            Enhanced Batch Upload with ReubenAI Analysis
           </DialogTitle>
         </DialogHeader>
 
@@ -375,7 +375,7 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
               <div className={`w-6 h-6 rounded-full flex items-center justify-center ${currentStep === 'analysis' ? 'bg-primary text-white' : currentStep === 'complete' ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}>
                 5
               </div>
-              AI Analysis
+              ReubenAI Analysis
             </div>
           </div>
 

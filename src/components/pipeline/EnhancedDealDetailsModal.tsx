@@ -253,7 +253,7 @@ export function EnhancedDealDetailsModal({
                 <div className="ml-2 animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
               )}
             </TabsTrigger>
-            <TabsTrigger value="analysis">AI Analysis</TabsTrigger>
+            <TabsTrigger value="analysis">ReubenAI Analysis</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>

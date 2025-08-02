@@ -129,7 +129,7 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
     try {
       toast({
         title: "AI Enhancement Started",
-        description: "Enhancing memo with latest AI analysis...",
+        description: "Enhancing memo with latest ReubenAI analysis...",
       });
       
       setTimeout(() => {
@@ -250,7 +250,7 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                 disabled={isGenerating}
               >
                 <Brain className="w-4 h-4 mr-2" />
-                {isGenerating ? 'Enhancing...' : 'Enhance with AI'}
+                {isGenerating ? 'Enhancing...' : 'Enhance with ReubenAI'}
               </Button>
               
               <Button

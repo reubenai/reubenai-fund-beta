@@ -37,7 +37,7 @@ interface ICCommitteeMember {
     first_name: string;
     last_name: string;
     email: string;
-  };
+  } | null;
 }
 
 export default function EnhancedICPage() {
@@ -118,7 +118,7 @@ export default function EnhancedICPage() {
       .from('deals')
       .select('*')
       .eq('fund_id', selectedFund.id)
-      .in('status', ['investment_committee', 'due_diligence', 'decision'])
+      .in('status', ['investment_committee', 'due_diligence', 'approved'])
       .order('updated_at', { ascending: false });
 
     if (error) {
@@ -132,25 +132,48 @@ export default function EnhancedICPage() {
   const fetchCommitteeMembers = async () => {
     if (!selectedFund) return [];
     
-    const { data, error } = await supabase
-      .from('ic_committee_members')
-      .select(`
-        *,
-        profiles:user_id (
-          first_name,
-          last_name,
-          email
-        )
-      `)
-      .eq('fund_id', selectedFund.id)
-      .eq('is_active', true);
+    try {
+      // Fetch members and their profiles separately to avoid join issues
+      const { data: membersData, error: membersError } = await supabase
+        .from('ic_committee_members')
+        .select('*')
+        .eq('fund_id', selectedFund.id)
+        .eq('is_active', true);
 
-    if (error) {
+      if (membersError) throw membersError;
+      if (!membersData || membersData.length === 0) return [];
+
+      // Fetch profiles for each member
+      const userIds = membersData.map(member => member.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name, email')
+        .in('user_id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        // Return members without profile data if profiles fetch fails
+        return membersData.map(member => ({ ...member, profiles: null }));
+      }
+
+      // Merge member data with profile data
+      const membersWithProfiles = membersData.map(member => {
+        const profile = profilesData?.find(p => p.user_id === member.user_id);
+        return {
+          ...member,
+          profiles: profile ? {
+            first_name: profile.first_name || '',
+            last_name: profile.last_name || '',
+            email: profile.email || ''
+          } : null
+        };
+      });
+
+      return membersWithProfiles;
+    } catch (error) {
       console.error('Error fetching committee members:', error);
       return [];
     }
-    
-    return data || [];
   };
 
   const handleCreateSession = async () => {
@@ -197,6 +220,7 @@ export default function EnhancedICPage() {
         description: votingForm.description,
         voting_deadline: new Date(votingForm.voting_deadline).toISOString(),
         status: 'active' as const,
+        vote_summary: {},
         created_by: (await supabase.auth.getUser()).data.user?.id || ''
       };
 
@@ -248,19 +272,28 @@ export default function EnhancedICPage() {
           role: memberForm.role,
           voting_weight: memberForm.voting_weight
         })
-        .select(`
-          *,
-          profiles:user_id (
-            first_name,
-            last_name,
-            email
-          )
-        `)
+        .select('*')
         .single();
 
       if (error) throw error;
 
-      setCommitteeMembers([...committeeMembers, data]);
+      // Fetch the profile data for the new member
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, email')
+        .eq('user_id', userData.user_id)
+        .single();
+
+      const memberWithProfile = {
+        ...data,
+        profiles: profileData ? {
+          first_name: profileData.first_name || '',
+          last_name: profileData.last_name || '',
+          email: profileData.email || ''
+        } : null
+      };
+
+      setCommitteeMembers([...committeeMembers, memberWithProfile]);
       setShowMemberModal(false);
       setMemberForm({ email: '', role: 'member', voting_weight: 1.0 });
       toast({
@@ -393,8 +426,10 @@ export default function EnhancedICPage() {
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <div className="text-xs text-muted-foreground">AI Score</div>
-                            <div className="text-xl font-semibold text-foreground">{deal.overall_score || 'N/A'}</div>
+                            <div className="text-xs text-muted-foreground">ReubenAI Score</div>
+                            <div className="text-sm font-medium text-foreground">
+                              {deal.overall_score ? getRAGCategory(deal.overall_score).label : 'N/A'}
+                            </div>
                           </div>
                           <div className="flex gap-2">
                             <Button variant="outline" size="sm">
