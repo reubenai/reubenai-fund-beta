@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { DetailedAnalysisSection } from '@/components/analysis/DetailedAnalysisSection';
+import { EnhancedCompanyDetails } from '@/components/company/EnhancedCompanyDetails';
 import { 
   Dialog, 
   DialogContent, 
@@ -247,12 +249,7 @@ export function EnhancedDealDetailsModal({
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="company">
-              Company Details
-              {isEnriching && (
-                <div className="ml-2 animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-              )}
-            </TabsTrigger>
+            <TabsTrigger value="company">Company Details</TabsTrigger>
             <TabsTrigger value="analysis">ReubenAI Analysis</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
@@ -398,100 +395,15 @@ export function EnhancedDealDetailsModal({
           </TabsContent>
 
           <TabsContent value="company" className="space-y-6">
-            {/* Business Model */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Business Model & Strategy</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {(deal.business_model || companyDetails?.business_model) && (
-                  <div>
-                    <h4 className="font-medium mb-2">Business Model</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {companyDetails?.business_model || deal.business_model}
-                    </p>
-                  </div>
-                )}
-                
-                {companyDetails?.revenue_model && (
-                  <div>
-                    <h4 className="font-medium mb-2">Revenue Model</h4>
-                    <p className="text-sm text-muted-foreground">{companyDetails.revenue_model}</p>
-                  </div>
-                )}
-
-                {companyDetails?.customer_segments && (
-                  <div>
-                    <h4 className="font-medium mb-2">Customer Segments</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {companyDetails.customer_segments.map((segment, index) => (
-                        <Badge key={index} variant="secondary">{segment}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Competitive Advantages */}
-            {companyDetails?.competitive_advantages && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Competitive Advantages</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {companyDetails.competitive_advantages.map((advantage, index) => (
-                      <li key={index} className="flex items-start gap-2 text-sm">
-                        <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span>{advantage}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Technology & IP */}
-            {(companyDetails?.technology_stack || companyDetails?.ip_portfolio) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {companyDetails?.technology_stack && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Technology Stack</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {companyDetails.technology_stack.map((tech, index) => (
-                          <Badge key={index} variant="outline">{tech}</Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {companyDetails?.ip_portfolio && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Intellectual Property</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-1">
-                        {companyDetails.ip_portfolio.map((ip, index) => (
-                          <li key={index} className="text-sm">{ip}</li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
+            <EnhancedCompanyDetails deal={deal} />
           </TabsContent>
 
           <TabsContent value="analysis" className="space-y-6">
-            <EnhancedDocumentAnalysis 
-              dealId={deal.id}
-              companyName={deal.company_name}
+            <DetailedAnalysisSection
+              engineResults={analysisData?.engine_results || {}}
+              executiveSummary={analysisData?.executive_summary}
+              overallScore={analysisData?.overall_score}
+              overallRecommendation={analysisData?.overall_recommendation}
             />
           </TabsContent>
 

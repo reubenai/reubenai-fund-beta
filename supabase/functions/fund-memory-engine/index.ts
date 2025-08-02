@@ -44,9 +44,11 @@ serve(async (req) => {
     let result;
     switch (request.action) {
       case 'store':
+      case 'store_memory':
         result = await storeMemoryEntry(request);
         break;
       case 'query':
+      case 'query_contextual_memory':
         result = await queryMemory(request);
         break;
       case 'pattern_discovery':
@@ -59,6 +61,7 @@ serve(async (req) => {
         result = await trackPerformance(request);
         break;
       default:
+        console.error(`Unknown action: ${request.action}`);
         throw new Error(`Unknown action: ${request.action}`);
     }
 

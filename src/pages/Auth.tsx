@@ -48,23 +48,29 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
-      {/* Beta Confidentiality Notice */}
+      {/* Beta Testing Notice */}
       <div className="fixed top-4 left-4 right-4 z-50">
-        <div className="mx-auto max-w-4xl bg-gradient-to-r from-accent-orange/10 to-primary/10 border border-accent-orange/20 rounded-lg p-3">
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0">
-              <Badge variant="secondary" className="bg-accent-orange/10 text-accent-orange border-accent-orange/20 font-medium">
-                Private Beta
-              </Badge>
+        <div className="mx-auto max-w-5xl bg-gradient-to-r from-accent-orange/10 to-primary/10 border border-accent-orange/20 rounded-lg p-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <Badge variant="secondary" className="bg-accent-orange/10 text-accent-orange border-accent-orange/20 font-medium">
+                  Private Beta
+                </Badge>
+              </div>
+              <p className="text-sm text-foreground">
+                <strong>Beta Testing Notice:</strong> ReubenAI is currently in private beta. This platform is designed for functionality testing and feedback collection.
+              </p>
             </div>
-            <p className="text-sm text-foreground">
-              <strong>Confidentiality Agreement:</strong> By using ReubenAI beta platform, you agree to maintain strict confidentiality of all proprietary AI capabilities, fund data, and platform features. This agreement is legally enforceable under applicable confidentiality and trade secret laws.
-            </p>
+            <div className="bg-background/50 rounded-md p-3 text-xs text-muted-foreground leading-relaxed">
+              <p><strong>Please Note:</strong> Beta software will be imperfect by design. Our goal is to test core functionality, capture your feedback on improvements, wishlist items, and bugs to inform our near-term roadmap and shape a disruptive product together.</p>
+              <p className="mt-2"><strong>Confidentiality:</strong> By using this platform, you agree to maintain strict confidentiality of all proprietary AI capabilities, fund data, and platform features under applicable trade secret laws.</p>
+            </div>
           </div>
         </div>
       </div>
       
-      <Card className="w-full max-w-md shadow-elegant mt-20">
+      <Card className="w-full max-w-md shadow-elegant mt-32">
         <CardHeader className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 bg-primary rounded-xl flex items-center justify-center">
             <span className="text-2xl font-bold text-primary-foreground">R</span>
