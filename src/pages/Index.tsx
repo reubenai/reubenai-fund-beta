@@ -274,13 +274,16 @@ const Index = () => {
             <p className="text-sm text-slate-600">Learn how to configure investment criteria and use our AI engine</p>
           </Link>
           
-          <Link to="/help" className="bg-white p-6 border border-slate-200 rounded-lg text-center hover:shadow-sm hover:border-slate-300 transition-all duration-200">
+          <div className="bg-white p-6 border border-slate-200 rounded-lg text-center opacity-50 cursor-not-allowed">
             <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">
               <Video className="h-6 w-6 text-slate-600" />
             </div>
             <h3 className="font-semibold text-slate-900 mb-2">Video Tutorials</h3>
-            <p className="text-sm text-slate-600">Watch step-by-step videos on deal sourcing and pipeline management</p>
-          </Link>
+            <p className="text-sm text-slate-600 mb-3">Watch step-by-step videos on deal sourcing and pipeline management</p>
+            <span className="inline-flex items-center px-2 py-1 bg-slate-50 border border-slate-200 rounded text-xs font-medium text-slate-600">
+              Coming Soon
+            </span>
+          </div>
           
           <Link to="/help" className="bg-white p-6 border border-slate-200 rounded-lg text-center hover:shadow-sm hover:border-slate-300 transition-all duration-200">
             <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">

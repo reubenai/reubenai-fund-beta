@@ -218,19 +218,21 @@ export function AppSidebar() {
             <div className="grid grid-cols-2 gap-2">
               {secondaryFunctions.map((item) => (
                 <div key={item.title} className="h-full">
-                  <div className={`group relative rounded-lg border border-border/60 p-3 text-center transition-all duration-200 h-full flex flex-col ${item.disabled ? 'opacity-50 cursor-not-allowed bg-muted/20' : 'bg-background/80 hover:border-border hover:bg-background hover:shadow-sm cursor-pointer'}`}>
-                    <div className={`w-5 h-5 rounded-md flex items-center justify-center mx-auto mb-2 ${item.disabled ? 'bg-muted/50' : 'bg-muted/80 group-hover:bg-muted'} transition-colors`}>
-                      <item.icon className={`h-3 w-3 ${item.disabled ? 'text-muted-foreground/50' : 'text-muted-foreground group-hover:text-foreground'} transition-colors`} />
+                  <div className={`group relative rounded-lg border border-border/60 p-3 text-center transition-all duration-200 h-full flex flex-col justify-between ${item.disabled ? 'opacity-50 cursor-not-allowed bg-muted/20' : 'bg-background/80 hover:border-border hover:bg-background hover:shadow-sm cursor-pointer'}`}>
+                    <div className="flex flex-col items-center flex-1">
+                      <div className={`w-5 h-5 rounded-md flex items-center justify-center mx-auto mb-2 ${item.disabled ? 'bg-muted/50' : 'bg-muted/80 group-hover:bg-muted'} transition-colors`}>
+                        <item.icon className={`h-3 w-3 ${item.disabled ? 'text-muted-foreground/50' : 'text-muted-foreground group-hover:text-foreground'} transition-colors`} />
+                      </div>
+                      <p className={`text-xs font-medium mb-1 ${item.disabled ? 'text-muted-foreground/50' : 'text-foreground'}`}>{item.title}</p>
+                      <p className={`text-xs ${item.disabled ? 'text-muted-foreground/50' : 'text-muted-foreground'} text-center flex-1`}>{item.description}</p>
                     </div>
-                    <div className="space-y-1 flex-1 flex flex-col justify-center">
-                      <p className={`text-xs font-medium ${item.disabled ? 'text-muted-foreground/50' : 'text-foreground'}`}>{item.title}</p>
-                      {(item as any).badge && (
+                    {(item as any).badge && (
+                      <div className="mt-2">
                         <Badge variant="outline" className={`text-xs font-medium ${item.disabled ? 'opacity-50' : ''}`}>
                           {(item as any).badge}
                         </Badge>
-                      )}
-                      <p className={`text-xs ${item.disabled ? 'text-muted-foreground/50' : 'text-muted-foreground'} text-center`}>{item.description}</p>
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
