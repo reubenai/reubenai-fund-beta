@@ -80,21 +80,20 @@ export function AppHeader() {
       </div>
 
       {/* Right Side */}
-      <div className="flex items-center gap-4">
-        {/* Beta Badge */}
-        <Badge variant="outline" className="text-xs font-normal bg-accent-orange/10 text-accent-orange border-accent-orange/20">
-          BETA
-        </Badge>
-
-        {/* Patent Pending Badge */}
-        <Badge variant="outline" className="text-xs font-normal">
-          Patent Pending
-        </Badge>
+      <div className="flex items-center gap-3">
+        {/* Combined Status Badge */}
+        <div className="flex items-center gap-1.5">
+          <Badge variant="outline" className="text-xs font-normal bg-accent-orange/10 text-accent-orange border-accent-orange/20">
+            BETA
+          </Badge>
+          <span className="text-xs text-muted-foreground">•</span>
+          <span className="text-xs text-muted-foreground">Patent Pending</span>
+        </div>
 
         {/* Quick Search */}
         <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground">
           <Search className="h-4 w-4" />
-          Quick Search
+          Search
         </Button>
       </div>
     </header>

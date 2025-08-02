@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,13 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, FileText, Vote, Users, Plus, Clock, CheckCircle, XCircle, Clock3, Send, Eye, Edit, Trash2 } from 'lucide-react';
+import { Calendar, FileText, Vote, Users, Plus, Clock, CheckCircle, XCircle, Clock3, Send, Eye, Edit, Trash2, TestTube } from 'lucide-react';
 import { useFund } from '@/contexts/FundContext';
 import { ICMemoModal } from '@/components/ic/ICMemoModal';
+import { VotingModal } from '@/components/ic/VotingModal';
+import { SessionDetailModal } from '@/components/ic/SessionDetailModal';
 import { icMemoService, ICSession, ICVotingDecision } from '@/services/ICMemoService';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
+import { testCompleteICWorkflow } from '@/utils/orchestratorTest';
 
 interface Deal {
   id: string;
@@ -47,7 +50,7 @@ export default function EnhancedICPage() {
   const [activeTab, setActiveTab] = useState('pipeline');
   const [showMemoModal, setShowMemoModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
-  const [showVotingModal, setShowVotingModal] = useState(false);
+  const [showCreateVotingModal, setShowCreateVotingModal] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
   
   // Data states
@@ -79,39 +82,43 @@ export default function EnhancedICPage() {
   });
   
   const [selectedDealForMemo, setSelectedDealForMemo] = useState<Deal | null>(null);
+  const [selectedVotingDecision, setSelectedVotingDecision] = useState<ICVotingDecision | null>(null);
+  const [selectedSession, setSelectedSession] = useState<ICSession | null>(null);
+  const [showVotingModal, setShowVotingModal] = useState(false);
+  const [showSessionDetailModal, setShowSessionDetailModal] = useState(false);
 
   // Fetch IC data
-  useEffect(() => {
-    const fetchICData = async () => {
-      if (!selectedFund) return;
+  const fetchICData = useCallback(async () => {
+    if (!selectedFund) return;
+    
+    try {
+      setLoading(true);
+      const [dealsData, sessionsData, votingData, membersData] = await Promise.all([
+        fetchDealsForIC(),
+        icMemoService.getSessions(selectedFund.id),
+        icMemoService.getVotingDecisions(selectedFund.id),
+        fetchCommitteeMembers()
+      ]);
       
-      try {
-        setLoading(true);
-        const [dealsData, sessionsData, votingData, membersData] = await Promise.all([
-          fetchDealsForIC(),
-          icMemoService.getSessions(selectedFund.id),
-          icMemoService.getVotingDecisions(selectedFund.id),
-          fetchCommitteeMembers()
-        ]);
-        
-        setDeals(dealsData || []);
-        setSessions(sessionsData);
-        setVotingDecisions(votingData);
-        setCommitteeMembers(membersData || []);
-      } catch (error) {
-        console.error('Error fetching IC data:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load IC data",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+      setDeals(dealsData || []);
+      setSessions(sessionsData);
+      setVotingDecisions(votingData);
+      setCommitteeMembers(membersData || []);
+    } catch (error) {
+      console.error('Error fetching IC data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load IC data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedFund, toast]);
 
+  useEffect(() => {
     fetchICData();
-  }, [selectedFund]);
+  }, [fetchICData]);
 
   const fetchDealsForIC = async () => {
     if (!selectedFund) return [];
@@ -229,7 +236,7 @@ export default function EnhancedICPage() {
       const newVoting = await icMemoService.createVotingDecision(votingData);
       if (newVoting) {
         setVotingDecisions([...votingDecisions, newVoting]);
-        setShowVotingModal(false);
+        setShowCreateVotingModal(false);
         setVotingForm({ title: '', description: '', voting_deadline: '', memo_id: '' });
         toast({
           title: "Success",
@@ -322,6 +329,34 @@ export default function EnhancedICPage() {
     }).format(amount);
   };
 
+  const handleTestOrchestrator = async () => {
+    if (!selectedFund) return;
+    
+    try {
+      const result = await testCompleteICWorkflow(selectedFund.id);
+      
+      if (result.success) {
+        toast({
+          title: "Orchestrator Test Successful",
+          description: `Tested with deal: ${result.dealTested}. Check console for details.`,
+        });
+      } else {
+        toast({
+          title: "Orchestrator Test Failed",
+          description: result.error || "Unknown error occurred",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Test error:', error);
+      toast({
+        title: "Test Error",
+        description: "Failed to run orchestrator test",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (!selectedFund) {
     return (
       <div className="flex-1 space-y-8 p-8">
@@ -356,10 +391,23 @@ export default function EnhancedICPage() {
   return (
     <div className="flex-1 space-y-8 p-8">
       <div className="space-y-2">
-        <h1 className="text-2xl font-semibold text-foreground">Investment Committee</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage IC meetings, memos, and decisions for {selectedFund.name}
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">Investment Committee</h1>
+            <p className="text-sm text-muted-foreground">
+              Manage IC meetings, memos, and decisions for {selectedFund.name}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleTestOrchestrator}
+            className="gap-2"
+          >
+            <TestTube className="h-4 w-4" />
+            Test Orchestrator
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
@@ -573,11 +621,26 @@ export default function EnhancedICPage() {
                         </div>
                       )}
                       <div className="flex justify-end gap-2 pt-2">
-                        <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 px-3 text-xs"
+                          onClick={() => {
+                            setSelectedSession(session);
+                            setShowSessionDetailModal(true);
+                          }}
+                        >
                           <Edit className="h-4 w-4 mr-1" />
                           Edit
                         </Button>
-                        <Button size="sm" className="h-8 px-3 text-xs">
+                        <Button 
+                          size="sm" 
+                          className="h-8 px-3 text-xs"
+                          onClick={() => {
+                            setSelectedSession(session);
+                            setShowSessionDetailModal(true);
+                          }}
+                        >
                           <Eye className="h-4 w-4 mr-1" />
                           View Details
                         </Button>
@@ -612,7 +675,7 @@ export default function EnhancedICPage() {
                 Track voting progress and investment decisions
               </p>
             </div>
-            <Dialog open={showVotingModal} onOpenChange={setShowVotingModal}>
+            <Dialog open={showCreateVotingModal} onOpenChange={setShowCreateVotingModal}>
               <DialogTrigger asChild>
                 <Button className="h-9 px-4 text-sm">
                   <Plus className="h-4 w-4 mr-2" />
@@ -653,7 +716,7 @@ export default function EnhancedICPage() {
                     />
                   </div>
                   <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setShowVotingModal(false)}>
+                    <Button variant="outline" onClick={() => setShowCreateVotingModal(false)}>
                       Cancel
                     </Button>
                     <Button onClick={handleCreateVotingDecision}>
@@ -706,11 +769,30 @@ export default function EnhancedICPage() {
                         </div>
                       )}
                       <div className="flex justify-end gap-2 pt-2">
-                        <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 px-3 text-xs"
+                          onClick={() => {
+                            setSelectedVotingDecision(decision);
+                            setShowVotingModal(true);
+                          }}
+                        >
                           <Vote className="h-4 w-4 mr-1" />
                           Vote
                         </Button>
-                        <Button variant="outline" size="sm" className="h-8 px-3 text-xs">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 px-3 text-xs"
+                          onClick={() => {
+                            // Navigate to decision details
+                            toast({
+                              title: "Decision Details",
+                              description: decision.description || "No additional details available."
+                            });
+                          }}
+                        >
                           <Eye className="h-4 w-4 mr-1" />
                           Details
                         </Button>
@@ -727,7 +809,7 @@ export default function EnhancedICPage() {
                     <p className="text-sm text-muted-foreground">
                       No voting decisions created
                     </p>
-                    <Button variant="outline" className="mt-4 h-9 px-4 text-sm" onClick={() => setShowVotingModal(true)}>
+                    <Button variant="outline" className="mt-4 h-9 px-4 text-sm" onClick={() => setShowCreateVotingModal(true)}>
                       Create Voting Decision
                     </Button>
                   </div>
@@ -865,6 +947,38 @@ export default function EnhancedICPage() {
         dealId={selectedDealForMemo?.id}
         fundId={selectedFund.id}
       />
+
+      {selectedVotingDecision && (
+        <VotingModal
+          isOpen={showVotingModal}
+          onClose={() => {
+            setShowVotingModal(false);
+            setSelectedVotingDecision(null);
+          }}
+          decision={selectedVotingDecision}
+          onVoteSubmitted={() => {
+            fetchICData();
+            setShowVotingModal(false);
+            setSelectedVotingDecision(null);
+          }}
+        />
+      )}
+
+      {selectedSession && (
+        <SessionDetailModal
+          isOpen={showSessionDetailModal}
+          onClose={() => {
+            setShowSessionDetailModal(false);
+            setSelectedSession(null);
+          }}
+          session={selectedSession}
+          onSessionUpdated={(updatedSession) => {
+            setSessions(sessions.map(s => s.id === updatedSession.id ? updatedSession : s));
+            setShowSessionDetailModal(false);
+            setSelectedSession(null);
+          }}
+        />
+      )}
     </div>
   );
 }
