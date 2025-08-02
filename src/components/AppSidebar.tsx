@@ -178,13 +178,16 @@ export function AppSidebar() {
             Core Functions
           </SidebarGroupLabel>
           <SidebarGroupContent className="space-y-1">
-            {coreFunctions.map((item) => (
-              <NavLink key={item.title} to={item.url}>
-                <div className={`group relative flex items-center space-x-3 rounded-lg px-3 py-3 text-sm transition-all duration-200 ${
-                  isActive(item.url) 
-                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm' 
-                    : 'hover:bg-muted/50 text-foreground hover:shadow-sm'
-                }`}>
+              {coreFunctions.map((item) => (
+                <NavLink key={item.title} to={item.url}>
+                  <div 
+                    className={`group relative flex items-center space-x-3 rounded-lg px-3 py-3 text-sm transition-all duration-200 ${
+                      isActive(item.url) 
+                        ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm' 
+                        : 'hover:bg-muted/50 text-foreground hover:shadow-sm'
+                    }`}
+                    data-tour={item.title === 'Investment Strategy' ? 'strategy' : item.title === 'Deal Pipeline' ? 'pipeline' : undefined}
+                  >
                   <div className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
                     isActive(item.url) ? 'bg-primary/20' : 'bg-muted/80 group-hover:bg-muted'
                   }`}>
@@ -288,6 +291,7 @@ export function AppSidebar() {
                             ? "bg-primary/10 text-primary border border-primary/20" 
                             : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
                         }`}
+                        data-tour={item.title === 'Help & Support' ? 'help' : undefined}
                       >
                         <item.icon className="h-4 w-4" />
                         <span className="font-medium">{item.title}</span>

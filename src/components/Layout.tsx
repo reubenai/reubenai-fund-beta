@@ -3,8 +3,11 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { useAppKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { useActivityTracking } from "@/hooks/useActivityTracking";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 
 interface LayoutProps {
@@ -13,6 +16,8 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { helpVisible, setHelpVisible, shortcuts, formatShortcut } = useAppKeyboardShortcuts();
+  const { hasCompleted, startTour } = useOnboarding();
+  useActivityTracking(); // Track user activity
 
   return (
     <>
@@ -50,11 +55,21 @@ export function Layout({ children }: LayoutProps) {
                 </Badge>
               </div>
             ))}
-            <div className="pt-2 border-t">
+            <div className="pt-2 border-t space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Show this help</span>
                 <Badge variant="outline" className="font-mono text-xs">?</Badge>
               </div>
+              {!hasCompleted && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={startTour}
+                  className="w-full text-xs"
+                >
+                  Start Guided Tour
+                </Button>
+              )}
             </div>
           </div>
         </DialogContent>

@@ -1,162 +1,112 @@
-import { useCallback } from 'react';
-import { useFund } from '@/contexts/FundContext';
-import { activityService, CreateActivityInput } from '@/services/ActivityService';
-import { useToast } from '@/hooks/use-toast';
+import { useEffect, useCallback } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+
+interface UserActivity {
+  event: string;
+  timestamp: string;
+  path: string;
+  userId?: string;
+  metadata?: Record<string, any>;
+}
 
 export function useActivityTracking() {
-  const { selectedFund } = useFund();
-  const { toast } = useToast();
+  const { user } = useAuth();
 
-  const logActivity = useCallback(async (input: Omit<CreateActivityInput, 'fund_id'>) => {
-    if (!selectedFund?.id) {
-      console.warn('No fund selected for activity logging');
-      return null;
+  const trackEvent = useCallback((event: string, metadata?: Record<string, any>) => {
+    const activity: UserActivity = {
+      event,
+      timestamp: new Date().toISOString(),
+      path: window.location.pathname,
+      userId: user?.id,
+      metadata
+    };
+
+    // Store locally for now - in production this would go to analytics service
+    const activities = JSON.parse(localStorage.getItem('user-activities') || '[]');
+    activities.push(activity);
+    
+    // Keep only last 1000 activities
+    if (activities.length > 1000) {
+      activities.splice(0, activities.length - 1000);
     }
+    
+    localStorage.setItem('user-activities', JSON.stringify(activities));
+    
+    // Log for debugging (remove in production)
+    console.log('Activity tracked:', activity);
+  }, [user?.id]);
 
-    try {
-      const result = await activityService.createActivity({
-        ...input,
-        fund_id: selectedFund.id
-      });
+  // Track page views
+  useEffect(() => {
+    trackEvent('page_view', {
+      title: document.title,
+      referrer: document.referrer
+    });
+  }, [trackEvent]);
 
-      if (!result) {
-        throw new Error('Failed to log activity');
+  // Track user interactions
+  useEffect(() => {
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'BUTTON' || target.tagName === 'A') {
+        trackEvent('click', {
+          element: target.tagName,
+          text: target.textContent?.slice(0, 50),
+          className: target.className
+        });
       }
+    };
 
-      return result;
-    } catch (error) {
-      console.error('Error logging activity:', error);
-      toast({
-        title: 'Activity Log Error',
-        description: 'Failed to log activity. Please try again.',
-        variant: 'destructive'
+    const handleFormSubmit = (event: SubmitEvent) => {
+      const form = event.target as HTMLFormElement;
+      trackEvent('form_submit', {
+        formId: form.id,
+        formName: form.name,
+        action: form.action
       });
-      return null;
-    }
-  }, [selectedFund?.id, toast]);
+    };
 
-  // Helper methods for common activities
-  const logDealCreated = useCallback((dealId: string, companyName: string, context?: Record<string, any>) => {
-    return logActivity({
-      activity_type: 'deal_created',
-      title: `New deal created: ${companyName}`,
-      description: `Created a new deal for ${companyName}`,
-      deal_id: dealId,
-      resource_type: 'deal',
-      resource_id: dealId,
-      context_data: { company_name: companyName, ...context },
-      priority: 'medium',
-      tags: ['deal', 'created']
-    });
-  }, [logActivity]);
+    document.addEventListener('click', handleClick);
+    document.addEventListener('submit', handleFormSubmit);
 
-  const logDealStageChanged = useCallback((dealId: string, companyName: string, fromStage: string, toStage: string) => {
-    return logActivity({
-      activity_type: 'deal_stage_changed',
-      title: `Deal moved: ${companyName}`,
-      description: `Moved ${companyName} from ${fromStage} to ${toStage}`,
-      deal_id: dealId,
-      resource_type: 'deal',
-      resource_id: dealId,
-      context_data: { 
-        company_name: companyName,
-        stage_from: fromStage,
-        stage_to: toStage
-      },
-      change_data: {
-        from: fromStage,
-        to: toStage
-      },
-      priority: 'medium',
-      tags: ['deal', 'stage_change', fromStage, toStage]
-    });
-  }, [logActivity]);
+    return () => {
+      document.removeEventListener('click', handleClick);
+      document.removeEventListener('submit', handleFormSubmit);
+    };
+  }, [trackEvent]);
 
-  const logDealUpdated = useCallback((dealId: string, companyName: string, changes: Record<string, any>) => {
-    return logActivity({
-      activity_type: 'deal_updated',
-      title: `Deal updated: ${companyName}`,
-      description: `Updated details for ${companyName}`,
-      deal_id: dealId,
-      resource_type: 'deal',
-      resource_id: dealId,
-      context_data: { company_name: companyName },
-      change_data: changes,
-      priority: 'low',
-      tags: ['deal', 'updated']
-    });
-  }, [logActivity]);
+  // Track session duration
+  useEffect(() => {
+    const sessionStart = Date.now();
+    
+    const trackSessionEnd = () => {
+      const duration = Date.now() - sessionStart;
+      trackEvent('session_end', { duration });
+    };
 
-  const logDealDeleted = useCallback((companyName: string, context?: Record<string, any>) => {
-    return logActivity({
-      activity_type: 'deal_deleted',
-      title: `Deal deleted: ${companyName}`,
-      description: `Deleted deal for ${companyName}`,
-      resource_type: 'deal',
-      context_data: { company_name: companyName, ...context },
-      priority: 'medium',
-      tags: ['deal', 'deleted']
-    });
-  }, [logActivity]);
-
-  const logDealNoteAdded = useCallback((dealId: string, companyName: string) => {
-    return logActivity({
-      activity_type: 'deal_note_added',
-      title: `Note added to ${companyName}`,
-      description: `Added a new note to ${companyName}`,
-      deal_id: dealId,
-      resource_type: 'deal_note',
-      resource_id: dealId,
-      context_data: { company_name: companyName },
-      priority: 'low',
-      tags: ['deal', 'note']
-    });
-  }, [logActivity]);
-
-  const logDocumentUploaded = useCallback((dealId: string, companyName: string, fileName: string, documentType?: string) => {
-    return logActivity({
-      activity_type: 'document_uploaded',
-      title: `Document uploaded for ${companyName}`,
-      description: `Uploaded ${fileName} for ${companyName}`,
-      deal_id: dealId,
-      resource_type: 'document',
-      resource_id: dealId,
-      context_data: { 
-        company_name: companyName,
-        file_name: fileName,
-        document_type: documentType
-      },
-      priority: 'low',
-      tags: ['deal', 'document', documentType].filter(Boolean)
-    });
-  }, [logActivity]);
-
-  const logDocumentAnalyzed = useCallback((dealId: string, companyName: string, fileName: string, analysisType: string) => {
-    return logActivity({
-      activity_type: 'deal_updated',
-      title: `Document analyzed for ${companyName}`,
-      description: `Completed ${analysisType} analysis of ${fileName}`,
-      deal_id: dealId,
-      resource_type: 'document',
-      resource_id: dealId,
-      context_data: { 
-        company_name: companyName,
-        file_name: fileName,
-        analysis_type: analysisType
-      },
-      priority: 'medium',
-      tags: ['deal', 'document', 'analysis', analysisType]
-    });
-  }, [logActivity]);
+    window.addEventListener('beforeunload', trackSessionEnd);
+    
+    return () => {
+      window.removeEventListener('beforeunload', trackSessionEnd);
+      trackSessionEnd();
+    };
+  }, [trackEvent]);
 
   return {
-    logActivity,
-    logDealCreated,
-    logDealStageChanged,
-    logDealUpdated,
-    logDealDeleted,
-    logDealNoteAdded,
-    logDocumentUploaded,
-    logDocumentAnalyzed
+    trackEvent,
+    // Legacy methods for backward compatibility
+    logActivity: (activity: any) => trackEvent('activity', typeof activity === 'string' ? { description: activity } : activity),
+    logDocumentUploaded: (...args: any[]) => {
+      const [dealId, fileName, documentType, sizeOrMetadata] = args;
+      trackEvent('document_uploaded', { dealId, fileName, documentType, sizeOrMetadata });
+    },
+    logDealStageChanged: (...args: any[]) => {
+      const [dealId, oldStage, newStage, metadataOrName] = args;
+      trackEvent('deal_stage_changed', { dealId, oldStage, newStage, metadataOrName });
+    },
+    logDealCreated: (...args: any[]) => {
+      const [dealId, companyName, stageOrMetadata] = args;
+      trackEvent('deal_created', { dealId, companyName, stageOrMetadata });
+    }
   };
 }

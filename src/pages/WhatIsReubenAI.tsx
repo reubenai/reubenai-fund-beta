@@ -67,25 +67,25 @@ const WhatIsReubenAI = () => {
       title: 'Investment Committee Portal',
       icon: Users,
       description: 'Full IC workflow with collaborative decision-making',
-      eta: 'Beta Testing'
+      eta: 'Q4 2025'
     },
     {
       title: 'Enhanced Analytics Dashboard',
       icon: BarChart3,
       description: 'Advanced portfolio analytics and performance tracking',
-      eta: 'Q1 2025'
+      eta: 'Q1 2026'
     },
     {
       title: 'Fund Administration Suite',
       icon: Building2,
       description: 'Complete fund operations and LP management',
-      eta: 'Q2 2025'
+      eta: 'Q2 2026'
     },
     {
       title: 'Help & Documentation',
       icon: MessageSquare,
       description: 'Comprehensive help system and user guides',
-      eta: 'Q1 2025'
+      eta: 'Q4 2025'
     }
   ];
 
