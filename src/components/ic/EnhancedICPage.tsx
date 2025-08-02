@@ -77,6 +77,8 @@ export default function EnhancedICPage() {
     role: 'member',
     voting_weight: 1.0
   });
+  
+  const [selectedDealForMemo, setSelectedDealForMemo] = useState<Deal | null>(null);
 
   // Fetch IC data
   useEffect(() => {
@@ -388,13 +390,6 @@ export default function EnhancedICPage() {
                 Deals ready for IC review and memo generation
               </p>
             </div>
-            <Button 
-              onClick={() => setShowMemoModal(true)}
-              className="h-9 px-4 text-sm"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Generate Memo
-            </Button>
           </div>
 
           <div className="space-y-4">
@@ -432,11 +427,25 @@ export default function EnhancedICPage() {
                             </div>
                           </div>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                // Navigate to deal analysis view
+                                window.open(`/deals?deal=${deal.id}`, '_blank');
+                              }}
+                            >
                               <Eye className="h-4 w-4 mr-2" />
                               Review
                             </Button>
-                            <Button size="sm">
+                            <Button 
+                              size="sm"
+                              onClick={() => {
+                                // Open ICMemoModal with pre-selected deal
+                                setSelectedDealForMemo(deal);
+                                setShowMemoModal(true);
+                              }}
+                            >
                               <FileText className="h-4 w-4 mr-2" />
                               Memo
                             </Button>
@@ -849,7 +858,11 @@ export default function EnhancedICPage() {
 
       <ICMemoModal
         isOpen={showMemoModal}
-        onClose={() => setShowMemoModal(false)}
+        onClose={() => {
+          setShowMemoModal(false);
+          setSelectedDealForMemo(null);
+        }}
+        dealId={selectedDealForMemo?.id}
         fundId={selectedFund.id}
       />
     </div>

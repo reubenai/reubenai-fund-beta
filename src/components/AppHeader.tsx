@@ -81,6 +81,11 @@ export function AppHeader() {
 
       {/* Right Side */}
       <div className="flex items-center gap-4">
+        {/* Beta Badge */}
+        <Badge variant="outline" className="text-xs font-normal bg-accent-orange/10 text-accent-orange border-accent-orange/20">
+          BETA
+        </Badge>
+
         {/* Patent Pending Badge */}
         <Badge variant="outline" className="text-xs font-normal">
           Patent Pending

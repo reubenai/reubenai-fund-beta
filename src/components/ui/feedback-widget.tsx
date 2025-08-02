@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { MessageSquare, Star, Send, Bug, Lightbulb, Heart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 type FeedbackType = 'bug' | 'feature' | 'general' | 'love';
 type Rating = 1 | 2 | 3 | 4 | 5;
@@ -38,19 +39,31 @@ export function FeedbackWidget() {
     setIsSubmitting(true);
     
     try {
-      // Store feedback locally for now
-      const feedback = {
-        type,
-        rating,
-        message: message.trim(),
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-        url: window.location.href
-      };
-      
-      const existingFeedback = JSON.parse(localStorage.getItem('user-feedback') || '[]');
-      existingFeedback.push(feedback);
-      localStorage.setItem('user-feedback', JSON.stringify(existingFeedback));
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: currentFund } = await supabase
+        .from('funds')
+        .select('id')
+        .limit(1)
+        .single();
+
+      const { error } = await supabase
+        .from('user_feedback')
+        .insert({
+          user_id: user?.id,
+          fund_id: currentFund?.id || null,
+          feedback_type: type,
+          rating,
+          message: message.trim(),
+          page_url: window.location.href,
+          user_agent: navigator.userAgent,
+          metadata: {
+            timestamp: new Date().toISOString(),
+            pathname: window.location.pathname,
+            referrer: document.referrer
+          }
+        });
+
+      if (error) throw error;
       
       toast({
         title: "Thank you!",
@@ -63,6 +76,7 @@ export function FeedbackWidget() {
       setMessage('');
       setIsOpen(false);
     } catch (error) {
+      console.error('Error submitting feedback:', error);
       toast({
         title: "Error",
         description: "Failed to submit feedback. Please try again.",

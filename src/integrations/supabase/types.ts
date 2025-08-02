@@ -1632,6 +1632,68 @@ export type Database = {
         }
         Relationships: []
       }
+      user_feedback: {
+        Row: {
+          admin_response: string | null
+          created_at: string
+          feedback_type: string
+          fund_id: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          page_url: string | null
+          priority: string
+          rating: number | null
+          resolved_at: string | null
+          status: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_response?: string | null
+          created_at?: string
+          feedback_type: string
+          fund_id?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          page_url?: string | null
+          priority?: string
+          rating?: number | null
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_response?: string | null
+          created_at?: string
+          feedback_type?: string
+          fund_id?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          page_url?: string | null
+          priority?: string
+          rating?: number | null
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_feedback_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_preferences: {
         Row: {
           created_at: string

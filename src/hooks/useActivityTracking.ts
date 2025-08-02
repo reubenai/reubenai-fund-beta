@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserActivity {
   event: string;
@@ -12,7 +13,7 @@ interface UserActivity {
 export function useActivityTracking() {
   const { user } = useAuth();
 
-  const trackEvent = useCallback((event: string, metadata?: Record<string, any>) => {
+  const trackEvent = useCallback(async (event: string, metadata?: Record<string, any>) => {
     const activity: UserActivity = {
       event,
       timestamp: new Date().toISOString(),
@@ -21,7 +22,37 @@ export function useActivityTracking() {
       metadata
     };
 
-    // Store locally for now - in production this would go to analytics service
+    try {
+      // Store in database via activity service
+      const { activityService } = await import('@/services/ActivityService');
+      
+      // Get current fund
+      const { data: currentFund } = await supabase
+        .from('funds')
+        .select('id')
+        .limit(1)
+        .single();
+
+      if (currentFund) {
+        await activityService.createActivity({
+          fund_id: currentFund.id,
+          activity_type: event === 'page_view' ? 'system_event' : 'deal_updated',
+          title: `User ${event}`,
+          description: `User performed ${event} on ${activity.path}`,
+          context_data: {
+            event,
+            path: activity.path,
+            ...metadata
+          },
+          priority: 'low',
+          tags: [event, 'user_tracking']
+        });
+      }
+    } catch (error) {
+      console.warn('Failed to track activity in database:', error);
+    }
+
+    // Also store locally as backup
     const activities = JSON.parse(localStorage.getItem('user-activities') || '[]');
     activities.push(activity);
     
@@ -31,9 +62,6 @@ export function useActivityTracking() {
     }
     
     localStorage.setItem('user-activities', JSON.stringify(activities));
-    
-    // Log for debugging (remove in production)
-    console.log('Activity tracked:', activity);
   }, [user?.id]);
 
   // Track page views

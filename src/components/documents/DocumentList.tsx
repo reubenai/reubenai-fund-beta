@@ -211,7 +211,7 @@ export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTri
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium truncate">{document.name}</span>
                       {document.document_type && (
-                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                       <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                           {document.document_type}
                         </Badge>
                       )}
@@ -221,6 +221,23 @@ export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTri
                           className={getCategoryColor(document.document_category)}
                         >
                           {document.document_category.replace('_', ' ')}
+                        </Badge>
+                      )}
+                      {/* Document Analysis Status */}
+                      {document.document_analysis_status && (
+                        <Badge 
+                          variant={document.document_analysis_status === 'completed' ? 'default' : 
+                                 document.document_analysis_status === 'processing' ? 'secondary' : 'outline'}
+                          className={`text-xs ${
+                            document.document_analysis_status === 'completed' ? 'bg-green-100 text-green-800' :
+                            document.document_analysis_status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                            document.document_analysis_status === 'failed' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {document.document_analysis_status === 'completed' ? 'Analyzed' :
+                           document.document_analysis_status === 'processing' ? 'Processing' :
+                           document.document_analysis_status === 'failed' ? 'Failed' : 'Pending'}
                         </Badge>
                       )}
                     </div>

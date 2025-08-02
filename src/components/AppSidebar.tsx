@@ -198,11 +198,6 @@ export function AppSidebar() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-medium truncate">{item.title}</p>
-                      {(item as any).beta && (
-                        <Badge variant="secondary" className="text-xs px-1.5 py-0.5 font-medium bg-accent-orange/10 text-accent-orange border-accent-orange/20">
-                          beta
-                        </Badge>
-                      )}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{item.description}</p>
                   </div>
