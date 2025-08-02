@@ -120,7 +120,7 @@ export function CleanThesisConfiguration({
                   id="strategy-description"
                   value={editedStrategy.strategy_notes || ''}
                   onChange={(e) => updateField('strategy_notes', e.target.value)}
-                  placeholder="Describe your investment thesis and strategy focus..."
+                  placeholder="e.g., We invest in early-stage B2B SaaS companies with strong technical teams, focusing on AI/ML and automation tools for enterprise customers. We look for companies with initial product-market fit, annual recurring revenue of $1M+, and clear path to $10M+ ARR within 3 years..."
                   className="mt-2 min-h-[120px] resize-none border-0 bg-muted/30"
                 />
               </div>

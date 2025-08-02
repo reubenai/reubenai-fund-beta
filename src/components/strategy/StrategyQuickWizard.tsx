@@ -504,7 +504,7 @@ export function StrategyQuickWizard({
                   id="philosophy"
                   value={wizardData.investmentPhilosophy || ''}
                   onChange={(e) => updateWizardData({ investmentPhilosophy: e.target.value })}
-                  placeholder="Describe your core investment philosophy, beliefs about value creation, market timing, risk approach, and what makes a great investment..."
+                  placeholder="e.g., We believe in backing exceptional founders solving large market problems with innovative technology. We focus on capital-efficient businesses with strong unit economics and clear paths to scale. Our value-add approach includes hands-on support in go-to-market strategy, talent acquisition, and follow-on fundraising..."
                   rows={6}
                   className="mt-2"
                 />
@@ -791,7 +791,7 @@ export function StrategyQuickWizard({
                       networkLeveraging: e.target.value
                     }
                   })}
-                  placeholder="Describe how to leverage your network, key relationships, and referral sources for deal flow..."
+                  placeholder="e.g., We leverage our network of enterprise CTOs and technical leaders at Fortune 500 companies for deal flow. Our LP base includes strategic corporate partners who provide warm introductions. We also work closely with top-tier accelerators like Techstars and Y Combinator for early-stage opportunities..."
                   rows={3}
                 />
               </div>

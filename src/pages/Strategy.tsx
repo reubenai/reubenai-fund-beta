@@ -95,26 +95,15 @@ export default function Strategy() {
 
   // Main strategy view
   return (
-    <div className="min-h-screen bg-background">
-      <div className="bg-card border-b">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">Strategy</h1>
-            <p className="text-muted-foreground mt-1">Configure your investment criteria and approach for {selectedFund.name}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <Card className="shadow-sm border-0">
-          <InvestmentStrategyManager 
-            fundId={selectedFund.id} 
-            fundName={selectedFund.name}
-            fundType={selectedFund.fund_type === 'venture_capital' ? 'vc' : 'pe'}
-            key={selectedFund.id} // Force re-render when fund changes
-          />
-        </Card>
-      </div>
+    <div className="max-w-7xl mx-auto px-6 py-8">
+      <Card className="shadow-sm border-0">
+        <InvestmentStrategyManager 
+          fundId={selectedFund.id} 
+          fundName={selectedFund.name}
+          fundType={selectedFund.fund_type === 'venture_capital' ? 'vc' : 'pe'}
+          key={selectedFund.id} // Force re-render when fund changes
+        />
+      </Card>
     </div>
   );
 }

@@ -20,23 +20,6 @@ export function InvestmentStrategyManager({ fundId, fundName, fundType, isModal 
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Clean header */}
-      <div className="bg-card border-b">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">Investment Strategy</h1>
-            <p className="text-muted-foreground mt-1">Define and refine your investment criteria and approach</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <Card className="shadow-sm border-0">
-          <StrategyConfigurationManager fundId={fundId} fundName={fundName} fundType={fundType} />
-        </Card>
-      </div>
-    </div>
+    <StrategyConfigurationManager fundId={fundId} fundName={fundName} fundType={fundType} />
   );
 }

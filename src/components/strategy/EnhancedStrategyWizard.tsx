@@ -564,9 +564,9 @@ export function EnhancedStrategyWizard({
                      <Textarea
                        id="description"
                        value={wizardData.strategyDescription || ''}
-                       onChange={(e) => updateWizardData({ strategyDescription: e.target.value })}
-                       placeholder="Describe your investment strategy, focus areas, and approach..."
-                       rows={4}
+                        onChange={(e) => updateWizardData({ strategyDescription: e.target.value })}
+                        placeholder="e.g., We invest in early-stage B2B SaaS companies with strong technical teams, focusing on AI/ML and automation tools for enterprise customers in North America..."
+                        rows={4}
                        className="text-base"
                      />
                    </div>
@@ -584,33 +584,34 @@ export function EnhancedStrategyWizard({
                               ...wizardData.checkSizeRange, 
                               min: parseInt(e.target.value) || 0 
                             } 
-                          })}
-                          placeholder="500,000"
-                          className="pl-8 h-12 text-base"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-base font-medium">Maximum Investment</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
-                        <Input
-                          type="number"
-                          value={wizardData.checkSizeRange?.max || 0}
-                          onChange={(e) => updateWizardData({ 
-                            checkSizeRange: { 
-                              ...wizardData.checkSizeRange, 
-                              max: parseInt(e.target.value) || 0 
-                            } 
-                          })}
-                          placeholder="5,000,000"
-                          className="pl-8 h-12 text-base"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+                           })}
+                           placeholder="500,000"
+                           className="pl-8 h-12 text-base"
+                         />
+                       </div>
+                     </div>
+                     <div className="space-y-2">
+                       <Label className="text-base font-medium">Maximum Investment</Label>
+                       <div className="relative">
+                         <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
+                         <Input
+                           type="number"
+                           value={wizardData.checkSizeRange?.max || 0}
+                           onChange={(e) => updateWizardData({ 
+                             checkSizeRange: { 
+                               ...wizardData.checkSizeRange, 
+                               max: parseInt(e.target.value) || 0 
+                             } 
+                           })}
+                           placeholder="5,000,000"
+                           className="pl-8 h-12 text-base"
+                         />
+                         <p className="text-xs text-muted-foreground mt-1">Typical range: $500K - $5M for seed/Series A</p>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               )}
 
               {currentStep === 1 && (
                 <div className="space-y-8">
