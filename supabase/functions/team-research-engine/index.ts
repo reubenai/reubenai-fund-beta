@@ -61,8 +61,11 @@ async function analyzeFounderAndTeam(dealData: any, strategyData: any, documentD
   // Enhanced document-driven team analysis
   const documentInsights = documentData ? await extractTeamInsightsFromDocuments(documentData) : null;
   
-  // Research founder background
+  // Research founder background with web research
   const founderResearch = await conductFounderResearch(validatedData);
+  
+  // Enhanced web research for founder and team
+  const webResearchData = await conductWebResearch(validatedData);
   
   // Analyze team composition
   const teamComposition = await analyzeTeamComposition(validatedData, founderResearch);
@@ -77,20 +80,22 @@ async function analyzeFounderAndTeam(dealData: any, strategyData: any, documentD
     backgroundResearch
   });
   
-  // Generate comprehensive team analysis
+  // Generate comprehensive team analysis with web research data
   const aiAnalysis = await generateTeamAnalysis(validatedData, {
     founderResearch,
     teamComposition,
     backgroundResearch,
-    executionAssessment
+    executionAssessment,
+    webResearchData
   });
   
-  // Calculate team strength score
+  // Calculate team strength score with web data
   const teamScore = calculateTeamScore({
     founderResearch,
     teamComposition,
     backgroundResearch,
-    executionAssessment
+    executionAssessment,
+    webResearchData
   });
   
   // Determine confidence level
@@ -100,12 +105,13 @@ async function analyzeFounderAndTeam(dealData: any, strategyData: any, documentD
     backgroundResearch
   });
   
-  // Combine all sources
+  // Combine all sources including web research
   const sources = [
     ...founderResearch.sources,
     ...teamComposition.sources,
     ...backgroundResearch.sources,
-    ...executionAssessment.sources
+    ...executionAssessment.sources,
+    ...(webResearchData?.sources || [])
   ];
   
   return {
@@ -122,7 +128,8 @@ async function analyzeFounderAndTeam(dealData: any, strategyData: any, documentD
         founderResearch,
         backgroundResearch,
         executionAssessment
-      })
+      }),
+      web_validation: webResearchData?.data || null
     },
     validation_status: confidence >= 70 ? 'validated' : confidence >= 50 ? 'partial' : 'unvalidated'
   };
@@ -602,6 +609,39 @@ Instructions:
     }
     
     return `Founder ${dealData.founder} shows ${researchData.teamComposition.assessment.domain_expertise} for ${dealData.industry}. Leadership experience: ${researchData.executionAssessment.factors.leadership_experience}. Team composition and execution track record require additional verification.`;
+  }
+}
+
+async function conductWebResearch(dealData: any) {
+  try {
+    console.log('🔍 Conducting web research for founder and team...');
+    
+    // Call web-research-engine for founder-specific research
+    const { data: webResult, error } = await supabase.functions.invoke('web-research-engine', {
+      body: {
+        dealData,
+        researchType: 'founder',
+        searchDepth: 'detailed'
+      }
+    });
+
+    if (error) {
+      console.error('Web research failed:', error);
+      return { success: false, sources: [] };
+    }
+
+    if (webResult.success && webResult.data) {
+      return {
+        success: true,
+        data: webResult.data,
+        sources: webResult.sources || []
+      };
+    }
+
+    return { success: false, sources: [] };
+  } catch (error) {
+    console.error('Web research error:', error);
+    return { success: false, sources: [] };
   }
 }
 

@@ -81,6 +81,14 @@ serve(async (req) => {
       }
     };
 
+    // Run comprehensive web research first
+    console.log('🔍 Running comprehensive web research...');
+    const webResearchPromise = callEngine('web-research-engine', {
+      ...engineContext,
+      researchType: 'comprehensive',
+      searchDepth: 'detailed'
+    });
+
     // Run all 5 AI engines in parallel with enhanced context
     const enginePromises = [
       callEngine('thesis-alignment-engine', engineContext),
@@ -90,17 +98,19 @@ serve(async (req) => {
       callEngine('team-research-engine', engineContext)
     ];
     
-    console.log('🚀 Running 5 AI engines in parallel...');
-    const engineResults = await Promise.allSettled(enginePromises);
+    console.log('🚀 Running web research and 5 AI engines in parallel...');
+    const [webResearchResult, ...engineResults] = await Promise.allSettled([webResearchPromise, ...enginePromises]);
     
-    // Process and validate results
+    // Process and validate results including web research
     const processedResults = processEngineResults(engineResults);
+    const webResearchData = webResearchResult.status === 'fulfilled' ? webResearchResult.value : null;
     
-    // Generate comprehensive analysis
+    // Generate comprehensive analysis with web research context
     const comprehensiveAnalysis = await generateComprehensiveAnalysis(
       dealData, 
       strategyData, 
-      processedResults
+      processedResults,
+      webResearchData
     );
     
     // Store results in database
@@ -272,15 +282,16 @@ function processEngineResults(engineResults: PromiseSettledResult<EngineResult>[
 async function generateComprehensiveAnalysis(
   dealData: any, 
   strategyData: any, 
-  engineResults: any
+  engineResults: any,
+  webResearchData: any = null
 ): Promise<ComprehensiveAnalysis> {
   
   // Calculate overall score using strategy-aware weighting
   const weights = calculateDynamicWeights(strategyData);
   const overallScore = calculateWeightedScore(engineResults, weights);
   
-  // Generate executive summary based on all engine results
-  const executiveSummary = await generateExecutiveSummary(dealData, engineResults, overallScore);
+  // Generate executive summary based on all engine results and web research
+  const executiveSummary = await generateExecutiveSummary(dealData, engineResults, overallScore, strategyData, webResearchData);
   
   // Determine overall recommendation
   const recommendation = determineRecommendation(overallScore, engineResults, strategyData);
@@ -376,12 +387,20 @@ function calculateWeightedScore(engineResults: any, weights: any): number {
   return totalWeight > 0 ? Math.round(totalScore / totalWeight) : 50;
 }
 
-async function generateExecutiveSummary(dealData: any, engineResults: any, overallScore: number, strategyData: any = null): Promise<string> {
+async function generateExecutiveSummary(dealData: any, engineResults: any, overallScore: number, strategyData: any = null, webResearchData: any = null): Promise<string> {
   const investmentPhilosophy = strategyData?.investment_philosophy 
     ? `Investment Philosophy: ${strategyData.investment_philosophy}\n`
     : '';
   
-  const prompt = `Generate a concise executive summary (2-3 sentences) for this investment opportunity:
+  const webResearchContext = webResearchData?.data ? `
+Web Research Insights:
+- Company Validation: ${webResearchData.data.company?.company_validation || 'N/A'}
+- Market Intelligence: ${webResearchData.data.market?.market_size_data || 'N/A'}
+- Founder Background: ${webResearchData.data.founder?.professional_background || 'N/A'}
+- Competitive Landscape: ${webResearchData.data.competitive?.market_positioning || 'N/A'}
+` : '';
+  
+  const prompt = `Generate a concise executive summary (2-3 sentences) for this investment opportunity with web-enhanced intelligence:
 
 Company: ${dealData.company_name}
 Industry: ${dealData.industry || 'N/A'}
@@ -394,7 +413,7 @@ ${investmentPhilosophy}Engine Analysis Results:
 - Financial Feasibility: ${engineResults.financial_feasibility?.score || 'N/A'}/100
 - Founder & Team Strength: ${engineResults.founder_team_strength?.score || 'N/A'}/100
 
-Focus on the key investment thesis and overall attractiveness. Be concise and actionable. ${investmentPhilosophy ? 'Consider the fund\'s investment philosophy in your assessment.' : ''}`;
+${webResearchContext}Focus on the key investment thesis and overall attractiveness. Be concise and actionable. ${investmentPhilosophy ? 'Consider the fund\'s investment philosophy in your assessment.' : ''} ${webResearchData ? 'Incorporate web research validation where relevant.' : ''}`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -408,7 +427,7 @@ Focus on the key investment thesis and overall attractiveness. Be concise and ac
         messages: [
           {
             role: 'system',
-            content: 'You are a concise investment analyst. Generate executive summaries that highlight key investment decisions factors in 2-3 sentences.'
+            content: 'You are a concise investment analyst with access to web-enhanced research. Generate executive summaries that highlight key investment decisions factors in 2-3 sentences, incorporating web validation where available.'
           },
           {
             role: 'user',

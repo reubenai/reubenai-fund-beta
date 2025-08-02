@@ -10,6 +10,7 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY')!;
+const googleSearchApiKey = Deno.env.get('GOOGLE_SEARCH_API_KEY')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -214,11 +215,16 @@ async function gatherMarketIntelligence(dealData: any, documentInsights: any = n
     });
   }
   
-  // Try to gather market data through web research simulation
-  // In a production environment, this would integrate with:
-  // - Perplexity AI for real-time market research
-  // - Industry databases
-  // - Market research APIs
+  // Conduct real-time market research using Google Search API
+  const webResearchData = await conductWebResearch(dealData, enhancedContext);
+  if (webResearchData.success) {
+    intelligence.market_size = webResearchData.market_size || intelligence.market_size;
+    intelligence.growth_rate = webResearchData.growth_rate || intelligence.growth_rate;
+    intelligence.competitive_landscape = webResearchData.competitive_landscape || intelligence.competitive_landscape;
+    intelligence.market_trends = webResearchData.market_trends || intelligence.market_trends;
+    intelligence.data_quality = 'web_enhanced';
+    intelligence.sources.push(...webResearchData.sources);
+  }
   
   if (dealData.industry !== 'N/A') {
     intelligence.sources.push({
@@ -484,6 +490,97 @@ function findMarketSignals(dealData: any, keySignals: string[]): string[] {
   });
   
   return foundSignals;
+}
+
+async function conductWebResearch(dealData: any, enhancedContext: any = null) {
+  try {
+    console.log('🔍 Conducting web research for market intelligence...');
+    
+    // Call web-research-engine for market-specific research
+    const { data: webResult, error } = await supabase.functions.invoke('web-research-engine', {
+      body: {
+        dealData,
+        researchType: 'market',
+        searchDepth: 'detailed'
+      }
+    });
+
+    if (error) {
+      console.error('Web research failed:', error);
+      return { success: false, sources: [] };
+    }
+
+    if (webResult.success && webResult.data) {
+      const marketData = webResult.data;
+      
+      return {
+        success: true,
+        market_size: extractMarketSize(marketData),
+        growth_rate: extractGrowthRate(marketData),
+        competitive_landscape: extractCompetitiveLandscape(marketData),
+        market_trends: extractMarketTrends(marketData),
+        sources: webResult.sources || []
+      };
+    }
+
+    return { success: false, sources: [] };
+  } catch (error) {
+    console.error('Web research error:', error);
+    return { success: false, sources: [] };
+  }
+}
+
+function extractMarketSize(marketData: any): string {
+  if (marketData.market_size_data && typeof marketData.market_size_data === 'string') {
+    // Look for market size patterns in the text
+    const sizePattern = /\$[\d.,]+[BMT]/gi;
+    const matches = marketData.market_size_data.match(sizePattern);
+    if (matches && matches.length > 0) {
+      return `Market size: ${matches[0]} (web-validated)`;
+    }
+  }
+  return 'Market size data requires validation';
+}
+
+function extractGrowthRate(marketData: any): string {
+  if (marketData.growth_trends && typeof marketData.growth_trends === 'string') {
+    // Look for CAGR patterns
+    const cagrPattern = /(\d+\.?\d*)%.*CAGR/gi;
+    const matches = marketData.growth_trends.match(cagrPattern);
+    if (matches && matches.length > 0) {
+      return `${matches[0]} (web-validated)`;
+    }
+    
+    // Look for general growth patterns
+    const growthPattern = /(\d+\.?\d*)%.*growth/gi;
+    const growthMatches = marketData.growth_trends.match(growthPattern);
+    if (growthMatches && growthMatches.length > 0) {
+      return `${growthMatches[0]} (web-validated)`;
+    }
+  }
+  return 'Growth rate requires validation';
+}
+
+function extractCompetitiveLandscape(marketData: any): string {
+  if (marketData.competitive_analysis && typeof marketData.competitive_analysis === 'string') {
+    return `${marketData.competitive_analysis.substring(0, 200)}... (web-enhanced)`;
+  }
+  return 'Competitive landscape analysis in progress';
+}
+
+function extractMarketTrends(marketData: any): string[] {
+  if (marketData.growth_trends && typeof marketData.growth_trends === 'string') {
+    // Extract trend keywords
+    const trendKeywords = ['AI', 'digital transformation', 'cloud', 'automation', 'sustainability', 'mobile'];
+    const foundTrends = trendKeywords.filter(keyword => 
+      marketData.growth_trends.toLowerCase().includes(keyword.toLowerCase())
+    );
+    
+    if (foundTrends.length > 0) {
+      return foundTrends.map(trend => `${trend} adoption (web-validated)`);
+    }
+  }
+  return ['Market trends analysis in progress'];
 }
 
 async function storeSources(dealId: string, engineName: string, sources: any[]) {
