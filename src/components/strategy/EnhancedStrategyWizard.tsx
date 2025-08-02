@@ -192,13 +192,34 @@ export function EnhancedStrategyWizard({
     
     console.log('Enabled criteria set:', enabledCriteria);
     setEnhancedCriteria(enabledCriteria);
+    
+    // Save enhanced criteria to wizard data for step persistence
+    setWizardData(prev => ({
+      ...prev,
+      enhancedCriteria: enabledCriteria
+    }));
   }, [fundType]);
+
+  // Restore enhanced criteria when navigating back to criteria step
+  useEffect(() => {
+    if (currentStep === 3 && wizardData.enhancedCriteria) {
+      console.log('=== Restoring Enhanced Criteria for Step 4 ===');
+      console.log('Restoring criteria from wizard data:', wizardData.enhancedCriteria);
+      setEnhancedCriteria(wizardData.enhancedCriteria);
+    }
+  }, [currentStep, wizardData.enhancedCriteria]);
 
   // Enhanced criteria management
   const updateCategoryWeight = (categoryIndex: number, weight: number) => {
     const newCriteria = [...enhancedCriteria];
     newCriteria[categoryIndex] = { ...newCriteria[categoryIndex], weight };
     setEnhancedCriteria(newCriteria);
+    
+    // Persist to wizard data for step navigation
+    setWizardData(prev => ({
+      ...prev,
+      enhancedCriteria: newCriteria
+    }));
   };
 
   const updateSubcategoryWeight = (categoryIndex: number, subcategoryIndex: number, weight: number) => {
@@ -209,6 +230,12 @@ export function EnhancedStrategyWizard({
     category.subcategories = subcategories;
     newCriteria[categoryIndex] = category;
     setEnhancedCriteria(newCriteria);
+    
+    // Persist to wizard data for step navigation
+    setWizardData(prev => ({
+      ...prev,
+      enhancedCriteria: newCriteria
+    }));
   };
 
   const toggleSubcategory = (categoryIndex: number, subcategoryIndex: number) => {
@@ -222,6 +249,12 @@ export function EnhancedStrategyWizard({
     category.subcategories = subcategories;
     newCriteria[categoryIndex] = category;
     setEnhancedCriteria(newCriteria);
+    
+    // Persist to wizard data for step navigation
+    setWizardData(prev => ({
+      ...prev,
+      enhancedCriteria: newCriteria
+    }));
   };
 
   const toggleCategoryExpansion = (categoryName: string) => {
@@ -287,6 +320,10 @@ export function EnhancedStrategyWizard({
   };
 
   const handleNext = () => {
+    console.log('=== Handle Next Step ===');
+    console.log('Current step:', currentStep);
+    console.log('Enhanced criteria before validation:', enhancedCriteria);
+    
     if (!validateStep(currentStep)) {
       const step = WIZARD_STEPS[currentStep];
       let errorMessage = `Please complete all required fields in ${step.title}`;
@@ -295,10 +332,21 @@ export function EnhancedStrategyWizard({
       if (currentStep === 3) {
         const totalWeight = enhancedCriteria.reduce((sum, cat) => sum + (cat.enabled ? cat.weight : 0), 0);
         errorMessage = `Category weights must sum to 100% (currently ${totalWeight.toFixed(1)}%)`;
+        console.log('Criteria validation failed:', errorMessage);
       }
       
       toast.error(errorMessage);
       return;
+    }
+
+    // Save enhanced criteria to wizard data when leaving criteria step
+    if (currentStep === 3) {
+      console.log('=== Saving Enhanced Criteria ===');
+      console.log('Saving criteria to wizard data:', enhancedCriteria);
+      setWizardData(prev => ({
+        ...prev,
+        enhancedCriteria: enhancedCriteria
+      }));
     }
 
     setCompletedSteps(prev => new Set([...prev, currentStep]));
