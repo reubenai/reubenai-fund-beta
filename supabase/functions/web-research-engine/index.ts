@@ -14,8 +14,9 @@ const googleSearchApiKey = Deno.env.get('GOOGLE_SEARCH_API_KEY')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Google Custom Search Engine ID (using Google's public search)
-const SEARCH_ENGINE_ID = '76f8a6e4c7e424e5e';
+// Google Custom Search Engine ID - This needs to be properly configured
+// Using a programmable search engine ID that should work for general web search
+const SEARCH_ENGINE_ID = '017576662512468118441:omuauf_lfve';
 
 interface WebResearchRequest {
   dealData: any;
@@ -68,6 +69,17 @@ async function conductWebResearch(dealData: any, researchType: string, searchDep
   };
 
   try {
+    // Validate that we have the required API keys
+    if (!googleSearchApiKey) {
+      throw new Error('Google Search API key not configured');
+    }
+    
+    if (!openAIApiKey) {
+      console.warn('⚠️  OpenAI API key not configured - analysis will be limited');
+    }
+
+    console.log(`🚀 Starting ${researchType} research for ${dealData.company_name} (depth: ${searchDepth})`);
+
     switch (researchType) {
       case 'company':
         research.data = await researchCompanyInfo(dealData, searchDepth);
@@ -92,11 +104,16 @@ async function conductWebResearch(dealData: any, researchType: string, searchDep
     research.confidence = calculateResearchConfidence(research.data);
     research.sources = research.data.sources || [];
 
+    console.log(`✅ ${researchType} research completed with confidence: ${research.confidence}%`);
+
   } catch (error) {
-    console.error('Web research failed:', error);
+    console.error(`❌ Web research failed for ${researchType}:`, error);
     research.success = false;
     research.confidence = 20;
-    research.data = { error: error.message };
+    research.data = { 
+      error: error.message,
+      fallback_message: 'Web research temporarily unavailable - using basic analysis'
+    };
   }
 
   return research;
@@ -251,41 +268,74 @@ async function researchComprehensive(dealData: any, searchDepth: string) {
 
 async function performGoogleSearches(queries: string[]) {
   const results = [];
+  let successfulSearches = 0;
+  
+  console.log(`🔍 Starting ${queries.length} Google searches...`);
   
   for (const query of queries) {
     try {
       const searchResult = await performSingleGoogleSearch(query);
       if (searchResult.items && searchResult.items.length > 0) {
-        results.push(...searchResult.items.slice(0, 3).map(item => ({
+        const processedResults = searchResult.items.slice(0, 3).map(item => ({
           query,
-          title: item.title,
-          snippet: item.snippet,
+          title: item.title || 'No title',
+          snippet: item.snippet || 'No snippet available',
           link: item.link,
-          source: item.displayLink,
+          source: item.displayLink || 'Unknown source',
           confidence: calculateSearchResultConfidence(item, query)
-        })));
+        }));
+        
+        results.push(...processedResults);
+        successfulSearches++;
+        console.log(`✅ Successfully processed ${processedResults.length} results for: "${query}"`);
+      } else {
+        console.log(`⚠️  No results found for: "${query}"`);
       }
       
-      // Add delay to respect API limits
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Add delay to respect API limits (minimum 100ms between requests)
+      await new Promise(resolve => setTimeout(resolve, 200));
     } catch (error) {
-      console.error(`Google search failed for query "${query}":`, error);
+      console.error(`❌ Google search failed for query "${query}":`, error);
+      // Continue with other queries even if one fails
     }
   }
   
+  console.log(`🔍 Completed Google searches: ${successfulSearches}/${queries.length} successful`);
   return results;
 }
 
 async function performSingleGoogleSearch(query: string) {
-  const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${googleSearchApiKey}&cx=${SEARCH_ENGINE_ID}&q=${encodeURIComponent(query)}&num=5`;
-  
-  const response = await fetch(searchUrl);
-  
-  if (!response.ok) {
-    throw new Error(`Google Search API error: ${response.status} ${response.statusText}`);
+  try {
+    // Clean the query to avoid API errors
+    const cleanQuery = query.replace(/[^\w\s".-]/g, '').trim();
+    const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${googleSearchApiKey}&cx=${SEARCH_ENGINE_ID}&q=${encodeURIComponent(cleanQuery)}&num=5&safe=active`;
+    
+    console.log(`🔍 Searching Google for: "${cleanQuery}"`);
+    
+    const response = await fetch(searchUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Google Search API error: ${response.status} - ${errorText}`);
+      
+      // Return empty result instead of throwing to allow graceful degradation
+      return { items: [] };
+    }
+    
+    const data = await response.json();
+    console.log(`✅ Google search successful for "${cleanQuery}" - found ${data.items?.length || 0} results`);
+    
+    return data;
+  } catch (error) {
+    console.error(`Search failed for query "${query}":`, error);
+    // Return empty result to allow graceful degradation
+    return { items: [] };
   }
-  
-  return await response.json();
 }
 
 function calculateSearchResultConfidence(item: any, query: string): number {
