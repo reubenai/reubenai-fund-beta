@@ -150,10 +150,8 @@ export function EnhancedDealDetailsModal({
         setAnalysisData(analysis[0]);
       }
 
-      // Check if we need to enrich data
-      if (!companyDetails) {
-        enrichCompanyData();
-      }
+      // Don't auto-enrich data on every modal open
+      // Only enrich when user explicitly clicks the button
     } catch (error) {
       console.error('Error loading enhanced data:', error);
     }
@@ -198,10 +196,13 @@ export function EnhancedDealDetailsModal({
         }
       }
 
-      toast({
-        title: "Company Data Enriched",
-        description: "Enhanced company information has been loaded",
-      });
+      // Only toast on successful enrichment, not on every load
+      if (!analysisData && enrichedData) {
+        toast({
+          title: "Company Data Enriched",
+          description: "Enhanced company information has been loaded",
+        });
+      }
     } catch (error) {
       console.error('Error enriching company data:', error);
       toast({
