@@ -70,7 +70,7 @@ export default function Auth() {
         </div>
       </div>
       
-      <Card className="w-full max-w-md shadow-elegant mt-44">{/* Increased top margin to accommodate larger beta notice */}
+      <Card className="w-full max-w-md shadow-elegant mt-56">{/* Increased top margin further to avoid beta notice overlap */}
         <CardHeader className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 bg-primary rounded-xl flex items-center justify-center">
             <span className="text-2xl font-bold text-primary-foreground">R</span>
