@@ -32,8 +32,8 @@ const coreFunctions = [
 
 // Secondary Functions - Grid Cards  
 const secondaryFunctions = [
-  { title: "Analytics", url: "/analytics", icon: BarChart3, description: "LP-ready metrics", enabled: true, beta: true },
-  { title: "Fund Memory", url: "/fund-memory", icon: Brain, description: "Institutional intelligence", enabled: true, beta: true },
+  { title: "Analytics", url: "/analytics", icon: BarChart3, description: "LP-ready metrics", badge: "Soon", disabled: true },
+  { title: "Fund Memory", url: "/fund-memory", icon: Brain, description: "Institutional intelligence", badge: "Soon", disabled: true },
   { title: "Due Diligence Hub", url: "/dd", icon: Briefcase, description: "DD workflows", badge: "Soon", disabled: true },
   { title: "LP Reporting", url: "/lp-reporting", icon: PieChart, description: "LP reports", badge: "Soon", disabled: true },
 ];
@@ -217,47 +217,21 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <div className="grid grid-cols-2 gap-2">
               {secondaryFunctions.map((item) => (
-                <div key={item.title}>
-                  {item.enabled ? (
-                    <NavLink to={item.url}>
-                      <div className={`group relative rounded-lg border border-border/60 p-3 text-center transition-all duration-200 bg-background/80 hover:border-border hover:bg-background hover:shadow-sm cursor-pointer ${
-                        isActive(item.url) ? 'border-primary/50 bg-primary/5' : ''
-                      }`}>
-                        <div className={`w-5 h-5 rounded-md flex items-center justify-center mx-auto mb-2 bg-muted/80 group-hover:bg-muted transition-colors ${
-                          isActive(item.url) ? 'bg-primary/20' : ''
-                        }`}>
-                          <item.icon className={`h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors ${
-                            isActive(item.url) ? 'text-primary' : ''
-                          }`} />
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-center gap-1">
-                            <p className="text-xs font-medium text-foreground">{item.title}</p>
-                            {(item as any).beta && (
-                              <Badge variant="secondary" className="text-xs px-1 py-0 font-medium bg-accent-orange/10 text-accent-orange border-accent-orange/20">
-                                beta
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground text-center">{item.description}</p>
-                        </div>
-                      </div>
-                    </NavLink>
-                  ) : (
-                    <div className={`group relative rounded-lg border border-border/60 p-3 text-center transition-all duration-200 ${item.disabled ? 'opacity-50 cursor-not-allowed bg-muted/20' : 'bg-background/80 hover:border-border hover:bg-background hover:shadow-sm cursor-pointer'}`}>
-                      <div className={`w-5 h-5 rounded-md flex items-center justify-center mx-auto mb-2 ${item.disabled ? 'bg-muted/50' : 'bg-muted/80 group-hover:bg-muted'} transition-colors`}>
-                        <item.icon className={`h-3 w-3 ${item.disabled ? 'text-muted-foreground/50' : 'text-muted-foreground group-hover:text-foreground'} transition-colors`} />
-                      </div>
-                      <div className="space-y-1">
-                        <p className={`text-xs font-medium ${item.disabled ? 'text-muted-foreground/50' : 'text-foreground'}`}>{item.title}</p>
-                        {(item as any).badge && (
-                          <Badge variant="outline" className={`text-xs font-medium ${item.disabled ? 'opacity-50' : ''}`}>
-                            {(item as any).badge}
-                          </Badge>
-                        )}
-                      </div>
+                <div key={item.title} className="h-full">
+                  <div className={`group relative rounded-lg border border-border/60 p-3 text-center transition-all duration-200 h-full flex flex-col ${item.disabled ? 'opacity-50 cursor-not-allowed bg-muted/20' : 'bg-background/80 hover:border-border hover:bg-background hover:shadow-sm cursor-pointer'}`}>
+                    <div className={`w-5 h-5 rounded-md flex items-center justify-center mx-auto mb-2 ${item.disabled ? 'bg-muted/50' : 'bg-muted/80 group-hover:bg-muted'} transition-colors`}>
+                      <item.icon className={`h-3 w-3 ${item.disabled ? 'text-muted-foreground/50' : 'text-muted-foreground group-hover:text-foreground'} transition-colors`} />
                     </div>
-                  )}
+                    <div className="space-y-1 flex-1 flex flex-col justify-center">
+                      <p className={`text-xs font-medium ${item.disabled ? 'text-muted-foreground/50' : 'text-foreground'}`}>{item.title}</p>
+                      {(item as any).badge && (
+                        <Badge variant="outline" className={`text-xs font-medium ${item.disabled ? 'opacity-50' : ''}`}>
+                          {(item as any).badge}
+                        </Badge>
+                      )}
+                      <p className={`text-xs ${item.disabled ? 'text-muted-foreground/50' : 'text-muted-foreground'} text-center`}>{item.description}</p>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
