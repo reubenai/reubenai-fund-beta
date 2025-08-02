@@ -18,6 +18,8 @@ import IC from "./pages/IC";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import Admin from "./pages/Admin";
+import Analytics from "./pages/Analytics";
+import FundMemory from "./pages/FundMemory";
 import WhatIsReubenAI from "./pages/WhatIsReubenAI";
 import NotFound from "./pages/NotFound";
 
@@ -85,6 +87,20 @@ const App = () => (
                       <p className="text-muted-foreground">Founder scoring functionality coming soon...</p>
                     </div>
                   </div>
+                </Layout>
+              </AuthGuard>
+            } />
+            <Route path="/analytics" element={
+              <AuthGuard>
+                <Layout>
+                  <Analytics />
+                </Layout>
+              </AuthGuard>
+            } />
+            <Route path="/fund-memory" element={
+              <AuthGuard>
+                <Layout>
+                  <FundMemory />
                 </Layout>
               </AuthGuard>
             } />
