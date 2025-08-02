@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
 import { useActivityTracking } from './useActivityTracking';
 import { usePipelineStages } from './usePipelineStages';
+import { useQueryCache } from './useQueryCache';
 
 export type Deal = Database['public']['Tables']['deals']['Row'] & {
   notes_count?: number;
