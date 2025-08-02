@@ -1,9 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Target, Plus, AlertCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Target, Plus, AlertCircle, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { InvestmentStrategyManager } from '@/components/strategy/InvestmentStrategyManager';
+import { RAGThresholdManager } from '@/components/strategy/RAGThresholdManager';
 import { useFund } from '@/contexts/FundContext';
 
 export default function Strategy() {
@@ -95,15 +97,38 @@ export default function Strategy() {
 
   // Main strategy view
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
-      <Card className="shadow-sm border-0">
-        <InvestmentStrategyManager 
-          fundId={selectedFund.id} 
-          fundName={selectedFund.name}
-          fundType={selectedFund.fund_type === 'venture_capital' ? 'vc' : 'pe'}
-          key={selectedFund.id} // Force re-render when fund changes
-        />
-      </Card>
+    <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Investment Strategy</h1>
+      </div>
+
+      <Tabs defaultValue="configuration" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="configuration" className="flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            Strategy Configuration
+          </TabsTrigger>
+          <TabsTrigger value="thresholds" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            RAG Thresholds
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="configuration">
+          <Card className="shadow-sm border-0">
+            <InvestmentStrategyManager 
+              fundId={selectedFund.id} 
+              fundName={selectedFund.name}
+              fundType={selectedFund.fund_type === 'venture_capital' ? 'vc' : 'pe'}
+              key={selectedFund.id} // Force re-render when fund changes
+            />
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="thresholds">
+          <RAGThresholdManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

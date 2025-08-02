@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { EnhancedStrategyWizard } from './EnhancedStrategyWizard';
 import { CleanThesisConfiguration } from './CleanThesisConfiguration';
+import { RAGThresholdManager } from './RAGThresholdManager';
 
 interface StrategyConfigurationManagerProps {
   fundId: string;

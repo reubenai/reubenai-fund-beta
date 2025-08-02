@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreVertical, ExternalLink, Star, CheckCircle, Brain, Clock, Bot } from 'lucide-react';
 import { Deal } from '@/hooks/usePipelineDeals';
+import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 
 interface DealCardHeaderProps {
   deal: Deal;
@@ -51,6 +52,7 @@ export const DealCardHeader: React.FC<DealCardHeaderProps> = ({
   viewDensity
 }) => {
   const StatusIcon = analysisStatus.icon;
+  const { getRAGCategory } = useStrategyThresholds();
 
   return (
     <div className="flex items-start justify-between mb-3">
@@ -64,6 +66,13 @@ export const DealCardHeader: React.FC<DealCardHeaderProps> = ({
           
           {/* Analysis Status Icon */}
           <StatusIcon className={`w-4 h-4 ${analysisStatus.color} flex-shrink-0`} />
+          
+          {/* RAG Score Badge - Show score/100 with label */}
+          {deal.overall_score && (
+            <Badge variant="outline" className={`text-xs ${getRAGCategory(deal.overall_score).color}`}>
+              {deal.overall_score}/100 · {getRAGCategory(deal.overall_score).label}
+            </Badge>
+          )}
         </div>
         
         {deal.industry && (
@@ -103,11 +112,6 @@ export const DealCardHeader: React.FC<DealCardHeaderProps> = ({
       </div>
       
       <div className="flex items-center gap-1 ml-2">
-        {/* RAG Status */}
-        {deal.score_level && (
-          <div className={`w-3 h-3 rounded-full ${getRAGColor(deal.score_level)}`} />
-        )}
-        
         {/* Actions Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

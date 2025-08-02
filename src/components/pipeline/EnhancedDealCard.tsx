@@ -137,19 +137,6 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
               viewDensity={viewDensity}
             />
 
-            {/* RAG Score */}
-            {deal.overall_score && viewDensity !== 'compact' && (
-              <div className="mb-3">
-                {(() => {
-                  const rag = getRAGCategory(deal.overall_score);
-                  return (
-                    <Badge variant="outline" className={rag.color}>
-                      {rag.label}
-                    </Badge>
-                  );
-                })()}
-              </div>
-            )}
 
             {/* Footer */}
               <WebPresenceSection 

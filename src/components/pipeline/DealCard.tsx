@@ -98,14 +98,14 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, index, onDealClick }) 
               )}
             </div>
 
-            {/* RAG Score */}
+            {/* RAG Score Badge */}
             {deal.overall_score && (
               <div className="mb-3">
                 {(() => {
                   const rag = getRAGCategory(deal.overall_score);
                   return (
                     <Badge variant="outline" className={rag.color}>
-                      {rag.label}
+                      {deal.overall_score}/100 · {rag.label}
                     </Badge>
                   );
                 })()}
