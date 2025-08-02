@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -36,7 +37,9 @@ const App = () => (
             <Route path="/" element={
               <AuthGuard>
                 <Layout>
-                  <Index />
+                  <ErrorBoundary>
+                    <Index />
+                  </ErrorBoundary>
                 </Layout>
               </AuthGuard>
             } />
@@ -57,7 +60,9 @@ const App = () => (
             <Route path="/pipeline" element={
               <AuthGuard>
                 <Layout>
-                  <Pipeline />
+                  <ErrorBoundary>
+                    <Pipeline />
+                  </ErrorBoundary>
                 </Layout>
               </AuthGuard>
             } />

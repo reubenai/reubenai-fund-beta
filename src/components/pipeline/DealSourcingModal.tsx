@@ -497,10 +497,16 @@ export function DealSourcingModal({ open, onClose, fundId, fundName }: DealSourc
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 justify-center">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="font-medium">Sourcing companies...</span>
               </div>
+               <div className="text-sm text-muted-foreground text-center mb-2">
+                 {progress < 30 && "Setting up sourcing session..."}
+                 {progress >= 30 && progress < 70 && "Searching company databases..."}
+                 {progress >= 70 && progress < 100 && "Processing and validating results..."}
+                 {progress >= 100 && "Sourcing complete!"}
+               </div>
               <Progress value={progress} className="w-full" />
               <p className="text-sm text-muted-foreground">
                 This may take a few moments as we search through company databases
