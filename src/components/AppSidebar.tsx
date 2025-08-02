@@ -25,15 +25,15 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Core Functions - Large Cards
 const coreFunctions = [
-  { title: "Investment Strategy", url: "/strategy", icon: Target, description: "Define criteria & focus" },
-  { title: "Deal Pipeline", url: "/deals", icon: TrendingUp, description: "Manage opportunities" },
-  { title: "Investment Committee", url: "/ic", icon: Users, description: "Run IC sessions" },
+  { title: "Investment Strategy", url: "/strategy", icon: Target, description: "Define criteria & focus", beta: true },
+  { title: "Deal Pipeline", url: "/deals", icon: TrendingUp, description: "Manage opportunities", beta: true },
+  { title: "Investment Committee", url: "/ic", icon: Users, description: "Run IC sessions", beta: true },
 ];
 
 // Secondary Functions - Grid Cards  
 const secondaryFunctions = [
-  { title: "Analytics", url: "/analytics", icon: BarChart3, description: "Fund metrics", enabled: true },
-  { title: "Fund Memory", url: "/fund-memory", icon: Brain, description: "AI insights", enabled: true },
+  { title: "Analytics", url: "/analytics", icon: BarChart3, description: "LP-ready metrics", enabled: true, beta: true },
+  { title: "Fund Memory", url: "/fund-memory", icon: Brain, description: "Institutional intelligence", enabled: true, beta: true },
   { title: "Due Diligence Hub", url: "/dd", icon: Briefcase, description: "DD workflows", badge: "Soon", disabled: true },
   { title: "LP Reporting", url: "/lp-reporting", icon: PieChart, description: "LP reports", badge: "Soon", disabled: true },
 ];
@@ -193,7 +193,14 @@ export function AppSidebar() {
                     }`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{item.title}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium truncate">{item.title}</p>
+                      {(item as any).beta && (
+                        <Badge variant="secondary" className="text-xs px-1.5 py-0.5 font-medium bg-accent-orange/10 text-accent-orange border-accent-orange/20">
+                          beta
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground truncate">{item.description}</p>
                   </div>
                 </div>
@@ -224,8 +231,15 @@ export function AppSidebar() {
                           }`} />
                         </div>
                         <div className="space-y-1">
-                          <p className="text-xs font-medium text-foreground">{item.title}</p>
-                          <p className="text-xs text-muted-foreground">{item.description}</p>
+                          <div className="flex items-center justify-center gap-1">
+                            <p className="text-xs font-medium text-foreground">{item.title}</p>
+                            {(item as any).beta && (
+                              <Badge variant="secondary" className="text-xs px-1 py-0 font-medium bg-accent-orange/10 text-accent-orange border-accent-orange/20">
+                                beta
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground text-center">{item.description}</p>
                         </div>
                       </div>
                     </NavLink>
@@ -337,6 +351,11 @@ export function AppSidebar() {
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out
           </Button>
+          
+          {/* Copyright */}
+          <div className="text-center pt-3 border-t border-border/30">
+            <p className="text-xs text-muted-foreground">© 2025 ReubenAI</p>
+          </div>
         </SidebarFooter>
       </SidebarContent>
     </Sidebar>

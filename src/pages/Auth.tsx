@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 
@@ -47,7 +48,23 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-elegant">
+      {/* Beta Confidentiality Notice */}
+      <div className="fixed top-4 left-4 right-4 z-50">
+        <div className="mx-auto max-w-4xl bg-gradient-to-r from-accent-orange/10 to-primary/10 border border-accent-orange/20 rounded-lg p-3">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <Badge variant="secondary" className="bg-accent-orange/10 text-accent-orange border-accent-orange/20 font-medium">
+                Private Beta
+              </Badge>
+            </div>
+            <p className="text-sm text-foreground">
+              <strong>Confidentiality Agreement:</strong> By using ReubenAI beta platform, you agree to maintain strict confidentiality of all proprietary AI capabilities, fund data, and platform features. This agreement is legally enforceable under applicable confidentiality and trade secret laws.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <Card className="w-full max-w-md shadow-elegant mt-20">
         <CardHeader className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 bg-primary rounded-xl flex items-center justify-center">
             <span className="text-2xl font-bold text-primary-foreground">R</span>
