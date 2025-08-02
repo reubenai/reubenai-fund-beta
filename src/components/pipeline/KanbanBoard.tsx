@@ -7,7 +7,9 @@ import { EnhancedKanbanView } from './EnhancedKanbanView';
 import { AddDealModal } from './AddDealModal';
 import { BatchUploadModal } from './BatchUploadModal';
 import { DealDetailsModal } from './DealDetailsModal';
+import { DealSourcingModal } from './DealSourcingModal';
 import { useToast } from '@/hooks/use-toast';
+import { useFund } from '@/contexts/FundContext';
 
 interface KanbanBoardState {
   currentView: 'kanban' | 'list';
@@ -15,6 +17,7 @@ interface KanbanBoardState {
   selectedDeal: Deal | null;
   showAddDeal: boolean;
   showBatchUpload: boolean;
+  showSourceDeals: boolean;
 }
 
 interface KanbanBoardProps {
@@ -33,12 +36,15 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
     refreshDeals
   } = usePipelineDeals(fundId);
 
+  const { selectedFund } = useFund();
+
   const [state, setState] = useState<KanbanBoardState>({
     currentView: 'kanban',
     showFilters: false,
     selectedDeal: null,
     showAddDeal: false,
     showBatchUpload: false,
+    showSourceDeals: false,
   });
 
   const { toast } = useToast();
@@ -109,7 +115,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
             onSearchChange={setSearchQuery}
             onAddDeal={() => updateState({ showAddDeal: true })}
             onBatchUpload={() => updateState({ showBatchUpload: true })}
-            onSourceDeals={() => {/* TODO: Implement source deals modal */}}
+            onSourceDeals={() => updateState({ showSourceDeals: true })}
             totalDeals={getTotalDeals()}
             showFilters={state.showFilters}
             onToggleFilters={() => updateState({ showFilters: !state.showFilters })}
@@ -163,6 +169,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
           refreshDeals();
           updateState({ selectedDeal: null });
         }}
+      />
+
+      <DealSourcingModal
+        open={state.showSourceDeals}
+        onClose={() => updateState({ showSourceDeals: false })}
+        fundId={fundId}
+        fundName={selectedFund?.name || "Selected Fund"}
       />
     </div>
   );

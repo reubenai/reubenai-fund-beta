@@ -510,6 +510,7 @@ export type Database = {
           rag_status: string | null
           score_level: Database["public"]["Enums"]["deal_score_level"] | null
           source_confidence_score: number | null
+          source_method: string | null
           status: Database["public"]["Enums"]["deal_status"] | null
           updated_at: string
           valuation: number | null
@@ -542,6 +543,7 @@ export type Database = {
           rag_status?: string | null
           score_level?: Database["public"]["Enums"]["deal_score_level"] | null
           source_confidence_score?: number | null
+          source_method?: string | null
           status?: Database["public"]["Enums"]["deal_status"] | null
           updated_at?: string
           valuation?: number | null
@@ -574,6 +576,7 @@ export type Database = {
           rag_status?: string | null
           score_level?: Database["public"]["Enums"]["deal_score_level"] | null
           source_confidence_score?: number | null
+          source_method?: string | null
           status?: Database["public"]["Enums"]["deal_status"] | null
           updated_at?: string
           valuation?: number | null
@@ -1505,6 +1508,129 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sourced_companies: {
+        Row: {
+          ai_analysis_score: number | null
+          company_name: string
+          confidence_score: number | null
+          created_at: string
+          created_deal_id: string | null
+          deal_size: number | null
+          description: string | null
+          funding_stage: string | null
+          id: string
+          industry: string | null
+          location: string | null
+          priority_level: string | null
+          raw_data: Json | null
+          recommendation: string | null
+          removed_by_user: boolean | null
+          session_id: string
+          source_method: string | null
+          strategy_alignment_score: number | null
+          updated_at: string
+          validation_reasons: Json | null
+          validation_score: number | null
+          valuation: number | null
+          website: string | null
+        }
+        Insert: {
+          ai_analysis_score?: number | null
+          company_name: string
+          confidence_score?: number | null
+          created_at?: string
+          created_deal_id?: string | null
+          deal_size?: number | null
+          description?: string | null
+          funding_stage?: string | null
+          id?: string
+          industry?: string | null
+          location?: string | null
+          priority_level?: string | null
+          raw_data?: Json | null
+          recommendation?: string | null
+          removed_by_user?: boolean | null
+          session_id: string
+          source_method?: string | null
+          strategy_alignment_score?: number | null
+          updated_at?: string
+          validation_reasons?: Json | null
+          validation_score?: number | null
+          valuation?: number | null
+          website?: string | null
+        }
+        Update: {
+          ai_analysis_score?: number | null
+          company_name?: string
+          confidence_score?: number | null
+          created_at?: string
+          created_deal_id?: string | null
+          deal_size?: number | null
+          description?: string | null
+          funding_stage?: string | null
+          id?: string
+          industry?: string | null
+          location?: string | null
+          priority_level?: string | null
+          raw_data?: Json | null
+          recommendation?: string | null
+          removed_by_user?: boolean | null
+          session_id?: string
+          source_method?: string | null
+          strategy_alignment_score?: number | null
+          updated_at?: string
+          validation_reasons?: Json | null
+          validation_score?: number | null
+          valuation?: number | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      sourcing_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          fund_id: string
+          id: string
+          search_parameters: Json
+          status: string
+          thesis_snapshot: Json
+          total_processed: number | null
+          total_reviewed: number | null
+          total_sourced: number | null
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          fund_id: string
+          id?: string
+          search_parameters?: Json
+          status?: string
+          thesis_snapshot?: Json
+          total_processed?: number | null
+          total_reviewed?: number | null
+          total_sourced?: number | null
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          fund_id?: string
+          id?: string
+          search_parameters?: Json
+          status?: string
+          thesis_snapshot?: Json
+          total_processed?: number | null
+          total_reviewed?: number | null
+          total_sourced?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_preferences: {
         Row: {
