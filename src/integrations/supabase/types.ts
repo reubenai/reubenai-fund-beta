@@ -1575,6 +1575,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      create_default_investment_strategy: {
+        Args: {
+          fund_id_param: string
+          fund_type_param: Database["public"]["Enums"]["fund_type"]
+        }
+        Returns: string
+      }
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
