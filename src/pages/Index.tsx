@@ -101,6 +101,21 @@ const Index = () => {
         </Link>
       </div>
 
+      {/* Welcome Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-6 h-6 bg-emerald-500 rounded flex items-center justify-center">
+            <span className="text-white text-xs font-bold">R</span>
+          </div>
+        <h1 className="text-2xl font-semibold text-slate-900">
+          Welcome back, {profile?.first_name || user?.email?.split('@')[0] || 'demo'}
+        </h1>
+        </div>
+        <p className="text-slate-600">
+          Your AI-powered investment platform for smarter decisions
+        </p>
+      </div>
+
       {/* Search Section */}
       <div className="mb-8">
         <div className="relative max-w-2xl">
@@ -156,21 +171,6 @@ const Index = () => {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Welcome Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-6 h-6 bg-emerald-500 rounded flex items-center justify-center">
-            <span className="text-white text-xs font-bold">R</span>
-          </div>
-        <h1 className="text-2xl font-semibold text-slate-900">
-          Welcome back, {profile?.first_name || user?.email?.split('@')[0] || 'demo'}
-        </h1>
-        </div>
-        <p className="text-slate-600">
-          Your AI-powered investment platform for smarter decisions
-        </p>
       </div>
 
       {/* Quick Explore */}
