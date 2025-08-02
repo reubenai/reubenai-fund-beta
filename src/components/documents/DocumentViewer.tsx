@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Download, ExternalLink, FileText } from 'lucide-react';
+import { X, Download, ExternalLink, FileText, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -183,18 +183,109 @@ export function DocumentViewer({ document, onClose }: DocumentViewerProps) {
             </div>
           )}
 
-          {/* Document Analysis Status */}
+          {/* Document Analysis & Insights */}
           {document.document_analysis_status && (
-            <div className="p-3 bg-accent rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Analysis Status</span>
-                <Badge variant={
-                  document.document_analysis_status === 'completed' ? 'default' :
-                  document.document_analysis_status === 'failed' ? 'destructive' : 'secondary'
-                }>
-                  {document.document_analysis_status}
-                </Badge>
+            <div className="space-y-4">
+              <div className="p-3 bg-accent rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Analysis Status</span>
+                  <Badge variant={
+                    document.document_analysis_status === 'completed' ? 'default' :
+                    document.document_analysis_status === 'failed' ? 'destructive' : 'secondary'
+                  }>
+                    {document.document_analysis_status}
+                  </Badge>
+                </div>
               </div>
+
+              {/* Show extracted insights when analysis is completed */}
+              {document.document_analysis_status === 'completed' && document.parsed_data && (() => {
+                const parsedData = document.parsed_data as any;
+                return (
+                  <div className="space-y-4">
+                    {/* Document Summary */}
+                    {parsedData.summary && (
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-2 flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          Document Summary
+                        </h4>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {parsedData.summary}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Key Insights */}
+                    {parsedData.insights && Array.isArray(parsedData.insights) && parsedData.insights.length > 0 && (
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-2">Key Insights</h4>
+                        <div className="space-y-2">
+                          {parsedData.insights.map((insight: string, index: number) => (
+                            <div key={index} className="flex items-start gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
+                              <span className="text-sm text-muted-foreground">{insight}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Financial Data (for financial documents) */}
+                    {document.document_category === 'financial_statement' && parsedData.financial_data && (
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-medium mb-2">Financial Highlights</h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          {Object.entries(parsedData.financial_data).map(([key, value]) => (
+                            <div key={key}>
+                              <span className="text-muted-foreground capitalize">{key.replace('_', ' ')}: </span>
+                              <span className="font-medium">{String(value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Flags & Concerns */}
+                    {parsedData.flags && Array.isArray(parsedData.flags) && parsedData.flags.length > 0 && (
+                      <div className="p-4 border rounded-lg border-yellow-200 bg-yellow-50">
+                        <h4 className="font-medium mb-2 text-yellow-800 flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4" />
+                          Flags & Concerns
+                        </h4>
+                        <div className="space-y-1">
+                          {parsedData.flags.map((flag: string, index: number) => (
+                            <div key={index} className="text-sm text-yellow-700">• {flag}</div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Confidence Score */}
+                    {parsedData.confidence && (
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <span className="text-sm font-medium">Analysis Confidence</span>
+                        <Badge variant="outline" className="bg-background">
+                          {parsedData.confidence}%
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Show extracted text if no structured analysis available */}
+              {document.document_analysis_status === 'completed' && document.extracted_text && !document.parsed_data && (
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-medium mb-2">Extracted Text</h4>
+                  <div className="max-h-32 overflow-y-auto">
+                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+                      {document.extracted_text.substring(0, 500)}
+                      {document.extracted_text.length > 500 && '...'}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

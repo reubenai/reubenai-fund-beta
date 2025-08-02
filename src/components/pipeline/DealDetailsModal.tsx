@@ -97,7 +97,7 @@ export function DealDetailsModal({
   const [analysisData, setAnalysisData] = useState<any>(null);
   const { toast } = useToast();
 
-  // Check for existing analysis and only generate if needed
+  // Auto-trigger analysis when deal is viewed (Phase 5: Real-time Analysis)
   useEffect(() => {
     if (deal && open) {
       checkAndGenerateAnalysis();
@@ -108,12 +108,12 @@ export function DealDetailsModal({
     if (!deal || isGeneratingAnalysis) return;
 
     try {
-      // Check if recent analysis exists (within last 24 hours)
+      // Check if recent analysis exists (within last 4 hours for faster updates)
       const { data: existingAnalysis, error } = await supabase
         .from('deal_analyses')
         .select('*')
         .eq('deal_id', deal.id)
-        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .gte('created_at', new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString())
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -131,7 +131,7 @@ export function DealDetailsModal({
         return;
       }
 
-      // No recent analysis found, generate new one
+      // Auto-generate analysis when viewing deal (Real-time Population)
       generateAnalysis();
     } catch (error) {
       console.error('Error checking analysis:', error);
@@ -143,19 +143,32 @@ export function DealDetailsModal({
 
     setIsGeneratingAnalysis(true);
     try {
-      const { data, error } = await supabase.functions.invoke('enhanced-deal-analysis', {
-        body: { dealId: deal.id }
+      // Use the reuben-orchestrator for comprehensive analysis (includes web research)
+      const { data, error } = await supabase.functions.invoke('reuben-orchestrator', {
+        body: { 
+          dealId: deal.id,
+          analysisType: 'comprehensive',
+          includeWebResearch: true,
+          includeDocumentAnalysis: true
+        }
       });
 
       if (error) throw error;
 
-      setAnalysisData(data);
-      toast({
-        title: "Analysis Generated",
-        description: "Enhanced deal analysis has been completed",
-      });
+      // Extract analysis data from orchestrator response
+      const analysisResult = data?.analysis || data;
+      setAnalysisData(analysisResult);
+      
+      // Don't show toast for auto-generated analysis to avoid UI spam
+      if (!analysisData) {
+        toast({
+          title: "Analysis Complete",
+          description: "AI analysis has been generated with latest data",
+        });
+      }
     } catch (error) {
       console.error('Error generating analysis:', error);
+      // Only show error toast, not success toast for auto-generation
       toast({
         title: "Analysis Error",
         description: "Failed to generate analysis. Please try again.",
@@ -261,6 +274,9 @@ export function DealDetailsModal({
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="analysis">
               Analysis
+              {isGeneratingAnalysis && (
+                <div className="ml-2 animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+              )}
               {!analysisData && !isGeneratingAnalysis && (
                 <Button 
                   variant="outline" 
@@ -271,7 +287,7 @@ export function DealDetailsModal({
                     generateAnalysis();
                   }}
                 >
-                  Generate
+                  Refresh
                 </Button>
               )}
             </TabsTrigger>
