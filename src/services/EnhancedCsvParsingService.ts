@@ -206,23 +206,25 @@ export class EnhancedCsvParsingService {
     const errors: string[] = [];
     const warnings: string[] = [];
     
+    // Only require company name as absolute requirement
     if (!data.company) {
       errors.push('Company name is required');
     }
     
-    if (!data.founder) warnings.push('Founder name is missing');
-    if (!data.sector) warnings.push('Sector is missing');
-    if (!data.stage) warnings.push('Stage is missing');
-    
+    // Only warn for truly problematic data, not missing optional fields
     if (data.founder_email && !this.validateEmail(data.founder_email)) {
       warnings.push('Invalid email format');
     }
+    
+    // Missing founder, sector, stage are common and acceptable - don't warn about them
+    // These fields are nice-to-have but not critical for initial deal creation
     
     return { errors, warnings };
   }
 
   static async saveToDatabaseBatch(results: ParseResult[], fundId: string): Promise<string[]> {
-    const validResults = results.filter(r => r.status === 'success' && !r.removed);
+    // Allow deals with warnings to be processed - they just have minor data quality issues
+    const validResults = results.filter(r => (r.status === 'success' || r.status === 'warning') && !r.removed);
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) throw new Error('User not authenticated');

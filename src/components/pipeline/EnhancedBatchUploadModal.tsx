@@ -118,14 +118,17 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
       setUploadProgress({ step: 'creating', progress: 30, message: 'Creating deals in database...' });
       setCurrentStep('creating');
       
-      // Step 2: Create deals in database immediately
-      const validResults = results.filter(r => r.status === 'success');
+      // Step 2: Create deals in database immediately (include warnings as they're processable)
+      const validResults = results.filter(r => r.status === 'success' || r.status === 'warning');
       const dealIds = await CsvParsingService.saveToDatabaseBatch(validResults, fundId);
       
       // Associate deal IDs with parse results
-      const resultsWithDealIds = results.map((result, index) => {
-        if (result.status === 'success' && index < dealIds.length) {
-          return { ...result, dealId: dealIds[index] };
+      let dealIdIndex = 0;
+      const resultsWithDealIds = results.map((result) => {
+        if ((result.status === 'success' || result.status === 'warning') && dealIdIndex < dealIds.length) {
+          const updatedResult = { ...result, dealId: dealIds[dealIdIndex] };
+          dealIdIndex++;
+          return updatedResult;
         }
         return result;
       });
@@ -163,7 +166,7 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
   };
 
   const processDeals = async () => {
-    const validDeals = parseResults.filter(r => r.status === 'success' && !r.removed && r.dealId);
+    const validDeals = parseResults.filter(r => (r.status === 'success' || r.status === 'warning') && !r.removed && r.dealId);
     
     if (validDeals.length === 0) {
       toast({
@@ -324,12 +327,12 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
   const getResultCounts = () => {
     const activeResults = parseResults.filter(r => !r.removed);
     const success = activeResults.filter(r => r.status === 'success').length;
-    const warning = activeResults.filter(r => r.status === 'warning').length;
+    const processable = activeResults.filter(r => r.status === 'warning').length; // Warnings are processable
     const error = activeResults.filter(r => r.status === 'error').length;
-    return { success, warning, error };
+    return { success, processable, error };
   };
 
-  const { success, warning, error } = getResultCounts();
+  const { success, processable, error } = getResultCounts();
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && !isProcessing && onClose()}>
@@ -438,10 +441,10 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
                         {success} Success
                       </Badge>
                     )}
-                    {warning > 0 && (
+                    {processable > 0 && (
                       <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
                         <AlertCircle className="w-3 h-3 mr-1" />
-                        {warning} Warning
+                        {processable} Processable
                       </Badge>
                     )}
                     {error > 0 && (
@@ -553,9 +556,9 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
             {currentStep === 'preview' && (
               <Button 
                 onClick={processDeals}
-                disabled={success === 0 || isProcessing}
+                disabled={(success + processable) === 0 || isProcessing}
               >
-                Process {success} Deals
+                Process {success + processable} Deals
               </Button>
             )}
           </div>
