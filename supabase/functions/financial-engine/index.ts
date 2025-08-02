@@ -63,8 +63,11 @@ async function analyzeFinancialFeasibility(dealData: any, strategyData: any, doc
   // Analyze available financial documents with enhanced document processing
   const documentAnalysis = await analyzeFinancialDocuments(dealData.id, documentData);
   
+  // Conduct web research for financial validation and market data
+  const webResearchData = await conductFinancialWebResearch(dealData);
+  
   // Assess business model and revenue streams
-  const businessModelAnalysis = await analyzeBusinessModel(validatedData);
+  const businessModelAnalysis = await analyzeBusinessModel(validatedData, webResearchData);
   
   // Evaluate unit economics and scalability
   const unitEconomicsAnalysis = await analyzeUnitEconomics(validatedData, documentAnalysis);
@@ -72,12 +75,13 @@ async function analyzeFinancialFeasibility(dealData: any, strategyData: any, doc
   // Assess funding requirements and financial health
   const fundingAnalysis = await analyzeFundingRequirements(validatedData, strategyData);
   
-  // Generate comprehensive financial analysis
+  // Generate comprehensive financial analysis with web-enhanced data
   const aiAnalysis = await generateFinancialAnalysis(validatedData, {
     documentAnalysis,
     businessModelAnalysis,
     unitEconomicsAnalysis,
-    fundingAnalysis
+    fundingAnalysis,
+    webResearchData
   });
   
   // Calculate financial feasibility score
@@ -96,12 +100,13 @@ async function analyzeFinancialFeasibility(dealData: any, strategyData: any, doc
     fundingAnalysis
   });
   
-  // Combine all sources
+  // Combine all sources including web research
   const sources = [
     ...documentAnalysis.sources,
     ...businessModelAnalysis.sources,
     ...unitEconomicsAnalysis.sources,
-    ...fundingAnalysis.sources
+    ...fundingAnalysis.sources,
+    ...(webResearchData?.sources || [])
   ];
   
   return {
@@ -315,7 +320,41 @@ async function simulateDocumentExtraction(documents: any[]) {
   };
 }
 
-async function analyzeBusinessModel(dealData: any) {
+async function conductFinancialWebResearch(dealData: any) {
+  try {
+    console.log('🔍 Conducting financial web research for:', dealData.company_name);
+    
+    // Call web-research-engine for financial validation
+    const { data: webResult, error } = await supabase.functions.invoke('web-research-engine', {
+      body: {
+        dealData,
+        researchType: 'company',
+        searchDepth: 'basic'
+      }
+    });
+
+    if (error) {
+      console.warn('Web research failed:', error);
+      return null;
+    }
+
+    if (webResult && webResult.success) {
+      console.log('✅ Financial web research completed');
+      return {
+        company_validation: webResult.data?.company || null,
+        funding_history: webResult.data?.funding || null,
+        sources: webResult.sources || []
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.warn('Financial web research error:', error);
+    return null;
+  }
+}
+
+async function analyzeBusinessModel(dealData: any, webResearchData: any = null) {
   const analysis = {
     model: 'Unknown',
     revenue_streams: [],
