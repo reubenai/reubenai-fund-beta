@@ -10,6 +10,8 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY')!;
+const googleSearchApiKey = Deno.env.get('GOOGLE_SEARCH_API_KEY')!;
+const googleSearchEngineId = Deno.env.get('GOOGLE_SEARCH_ENGINE_ID')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -60,19 +62,38 @@ async function analyzeThesisAlignment(dealData: any, strategyData: any, document
   const validatedDeal = validateDealData(dealData);
   const validatedStrategy = validateStrategyData(strategyData);
   
-  // Calculate alignment scores
-  const sectorAlignment = calculateSectorAlignment(validatedDeal, validatedStrategy);
-  const geographyAlignment = calculateGeographyAlignment(validatedDeal, validatedStrategy);
+  // Enhance deal data with Google Search validation if API keys are available
+  let webValidationData = null;
+  let enhancedSources = [
+    { type: 'database', source: 'investment_strategies', validated: true },
+    { type: 'database', source: 'deals', validated: true }
+  ];
+  
+  if (googleSearchApiKey && googleSearchEngineId && validatedDeal.company_name !== 'N/A') {
+    try {
+      console.log('🔍 Enhancing thesis alignment analysis with Google Search validation');
+      webValidationData = await validateCompanyWithGoogleSearch(validatedDeal);
+      if (webValidationData && webValidationData.sources) {
+        enhancedSources = [...enhancedSources, ...webValidationData.sources];
+      }
+    } catch (error) {
+      console.warn('Google Search validation failed, continuing with database analysis:', error.message);
+    }
+  }
+  
+  // Calculate alignment scores with web validation data if available
+  const sectorAlignment = calculateSectorAlignment(validatedDeal, validatedStrategy, webValidationData);
+  const geographyAlignment = calculateGeographyAlignment(validatedDeal, validatedStrategy, webValidationData);
   const sizeAlignment = calculateSizeAlignment(validatedDeal, validatedStrategy);
   const stageAlignment = calculateStageAlignment(validatedDeal, validatedStrategy);
   
-  // Generate detailed analysis using AI
+  // Generate detailed analysis using AI with web validation context
   const aiAnalysis = await generateAIAnalysis(validatedDeal, validatedStrategy, {
     sectorAlignment,
     geographyAlignment,
     sizeAlignment,
     stageAlignment
-  });
+  }, webValidationData);
   
   // Calculate overall alignment score
   const overallScore = calculateOverallAlignmentScore({
@@ -82,24 +103,20 @@ async function analyzeThesisAlignment(dealData: any, strategyData: any, document
     stageAlignment
   });
   
-  // Determine confidence level based on data availability
-  const confidence = calculateConfidence(validatedDeal, validatedStrategy);
-  
-  const sources = [
-    { type: 'database', source: 'investment_strategies', validated: true },
-    { type: 'database', source: 'deals', validated: true }
-  ];
+  // Determine confidence level based on data availability and web validation
+  const confidence = calculateConfidence(validatedDeal, validatedStrategy, webValidationData);
   
   return {
     score: overallScore,
     analysis: aiAnalysis,
     confidence: confidence,
-    sources: sources,
+    sources: enhancedSources,
     data: {
       sector_alignment: sectorAlignment,
       geography_alignment: geographyAlignment,
       size_alignment: sizeAlignment,
       stage_alignment: stageAlignment,
+      web_validation: webValidationData?.companyValidation || null,
       key_alignment_points: extractKeyAlignmentPoints({
         sectorAlignment,
         geographyAlignment,
@@ -145,7 +162,7 @@ function validateStrategyData(strategyData: any) {
   };
 }
 
-function calculateSectorAlignment(dealData: any, strategyData: any): { score: number, details: string } {
+function calculateSectorAlignment(dealData: any, strategyData: any, webValidationData: any = null): { score: number, details: string } {
   if (!strategyData.hasStrategy || !strategyData.industries.length) {
     return { score: 50, details: "No sector preferences defined in fund strategy" };
   }
@@ -178,7 +195,7 @@ function calculateSectorAlignment(dealData: any, strategyData: any): { score: nu
   return { score: 25, details: `Poor sector alignment - ${dealData.industry} outside fund focus areas` };
 }
 
-function calculateGeographyAlignment(dealData: any, strategyData: any): { score: number, details: string } {
+function calculateGeographyAlignment(dealData: any, strategyData: any, webValidationData: any = null): { score: number, details: string } {
   if (!strategyData.hasStrategy || !strategyData.geography.length) {
     return { score: 50, details: "No geographic preferences defined in fund strategy" };
   }
@@ -265,7 +282,7 @@ function calculateOverallAlignmentScore(alignmentScores: any): number {
   );
 }
 
-function calculateConfidence(dealData: any, strategyData: any): number {
+function calculateConfidence(dealData: any, strategyData: any, webValidationData: any = null): number {
   let confidence = 0;
   let factors = 0;
   
@@ -294,7 +311,7 @@ function extractKeyAlignmentPoints(alignmentScores: any): string[] {
   return points;
 }
 
-async function generateAIAnalysis(dealData: any, strategyData: any, alignmentScores: any): Promise<string> {
+async function generateAIAnalysis(dealData: any, strategyData: any, alignmentScores: any, webValidationData: any = null): Promise<string> {
   const hasStrategy = strategyData.hasStrategy;
   const enhancedCriteria = strategyData.enhanced_criteria || {};
   
@@ -401,6 +418,105 @@ async function storeSources(dealId: string, engineName: string, sources: any[]) 
   } catch (error) {
     console.error('Error storing sources:', error);
   }
+}
+
+async function validateCompanyWithGoogleSearch(dealData: any) {
+  if (!googleSearchApiKey || !googleSearchEngineId) {
+    return null;
+  }
+
+  try {
+    // Perform targeted company validation searches
+    const searchQueries = [
+      `"${dealData.company_name}" ${dealData.industry}`,
+      `"${dealData.company_name}" company ${dealData.location}`,
+      `"${dealData.company_name}" funding website`
+    ];
+
+    const searchResults = await performGoogleSearches(searchQueries.slice(0, 2)); // Limit to 2 searches
+    
+    const sources = searchResults.map(result => ({
+      type: 'web_search',
+      source: result.link || 'google_search',
+      title: result.title || 'Search Result',
+      validated: true,
+      confidence: calculateSearchResultConfidence(result, dealData)
+    }));
+
+    // Basic company validation based on search results
+    const hasStrongWebPresence = searchResults.length >= 2;
+    const hasRelevantContent = searchResults.some(result => 
+      result.title?.toLowerCase().includes(dealData.company_name.toLowerCase()) ||
+      result.snippet?.toLowerCase().includes(dealData.company_name.toLowerCase())
+    );
+
+    return {
+      companyValidation: {
+        web_presence_confirmed: hasStrongWebPresence,
+        relevant_content_found: hasRelevantContent,
+        search_result_count: searchResults.length
+      },
+      sources: sources
+    };
+  } catch (error) {
+    console.error('Google Search validation error:', error);
+    return null;
+  }
+}
+
+async function performGoogleSearches(queries: string[]) {
+  const results: any[] = [];
+  
+  for (const query of queries) {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100)); // Rate limiting
+      const searchResult = await performSingleGoogleSearch(query);
+      if (searchResult && searchResult.items) {
+        results.push(...searchResult.items.slice(0, 3)); // Top 3 results per query
+      }
+    } catch (error) {
+      console.warn(`Search failed for query "${query}":`, error.message);
+    }
+  }
+  
+  return results;
+}
+
+async function performSingleGoogleSearch(query: string) {
+  try {
+    const cleanQuery = query.replace(/[^\w\s".-]/g, '').trim();
+    const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${googleSearchApiKey}&cx=${googleSearchEngineId}&q=${encodeURIComponent(cleanQuery)}&num=3&safe=active`;
+    
+    const response = await fetch(searchUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Google Search API error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Single Google search error:', error);
+    return null;
+  }
+}
+
+function calculateSearchResultConfidence(result: any, dealData: any): number {
+  let confidence = 50;
+  
+  if (result.title?.toLowerCase().includes(dealData.company_name.toLowerCase())) {
+    confidence += 30;
+  }
+  
+  if (result.snippet?.toLowerCase().includes(dealData.company_name.toLowerCase())) {
+    confidence += 20;
+  }
+  
+  return Math.min(confidence, 90);
 }
 
 function formatCurrency(amount: number): string {

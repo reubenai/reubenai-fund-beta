@@ -11,12 +11,9 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY')!;
 const googleSearchApiKey = Deno.env.get('GOOGLE_SEARCH_API_KEY')!;
+const googleSearchEngineId = Deno.env.get('GOOGLE_SEARCH_ENGINE_ID')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-// Google Custom Search Engine ID - This needs to be properly configured
-// Using a programmable search engine ID that should work for general web search
-const SEARCH_ENGINE_ID = '017576662512468118441:omuauf_lfve';
 
 interface WebResearchRequest {
   dealData: any;
@@ -72,6 +69,10 @@ async function conductWebResearch(dealData: any, researchType: string, searchDep
     // Validate that we have the required API keys
     if (!googleSearchApiKey) {
       throw new Error('Google Search API key not configured');
+    }
+    
+    if (!googleSearchEngineId) {
+      throw new Error('Google Search Engine ID not configured');
     }
     
     if (!openAIApiKey) {
@@ -308,7 +309,7 @@ async function performSingleGoogleSearch(query: string) {
   try {
     // Clean the query to avoid API errors
     const cleanQuery = query.replace(/[^\w\s".-]/g, '').trim();
-    const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${googleSearchApiKey}&cx=${SEARCH_ENGINE_ID}&q=${encodeURIComponent(cleanQuery)}&num=5&safe=active`;
+    const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${googleSearchApiKey}&cx=${googleSearchEngineId}&q=${encodeURIComponent(cleanQuery)}&num=5&safe=active`;
     
     console.log(`🔍 Searching Google for: "${cleanQuery}"`);
     

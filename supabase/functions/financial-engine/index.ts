@@ -10,6 +10,8 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY')!;
+const googleSearchApiKey = Deno.env.get('GOOGLE_SEARCH_API_KEY')!;
+const googleSearchEngineId = Deno.env.get('GOOGLE_SEARCH_ENGINE_ID')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
