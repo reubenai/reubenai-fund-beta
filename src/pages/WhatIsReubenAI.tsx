@@ -29,35 +29,35 @@ const WhatIsReubenAI = () => {
 
   const liveFeatures = [
     {
-      id: 'deal-sourcing',
-      title: 'AI Deal Sourcing',
-      icon: Search,
-      description: 'Intelligent deal discovery powered by AI',
-      details: 'Our AI scans thousands of potential deals and matches them to your investment criteria automatically.',
-      status: 'live'
-    },
-    {
-      id: 'pipeline-management',
-      title: 'Pipeline Management',
-      icon: TrendingUp,
-      description: 'Streamlined deal tracking and management',
-      details: 'Organize your deal flow with our intuitive kanban-style pipeline interface.',
-      status: 'live'
-    },
-    {
-      id: 'investment-criteria',
-      title: 'Investment Strategy',
+      id: 'investment-strategy',
+      title: 'Investment Strategy Configuration',
       icon: Target,
-      description: 'Define and manage investment criteria',
-      details: 'Set up sophisticated investment criteria that guide AI-powered deal matching.',
+      description: 'Define sophisticated investment criteria and thresholds',
+      details: 'Configure your fund\'s investment focus, criteria weights, and decision thresholds with our intelligent strategy builder.',
+      status: 'live'
+    },
+    {
+      id: 'deal-pipeline',
+      title: 'Deal Pipeline Management',
+      icon: TrendingUp,
+      description: 'Complete deal flow management with AI-powered insights',
+      details: 'Track deals through your investment process with automated stage progression and comprehensive deal analysis.',
       status: 'live'
     },
     {
       id: 'ai-analysis',
-      title: 'AI Analysis Engine',
+      title: 'ReubenAI Analysis Engine',
       icon: Brain,
-      description: 'Deep deal analysis and scoring',
-      details: 'Get comprehensive AI-powered analysis of potential investments with risk assessment.',
+      description: 'Multi-dimensional AI analysis with web research',
+      details: 'Get deep company, market, team, and competitive analysis powered by our proprietary AI orchestrator with real-time web research.',
+      status: 'live'
+    },
+    {
+      id: 'fund-memory',
+      title: 'Fund Memory System',
+      icon: FileText,
+      description: 'Contextual AI memory for institutional knowledge',
+      details: 'Build and query your fund\'s institutional knowledge base with AI-powered memory that learns from every interaction.',
       status: 'live'
     }
   ];
@@ -66,83 +66,128 @@ const WhatIsReubenAI = () => {
     {
       title: 'Investment Committee Portal',
       icon: Users,
-      description: 'Collaborative decision-making platform',
-      eta: 'Q1 2025'
+      description: 'Full IC workflow with collaborative decision-making',
+      eta: 'Beta Testing'
     },
     {
-      title: 'Document Intelligence',
-      icon: FileText,
-      description: 'AI-powered document analysis and extraction',
-      eta: 'Q1 2025'
-    },
-    {
-      title: 'Portfolio Analytics',
+      title: 'Enhanced Analytics Dashboard',
       icon: BarChart3,
-      description: 'Advanced portfolio performance tracking',
+      description: 'Advanced portfolio analytics and performance tracking',
+      eta: 'Q1 2025'
+    },
+    {
+      title: 'Fund Administration Suite',
+      icon: Building2,
+      description: 'Complete fund operations and LP management',
       eta: 'Q2 2025'
     },
     {
-      title: 'Fund Administration',
+      title: 'Help & Documentation',
+      icon: MessageSquare,
+      description: 'Comprehensive help system and user guides',
+      eta: 'Q1 2025'
+    }
+  ];
+
+  const targetAudience = [
+    {
       icon: Building2,
-      description: 'Complete fund management suite',
-      eta: 'Q2 2025'
+      title: 'Venture Capital Funds',
+      description: 'Early-stage to growth equity funds looking to scale deal sourcing and analysis capabilities.'
+    },
+    {
+      icon: DollarSign,
+      title: 'Private Equity Firms',
+      description: 'PE firms seeking data-driven insights for middle-market and buyout opportunities.'
+    },
+    {
+      icon: Users,
+      title: 'Family Offices',
+      description: 'Sophisticated family offices managing direct investment programs.'
+    },
+    {
+      icon: TrendingUp,
+      title: 'Corporate Venture',
+      description: 'Corporate venture arms and strategic investment teams.'
     }
   ];
 
   const valueProps = [
     {
-      icon: Lightbulb,
-      title: 'Smarter Decisions',
-      description: 'AI-powered insights help you identify the best investment opportunities faster.'
-    },
-    {
-      icon: DollarSign,
-      title: 'Higher Returns',
-      description: 'Data-driven approach to deal sourcing and evaluation improves portfolio performance.'
+      icon: Brain,
+      title: 'AI-First Investment Intelligence',
+      description: 'Proprietary AI orchestrator that combines market research, company analysis, and strategic alignment in real-time.'
     },
     {
       icon: Shield,
-      title: 'Risk Mitigation',
-      description: 'Comprehensive analysis reduces blind spots and investment risks.'
+      title: 'Institutional-Grade Security',
+      description: 'Enterprise security with role-based access, audit trails, and data encryption for sensitive investment data.'
     },
     {
       icon: Zap,
-      title: 'Efficiency Gains',
-      description: 'Automate routine tasks and focus on high-value strategic decisions.'
+      title: '10x Efficiency Gains',
+      description: 'Automate 80% of initial deal screening and research, letting teams focus on high-value relationship building.'
+    },
+    {
+      icon: Target,
+      title: 'Strategy-Driven Sourcing',
+      description: 'AI that learns your investment thesis and automatically surfaces deals aligned with your fund\'s unique criteria.'
     }
   ];
 
   return (
     <Layout>
-      <div className="space-y-8">
+      <div className="max-w-6xl mx-auto space-y-12 px-6">
         {/* Hero Section */}
-        <div className="text-center space-y-6">
-          <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
-            <span className="text-2xl font-bold text-primary-foreground">R</span>
+        <div className="text-center space-y-8">
+          <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-3xl flex items-center justify-center mx-auto shadow-lg">
+            <span className="text-3xl font-bold text-primary-foreground">R</span>
           </div>
-          <div className="space-y-4">
-            <h1 className="text-4xl font-bold text-foreground tracking-tight">
-              AI-Powered Investment Intelligence
+          <div className="space-y-6">
+            <h1 className="text-5xl font-bold text-foreground tracking-tight">
+              The AI-Native Investment Platform
             </h1>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              ReubenAI streamlines venture capital and private equity deal flow with intelligent 
-              automation, comprehensive analysis, and data-driven decision making.
+            <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+              ReubenAI transforms how venture capital and private equity firms source, analyze, and decide on investments. 
+              Our proprietary AI orchestrator delivers institutional-grade intelligence that scales with your fund's growth.
             </p>
+          </div>
+        </div>
+
+        {/* Who It's For */}
+        <div className="space-y-8">
+          <h2 className="text-3xl font-bold text-center text-foreground">Built for Investment Professionals</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {targetAudience.map((audience, index) => (
+              <Card key={index} className="text-center border-border/50 hover:border-primary/20 hover:shadow-lg transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <audience.icon className="h-7 w-7 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-3">{audience.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{audience.description}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
 
         {/* Value Proposition */}
         <div className="space-y-8">
-          <h2 className="text-2xl font-semibold text-center text-foreground">Key Benefits</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <h2 className="text-3xl font-bold text-center text-foreground">Why Choose ReubenAI</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {valueProps.map((value, index) => (
-              <Card key={index} className="text-center border-border/50 hover:border-border hover:shadow-sm transition-all">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <value.icon className="h-6 w-6 text-primary" />
+              <Card key={index} className="border-border/50 hover:border-primary/20 hover:shadow-lg transition-all duration-300">
+                <CardContent className="p-8">
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <value.icon className="h-7 w-7 text-primary" />
+                    </div>
+                    <div className="space-y-3">
+                      <h3 className="text-xl font-semibold text-foreground">{value.title}</h3>
+                      <p className="text-muted-foreground leading-relaxed">{value.description}</p>
+                    </div>
                   </div>
-                  <h3 className="font-semibold text-foreground mb-2">{value.title}</h3>
-                  <p className="text-sm text-muted-foreground">{value.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -150,35 +195,32 @@ const WhatIsReubenAI = () => {
         </div>
 
         {/* Features Section */}
-        <div className="space-y-8">
-          <h2 className="text-2xl font-semibold text-center text-foreground">Platform Features</h2>
+        <div className="space-y-10">
+          <h2 className="text-3xl font-bold text-center text-foreground">Platform Capabilities</h2>
           
           {/* Live Features */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <h3 className="text-xl font-semibold text-foreground">Available Now</h3>
-              <Badge variant="default" className="bg-green-500/10 text-green-700 border-green-200">
-                Live
+          <div className="space-y-8">
+            <div className="flex items-center justify-center gap-3">
+              <h3 className="text-2xl font-semibold text-foreground">Available Now</h3>
+              <Badge variant="default" className="bg-green-500/10 text-green-700 border-green-200 px-3 py-1">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Live in Production
               </Badge>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {liveFeatures.map((feature) => (
-                <Card key={feature.id} className="border-border/50 hover:border-border hover:shadow-sm transition-all">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <feature.icon className="h-5 w-5 text-primary" />
+                <Card key={feature.id} className="border-border/50 hover:border-primary/20 hover:shadow-lg transition-all duration-300">
+                  <CardContent className="p-8">
+                    <div className="flex items-start gap-6">
+                      <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <feature.icon className="h-7 w-7 text-primary" />
                       </div>
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold text-foreground">{feature.title}</h4>
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Live
-                          </Badge>
+                      <div className="flex-1 space-y-4">
+                        <div className="space-y-2">
+                          <h4 className="text-xl font-semibold text-foreground">{feature.title}</h4>
+                          <p className="text-muted-foreground">{feature.description}</p>
                         </div>
-                        <p className="text-sm text-muted-foreground">{feature.description}</p>
-                        <p className="text-xs text-muted-foreground/80">{feature.details}</p>
+                        <p className="text-sm text-muted-foreground/80 leading-relaxed">{feature.details}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -188,30 +230,32 @@ const WhatIsReubenAI = () => {
           </div>
 
           {/* Coming Soon */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <h3 className="text-xl font-semibold text-foreground">Coming Soon</h3>
-              <Badge variant="outline" className="bg-muted text-muted-foreground">
+          <div className="space-y-8">
+            <div className="flex items-center justify-center gap-3">
+              <h3 className="text-2xl font-semibold text-foreground">Product Roadmap</h3>
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-1">
+                <Clock className="h-4 w-4 mr-2" />
                 In Development
               </Badge>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {comingSoonFeatures.map((feature, index) => (
-                <Card key={index} className="border-border/50 opacity-75">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 bg-muted/50 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <feature.icon className="h-5 w-5 text-muted-foreground" />
+                <Card key={index} className="border-border/50 bg-muted/20 hover:bg-muted/30 transition-all duration-300">
+                  <CardContent className="p-8">
+                    <div className="flex items-start gap-6">
+                      <div className="w-14 h-14 bg-muted/50 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <feature.icon className="h-7 w-7 text-muted-foreground" />
                       </div>
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold text-foreground">{feature.title}</h4>
-                          <Badge variant="outline" className="bg-muted/50 text-muted-foreground">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {feature.eta}
-                          </Badge>
+                      <div className="flex-1 space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-3">
+                            <h4 className="text-xl font-semibold text-foreground">{feature.title}</h4>
+                            <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-muted">
+                              {feature.eta}
+                            </Badge>
+                          </div>
+                          <p className="text-muted-foreground">{feature.description}</p>
                         </div>
-                        <p className="text-sm text-muted-foreground">{feature.description}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -222,23 +266,24 @@ const WhatIsReubenAI = () => {
         </div>
 
         {/* CTA Section */}
-        <Card className="border-border/50 bg-gradient-to-br from-primary/5 to-primary/10">
-          <CardContent className="p-8 text-center space-y-6">
-            <div className="space-y-3">
-              <h3 className="text-2xl font-semibold text-foreground">Get Started with ReubenAI</h3>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Transform your investment process with AI-powered deal sourcing and analysis.
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 shadow-xl">
+          <CardContent className="p-12 text-center space-y-8">
+            <div className="space-y-4">
+              <h3 className="text-3xl font-bold text-foreground">Ready to Transform Your Investment Process?</h3>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                Join leading VC and PE firms using ReubenAI to source better deals, make faster decisions, 
+                and drive superior returns with AI-powered investment intelligence.
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/strategy">
-                <Button size="lg" className="w-full sm:w-auto">
-                  Configure Investment Strategy
+                <Button size="lg" className="w-full sm:w-auto px-8 py-3 text-lg">
+                  Configure Your Strategy
                 </Button>
               </Link>
               <Link to="/deals">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  View Deal Pipeline
+                <Button variant="outline" size="lg" className="w-full sm:w-auto px-8 py-3 text-lg border-primary/20 hover:bg-primary/5">
+                  Explore Deal Pipeline
                 </Button>
               </Link>
             </div>
