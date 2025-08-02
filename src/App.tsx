@@ -50,14 +50,18 @@ const App = () => (
             <Route path="/strategy" element={
               <AuthGuard>
                 <Layout>
-                  <Strategy />
+                  <ErrorBoundary>
+                    <Strategy />
+                  </ErrorBoundary>
                 </Layout>
               </AuthGuard>
             } />
             <Route path="/deals" element={
               <AuthGuard>
                 <Layout>
-                  <Pipeline />
+                  <ErrorBoundary>
+                    <Pipeline />
+                  </ErrorBoundary>
                 </Layout>
               </AuthGuard>
             } />
@@ -73,7 +77,9 @@ const App = () => (
             <Route path="/ic" element={
               <AuthGuard>
                 <Layout>
-                  <IC />
+                  <ErrorBoundary>
+                    <IC />
+                  </ErrorBoundary>
                 </Layout>
               </AuthGuard>
             } />
