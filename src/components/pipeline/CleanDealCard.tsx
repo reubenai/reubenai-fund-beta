@@ -8,6 +8,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { Deal } from '@/hooks/usePipelineDeals';
+import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 
 interface CleanDealCardProps {
   deal: Deal;
@@ -20,6 +21,7 @@ export const CleanDealCard: React.FC<CleanDealCardProps> = ({
   index, 
   onDealClick
 }) => {
+  const { getRAGCategory } = useStrategyThresholds();
   const formatAmount = (amount?: number) => {
     if (!amount) return 'N/A';
     
@@ -95,12 +97,14 @@ export const CleanDealCard: React.FC<CleanDealCardProps> = ({
               </div>
             </div>
             {deal.overall_score && (
-              <Badge 
-                variant={getScoreBadgeVariant(deal.overall_score)}
-                className="text-xs font-medium"
-              >
-                {deal.overall_score}/100
-              </Badge>
+              (() => {
+                const rag = getRAGCategory(deal.overall_score);
+                return (
+                  <Badge variant="outline" className={`text-xs ${rag.color}`}>
+                    {deal.overall_score}/100 · {rag.label}
+                  </Badge>
+                );
+              })()
             )}
           </div>
 
