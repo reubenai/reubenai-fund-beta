@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { useToast } from '@/hooks/use-toast';
+import { performanceMonitor } from '@/utils/performanceMonitor';
+import { NetworkHandler } from '@/utils/edgeCaseHandler';
 
 interface AIServiceOptions {
   timeout?: number;
@@ -35,6 +37,7 @@ export function useAIService() {
       fallbackMessage = 'AI analysis is temporarily unavailable. Please try again later.'
     } = options;
 
+    const startTime = performance.now();
     setIsLoading(true);
     setCurrentStage('starting');
     setProgress(0);
@@ -51,7 +54,13 @@ export function useAIService() {
     try {
       reportProgress('initializing', 10);
 
-      const result = await withRetry(
+      // Check network connectivity first
+      const isConnected = await NetworkHandler.checkConnectivity();
+      if (!isConnected) {
+        throw new Error('No network connection available');
+      }
+
+      const result = await NetworkHandler.withRetry(
         async () => {
           reportProgress('analyzing', 30);
           
@@ -82,12 +91,13 @@ export function useAIService() {
           return response.data;
         },
         retries,
-        1000, // 1 second delay between retries
-        { 
-          title: 'AI Service Error',
-          description: fallbackMessage
-        }
+        1000 // 1 second delay between retries
       );
+
+      // Track API performance
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+      performanceMonitor.trackAPICall(functionName, duration, result !== null);
 
       if (result === null) {
         // Show fallback message on total failure
@@ -103,6 +113,10 @@ export function useAIService() {
       return { data: result, error: null };
 
     } catch (error) {
+      // Track failed API call
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+      performanceMonitor.trackAPICall(functionName, duration, false);
       console.error(`AI Service ${functionName} failed:`, error);
       
       // Handle specific error types
@@ -127,7 +141,7 @@ export function useAIService() {
       setCurrentStage('');
       setProgress(0);
     }
-  }, [withRetry, toast]);
+  }, [toast]);
 
   // Specific AI service methods with proper error handling
   const analyzeCompany = useCallback(async (dealId: string) => {

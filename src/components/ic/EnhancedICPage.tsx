@@ -18,6 +18,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 import { testCompleteICWorkflow } from '@/utils/orchestratorTest';
+import { DataValidator, NetworkHandler } from '@/utils/edgeCaseHandler';
+import { performanceMonitor } from '@/utils/performanceMonitor';
 
 interface Deal {
   id: string;
@@ -87,28 +89,48 @@ export default function EnhancedICPage() {
   const [showVotingModal, setShowVotingModal] = useState(false);
   const [showSessionDetailModal, setShowSessionDetailModal] = useState(false);
 
-  // Fetch IC data
+  // Fetch IC data with performance monitoring and error handling
   const fetchICData = useCallback(async () => {
     if (!selectedFund) return;
     
+    const startTime = performance.now();
+    
     try {
       setLoading(true);
+      
+      // Check network connectivity first
+      const isConnected = await NetworkHandler.checkConnectivity();
+      if (!isConnected) {
+        throw new Error('No network connection available');
+      }
+
       const [dealsData, sessionsData, votingData, membersData] = await Promise.all([
-        fetchDealsForIC(),
-        icMemoService.getSessions(selectedFund.id),
-        icMemoService.getVotingDecisions(selectedFund.id),
-        fetchCommitteeMembers()
+        NetworkHandler.withRetry(() => fetchDealsForIC()),
+        NetworkHandler.withRetry(() => icMemoService.getSessions(selectedFund.id)),
+        NetworkHandler.withRetry(() => icMemoService.getVotingDecisions(selectedFund.id)),
+        NetworkHandler.withRetry(() => fetchCommitteeMembers())
       ]);
       
       setDeals(dealsData || []);
       setSessions(sessionsData);
       setVotingDecisions(votingData);
       setCommitteeMembers(membersData || []);
+
+      // Track successful data fetch
+      const endTime = performance.now();
+      performanceMonitor.trackAPICall('fetchICData', endTime - startTime, true);
+      
     } catch (error) {
+      // Track failed data fetch
+      const endTime = performance.now();
+      performanceMonitor.trackAPICall('fetchICData', endTime - startTime, false);
+      
       console.error('Error fetching IC data:', error);
       toast({
         title: "Error",
-        description: "Failed to load IC data",
+        description: error instanceof Error && error.message.includes('network') 
+          ? "Connection issue. Please check your internet and try again."
+          : "Failed to load IC data. Please try refreshing the page.",
         variant: "destructive"
       });
     } finally {
@@ -256,18 +278,28 @@ export default function EnhancedICPage() {
   const handleAddMember = async () => {
     if (!selectedFund) return;
 
+    // Validate email format
+    if (!DataValidator.isValidEmail(memberForm.email)) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid email address",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       // First find user by email
       const { data: userData, error: userError } = await supabase
         .from('profiles')
         .select('user_id')
-        .eq('email', memberForm.email)
+        .eq('email', memberForm.email.trim().toLowerCase())
         .single();
 
       if (userError || !userData) {
         toast({
           title: "Error",
-          description: "User not found with this email",
+          description: "User not found with this email address. Please ensure the user is registered in the system.",
           variant: "destructive"
         });
         return;
