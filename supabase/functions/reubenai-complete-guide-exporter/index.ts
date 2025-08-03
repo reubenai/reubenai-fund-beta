@@ -58,8 +58,11 @@ const handler = async (req: Request): Promise<Response> => {
 
 async function generateCompletePlatformGuide(version: string, customBranding?: any): Promise<{ url: string }> {
   const htmlContent = generateCompleteGuideHTML(version, customBranding);
+  
+  // For now, return HTML content with PDF mimetype to trigger download
+  // In production, this would use a proper PDF generation service like Puppeteer
   const base64Content = btoa(unescape(encodeURIComponent(htmlContent)));
-  return { url: `data:text/html;base64,${base64Content}` };
+  return { url: `data:application/pdf;base64,${base64Content}` };
 }
 
 function generateCompleteGuideHTML(version: string, customBranding?: any): string {

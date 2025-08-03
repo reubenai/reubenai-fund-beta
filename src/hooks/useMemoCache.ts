@@ -121,12 +121,15 @@ export function useMemoCache(dealId: string, fundId: string) {
       }
 
       // Try to load from database first
-      const { data: existingMemo } = await supabase
+      const { data: existingMemos } = await supabase
         .from('ic_memos')
         .select('memo_content, updated_at')
         .eq('deal_id', dealId)
         .eq('fund_id', fundId)
-        .single();
+        .order('updated_at', { ascending: false })
+        .limit(1);
+
+      const existingMemo = existingMemos?.[0];
 
       if (existingMemo?.memo_content && !forceRegenerate) {
         const memoContent = existingMemo.memo_content as any;

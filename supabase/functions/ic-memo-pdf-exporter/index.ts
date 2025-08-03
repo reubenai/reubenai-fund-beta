@@ -102,7 +102,36 @@ async function generateProfessionalPDF(memo: any, deal: any, fund: any): Promise
   // Generate HTML content with Reuben branding
   const htmlContent = generateHTMLContent(memo, deal, fund);
   
-  // Convert HTML to base64 for download
+  // Use Puppeteer for PDF generation
+  try {
+    const response = await fetch('https://api.htmlpdfapi.com/v1/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': Deno.env.get('HTML_PDF_API_KEY') || 'demo'
+      },
+      body: JSON.stringify({
+        html: htmlContent,
+        displayOptions: {
+          format: 'A4',
+          margin: { top: '0.5in', right: '0.5in', bottom: '0.5in', left: '0.5in' },
+          printBackground: true
+        }
+      })
+    });
+
+    if (response.ok) {
+      const pdfBlob = await response.blob();
+      const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(await pdfBlob.arrayBuffer())));
+      return {
+        url: `data:application/pdf;base64,${pdfBase64}`
+      };
+    }
+  } catch (error) {
+    console.warn('PDF API failed, falling back to HTML:', error);
+  }
+  
+  // Fallback to HTML for now
   return {
     url: `data:text/html;base64,${btoa(htmlContent)}`
   };
