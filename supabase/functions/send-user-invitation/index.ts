@@ -122,21 +122,31 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Sending invitation to:', email, 'for organization:', organization.name);
 
-    // Generate invitation token
-    const { data: tokenData, error: tokenError } = await supabaseAdmin
-      .rpc('generate_invitation_token');
+    // Create user account with default password
+    const defaultPassword = "Reuben123!";
+    
+    const { data: newUser, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: defaultPassword,
+      email_confirm: true, // Skip email confirmation
+      user_metadata: {
+        invited_role: role,
+        invited_organization_id: organizationId,
+        first_name: email.split('@')[0], // Use email prefix as default first name
+      }
+    });
 
-    if (tokenError || !tokenData) {
-      console.error('Token generation error:', tokenError);
+    if (signUpError) {
+      console.error('User creation error:', signUpError);
       return new Response(
-        JSON.stringify({ error: 'Failed to generate invitation token' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: `Failed to create user account: ${signUpError.message}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const invitationToken = tokenData;
+    console.log('User account created successfully for:', email);
 
-    // Store invitation in database
+    // Store invitation record (without token, just for tracking)
     const { data: invitationData, error: invitationError } = await supabaseAdmin
       .from('user_invitations')
       .insert({
@@ -145,29 +155,27 @@ const handler = async (req: Request): Promise<Response> => {
         organization_id: organizationId,
         invited_by: user.id,
         custom_message: customMessage,
-        invitation_token: invitationToken,
+        is_active: false, // Mark as completed since account is created
+        accepted_at: new Date().toISOString(),
       })
       .select('id')
       .single();
 
     if (invitationError) {
       console.error('Invitation storage error:', invitationError);
-      return new Response(
-        JSON.stringify({ error: `Failed to store invitation: ${invitationError.message}` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // Don't fail the process since user is already created
     }
 
-    // Send custom invitation email
+    // Send welcome email with login credentials
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
     const origin = req.headers.get('origin') || 'https://localhost:3000';
-    const setupUrl = `${origin}/setup-password?token=${invitationToken}`;
+    const loginUrl = `${origin}/auth`;
 
     try {
       const emailData = await resend.emails.send({
         from: "ReubenAI <noreply@goreuben.com>",
         to: [email],
-        subject: `You're invited to join ${organization.name} on ReubenAI`,
+        subject: `Welcome to ${organization.name} on ReubenAI - Your account is ready!`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
@@ -178,9 +186,12 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
             
             <div style="background: #f8fafc; border-radius: 8px; padding: 24px; margin: 20px 0;">
-              <h2 style="color: #1f2937; margin: 0 0 16px;">You've been invited!</h2>
+              <h2 style="color: #1f2937; margin: 0 0 16px;">Your account is ready!</h2>
               <p style="color: #4b5563; margin: 0 0 16px;">
                 <strong>${user.email}</strong> has invited you to join <strong>${organization.name}</strong> on ReubenAI as a <strong>${role}</strong>.
+              </p>
+              <p style="color: #4b5563; margin: 0 0 16px;">
+                Your account has been created and you can now log in with the credentials below.
               </p>
               ${customMessage ? `
                 <div style="background: white; border-left: 4px solid #2563eb; padding: 16px; margin: 16px 0; border-radius: 4px;">
@@ -189,22 +200,34 @@ const handler = async (req: Request): Promise<Response> => {
               ` : ''}
             </div>
 
+            <div style="background: #e0f2fe; border-radius: 8px; padding: 24px; margin: 20px 0;">
+              <h3 style="color: #1f2937; margin: 0 0 16px; font-size: 18px;">Your Login Credentials</h3>
+              <div style="background: white; border-radius: 6px; padding: 16px; margin: 8px 0;">
+                <p style="color: #374151; margin: 0; font-weight: 500;">Email:</p>
+                <p style="color: #1f2937; margin: 4px 0 0; font-family: monospace; font-size: 16px;">${email}</p>
+              </div>
+              <div style="background: white; border-radius: 6px; padding: 16px; margin: 8px 0;">
+                <p style="color: #374151; margin: 0; font-weight: 500;">Password:</p>
+                <p style="color: #1f2937; margin: 4px 0 0; font-family: monospace; font-size: 16px;">${defaultPassword}</p>
+              </div>
+            </div>
+
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${setupUrl}" 
+              <a href="${loginUrl}" 
                  style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; display: inline-block;">
-                Set Up Your Account
+                Log In to ReubenAI
               </a>
             </div>
 
             <div style="background: #fef3c7; border-radius: 6px; padding: 16px; margin: 20px 0;">
               <p style="color: #92400e; margin: 0; font-size: 14px;">
-                <strong>Important:</strong> This invitation will expire in 7 days. You'll need to set up your password before you can access the platform.
+                <strong>Important:</strong> For security, please change your password after logging in. You can do this in your account settings.
               </p>
             </div>
 
             <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
               <p style="color: #6b7280; font-size: 12px; margin: 0;">
-                This invitation was sent by ReubenAI. If you didn't expect this invitation, you can safely ignore this email.
+                This invitation was sent by ReubenAI. If you didn't expect this invitation, please contact your administrator.
               </p>
             </div>
           </div>
