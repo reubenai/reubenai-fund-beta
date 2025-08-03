@@ -2,3 +2,12 @@ project_id = "bueuioozcgmedkuxawju"
 
 [functions.web-research-engine]
 verify_jwt = false
+
+[functions.reubenai-complete-guide-exporter]
+verify_jwt = false
+
+[functions.reubenai-quick-start-exporter]
+verify_jwt = false
+
+[functions.reubenai-technical-guide-exporter]
+verify_jwt = false

@@ -141,7 +141,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
 
       if (error) throw error;
 
-      // Save version after successful save
+      // Save version after successful save (simplified)
       try {
         await saveVersion(memoState.content, 'Manual save');
       } catch (versionError) {

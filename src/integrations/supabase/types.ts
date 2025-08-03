@@ -1241,6 +1241,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ic_memo_versions: {
+        Row: {
+          content: Json
+          created_at: string
+          created_by: string
+          deal_id: string
+          description: string | null
+          fund_id: string
+          id: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          created_by: string
+          deal_id: string
+          description?: string | null
+          fund_id: string
+          id?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          created_by?: string
+          deal_id?: string
+          description?: string | null
+          fund_id?: string
+          id?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       ic_memo_votes: {
         Row: {
           confidence_level: number | null
