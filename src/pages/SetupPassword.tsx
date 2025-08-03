@@ -51,17 +51,25 @@ export default function SetupPassword() {
   });
 
   useEffect(() => {
+    console.log('🔍 SetupPassword useEffect - URL search params:', window.location.search);
+    console.log('🔍 SetupPassword useEffect - Token extracted:', token);
+    
     if (!token) {
+      console.log('❌ No token found in URL parameters');
       setError('Invalid invitation link. Please contact your administrator.');
       setIsVerifying(false);
       return;
     }
 
+    console.log('✅ Token found, starting verification for:', token);
     verifyInvitation();
   }, [token]);
 
   const verifyInvitation = async () => {
+    console.log('🔍 Starting invitation verification for token:', token);
+    
     try {
+      console.log('📤 Executing Supabase query with token:', token);
       const { data, error } = await supabase
         .from('user_invitations')
         .select(`
@@ -78,8 +86,16 @@ export default function SetupPassword() {
         .eq('is_active', true)
         .single();
 
+      console.log('📥 Supabase query response:', { data, error });
+
       if (error) {
-        console.error('Invitation verification error:', error);
+        console.error('❌ Invitation verification error:', error);
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
         setError('Invalid or expired invitation link.');
         return;
       }
