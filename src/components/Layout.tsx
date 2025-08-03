@@ -29,10 +29,7 @@ export function Layout({ children }: LayoutProps) {
               <AppHeader />
               <main className="flex-1 overflow-auto">
                 <div className="pl-8 pr-8 pt-6 pb-8 max-w-7xl mx-auto">
-                  <Breadcrumbs />
-                  <div className="mt-2">
-                    {children}
-                  </div>
+                  {children}
                 </div>
               </main>
             </div>
