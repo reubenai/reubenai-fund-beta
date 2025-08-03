@@ -129,6 +129,8 @@ export const MemoPreviewModal: React.FC<MemoPreviewModalProps> = ({
     try {
       setIsGenerating(true);
       
+      console.log('Generating memo for deal:', deal.id, 'fund:', fundId);
+      
       const { data, error } = await supabase.functions.invoke('ai-memo-generator', {
         body: { 
           dealId: deal.id,
@@ -198,6 +200,8 @@ export const MemoPreviewModal: React.FC<MemoPreviewModalProps> = ({
       
       // First ensure memo is saved
       await handleSaveMemo();
+      
+      console.log('Exporting PDF for deal:', deal.id, 'fund:', fundId);
       
       const { data, error } = await supabase.functions.invoke('ic-memo-pdf-exporter', {
         body: { 
