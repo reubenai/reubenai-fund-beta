@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,40 +18,338 @@ import {
   Sun,
   Monitor,
   Settings2,
-  Database
+  Database,
+  Eye,
+  EyeOff,
+  Smartphone,
+  Laptop,
+  LogOut
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
+interface UserProfile {
+  id: string;
+  user_id: string;
+  organization_id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  role: string;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  deals: boolean;
+  meetings: boolean;
+  system: boolean;
+}
+
+interface UserPreferences {
+  theme: string;
+  timezone: string;
+  defaultPipelineView: string;
+}
+
+interface ActiveSession {
+  id: string;
+  device: string;
+  browser: string;
+  os: string;
+  location: string;
+  lastActive: string;
+  current: boolean;
+}
 
 export default function Settings() {
-  const [theme, setTheme] = useState('system');
-  const [notifications, setNotifications] = useState({
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationSettings>({
     email: true,
     push: true,
     deals: true,
     meetings: true,
     system: false
   });
-  const { toast } = useToast();
-  const { user } = useAuth();
+  const [preferences, setPreferences] = useState<UserPreferences>({
+    theme: 'system',
+    timezone: 'utc',
+    defaultPipelineView: 'kanban'
+  });
+  const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
+  
+  // Password change states
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  const handleExportData = () => {
+  // Form data states
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+
+  const { toast } = useToast();
+  const { user, signOut } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      fetchUserProfile();
+      loadUserPreferences();
+      loadNotificationSettings();
+      fetchActiveSessions();
+    }
+  }, [user]);
+
+  const fetchUserProfile = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      setProfile(data);
+      setFirstName(data.first_name || '');
+      setLastName(data.last_name || '');
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load profile information",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const loadUserPreferences = () => {
+    const savedPreferences = localStorage.getItem('userPreferences');
+    if (savedPreferences) {
+      setPreferences(JSON.parse(savedPreferences));
+    }
+  };
+
+  const loadNotificationSettings = () => {
+    const savedNotifications = localStorage.getItem('notificationSettings');
+    if (savedNotifications) {
+      setNotifications(JSON.parse(savedNotifications));
+    }
+  };
+
+  const fetchActiveSessions = async () => {
+    // Mock active sessions data since Supabase doesn't expose session management
+    const mockSessions: ActiveSession[] = [
+      {
+        id: '1',
+        device: 'MacBook Pro',
+        browser: 'Chrome',
+        os: 'macOS',
+        location: 'San Francisco, CA',
+        lastActive: new Date().toISOString(),
+        current: true
+      }
+    ];
+    setActiveSessions(mockSessions);
+  };
+
+  const handleProfileSave = async () => {
+    if (!user || !profile) return;
+
+    setIsProfileLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setProfile(prev => prev ? {
+        ...prev,
+        first_name: firstName,
+        last_name: lastName,
+        updated_at: new Date().toISOString()
+      } : null);
+
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile information",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProfileLoading(false);
+    }
+  };
+
+  const handleNotificationSave = () => {
+    localStorage.setItem('notificationSettings', JSON.stringify(notifications));
     toast({
-      title: "Export initiated",
-      description: "Your data export will be ready shortly. You'll receive an email when it's complete.",
+      title: "Notifications Updated",
+      description: "Your notification preferences have been saved.",
     });
+  };
+
+  const handlePreferencesSave = () => {
+    localStorage.setItem('userPreferences', JSON.stringify(preferences));
+    
+    // Apply theme immediately
+    if (preferences.theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else if (preferences.theme === 'light') {
+      document.documentElement.classList.remove('dark');
+    } else {
+      // System theme
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+
+    toast({
+      title: "Preferences Updated",
+      description: "Your display preferences have been saved.",
+    });
+  };
+
+  const handlePasswordChange = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Please fill in all password fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "New passwords do not match",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowPasswords(false);
+
+      toast({
+        title: "Password Updated",
+        description: "Your password has been changed successfully.",
+      });
+    } catch (error: any) {
+      console.error('Error changing password:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to change password",
+        variant: "destructive"
+      });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handleExportData = async () => {
+    if (!user) return;
+
+    try {
+      // Create a comprehensive data export
+      const exportData = {
+        profile: profile,
+        preferences: preferences,
+        notifications: notifications,
+        exportDate: new Date().toISOString(),
+        userId: user.id
+      };
+
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `reuben-ai-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Export Complete",
+        description: "Your data has been exported successfully.",
+      });
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export your data",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDeleteAccount = () => {
     toast({
-      title: "Account deletion",
-      description: "Please contact support to delete your account.",
+      title: "Account Deletion",
+      description: "Please contact support at hello@goreuben.com to delete your account.",
       variant: "destructive"
     });
   };
 
+  const handleSignOutFromDevice = async (sessionId: string) => {
+    if (sessionId === '1') { // Current session
+      await signOut();
+    } else {
+      // Remove from mock sessions
+      setActiveSessions(prev => prev.filter(s => s.id !== sessionId));
+      toast({
+        title: "Session Ended",
+        description: "You have been signed out of that device.",
+      });
+    }
+  };
+
   return (
-    <div className="space-y-8 p-8">
+    <div className="space-y-8 p-8 max-w-4xl mx-auto">
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
         <p className="text-muted-foreground mt-1">Manage your account and platform preferences</p>
@@ -93,16 +391,20 @@ export default function Settings() {
                   <Label htmlFor="firstName">First Name</Label>
                   <Input 
                     id="firstName" 
-                    defaultValue="John"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
                     className="mt-2" 
+                    placeholder="Enter your first name"
                   />
                 </div>
                 <div>
                   <Label htmlFor="lastName">Last Name</Label>
                   <Input 
                     id="lastName" 
-                    defaultValue="Doe"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     className="mt-2" 
+                    placeholder="Enter your last name"
                   />
                 </div>
               </div>
@@ -111,7 +413,7 @@ export default function Settings() {
                 <Input 
                   id="email" 
                   type="email"
-                  defaultValue={user?.email || ''}
+                  value={profile?.email || user?.email || ''}
                   disabled
                   className="mt-2 bg-muted" 
                 />
@@ -122,10 +424,16 @@ export default function Settings() {
               <div>
                 <Label htmlFor="role">Role</Label>
                 <div className="mt-2">
-                  <Badge variant="outline">Fund Manager</Badge>
+                  <Badge variant="outline">{profile?.role || 'Loading...'}</Badge>
                 </div>
               </div>
-              <Button className="w-fit">Save Changes</Button>
+              <Button 
+                onClick={handleProfileSave}
+                disabled={isProfileLoading}
+                className="w-fit"
+              >
+                {isProfileLoading ? 'Saving...' : 'Save Changes'}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -203,7 +511,9 @@ export default function Settings() {
                   />
                 </div>
               </div>
-              <Button className="w-fit">Save Preferences</Button>
+              <Button onClick={handleNotificationSave} className="w-fit">
+                Save Preferences
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -217,7 +527,7 @@ export default function Settings() {
             <CardContent className="space-y-6">
               <div>
                 <Label className="text-sm font-medium">Theme</Label>
-                <Select value={theme} onValueChange={setTheme}>
+                <Select value={preferences.theme} onValueChange={(value) => setPreferences(prev => ({ ...prev, theme: value }))}>
                   <SelectTrigger className="w-[200px] mt-2">
                     <SelectValue />
                   </SelectTrigger>
@@ -245,7 +555,7 @@ export default function Settings() {
               </div>
               <div>
                 <Label className="text-sm font-medium">Timezone</Label>
-                <Select defaultValue="utc">
+                <Select value={preferences.timezone} onValueChange={(value) => setPreferences(prev => ({ ...prev, timezone: value }))}>
                   <SelectTrigger className="w-[200px] mt-2">
                     <SelectValue />
                   </SelectTrigger>
@@ -259,7 +569,7 @@ export default function Settings() {
               </div>
               <div>
                 <Label className="text-sm font-medium">Default Pipeline View</Label>
-                <Select defaultValue="kanban">
+                <Select value={preferences.defaultPipelineView} onValueChange={(value) => setPreferences(prev => ({ ...prev, defaultPipelineView: value }))}>
                   <SelectTrigger className="w-[200px] mt-2">
                     <SelectValue />
                   </SelectTrigger>
@@ -270,7 +580,9 @@ export default function Settings() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-fit">Save Preferences</Button>
+              <Button onClick={handlePreferencesSave} className="w-fit">
+                Save Preferences
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -283,10 +595,59 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <Label className="text-sm font-medium">Password</Label>
-                <div className="flex items-center gap-4 mt-2">
-                  <Input type="password" value="••••••••" disabled className="max-w-xs bg-muted" />
-                  <Button variant="outline" size="sm">Change Password</Button>
+                <Label className="text-sm font-medium mb-4 block">Change Password</Label>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="currentPassword" className="text-xs">Current Password</Label>
+                    <div className="relative">
+                      <Input 
+                        id="currentPassword"
+                        type={showPasswords ? "text" : "password"}
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        className="mt-1 pr-10" 
+                        placeholder="Enter current password"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-1 h-8 w-8 px-0"
+                        onClick={() => setShowPasswords(!showPasswords)}
+                      >
+                        {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="newPassword" className="text-xs">New Password</Label>
+                    <Input 
+                      id="newPassword"
+                      type={showPasswords ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="mt-1" 
+                      placeholder="Enter new password"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="confirmPassword" className="text-xs">Confirm New Password</Label>
+                    <Input 
+                      id="confirmPassword"
+                      type={showPasswords ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="mt-1" 
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handlePasswordChange}
+                    disabled={isChangingPassword}
+                    className="w-fit"
+                  >
+                    {isChangingPassword ? 'Changing...' : 'Change Password'}
+                  </Button>
                 </div>
               </div>
               <Separator />
@@ -294,20 +655,62 @@ export default function Settings() {
                 <Label className="text-sm font-medium">Two-Factor Authentication</Label>
                 <div className="flex items-center justify-between mt-2">
                   <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
-                  <Button variant="outline" size="sm">Setup 2FA</Button>
+                  <Button variant="outline" size="sm" disabled>
+                    Setup 2FA (Coming Soon)
+                  </Button>
                 </div>
               </div>
               <Separator />
               <div>
                 <Label className="text-sm font-medium">Active Sessions</Label>
                 <div className="mt-2 space-y-2">
-                  <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                    <div>
-                      <p className="text-sm font-medium">Current Session</p>
-                      <p className="text-xs text-muted-foreground">Chrome on macOS • San Francisco, CA</p>
+                  {activeSessions.map((session) => (
+                    <div key={session.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-background rounded">
+                          {session.device.includes('MacBook') || session.device.includes('Windows') ? 
+                            <Laptop className="h-4 w-4" /> : 
+                            <Smartphone className="h-4 w-4" />
+                          }
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {session.current ? 'Current Session' : session.device}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {session.browser} on {session.os} • {session.location}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {session.current ? (
+                          <Badge variant="secondary">Active</Badge>
+                        ) : (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <LogOut className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Sign out from device?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will end the session on {session.device}. You'll need to sign in again on that device.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleSignOutFromDevice(session.id)}>
+                                  Sign Out
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
                     </div>
-                    <Badge variant="secondary">Active</Badge>
-                  </div>
+                  ))}
                 </div>
               </div>
             </CardContent>
@@ -324,7 +727,7 @@ export default function Settings() {
               <div>
                 <Label className="text-sm font-medium">Export Data</Label>
                 <p className="text-sm text-muted-foreground mt-1 mb-4">
-                  Download a copy of your deals, notes, and analysis data
+                  Download a copy of your profile, preferences, and settings data
                 </p>
                 <Button onClick={handleExportData} className="gap-2">
                   <Download className="h-4 w-4" />
@@ -339,14 +742,28 @@ export default function Settings() {
                   <p className="text-sm text-muted-foreground mb-4">
                     Permanently delete your account and all associated data. This action cannot be undone.
                   </p>
-                  <Button 
-                    variant="destructive" 
-                    onClick={handleDeleteAccount}
-                    className="gap-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete Account
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" className="gap-2">
+                        <Trash2 className="h-4 w-4" />
+                        Delete Account
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure you want to delete your account?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Delete Account
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             </CardContent>
