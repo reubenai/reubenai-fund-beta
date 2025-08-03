@@ -608,7 +608,7 @@ function generateReliableFallbackMemo(dealData: any, fundData: any, sections: an
         memoSections[section.key] = `${dealData.company_name} is a ${dealData.industry || 'technology'} company ${dealData.location ? `based in ${dealData.location}` : 'with undisclosed location'}. ${dealData.description || 'Company description to be provided during due diligence.'} ${dealData.business_model ? `Business model: ${dealData.business_model}.` : 'Business model analysis pending.'} ${dealData.employee_count ? `Current team size: ${dealData.employee_count} employees.` : 'Team size information to be confirmed.'} ${dealData.website ? `Website: ${dealData.website}` : 'Company website information pending.'}`;
         break;
       
-      case 'market_analysis':
+      case 'market_opportunity':
         memoSections[section.key] = `Market analysis for the ${dealData.industry || 'technology'} sector. ${analysisData?.market_score ? `Market assessment score: ${analysisData.market_score}/100.` : 'Detailed market assessment pending.'} Geographic market focus ${dealData.location ? `includes ${dealData.location}` : 'to be determined'}. Competitive landscape analysis and market sizing require further research to validate opportunity size and growth potential.`;
         break;
       
@@ -616,11 +616,11 @@ function generateReliableFallbackMemo(dealData: any, fundData: any, sections: an
         memoSections[section.key] = `Financial overview: ${dealData.deal_size ? `Requested investment: $${(dealData.deal_size / 1000000).toFixed(1)}M.` : 'Investment amount to be confirmed.'} ${dealData.valuation ? `Company valuation: $${(dealData.valuation / 1000000).toFixed(1)}M.` : 'Valuation pending assessment.'} ${analysisData?.financial_score ? `Financial health score: ${analysisData.financial_score}/100.` : 'Financial metrics under review.'} Detailed financial statements, revenue projections, and unit economics require comprehensive analysis during due diligence phase.`;
         break;
       
-      case 'team_assessment':
+      case 'management_team':
         memoSections[section.key] = `Leadership and team evaluation: ${analysisData?.leadership_score ? `Team assessment score: ${analysisData.leadership_score}/100.` : 'Management team evaluation pending.'} ${dealData.founder ? `Founder: ${dealData.founder}.` : 'Founder background to be reviewed.'} Team experience, track record, and cultural fit assessment require detailed management presentations and reference checks.`;
         break;
       
-      case 'product_technology':
+      case 'product_service':
         memoSections[section.key] = `Product and technology assessment: ${analysisData?.product_score ? `Product evaluation score: ${analysisData.product_score}/100.` : 'Technology stack and product differentiation under review.'} Product development stage, technical capabilities, intellectual property position, and competitive technological advantages require detailed technical due diligence.`;
         break;
       
@@ -640,12 +640,12 @@ function generateReliableFallbackMemo(dealData: any, fundData: any, sections: an
         memoSections[section.key] = `Investment thesis alignment: ${thesisData?.alignment_score ? `Thesis alignment score: ${thesisData.alignment_score}/100.` : 'Strategic fit assessment pending.'} Alignment with ${fundData?.fund_type || 'fund'} investment criteria, sector focus, stage preferences, and strategic objectives requires detailed evaluation against fund thesis.`;
         break;
       
-      case 'risk_analysis':
+      case 'risks_mitigants':
         memoSections[section.key] = `Risk assessment: ${ragData?.ragStatus ? `Current risk status: ${ragData.ragStatus}.` : 'Comprehensive risk evaluation pending.'} Key identified risks include market timing, competitive threats, execution challenges, regulatory considerations, technology risks, and funding requirements. Risk mitigation strategies and contingency planning require detailed analysis.`;
         break;
       
-      case 'deal_terms':
-        memoSections[section.key] = `Deal structure and terms: ${dealData.deal_size ? `Investment amount: $${(dealData.deal_size / 1000000).toFixed(1)}M` : 'Investment size TBD'} ${dealData.valuation ? `at $${(dealData.valuation / 1000000).toFixed(1)}M pre-money valuation` : 'with valuation TBD'}. Deal terms, liquidation preferences, board composition, anti-dilution provisions, and investor rights require detailed legal and financial review.`;
+      case 'exit_strategy':
+        memoSections[section.key] = `Exit strategy analysis: Potential exit paths include strategic acquisition by industry leaders, public offering considerations, and secondary market opportunities. ${dealData.valuation ? `Current valuation of $${(dealData.valuation / 1000000).toFixed(1)}M provides baseline for exit planning.` : 'Exit valuation targets to be established.'} Market conditions, competitive landscape, and growth trajectory will influence optimal exit timing and strategy selection.`;
         break;
       
       case 'recommendation':
