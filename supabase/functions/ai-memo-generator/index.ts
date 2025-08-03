@@ -110,6 +110,84 @@ serve(async (req) => {
       console.warn('⚠️ Orchestrator warning:', orchestratorError);
     }
 
+    // 4.5. Call specialist AI engines for memo sections
+    console.log('🔬 Calling specialist AI engines for detailed analysis...');
+    
+    const [marketResearchData, managementData, investmentTermsData, riskMitigationData, exitStrategyData] = await Promise.allSettled([
+      supabase.functions.invoke('market-research-engine', {
+        body: { 
+          dealId,
+          companyData: {
+            name: dealData.company_name,
+            industry: dealData.industry,
+            location: dealData.location,
+            website: dealData.website
+          }
+        }
+      }),
+      supabase.functions.invoke('management-assessment-engine', {
+        body: { 
+          dealId,
+          companyData: {
+            name: dealData.company_name,
+            founder: dealData.founder,
+            industry: dealData.industry,
+            employee_count: dealData.employee_count
+          }
+        }
+      }),
+      supabase.functions.invoke('investment-terms-engine', {
+        body: { 
+          dealId,
+          dealData: {
+            deal_size: dealData.deal_size,
+            valuation: dealData.valuation,
+            business_model: dealData.business_model,
+            stage: dealData.status
+          }
+        }
+      }),
+      supabase.functions.invoke('risk-mitigation-engine', {
+        body: { 
+          dealId,
+          allEngineResults: orchestratorData || {},
+          dealData: {
+            industry: dealData.industry,
+            stage: dealData.status,
+            valuation: dealData.valuation
+          }
+        }
+      }),
+      supabase.functions.invoke('exit-strategy-engine', {
+        body: { 
+          dealId,
+          companyData: {
+            name: dealData.company_name,
+            industry: dealData.industry,
+            valuation: dealData.valuation,
+            deal_size: dealData.deal_size
+          }
+        }
+      })
+    ]);
+
+    // Extract specialist engine results
+    const specialistEngines = {
+      marketResearch: marketResearchData.status === 'fulfilled' ? marketResearchData.value.data : null,
+      management: managementData.status === 'fulfilled' ? managementData.value.data : null,
+      investmentTerms: investmentTermsData.status === 'fulfilled' ? investmentTermsData.value.data : null,
+      riskMitigation: riskMitigationData.status === 'fulfilled' ? riskMitigationData.value.data : null,
+      exitStrategy: exitStrategyData.status === 'fulfilled' ? exitStrategyData.value.data : null
+    };
+
+    console.log('🔬 Specialist engines results:', {
+      marketResearch: !!specialistEngines.marketResearch,
+      management: !!specialistEngines.management,
+      investmentTerms: !!specialistEngines.investmentTerms,
+      riskMitigation: !!specialistEngines.riskMitigation,
+      exitStrategy: !!specialistEngines.exitStrategy
+    });
+
     // 5. Calculate RAG status using RAG engine
     console.log('🚦 Calculating RAG status...');
     const { data: ragData, error: ragError } = await supabase.functions.invoke('rag-calculation-engine', {
@@ -164,7 +242,8 @@ serve(async (req) => {
         ragData,
         thesisData,
         enhancedCriteria,
-        dealData.deal_notes || []
+        dealData.deal_notes || [],
+        specialistEngines
       );
       
       // Validate memo content structure
@@ -174,7 +253,7 @@ serve(async (req) => {
     } catch (aiError) {
       console.log('⚠️ AI generation failed, using fallback:', aiError.message);
       // Use reliable fallback memo generation
-      memoContent = generateReliableFallbackMemo(dealData, dealData.funds, sections, dealData.deal_analyses?.[0], ragData, thesisData);
+      memoContent = generateReliableFallbackMemo(dealData, dealData.funds, sections, dealData.deal_analyses?.[0], ragData, thesisData, specialistEngines);
     }
 
     // 8. Determine RAG status from validated data
@@ -272,7 +351,8 @@ async function generateMemoContent(
   ragData: any,
   thesisData: any,
   enhancedCriteria: any,
-  dealNotes: any[]
+  dealNotes: any[],
+  specialistEngines: any
 ): Promise<{ content: any; executive_summary: string; investment_recommendation: string }> {
   
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -280,11 +360,14 @@ async function generateMemoContent(
     throw new Error('OpenAI API key not found');
   }
 
-  // Prepare validated data sources
-  const marketData = analysisData?.engine_results?.market_engine || {};
-  const teamData = analysisData?.engine_results?.team_engine || {};
+  // Prepare validated data sources including specialist engines
+  const marketData = specialistEngines?.marketResearch?.data || analysisData?.engine_results?.market_engine || {};
+  const teamData = specialistEngines?.management?.data || analysisData?.engine_results?.team_engine || {};
   const productData = analysisData?.engine_results?.product_engine || {};
   const financialData = analysisData?.engine_results?.financial_engine || {};
+  const investmentTermsData = specialistEngines?.investmentTerms?.data || {};
+  const riskMitigationData = specialistEngines?.riskMitigation?.data || {};
+  const exitStrategyData = specialistEngines?.exitStrategy?.data || {};
 
   console.log('🔍 Generating memo content with zero-fabrication policy...');
   
@@ -334,6 +417,13 @@ FUND STRATEGY: ${fundData?.fund_type || 'N/A'} fund focusing on: ${strategyFocus
 KEY INSIGHTS:
 Risks: ${keyInsights.keyRisks.join(', ') || 'None identified'}
 Opportunities: ${keyInsights.keyOpportunities.join(', ') || 'None identified'}
+
+SPECIALIST ANALYSIS:
+Market: ${marketData.market_size ? `$${marketData.market_size} market` : 'Market sizing pending'} | Growth: ${marketData.growth_rate || 'N/A'}
+Management: ${teamData.founder_score ? `Founder score: ${teamData.founder_score}/100` : 'Team assessment pending'}
+Investment Terms: ${investmentTermsData.recommended_structure || 'Terms analysis pending'}
+Risk Factors: ${riskMitigationData.risk_score ? `Risk score: ${riskMitigationData.risk_score}/100` : 'Risk assessment pending'}
+Exit Strategy: ${exitStrategyData.primary_exit_path || 'Exit path analysis pending'}
 
 NOTES: ${recentNotes}
 
@@ -436,13 +526,18 @@ Tone: Professional, suitable for investment committee.`;
           key_metrics: memoData.key_metrics,
           data_quality_assessment: memoData.data_quality_assessment,
           generated_at: new Date().toISOString(),
-          data_sources: {
-            deal_analysis: !!analysisData,
-            orchestrator: !!orchestratorData,
-            rag_assessment: !!ragData,
-            thesis_alignment: !!thesisData,
-            deal_notes: dealNotes.length
-          }
+            data_sources: {
+              deal_analysis: !!analysisData,
+              orchestrator: !!orchestratorData,
+              rag_assessment: !!ragData,
+              thesis_alignment: !!thesisData,
+              deal_notes: dealNotes.length,
+              market_research: !!specialistEngines?.marketResearch,
+              management_assessment: !!specialistEngines?.management,
+              investment_terms: !!specialistEngines?.investmentTerms,
+              risk_mitigation: !!specialistEngines?.riskMitigation,
+              exit_strategy: !!specialistEngines?.exitStrategy
+            }
         },
         executive_summary: memoData.executive_summary,
         investment_recommendation: memoData.investment_recommendation
@@ -497,7 +592,7 @@ function validateMemoContent(memoContent: any): boolean {
 }
 
 // Reliable fallback memo generation
-function generateReliableFallbackMemo(dealData: any, fundData: any, sections: any[], analysisData: any, ragData: any, thesisData: any): any {
+function generateReliableFallbackMemo(dealData: any, fundData: any, sections: any[], analysisData: any, ragData: any, thesisData: any, specialistEngines?: any): any {
   console.log('🔄 Generating reliable fallback memo with complete sections...');
   
   const memoSections: any = {};

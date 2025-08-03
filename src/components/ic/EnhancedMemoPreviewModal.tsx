@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { useMemoCache } from '@/hooks/useMemoCache';
 import { useEnhancedToast } from '@/hooks/useEnhancedToast';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { useMemoVersions } from '@/hooks/useMemoVersions';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Deal {
@@ -73,6 +75,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   const [activeSection, setActiveSection] = useState('executive_summary');
   
   const { memoState, loadMemo, generateMemo, cancelGeneration, updateContent } = useMemoCache(deal.id, fundId);
+  const { versionState, loadVersions, saveVersion } = useMemoVersions(deal.id, fundId);
   const { 
     showMemoGenerationToast, 
     showAnalysisOutdatedToast, 
@@ -81,11 +84,23 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     dismiss 
   } = useEnhancedToast();
 
+  // Auto-save functionality
+  const { isAutoSaveEnabled } = useAutoSave(memoState.content, {
+    onSave: async () => {
+      if (memoState.existsInDb && Object.keys(memoState.content).length > 0) {
+        await handleSaveMemo();
+      }
+    },
+    delay: 5000, // Auto-save every 5 seconds
+    enabled: isEditing && memoState.existsInDb
+  });
+
   useEffect(() => {
     if (isOpen && deal.id) {
       loadMemo();
+      loadVersions();
     }
-  }, [isOpen, deal.id, loadMemo]);
+  }, [isOpen, deal.id, loadMemo, loadVersions]);
 
   const handleGenerateMemo = async () => {
     const loadingToast = showLoadingToast(
@@ -125,6 +140,13 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
       });
 
       if (error) throw error;
+
+      // Save version after successful save
+      try {
+        await saveVersion(memoState.content, 'Manual save');
+      } catch (versionError) {
+        console.warn('Failed to save version:', versionError);
+      }
 
       showMemoGenerationToast(deal.company_name, () => {});
     } catch (error) {
@@ -219,6 +241,16 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                     Outdated
                   </Badge>
                 )}
+                {isAutoSaveEnabled && isEditing && (
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    Auto-save enabled
+                  </Badge>
+                )}
+                {versionState.versions.length > 0 && (
+                  <Badge variant="outline">
+                    v{versionState.currentVersion}
+                  </Badge>
+                )}
               </div>
             </div>
             
@@ -248,7 +280,15 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleGenerateMemo}
+                onClick={() => {
+                  if (memoState.existsInDb && Object.keys(memoState.content).length > 0) {
+                    if (confirm('Regenerating will overwrite your current memo content. Are you sure you want to continue?')) {
+                      handleGenerateMemo();
+                    }
+                  } else {
+                    handleGenerateMemo();
+                  }
+                }}
                 disabled={memoState.isGenerating || isSaving}
               >
                 {memoState.isGenerating ? (
