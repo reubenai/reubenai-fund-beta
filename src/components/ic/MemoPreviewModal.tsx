@@ -149,14 +149,35 @@ export const MemoPreviewModal: React.FC<MemoPreviewModalProps> = ({
 
       if (error) {
         console.error('AI memo generation error:', error);
+        
+        if (error.message?.includes('rate limit')) {
+          toast({
+            title: "Generation Temporarily Unavailable",
+            description: "High demand detected. Please try again in a few moments.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Generation Failed",
+            description: "Unable to generate memo. Please try again or contact support.",
+            variant: "destructive",
+          });
+        }
         throw error;
       }
 
-      if (data?.success && data?.memo?.memo_content?.sections) {
-        setMemoContent(data.memo.memo_content.sections);
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to generate memo');
+      }
+
+      // Handle memo content structure flexibly
+      const memoSections = data?.memo?.memo_content?.sections || data?.memo?.memo_content || {};
+      
+      if (Object.keys(memoSections).length > 0) {
+        setMemoContent(memoSections);
         toast({
           title: "AI Memo Generated",
-          description: `Institutional-grade memo generated for ${deal.company_name}`,
+          description: `Professional memo generated for ${deal.company_name}`,
         });
       } else {
         console.error('Memo generation failed:', data);
