@@ -14,6 +14,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Layout } from "@/components/Layout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import SetupPassword from "./pages/SetupPassword";
 import Funds from "./pages/Funds";
 import Pipeline from "./pages/Pipeline";
 import Strategy from "./pages/Strategy";
@@ -40,6 +41,7 @@ const App = () => (
             <SidebarProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/setup-password" element={<SetupPassword />} />
             <Route path="/" element={
               <AuthGuard>
                 <Layout>

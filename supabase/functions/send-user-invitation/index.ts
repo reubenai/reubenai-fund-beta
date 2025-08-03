@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -121,29 +122,100 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Sending invitation to:', email, 'for organization:', organization.name);
 
-    // Send invitation using admin client
-    const redirectUrl = `${req.headers.get('origin') || 'https://localhost:3000'}/auth`;
-    
-    const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      redirectTo: redirectUrl,
-      data: {
-        invited_role: role,
-        invited_organization_id: organizationId,
-        custom_message: customMessage,
-        invited_by: user.email,
-        organization_name: organization.name
-      }
-    });
+    // Generate invitation token
+    const { data: tokenData, error: tokenError } = await supabaseAdmin
+      .rpc('generate_invitation_token');
 
-    if (error) {
-      console.error('Invitation error:', error);
+    if (tokenError || !tokenData) {
+      console.error('Token generation error:', tokenError);
       return new Response(
-        JSON.stringify({ error: `Failed to send invitation: ${error.message}` }),
+        JSON.stringify({ error: 'Failed to generate invitation token' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const invitationToken = tokenData;
+
+    // Store invitation in database
+    const { data: invitationData, error: invitationError } = await supabaseAdmin
+      .from('user_invitations')
+      .insert({
+        email,
+        role,
+        organization_id: organizationId,
+        invited_by: user.id,
+        custom_message: customMessage,
+        invitation_token: invitationToken,
+      })
+      .select('id')
+      .single();
+
+    if (invitationError) {
+      console.error('Invitation storage error:', invitationError);
+      return new Response(
+        JSON.stringify({ error: `Failed to store invitation: ${invitationError.message}` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Invitation sent successfully:', data);
+    // Send custom invitation email
+    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+    const origin = req.headers.get('origin') || 'https://localhost:3000';
+    const setupUrl = `${origin}/setup-password?token=${invitationToken}`;
+
+    try {
+      const emailData = await resend.emails.send({
+        from: "ReubenAI <noreply@goreuben.com>",
+        to: [email],
+        subject: `You're invited to join ${organization.name} on ReubenAI`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <div style="width: 60px; height: 60px; margin: 0 auto 20px; background: #2563eb; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <span style="color: white; font-size: 24px; font-weight: bold;">R</span>
+              </div>
+              <h1 style="color: #1f2937; margin: 0;">Welcome to ReubenAI</h1>
+            </div>
+            
+            <div style="background: #f8fafc; border-radius: 8px; padding: 24px; margin: 20px 0;">
+              <h2 style="color: #1f2937; margin: 0 0 16px;">You've been invited!</h2>
+              <p style="color: #4b5563; margin: 0 0 16px;">
+                <strong>${user.email}</strong> has invited you to join <strong>${organization.name}</strong> on ReubenAI as a <strong>${role}</strong>.
+              </p>
+              ${customMessage ? `
+                <div style="background: white; border-left: 4px solid #2563eb; padding: 16px; margin: 16px 0; border-radius: 4px;">
+                  <p style="color: #4b5563; margin: 0; font-style: italic;">"${customMessage}"</p>
+                </div>
+              ` : ''}
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${setupUrl}" 
+                 style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; display: inline-block;">
+                Set Up Your Account
+              </a>
+            </div>
+
+            <div style="background: #fef3c7; border-radius: 6px; padding: 16px; margin: 20px 0;">
+              <p style="color: #92400e; margin: 0; font-size: 14px;">
+                <strong>Important:</strong> This invitation will expire in 7 days. You'll need to set up your password before you can access the platform.
+              </p>
+            </div>
+
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px;">
+              <p style="color: #6b7280; font-size: 12px; margin: 0;">
+                This invitation was sent by ReubenAI. If you didn't expect this invitation, you can safely ignore this email.
+              </p>
+            </div>
+          </div>
+        `,
+      });
+
+      console.log('Invitation email sent successfully:', emailData);
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+      // Don't fail the invitation if email fails - log it but continue
+    }
 
     // Log the activity
     try {
@@ -171,7 +243,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ 
         success: true, 
         message: `Invitation sent successfully to ${email}`,
-        data 
+        invitationId: invitationData.id
       }),
       {
         status: 200,
