@@ -12,6 +12,8 @@ interface AuthContextType {
   signUp: (email: string, password: string, options?: any) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
+  updatePassword: (password: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -160,6 +162,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const redirectUrl = `${window.location.origin}/auth`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        email.trim().toLowerCase(),
+        {
+          redirectTo: redirectUrl
+        }
+      );
+      
+      if (error) {
+        setError(error.message);
+      }
+      
+      return { error };
+    } catch (err) {
+      const errorMsg = 'Failed to send reset email. Please try again.';
+      setError(errorMsg);
+      return { error: { message: errorMsg } };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updatePassword = async (password: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password
+      });
+      
+      if (error) {
+        setError(error.message);
+      }
+      
+      return { error };
+    } catch (err) {
+      const errorMsg = 'Failed to update password. Please try again.';
+      setError(errorMsg);
+      return { error: { message: errorMsg } };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     user,
     session,
@@ -169,6 +222,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signOut,
     refreshSession,
+    resetPassword,
+    updatePassword,
   };
 
   return (

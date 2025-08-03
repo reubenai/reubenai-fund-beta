@@ -20,19 +20,34 @@ const authSchema = z.object({
 export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn, user, loading: authLoading, error: authError } = useAuth();
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [mode, setMode] = useState<'signin' | 'reset' | 'update'>('signin');
+  const [resetSent, setResetSent] = useState(false);
+  const { signIn, resetPassword, updatePassword, user, loading: authLoading, error: authError, session } = useAuth();
   const navigate = useNavigate();
   
   const { validate, getFieldError, errors } = useValidation({
     schema: authSchema
   });
 
-  // Redirect if already logged in
+  // Check for password reset or update mode
   useEffect(() => {
-    if (user) {
+    const params = new URLSearchParams(window.location.search);
+    const type = params.get('type');
+    
+    if (type === 'recovery' && session?.user) {
+      // User is returning from password reset email
+      setMode('update');
+    }
+  }, [session]);
+
+  // Redirect if already logged in (except during password update)
+  useEffect(() => {
+    if (user && mode !== 'update') {
       navigate('/');
     }
-  }, [user, navigate]);
+  }, [user, navigate, mode]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +70,73 @@ export default function Auth() {
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
+      });
+      navigate('/');
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email.trim()) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await resetPassword(email);
+    
+    if (error) {
+      toast({
+        title: "Reset failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      setResetSent(true);
+      toast({
+        title: "Reset email sent",
+        description: "If an account with that email exists, we've sent you a password reset link.",
+      });
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newPassword || newPassword.length < 6) {
+      toast({
+        title: "Invalid password",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure both passwords are the same.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await updatePassword(newPassword);
+    
+    if (error) {
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Password updated",
+        description: "Your password has been successfully updated.",
       });
       navigate('/');
     }
@@ -93,7 +175,16 @@ export default function Auth() {
             <span className="text-2xl font-bold text-primary-foreground">R</span>
           </div>
           <CardTitle className="text-2xl font-bold">ReubenAI</CardTitle>
-          <CardDescription>Investment Intelligence Platform</CardDescription>
+          <CardDescription>
+            {mode === 'update' 
+              ? 'Set Your New Password'
+              : mode === 'reset' 
+                ? resetSent 
+                  ? 'Check Your Email'
+                  : 'Reset Your Password'
+                : 'Investment Intelligence Platform'
+            }
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {authError && (
@@ -102,50 +193,157 @@ export default function Auth() {
             </Alert>
           )}
           
-          <form onSubmit={handleSignIn} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className={`bg-background border-border/60 ${getFieldError('email') ? 'border-destructive' : ''}`}
-                disabled={authLoading}
-              />
-              {getFieldError('email') && (
-                <p className="text-sm text-destructive">{getFieldError('email')}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className={`bg-background border-border/60 ${getFieldError('password') ? 'border-destructive' : ''}`}
-                disabled={authLoading}
-              />
-              {getFieldError('password') && (
-                <p className="text-sm text-destructive">{getFieldError('password')}</p>
-              )}
-            </div>
-            <Button type="submit" className="w-full" disabled={authLoading || !email || !password}>
-              {authLoading ? (
-                <div className="flex items-center gap-2">
-                  <LoadingSpinner size="sm" />
-                  Signing in...
+          {mode === 'update' ? (
+            <form onSubmit={handleUpdatePassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">New Password</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  placeholder="Enter your new password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  className="bg-background border-border/60"
+                  disabled={authLoading}
+                  minLength={6}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Confirm your new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="bg-background border-border/60"
+                  disabled={authLoading}
+                  minLength={6}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={authLoading || !newPassword || !confirmPassword}>
+                {authLoading ? (
+                  <div className="flex items-center gap-2">
+                    <LoadingSpinner size="sm" />
+                    Updating...
+                  </div>
+                ) : (
+                  "Update Password"
+                )}
+              </Button>
+            </form>
+          ) : mode === 'reset' ? (
+            resetSent ? (
+              <div className="text-center space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  <p>We've sent a password reset link to your email address.</p>
+                  <p className="mt-2">Please check your inbox and follow the instructions.</p>
                 </div>
-              ) : (
-                "Sign In"
-              )}
-            </Button>
-          </form>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setMode('signin');
+                    setResetSent(false);
+                  }}
+                  className="w-full"
+                >
+                  Back to Sign In
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="resetEmail">Email</Label>
+                  <Input
+                    id="resetEmail"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="bg-background border-border/60"
+                    disabled={authLoading}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={authLoading || !email}>
+                  {authLoading ? (
+                    <div className="flex items-center gap-2">
+                      <LoadingSpinner size="sm" />
+                      Sending...
+                    </div>
+                  ) : (
+                    "Send Reset Email"
+                  )}
+                </Button>
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  onClick={() => setMode('signin')}
+                  className="w-full"
+                >
+                  Back to Sign In
+                </Button>
+              </form>
+            )
+          ) : (
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className={`bg-background border-border/60 ${getFieldError('email') ? 'border-destructive' : ''}`}
+                  disabled={authLoading}
+                />
+                {getFieldError('email') && (
+                  <p className="text-sm text-destructive">{getFieldError('email')}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className={`bg-background border-border/60 ${getFieldError('password') ? 'border-destructive' : ''}`}
+                  disabled={authLoading}
+                />
+                {getFieldError('password') && (
+                  <p className="text-sm text-destructive">{getFieldError('password')}</p>
+                )}
+              </div>
+              <Button type="submit" className="w-full" disabled={authLoading || !email || !password}>
+                {authLoading ? (
+                  <div className="flex items-center gap-2">
+                    <LoadingSpinner size="sm" />
+                    Signing in...
+                  </div>
+                ) : (
+                  "Sign In"
+                )}
+              </Button>
+              
+              {/* Forgot Password Link */}
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setMode('reset')}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Forgot your password?
+                </button>
+              </div>
+            </form>
+          )}
           
           <div className="mt-6 pt-4 border-t border-border/50 text-center">
             <p className="text-sm text-muted-foreground">
