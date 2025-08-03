@@ -175,10 +175,8 @@ export function EnhancedStrategyWizard({
 
   // Enhanced criteria are initialized based on fund type - no manual fund type changes allowed
   useEffect(() => {
-    console.log('=== Initializing Enhanced Criteria ===');
+    // Initializing Enhanced Criteria
     const template = getTemplateByFundType(fundType);
-    console.log('Template loaded:', template);
-    console.log('Template categories:', template.categories);
     
     // Ensure all categories and subcategories are properly enabled WITH DEFAULT WEIGHTS
     const enabledCriteria = template.categories.map(category => ({
@@ -194,17 +192,15 @@ export function EnhancedStrategyWizard({
     
     // Verify that total weight sums to 100%
     const totalWeight = enabledCriteria.reduce((sum, cat) => sum + (cat.enabled ? cat.weight : 0), 0);
-    console.log('Total category weight after initialization:', totalWeight);
+    // Verify that total weight sums to 100%
     
     if (Math.abs(totalWeight - 100) > 0.1) {
-      console.log('Weight distribution not 100%, adjusting to equal distribution...');
       // Adjust weights to equal distribution (25% each for 4 categories)
       const equalWeight = 100 / enabledCriteria.length;
       const adjustedCriteria = enabledCriteria.map(cat => ({
         ...cat,
         weight: equalWeight
       }));
-      console.log('Adjusted criteria with equal weights:', adjustedCriteria);
       setEnhancedCriteria(adjustedCriteria);
       
       // Save to wizard data
@@ -213,7 +209,7 @@ export function EnhancedStrategyWizard({
         enhancedCriteria: adjustedCriteria
       }));
     } else {
-      console.log('Enabled criteria set with correct weights:', enabledCriteria);
+      // Enabled criteria set with correct weights
       setEnhancedCriteria(enabledCriteria);
       
       // Save enhanced criteria to wizard data for step persistence
@@ -227,8 +223,7 @@ export function EnhancedStrategyWizard({
   // Restore enhanced criteria when navigating back to criteria step
   useEffect(() => {
     if (currentStep === 3 && wizardData.enhancedCriteria) {
-      console.log('=== Restoring Enhanced Criteria for Step 4 ===');
-      console.log('Restoring criteria from wizard data:', wizardData.enhancedCriteria);
+      // Restoring Enhanced Criteria for Step 4
       setEnhancedCriteria(wizardData.enhancedCriteria);
     }
   }, [currentStep, wizardData.enhancedCriteria]);
@@ -295,13 +290,9 @@ export function EnhancedStrategyWizard({
   const validateEnhancedCriteria = (): boolean => {
     const totalWeight = enhancedCriteria.reduce((sum, cat) => sum + (cat.enabled ? cat.weight : 0), 0);
     
-    console.log('=== Enhanced Criteria Validation ===');
-    console.log('Enhanced criteria:', enhancedCriteria);
-    console.log('Total weight calculation:', totalWeight);
-    console.log('Enabled categories:', enhancedCriteria.filter(cat => cat.enabled));
+    // Enhanced Criteria Validation
     
     if (Math.abs(totalWeight - 100) > 0.1) {
-      console.log(`Total weight invalid: ${totalWeight}% (should be 100%)`);
       return false;
     }
     
@@ -311,16 +302,12 @@ export function EnhancedStrategyWizard({
         const enabledSubcategories = category.subcategories.filter(sub => sub.enabled);
         if (enabledSubcategories.length > 0) {
           const subWeight = enabledSubcategories.reduce((sum, sub) => sum + sub.weight, 0);
-          console.log(`Category "${category.name}" subcategory weight: ${subWeight}%`);
           if (Math.abs(subWeight - 100) > 0.1) {
-            console.log(`Category "${category.name}" subcategory weights invalid: ${subWeight}%`);
             return false;
           }
         }
       }
     }
-    
-    console.log('Enhanced criteria validation passed');
     return true;
   };
 
@@ -356,7 +343,7 @@ export function EnhancedStrategyWizard({
       if (currentStep === 3) {
         const totalWeight = enhancedCriteria.reduce((sum, cat) => sum + (cat.enabled ? cat.weight : 0), 0);
         errorMessage = `Category weights must sum to 100% (currently ${totalWeight.toFixed(1)}%)`;
-        console.log('Criteria validation failed:', errorMessage);
+        // Criteria validation failed
       }
       
       toast.error(errorMessage);
@@ -365,8 +352,7 @@ export function EnhancedStrategyWizard({
 
     // Save enhanced criteria to wizard data when leaving criteria step
     if (currentStep === 3) {
-      console.log('=== Saving Enhanced Criteria ===');
-      console.log('Saving criteria to wizard data:', enhancedCriteria);
+      // Saving Enhanced Criteria
       setWizardData(prev => ({
         ...prev,
         enhancedCriteria: enhancedCriteria

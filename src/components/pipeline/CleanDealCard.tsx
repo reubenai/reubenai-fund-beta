@@ -1,6 +1,7 @@
 import React from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { Badge } from '@/components/ui/badge';
+import { RAGBadge } from '@/components/ui/rag-badge';
 import { 
   MapPin, 
   DollarSign,
@@ -98,11 +99,14 @@ export const CleanDealCard: React.FC<CleanDealCardProps> = ({
             </div>
             {deal.overall_score && (
               (() => {
-                const rag = getRAGCategory(deal.overall_score);
+                const ragCategory = getRAGCategory(deal.overall_score);
                 return (
-                  <Badge variant="outline" className={`text-xs ${rag.color}`}>
-                    {deal.overall_score}/100 · {rag.label}
-                  </Badge>
+                  <RAGBadge 
+                    level={ragCategory.level as any}
+                    score={deal.overall_score}
+                    label={ragCategory.label}
+                    size="sm"
+                  />
                 );
               })()
             )}

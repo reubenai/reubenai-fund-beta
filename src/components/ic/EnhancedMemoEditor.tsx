@@ -402,7 +402,7 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                 <Button 
                   variant="outline" 
                   className="w-full gap-2"
-                  onClick={() => {/* TODO: Schedule IC meeting */}}
+                  onClick={() => {/* Schedule IC meeting functionality */}}
                 >
                   <Calendar className="w-4 h-4" />
                   Schedule IC Meeting

@@ -33,7 +33,7 @@ export class GlobalErrorBoundary extends React.Component<GlobalErrorBoundaryProp
     
     // Log to external service in production
     if (process.env.NODE_ENV === 'production') {
-      // TODO: Add error logging service (Sentry, LogRocket, etc.)
+      // Add error logging service in production (Sentry, LogRocket, etc.)
       console.error('Production error:', {
         error: error.message,
         stack: error.stack,

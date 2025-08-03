@@ -308,7 +308,7 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
         throw new Error('Failed to upload pitch deck');
       }
       
-      console.log(`Successfully uploaded pitch deck for ${companyName}: ${newFileName}`);
+      // Successfully uploaded pitch deck
     } catch (error) {
       console.error(`Failed to upload pitch deck for ${companyName}:`, error);
       throw error;

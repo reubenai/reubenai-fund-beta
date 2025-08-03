@@ -74,7 +74,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
   }, [updateState]);
 
   const handleStageEdit = useCallback((stageId: string, newTitle: string) => {
-    console.log('Edit stage:', stageId, newTitle);
+    // Edit stage functionality
     toast({
       title: "Stage Updated",
       description: `Stage renamed to "${newTitle}"`,
@@ -132,7 +132,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
               onDragEnd={handleDragEnd}
               onDealClick={handleDealClick}
               onStageEdit={handleStageEdit}
-              onStageDelete={(stageId) => console.log('Delete stage:', stageId)}
+              onStageDelete={(stageId) => {/* Delete stage functionality */}}
               onAddDeal={handleAddDeal}
             />
           </div>

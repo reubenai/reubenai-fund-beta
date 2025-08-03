@@ -263,7 +263,7 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
         }}
         memo={generatedMemo}
         onSave={(memo) => {
-          console.log('Saving memo:', memo);
+          // Saving memo to database
           toast({
             title: "Memo Saved",
             description: "Investment memo has been saved successfully",

@@ -18,15 +18,14 @@ export function useUnifiedStrategy(fundId?: string) {
   const loadStrategy = async () => {
     if (!fundId) return;
     
-    console.log('=== LOADING STRATEGY ===');
-    console.log('Fund ID:', fundId);
+    // Loading strategy
     
     setLoading(true);
     setError(null);
     
     try {
       const data = await unifiedStrategyService.getFundStrategy(fundId);
-      console.log('Strategy data:', data);
+      // Strategy data loaded successfully
       setStrategy(data);
     } catch (err) {
       console.error('Strategy loading error:', err);
@@ -45,10 +44,7 @@ export function useUnifiedStrategy(fundId?: string) {
   const createStrategy = async (fundType: 'vc' | 'pe', wizardData: EnhancedWizardData) => {
     if (!fundId) return null;
     
-    console.log('=== CREATING STRATEGY ===');
-    console.log('Fund ID:', fundId);
-    console.log('Fund Type:', fundType);
-    console.log('Wizard Data:', wizardData);
+    // Creating strategy
     
     setLoading(true);
     setError(null);
@@ -57,7 +53,7 @@ export function useUnifiedStrategy(fundId?: string) {
       // Validate wizard data
       const validation = unifiedStrategyService.validateStrategy(wizardData);
       if (!validation.isValid) {
-        console.log('Validation failed:', validation.errors);
+        // Validation failed
         setError(validation.errors.join(', '));
         toast({
           title: 'Validation Error',
@@ -68,7 +64,7 @@ export function useUnifiedStrategy(fundId?: string) {
       }
 
       const newStrategy = await unifiedStrategyService.createFundStrategy(fundId, fundType, wizardData);
-      console.log('Created strategy:', newStrategy);
+      // Strategy created successfully
       
       if (newStrategy) {
         setStrategy(newStrategy);

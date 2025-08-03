@@ -25,9 +25,7 @@ interface StrategyConfigurationManagerProps {
 }
 
 export function StrategyConfigurationManager({ fundId, fundName, fundType }: StrategyConfigurationManagerProps) {
-  console.log('=== STRATEGY CONFIGURATION MANAGER ===');
-  console.log('Fund ID:', fundId);
-  console.log('Fund Name:', fundName);
+  // Strategy Configuration Manager initialization
   
   const { strategy, loading, error, refreshStrategy } = useUnifiedStrategy(fundId);
   const [showWizard, setShowWizard] = useState(false);

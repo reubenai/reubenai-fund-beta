@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { RAGBadge } from '@/components/ui/rag-badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreVertical, ExternalLink, Star, CheckCircle, Brain, Clock, Bot } from 'lucide-react';
 import { Deal } from '@/hooks/usePipelineDeals';
@@ -69,9 +70,17 @@ export const DealCardHeader: React.FC<DealCardHeaderProps> = ({
           
           {/* RAG Score Badge - Show score/100 with label */}
           {deal.overall_score && (
-            <Badge variant="outline" className={`text-xs ${getRAGCategory(deal.overall_score).color}`}>
-              {deal.overall_score}/100 · {getRAGCategory(deal.overall_score).label}
-            </Badge>
+            (() => {
+              const ragCategory = getRAGCategory(deal.overall_score);
+              return (
+                <RAGBadge 
+                  level={ragCategory.level as any}
+                  score={deal.overall_score}
+                  label={ragCategory.label}
+                  size="sm"
+                />
+              );
+            })()
           )}
         </div>
         

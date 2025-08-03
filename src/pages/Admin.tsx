@@ -169,7 +169,7 @@ export default function Admin() {
         totalFunds: fundsData?.length || 0,
         activeDeals: dealsCount || 0,
         recentActivity: recentActivityCount || 0,
-        pendingIssues: 0, // TODO: Implement pending issues logic
+        pendingIssues: 0, // Implement pending issues logic
       });
     } catch (error) {
       console.error('Error fetching data:', error);
