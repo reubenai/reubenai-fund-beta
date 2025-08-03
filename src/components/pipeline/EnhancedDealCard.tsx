@@ -25,6 +25,7 @@ import { DealCardHeader } from './DealCardHeader';
 import { DealCardMetrics } from './DealCardMetrics';
 import { DealCardFooter } from './DealCardFooter';
 import { WebPresenceSection } from './WebPresenceSection';
+import { AnalysisQueueStatus } from './AnalysisQueueStatus';
 
 interface EnhancedDealCardProps {
   deal: Deal;
@@ -138,11 +139,21 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
             />
 
 
+            {/* Analysis Queue Status (only in detailed view) */}
+            {viewDensity === 'detailed' && (
+              <div className="mt-3">
+                <AnalysisQueueStatus
+                  dealId={deal.id}
+                  autoAnalysisEnabled={deal.auto_analysis_enabled}
+                />
+              </div>
+            )}
+
             {/* Footer */}
-              <WebPresenceSection 
-                deal={deal}
-                viewDensity={viewDensity}
-              />
+            <WebPresenceSection 
+              deal={deal}
+              viewDensity={viewDensity}
+            />
               
               <DealCardFooter 
                 deal={deal}

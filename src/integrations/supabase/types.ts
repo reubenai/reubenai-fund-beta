@@ -225,6 +225,68 @@ export type Database = {
           },
         ]
       }
+      analysis_queue: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          deal_id: string
+          error_message: string | null
+          fund_id: string
+          id: string
+          max_attempts: number
+          metadata: Json | null
+          priority: string
+          scheduled_for: string
+          started_at: string | null
+          status: string
+          trigger_reason: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          deal_id: string
+          error_message?: string | null
+          fund_id: string
+          id?: string
+          max_attempts?: number
+          metadata?: Json | null
+          priority?: string
+          scheduled_for?: string
+          started_at?: string | null
+          status?: string
+          trigger_reason: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          deal_id?: string
+          error_message?: string | null
+          fund_id?: string
+          id?: string
+          max_attempts?: number
+          metadata?: Json | null
+          priority?: string
+          scheduled_for?: string
+          started_at?: string | null
+          status?: string
+          trigger_reason?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_queue_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_analyses: {
         Row: {
           analysis_version: number | null
@@ -433,6 +495,7 @@ export type Database = {
           fund_id: string | null
           id: string
           is_public: boolean | null
+          last_analysis_impact: string | null
           metadata: Json | null
           name: string
           organization_id: string | null
@@ -440,6 +503,7 @@ export type Database = {
           parsing_status: string | null
           storage_path: string | null
           tags: string[] | null
+          triggers_reanalysis: boolean | null
           uploaded_by: string
           version: number | null
         }
@@ -462,6 +526,7 @@ export type Database = {
           fund_id?: string | null
           id?: string
           is_public?: boolean | null
+          last_analysis_impact?: string | null
           metadata?: Json | null
           name: string
           organization_id?: string | null
@@ -469,6 +534,7 @@ export type Database = {
           parsing_status?: string | null
           storage_path?: string | null
           tags?: string[] | null
+          triggers_reanalysis?: boolean | null
           uploaded_by: string
           version?: number | null
         }
@@ -491,6 +557,7 @@ export type Database = {
           fund_id?: string | null
           id?: string
           is_public?: boolean | null
+          last_analysis_impact?: string | null
           metadata?: Json | null
           name?: string
           organization_id?: string | null
@@ -498,6 +565,7 @@ export type Database = {
           parsing_status?: string | null
           storage_path?: string | null
           tags?: string[] | null
+          triggers_reanalysis?: boolean | null
           uploaded_by?: string
           version?: number | null
         }
@@ -548,6 +616,8 @@ export type Database = {
       }
       deals: {
         Row: {
+          analysis_queue_status: string | null
+          auto_analysis_enabled: boolean | null
           business_model: string | null
           company_name: string
           company_validation_status: string | null
@@ -562,6 +632,7 @@ export type Database = {
           fund_id: string
           id: string
           industry: string | null
+          last_analysis_trigger: string | null
           linkedin_url: string | null
           location: string | null
           next_action: string | null
@@ -581,6 +652,8 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          analysis_queue_status?: string | null
+          auto_analysis_enabled?: boolean | null
           business_model?: string | null
           company_name: string
           company_validation_status?: string | null
@@ -595,6 +668,7 @@ export type Database = {
           fund_id: string
           id?: string
           industry?: string | null
+          last_analysis_trigger?: string | null
           linkedin_url?: string | null
           location?: string | null
           next_action?: string | null
@@ -614,6 +688,8 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          analysis_queue_status?: string | null
+          auto_analysis_enabled?: boolean | null
           business_model?: string | null
           company_name?: string
           company_validation_status?: string | null
@@ -628,6 +704,7 @@ export type Database = {
           fund_id?: string
           id?: string
           industry?: string | null
+          last_analysis_trigger?: string | null
           linkedin_url?: string | null
           location?: string | null
           next_action?: string | null
@@ -1994,6 +2071,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      complete_analysis_queue_item: {
+        Args: {
+          queue_id_param: string
+          success?: boolean
+          error_message_param?: string
+        }
+        Returns: boolean
+      }
       create_default_investment_strategy: {
         Args: {
           fund_id_param: string
@@ -2024,6 +2109,19 @@ export type Database = {
       is_reuben_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      process_analysis_queue: {
+        Args: { batch_size?: number; max_concurrent?: number }
+        Returns: Json
+      }
+      queue_deal_analysis: {
+        Args: {
+          deal_id_param: string
+          trigger_reason_param?: string
+          priority_param?: string
+          delay_minutes?: number
+        }
+        Returns: string
       }
       set_user_role: {
         Args: {
