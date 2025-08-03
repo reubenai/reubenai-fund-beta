@@ -62,30 +62,32 @@ export default function Auth() {
 
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
-      {/* Beta Testing Notice - Moved down and enlarged */}
-      <div className="fixed top-8 left-4 right-4 z-50">
-        <div className="mx-auto max-w-5xl bg-gradient-to-r from-accent-orange/10 to-primary/10 border border-accent-orange/20 rounded-lg p-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
+    <div className="min-h-screen w-full flex flex-col bg-background">
+      {/* Beta Testing Notice - Mobile optimized */}
+      <div className="w-full p-3 sm:p-4 lg:p-8 bg-gradient-to-r from-accent-orange/5 to-primary/5 border-b border-accent-orange/10">
+        <div className="mx-auto max-w-4xl">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <div className="flex-shrink-0">
-                <Badge variant="secondary" className="bg-accent-orange/10 text-accent-orange border-accent-orange/20 font-semibold text-sm px-3 py-1">
+                <Badge variant="secondary" className="bg-accent-orange/10 text-accent-orange border-accent-orange/20 font-semibold text-xs sm:text-sm px-2 py-1 sm:px-3">
                   Private Beta
                 </Badge>
               </div>
-              <p className="text-base font-medium text-foreground">
-                <strong className="text-accent-orange">Beta Testing Notice:</strong> ReubenAI is currently in private beta. This platform is designed for functionality testing and feedback collection.
+              <p className="text-sm sm:text-base font-medium text-foreground">
+                <strong className="text-accent-orange">Beta Testing Notice:</strong> ReubenAI is currently in private beta for functionality testing and feedback.
               </p>
             </div>
-            <div className="bg-background/50 rounded-md p-4 text-sm text-muted-foreground leading-relaxed">
-              <p><strong>Please Note:</strong> Beta software will be imperfect by design. Our goal is to test core functionality, capture your feedback on improvements, wishlist items, and bugs to inform our near-term roadmap and shape a disruptive product together.</p>
-              <p className="mt-3"><strong>Confidentiality:</strong> By using this platform, you agree to maintain strict confidentiality of all proprietary AI capabilities, fund data, and platform features under applicable trade secret laws.</p>
+            <div className="bg-background/50 rounded-md p-3 sm:p-4 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              <p><strong>Please Note:</strong> Beta software will be imperfect by design. Our goal is to test core functionality and capture feedback to shape our product roadmap.</p>
+              <p className="mt-2 sm:mt-3"><strong>Confidentiality:</strong> By using this platform, you agree to maintain strict confidentiality of all proprietary AI capabilities and platform features.</p>
             </div>
           </div>
         </div>
       </div>
       
-      <Card className="w-full max-w-md shadow-elegant mt-72">{/* Further increased top margin for better spacing from beta notice */}
+      {/* Login Form - Mobile centered */}
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
+        <Card className="w-full max-w-sm sm:max-w-md shadow-elegant">{/* Responsive width and smaller on mobile */}
         <CardHeader className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 bg-primary rounded-xl flex items-center justify-center">
             <span className="text-2xl font-bold text-primary-foreground">R</span>
@@ -157,7 +159,8 @@ export default function Auth() {
             </p>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }
