@@ -8,10 +8,11 @@ import {
   FileText, 
   Calendar, 
   Download,
-  Loader2
+  Loader2,
+  Eye
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { EnhancedMemoEditor } from './EnhancedMemoEditor';
+import { MemoPreviewModal } from './MemoPreviewModal';
 import { supabase } from '@/integrations/supabase/client';
 import { icMemoService } from '@/services/ICMemoService';
 
@@ -42,10 +43,8 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
   dealId,
   fundId
 }) => {
-  const [isGenerating, setIsGenerating] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
-  const [showMemoEditor, setShowMemoEditor] = useState(false);
-  const [generatedMemo, setGeneratedMemo] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -83,56 +82,14 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
     }
   }, [isOpen, fundId, toast]);
 
-  const handleViewEditMemo = async (deal: Deal) => {
-    setIsGenerating(true);
-    try {
-      // First check if memo already exists for this deal
-      const existingMemos = await icMemoService.getMemos(fundId);
-      const existingMemo = existingMemos.find(memo => memo.deal_id === deal.id);
-      
-      if (existingMemo) {
-        // Load existing memo for editing
-        setGeneratedMemo(existingMemo);
-        setShowMemoEditor(true);
-        toast({
-          title: "Memo Loaded",
-          description: "Existing memo loaded for editing",
-        });
-      } else {
-        // Auto-generate new memo for investment committee deals
-        toast({
-          title: "Generating IC Memo",
-          description: "Auto-generating comprehensive memo with RAG and thesis integration...",
-        });
-
-        const result = await icMemoService.generateMemo(deal.id);
-        
-        if (result.success && result.memo) {
-          setGeneratedMemo(result.memo);
-          setShowMemoEditor(true);
-          toast({
-            title: "Memo Auto-Generated",
-            description: "Investment memo created with validated data sources",
-          });
-        } else {
-          throw new Error(result.error || 'Failed to generate memo');
-        }
-      }
-    } catch (error) {
-      console.error('Error handling memo:', error);
-      toast({
-        title: "Memo Error",
-        description: "Failed to load/generate memo. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsGenerating(false);
-    }
+  const handlePreviewMemo = async (deal: Deal) => {
+    setSelectedDeal(deal);
+    setShowPreviewModal(true);
   };
 
   if (loading) {
     return (
-      <Dialog open={isOpen && !showMemoEditor} onOpenChange={onClose}>
+      <Dialog open={isOpen && !showPreviewModal} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -151,7 +108,7 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
 
   return (
     <>
-      <Dialog open={isOpen && !showMemoEditor} onOpenChange={onClose}>
+      <Dialog open={isOpen && !showPreviewModal} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -213,21 +170,11 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
                       </div>
                       
                       <Button
-                        onClick={() => handleViewEditMemo(deal)}
-                        disabled={isGenerating}
+                        onClick={() => handlePreviewMemo(deal)}
                         className="gap-2"
                       >
-                        {isGenerating ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Loading...
-                          </>
-                        ) : (
-                          <>
-                            <FileText className="w-4 h-4" />
-                            View / Edit Memo
-                          </>
-                        )}
+                        <Eye className="w-4 h-4" />
+                        Preview Memo
                       </Button>
                     </div>
                   </CardContent>
@@ -254,21 +201,14 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
         </DialogContent>
       </Dialog>
 
-      <EnhancedMemoEditor
-        isOpen={showMemoEditor}
+      <MemoPreviewModal
+        isOpen={showPreviewModal}
         onClose={() => {
-          setShowMemoEditor(false);
-          setGeneratedMemo(null);
-          onClose();
+          setShowPreviewModal(false);
+          setSelectedDeal(null);
         }}
-        memo={generatedMemo}
-        onSave={(memo) => {
-          // Saving memo to database
-          toast({
-            title: "Memo Saved",
-            description: "Investment memo has been saved successfully",
-          });
-        }}
+        deal={selectedDeal!}
+        fundId={fundId}
       />
     </>
   );

@@ -18,44 +18,66 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { memoId } = await req.json();
-    console.log('Generating PDF for memo:', memoId);
+    const { memoId, dealId, fundId, memoContent, dealData } = await req.json();
+    console.log('Generating PDF for memo:', memoId || `Deal: ${dealId}`);
 
-    // Fetch memo with related data
-    const { data: memo, error: memoError } = await supabase
-      .from('ic_memos')
-      .select(`
-        *,
-        deals (
-          company_name,
-          industry,
-          location,
-          deal_size,
-          valuation,
-          website,
-          description,
-          overall_score,
-          rag_status
-        ),
-        funds (
-          name,
-          fund_type
-        )
-      `)
-      .eq('id', memoId)
-      .single();
+    let memo: any;
+    let deal: any;
+    let fund: any;
 
-    if (memoError || !memo) {
-      throw new Error('Memo not found');
+    if (memoId) {
+      // Fetch memo with related data
+      const { data: memoData, error: memoError } = await supabase
+        .from('ic_memos')
+        .select(`
+          *,
+          deals (
+            company_name,
+            industry,
+            location,
+            deal_size,
+            valuation,
+            website,
+            description,
+            overall_score,
+            rag_status
+          ),
+          funds (
+            name,
+            fund_type
+          )
+        `)
+        .eq('id', memoId)
+        .single();
+
+      if (memoError || !memoData) {
+        throw new Error('Memo not found');
+      }
+
+      memo = memoData;
+      deal = memoData.deals;
+      fund = memoData.funds;
+    } else {
+      // Use provided data
+      memo = { memo_content: memoContent };
+      deal = dealData;
+      
+      const { data: fundData } = await supabase
+        .from('funds')
+        .select('name, fund_type')
+        .eq('id', fundId)
+        .single();
+      
+      fund = fundData;
     }
 
     // Generate professional PDF content
-    const pdfContent = await generateProfessionalPDF(memo);
+    const pdfContent = await generateProfessionalPDF(memo, deal, fund);
 
     return new Response(JSON.stringify({
       success: true,
       pdfUrl: pdfContent.url,
-      fileName: `IC_Memo_${memo.deals?.company_name?.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
+      fileName: `IC_Memo_${deal?.company_name?.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -72,23 +94,25 @@ serve(async (req) => {
   }
 });
 
-async function generateProfessionalPDF(memo: any): Promise<{ url: string }> {
+async function generateProfessionalPDF(memo: any, deal: any, fund: any): Promise<{ url: string }> {
   // Generate HTML content with Reuben branding
-  const htmlContent = generateHTMLContent(memo);
+  const htmlContent = generateHTMLContent(memo, deal, fund);
   
-  // For now, return a mock PDF URL - in production, integrate with PDF generation service
-  // This would typically use Puppeteer, PDFKit, or similar service
-  console.log('Generated HTML content for PDF:', htmlContent.substring(0, 200));
-  
+  // Convert HTML to base64 for download
   return {
     url: `data:text/html;base64,${btoa(htmlContent)}`
   };
 }
 
-function generateHTMLContent(memo: any): string {
-  const sections = memo.memo_content?.sections || {};
-  const company = memo.deals?.company_name || 'Unknown Company';
-  const fund = memo.funds?.name || 'Investment Fund';
+function generateHTMLContent(memo: any, deal: any, fund: any): string {
+  const sections = memo.memo_content || {};
+  const company = deal?.company_name || 'Unknown Company';
+  const fundName = fund?.name || 'Investment Fund';
+  const currentDate = new Date().toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
   
   return `
 <!DOCTYPE html>
