@@ -350,6 +350,69 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_decisions: {
+        Row: {
+          ai_recommendation_at_decision: string | null
+          ai_score_at_decision: number | null
+          confidence_level: number | null
+          contradicts_ai: boolean | null
+          created_at: string
+          deal_id: string
+          decision_maker: string
+          decision_metadata: Json | null
+          decision_rationale: string | null
+          decision_type: string
+          fund_id: string
+          id: string
+          impact_on_strategy: Json | null
+          learning_context: Json | null
+          rejection_category: string | null
+          rejection_reason: string | null
+          sourcing_feedback: Json | null
+          updated_at: string
+        }
+        Insert: {
+          ai_recommendation_at_decision?: string | null
+          ai_score_at_decision?: number | null
+          confidence_level?: number | null
+          contradicts_ai?: boolean | null
+          created_at?: string
+          deal_id: string
+          decision_maker: string
+          decision_metadata?: Json | null
+          decision_rationale?: string | null
+          decision_type: string
+          fund_id: string
+          id?: string
+          impact_on_strategy?: Json | null
+          learning_context?: Json | null
+          rejection_category?: string | null
+          rejection_reason?: string | null
+          sourcing_feedback?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          ai_recommendation_at_decision?: string | null
+          ai_score_at_decision?: number | null
+          confidence_level?: number | null
+          contradicts_ai?: boolean | null
+          created_at?: string
+          deal_id?: string
+          decision_maker?: string
+          decision_metadata?: Json | null
+          decision_rationale?: string | null
+          decision_type?: string
+          fund_id?: string
+          id?: string
+          impact_on_strategy?: Json | null
+          learning_context?: Json | null
+          rejection_category?: string | null
+          rejection_reason?: string | null
+          sourcing_feedback?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       deal_documents: {
         Row: {
           bucket_name: string | null
@@ -659,10 +722,56 @@ export type Database = {
           },
         ]
       }
+      decision_learning_patterns: {
+        Row: {
+          actionable_insights: string | null
+          confidence_score: number | null
+          created_at: string
+          decisions_analyzed: number | null
+          fund_id: string
+          id: string
+          is_active: boolean | null
+          last_updated: string
+          pattern_data: Json
+          pattern_strength: number | null
+          pattern_type: string
+          recommended_adjustments: Json | null
+        }
+        Insert: {
+          actionable_insights?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          decisions_analyzed?: number | null
+          fund_id: string
+          id?: string
+          is_active?: boolean | null
+          last_updated?: string
+          pattern_data?: Json
+          pattern_strength?: number | null
+          pattern_type: string
+          recommended_adjustments?: Json | null
+        }
+        Update: {
+          actionable_insights?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          decisions_analyzed?: number | null
+          fund_id?: string
+          id?: string
+          is_active?: boolean | null
+          last_updated?: string
+          pattern_data?: Json
+          pattern_strength?: number | null
+          pattern_type?: string
+          recommended_adjustments?: Json | null
+        }
+        Relationships: []
+      }
       fund_memory_entries: {
         Row: {
           ai_service_name: string | null
           confidence_score: number | null
+          content: string | null
           contextual_tags: string[] | null
           correlation_score: number | null
           created_at: string | null
@@ -684,6 +793,7 @@ export type Database = {
         Insert: {
           ai_service_name?: string | null
           confidence_score?: number | null
+          content?: string | null
           contextual_tags?: string[] | null
           correlation_score?: number | null
           created_at?: string | null
@@ -705,6 +815,7 @@ export type Database = {
         Update: {
           ai_service_name?: string | null
           confidence_score?: number | null
+          content?: string | null
           contextual_tags?: string[] | null
           correlation_score?: number | null
           created_at?: string | null
@@ -789,6 +900,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ic_calendar_invites: {
+        Row: {
+          attendees: Json | null
+          calendar_provider: string | null
+          conference_method: string | null
+          conference_url: string | null
+          created_at: string
+          end_time: string
+          external_event_id: string | null
+          ics_content: string | null
+          id: string
+          invite_status: string | null
+          location: string | null
+          meeting_description: string | null
+          meeting_title: string
+          organizer_email: string
+          reminder_sent: boolean | null
+          session_id: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          attendees?: Json | null
+          calendar_provider?: string | null
+          conference_method?: string | null
+          conference_url?: string | null
+          created_at?: string
+          end_time: string
+          external_event_id?: string | null
+          ics_content?: string | null
+          id?: string
+          invite_status?: string | null
+          location?: string | null
+          meeting_description?: string | null
+          meeting_title: string
+          organizer_email: string
+          reminder_sent?: boolean | null
+          session_id: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          attendees?: Json | null
+          calendar_provider?: string | null
+          conference_method?: string | null
+          conference_url?: string | null
+          created_at?: string
+          end_time?: string
+          external_event_id?: string | null
+          ics_content?: string | null
+          id?: string
+          invite_status?: string | null
+          location?: string | null
+          meeting_description?: string | null
+          meeting_title?: string
+          organizer_email?: string
+          reminder_sent?: boolean | null
+          session_id?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       ic_committee_members: {
         Row: {
@@ -1796,6 +1970,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      analyze_decision_patterns: {
+        Args: { fund_id_param: string }
+        Returns: Json
+      }
       can_create_funds: {
         Args: Record<PropertyKey, never>
         Returns: boolean
