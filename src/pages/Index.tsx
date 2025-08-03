@@ -7,6 +7,7 @@ import { useFund } from '@/contexts/FundContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { FundCreationWizard } from '@/components/funds/FundCreationWizard';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 
 const Index = () => {
   const { user } = useAuth();
@@ -91,6 +92,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-slate-50/30 ml-6">
+      <Breadcrumbs />
       {/* Top Bar with What is ReubenAI Button */}
       <div className="flex justify-end mb-6">
         <Link to="/what-is-reubenai">

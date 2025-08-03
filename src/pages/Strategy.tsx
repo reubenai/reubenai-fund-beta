@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { InvestmentStrategyManager } from '@/components/strategy/InvestmentStrategyManager';
 import { RAGThresholdManager } from '@/components/strategy/RAGThresholdManager';
 import { useFund } from '@/contexts/FundContext';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 
 export default function Strategy() {
   const { selectedFund, funds, loading } = useFund();
@@ -98,6 +99,7 @@ export default function Strategy() {
   // Main strategy view
   return (
     <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+      <Breadcrumbs />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Investment Strategy</h1>
       </div>

@@ -1,7 +1,6 @@
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { useAppKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
@@ -28,9 +27,7 @@ export function Layout({ children }: LayoutProps) {
             <div className="flex h-full flex-col">
               <AppHeader />
               <main className="flex-1 overflow-auto">
-                <div className="pl-8 pr-8 pt-6 pb-8 max-w-7xl mx-auto">
-                  {children}
-                </div>
+                {children}
               </main>
             </div>
           </SidebarInset>

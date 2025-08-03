@@ -20,6 +20,7 @@ import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 import { testCompleteICWorkflow } from '@/utils/orchestratorTest';
 import { DataValidator, NetworkHandler } from '@/utils/edgeCaseHandler';
 import { performanceMonitor } from '@/utils/performanceMonitor';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 
 interface Deal {
   id: string;
@@ -422,6 +423,7 @@ export default function EnhancedICPage() {
 
   return (
     <div className="flex-1 space-y-8 p-8">
+      <Breadcrumbs />
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div>

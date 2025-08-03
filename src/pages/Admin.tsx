@@ -25,6 +25,7 @@ import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModa
 import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
 import { ProductionReadinessPanel } from '@/components/admin/ProductionReadinessPanel';
 import { AdminInviteUserModal } from '@/components/admin/AdminInviteUserModal';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 
 interface Organization {
   id: string;
@@ -452,6 +453,7 @@ export default function Admin() {
 
   return (
     <div className="space-y-8 p-8">
+      <Breadcrumbs />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">

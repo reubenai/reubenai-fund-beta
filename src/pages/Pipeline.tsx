@@ -2,6 +2,7 @@ import React from 'react';
 import { KanbanBoard } from '@/components/pipeline/KanbanBoard';
 import { useFund } from '@/contexts/FundContext';
 import { useSearchParams } from 'react-router-dom';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 
 export default function Pipeline() {
   const { selectedFund, funds, setSelectedFund } = useFund();
@@ -33,5 +34,10 @@ export default function Pipeline() {
     );
   }
 
-  return <KanbanBoard fundId={selectedFund.id} />;
+  return (
+    <div className="max-w-7xl mx-auto px-6 py-8">
+      <Breadcrumbs />
+      <KanbanBoard fundId={selectedFund.id} />
+    </div>
+  );
 }
