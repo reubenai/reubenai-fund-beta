@@ -149,19 +149,33 @@ serve(async (req) => {
       console.warn('⚠️ Thesis alignment warning:', thesisError);
     }
 
-    // 7. Generate memo content using OpenAI with strict no-fabrication instructions
-    console.log('🔍 Generating memo content with zero-fabrication policy...');
-    const memoContent = await generateMemoContent(
-      dealData, 
-      dealData.funds, 
-      sections, 
-      dealData.deal_analyses?.[0], 
-      orchestratorData,
-      ragData,
-      thesisData,
-      enhancedCriteria,
-      dealData.deal_notes || []
-    );
+    // 7. Generate memo content with improved fallback strategy
+    console.log('🔍 Generating memo content...');
+    let memoContent;
+    
+    try {
+      // First try AI generation
+      memoContent = await generateMemoContent(
+        dealData, 
+        dealData.funds, 
+        sections, 
+        dealData.deal_analyses?.[0], 
+        orchestratorData,
+        ragData,
+        thesisData,
+        enhancedCriteria,
+        dealData.deal_notes || []
+      );
+      
+      // Validate memo content structure
+      if (!validateMemoContent(memoContent)) {
+        throw new Error('Generated memo content is incomplete');
+      }
+    } catch (aiError) {
+      console.log('⚠️ AI generation failed, using fallback:', aiError.message);
+      // Use reliable fallback memo generation
+      memoContent = generateReliableFallbackMemo(dealData, dealData.funds, sections, dealData.deal_analyses?.[0], ragData, thesisData);
+    }
 
     // 8. Determine RAG status from validated data
     const finalRagStatus = ragData?.ragStatus || dealData.rag_status || 'needs_review';
@@ -462,34 +476,109 @@ Tone: Professional, suitable for investment committee.`;
   }
 }
 
-function generateFallbackMemo(dealData: any, analysisData: any, ragData: any): any {
+// Validation function to check memo content structure
+function validateMemoContent(memoContent: any): boolean {
+  if (!memoContent || !memoContent.content) {
+    return false;
+  }
+  
+  // Check if sections object exists and has content
+  const sections = memoContent.content.sections;
+  if (!sections || typeof sections !== 'object') {
+    return false;
+  }
+  
+  // Check if we have at least 3 populated sections
+  const populatedSections = Object.values(sections).filter(section => 
+    section && typeof section === 'string' && section.trim().length > 20
+  );
+  
+  return populatedSections.length >= 3;
+}
+
+// Reliable fallback memo generation
+function generateReliableFallbackMemo(dealData: any, fundData: any, sections: any[], analysisData: any, ragData: any, thesisData: any): any {
+  console.log('🔄 Generating reliable fallback memo with complete sections...');
+  
+  const memoSections: any = {};
+  
+  // Generate content for each section based on available data
+  sections.forEach(section => {
+    switch (section.key) {
+      case 'executive_summary':
+        memoSections[section.key] = `Investment opportunity analysis for ${dealData.company_name}, a ${dealData.industry || 'technology'} company. Deal size: ${dealData.deal_size ? `$${(dealData.deal_size / 1000000).toFixed(1)}M` : 'TBD'}. Valuation: ${dealData.valuation ? `$${(dealData.valuation / 1000000).toFixed(1)}M` : 'TBD'}. Overall score: ${dealData.overall_score || 'Pending'}/100. Status: ${dealData.rag_status || 'Under review'}. This memo provides a comprehensive analysis based on available data and requires further due diligence for final investment decision.`;
+        break;
+      
+      case 'company_overview':
+        memoSections[section.key] = `${dealData.company_name} is a ${dealData.industry || 'technology'} company ${dealData.location ? `based in ${dealData.location}` : 'with undisclosed location'}. ${dealData.description || 'Company description to be provided during due diligence.'} ${dealData.business_model ? `Business model: ${dealData.business_model}.` : 'Business model analysis pending.'} ${dealData.employee_count ? `Current team size: ${dealData.employee_count} employees.` : 'Team size information to be confirmed.'} ${dealData.website ? `Website: ${dealData.website}` : 'Company website information pending.'}`;
+        break;
+      
+      case 'market_analysis':
+        memoSections[section.key] = `Market analysis for the ${dealData.industry || 'technology'} sector. ${analysisData?.market_score ? `Market assessment score: ${analysisData.market_score}/100.` : 'Detailed market assessment pending.'} Geographic market focus ${dealData.location ? `includes ${dealData.location}` : 'to be determined'}. Competitive landscape analysis and market sizing require further research to validate opportunity size and growth potential.`;
+        break;
+      
+      case 'financial_analysis':
+        memoSections[section.key] = `Financial overview: ${dealData.deal_size ? `Requested investment: $${(dealData.deal_size / 1000000).toFixed(1)}M.` : 'Investment amount to be confirmed.'} ${dealData.valuation ? `Company valuation: $${(dealData.valuation / 1000000).toFixed(1)}M.` : 'Valuation pending assessment.'} ${analysisData?.financial_score ? `Financial health score: ${analysisData.financial_score}/100.` : 'Financial metrics under review.'} Detailed financial statements, revenue projections, and unit economics require comprehensive analysis during due diligence phase.`;
+        break;
+      
+      case 'team_assessment':
+        memoSections[section.key] = `Leadership and team evaluation: ${analysisData?.leadership_score ? `Team assessment score: ${analysisData.leadership_score}/100.` : 'Management team evaluation pending.'} ${dealData.founder ? `Founder: ${dealData.founder}.` : 'Founder background to be reviewed.'} Team experience, track record, and cultural fit assessment require detailed management presentations and reference checks.`;
+        break;
+      
+      case 'product_technology':
+        memoSections[section.key] = `Product and technology assessment: ${analysisData?.product_score ? `Product evaluation score: ${analysisData.product_score}/100.` : 'Technology stack and product differentiation under review.'} Product development stage, technical capabilities, intellectual property position, and competitive technological advantages require detailed technical due diligence.`;
+        break;
+      
+      case 'business_model':
+        memoSections[section.key] = `Business model analysis: ${dealData.business_model || 'Revenue model and go-to-market strategy pending detailed review.'} Scalability assessment, customer acquisition costs, lifetime value metrics, and path to profitability require comprehensive business model validation.`;
+        break;
+      
+      case 'traction_metrics':
+        memoSections[section.key] = `Growth and traction analysis: ${analysisData?.traction_score ? `Traction assessment score: ${analysisData.traction_score}/100.` : 'Customer growth metrics and market validation pending review.'} Key performance indicators, customer acquisition trends, revenue growth, and market penetration metrics require detailed analysis and validation.`;
+        break;
+      
+      case 'competitive_landscape':
+        memoSections[section.key] = `Competitive analysis: Market positioning and competitive differentiation assessment pending. Direct and indirect competitors, competitive advantages, market share analysis, and sustainable competitive moats require comprehensive market research and analysis.`;
+        break;
+      
+      case 'thesis_alignment':
+        memoSections[section.key] = `Investment thesis alignment: ${thesisData?.alignment_score ? `Thesis alignment score: ${thesisData.alignment_score}/100.` : 'Strategic fit assessment pending.'} Alignment with ${fundData?.fund_type || 'fund'} investment criteria, sector focus, stage preferences, and strategic objectives requires detailed evaluation against fund thesis.`;
+        break;
+      
+      case 'risk_analysis':
+        memoSections[section.key] = `Risk assessment: ${ragData?.ragStatus ? `Current risk status: ${ragData.ragStatus}.` : 'Comprehensive risk evaluation pending.'} Key identified risks include market timing, competitive threats, execution challenges, regulatory considerations, technology risks, and funding requirements. Risk mitigation strategies and contingency planning require detailed analysis.`;
+        break;
+      
+      case 'deal_terms':
+        memoSections[section.key] = `Deal structure and terms: ${dealData.deal_size ? `Investment amount: $${(dealData.deal_size / 1000000).toFixed(1)}M` : 'Investment size TBD'} ${dealData.valuation ? `at $${(dealData.valuation / 1000000).toFixed(1)}M pre-money valuation` : 'with valuation TBD'}. Deal terms, liquidation preferences, board composition, anti-dilution provisions, and investor rights require detailed legal and financial review.`;
+        break;
+      
+      case 'recommendation':
+      case 'investment_recommendation':
+        memoSections[section.key] = `Investment recommendation: FURTHER DUE DILIGENCE REQUIRED. ${dealData.company_name} presents a potential investment opportunity with ${dealData.overall_score ? `current assessment score of ${dealData.overall_score}/100` : 'assessment pending'}. Recommendation: Proceed to detailed due diligence phase including financial review, management presentations, technical assessment, and market validation before final investment decision.`;
+        break;
+      
+      case 'next_steps':
+        memoSections[section.key] = `Recommended next steps: 1) Schedule management presentation and Q&A session, 2) Conduct comprehensive financial due diligence and review audited statements, 3) Perform technical due diligence and IP assessment, 4) Complete market research and competitive analysis, 5) Review legal documentation and deal terms, 6) Conduct reference checks with customers and partners, 7) Present findings to investment committee for final decision.`;
+        break;
+      
+      default:
+        memoSections[section.key] = `${section.title} analysis for ${dealData.company_name} requires detailed evaluation during the due diligence process. This section will be populated with comprehensive analysis based on validated data and expert assessment.`;
+    }
+  });
+  
   return {
-    executive_summary: `Investment opportunity analysis for ${dealData.company_name}, a ${dealData.industry || 'technology'} company based in ${dealData.location || 'undisclosed location'}. Deal involves ${dealData.deal_size ? `$${(dealData.deal_size / 1000000).toFixed(1)}M` : 'undisclosed amount'} at ${dealData.valuation ? `$${(dealData.valuation / 1000000).toFixed(1)}M` : 'undisclosed'} valuation.`,
-    
-    company_overview: `${dealData.company_name} operates in the ${dealData.industry || 'technology'} sector. ${dealData.description || 'Company description not available.'} ${dealData.business_model ? `Business model: ${dealData.business_model}.` : ''} ${dealData.employee_count ? `Team size: ${dealData.employee_count} employees.` : ''}`,
-    
-    market_analysis: `Market analysis for ${dealData.industry || 'the company\'s'} sector requires further research. ${dealData.location ? `Geographic focus: ${dealData.location}.` : ''} Competitive landscape assessment pending detailed market research.`,
-    
-    financial_analysis: `Financial metrics: ${analysisData?.financial_score ? `Financial score: ${analysisData.financial_score}/100.` : 'Financial analysis pending.'} ${dealData.deal_size ? `Investment amount: $${(dealData.deal_size / 1000000).toFixed(1)}M.` : ''} ${dealData.valuation ? `Valuation: $${(dealData.valuation / 1000000).toFixed(1)}M.` : ''}`,
-    
-    team_assessment: `Leadership team evaluation: ${analysisData?.leadership_score ? `Team score: ${analysisData.leadership_score}/100.` : 'Team assessment pending.'} Further due diligence required on founder background and management capabilities.`,
-    
-    product_technology: `Product and technology assessment: ${analysisData?.product_score ? `Product score: ${analysisData.product_score}/100.` : 'Technology evaluation pending.'} ${dealData.website ? `Company website: ${dealData.website}` : 'Online presence requires review.'}`,
-    
-    business_model: `Business model analysis: ${dealData.business_model || 'Business model details not available.'} Revenue model and scalability assessment required.`,
-    
-    traction_metrics: `Traction and growth metrics: ${analysisData?.traction_score ? `Traction score: ${analysisData.traction_score}/100.` : 'Growth metrics pending analysis.'} Customer acquisition and retention data needed.`,
-    
-    competitive_landscape: `Competitive positioning assessment pending. Market differentiation and competitive advantages require detailed analysis.`,
-    
-    thesis_alignment: `Investment thesis alignment: ${analysisData?.thesis_alignment_score ? `Alignment score: ${analysisData.thesis_alignment_score}/100.` : 'Thesis alignment evaluation pending.'} Strategic fit assessment with fund objectives required.`,
-    
-    risk_analysis: `Risk assessment: ${ragData?.ragStatus ? `Current status: ${ragData.ragStatus}.` : 'Risk evaluation pending.'} Key risks include market timing, competitive pressure, execution risk, and funding requirements.`,
-    
-    deal_terms: `Deal structure: ${dealData.deal_size ? `Investment: $${(dealData.deal_size / 1000000).toFixed(1)}M` : 'Investment amount TBD'} ${dealData.valuation ? ` at $${(dealData.valuation / 1000000).toFixed(1)}M valuation` : ', valuation TBD'}. Terms and conditions require detailed review.`,
-    
-    recommendation: `Investment recommendation: REQUIRES FURTHER ANALYSIS. ${dealData.company_name} presents potential opportunity pending comprehensive due diligence. Recommend detailed financial review, market analysis, and team assessment before investment decision.`,
-    
-    next_steps: `Immediate next steps: 1) Complete financial due diligence, 2) Conduct management presentations, 3) Analyze market opportunity, 4) Review legal documentation, 5) Assess technical capabilities and IP position.`
+    content: {
+      sections: memoSections,
+      generated_at: new Date().toISOString(),
+      fallback_mode: true,
+      data_sources: {
+        deal_analysis: !!analysisData,
+        rag_assessment: !!ragData,
+        thesis_alignment: !!thesisData
+      }
+    },
+    executive_summary: `Investment opportunity in ${dealData.company_name}, a ${dealData.industry || 'technology'} company. Deal size: ${dealData.deal_size ? `$${(dealData.deal_size / 1000000).toFixed(1)}M` : 'TBD'}. Overall assessment score: ${dealData.overall_score || 'Pending'}/100. Status: ${dealData.rag_status || 'Under review'}. Comprehensive due diligence recommended.`,
+    investment_recommendation: `RECOMMENDATION: PROCEED TO DUE DILIGENCE. ${dealData.company_name} warrants further investigation based on initial assessment. Comprehensive evaluation of financials, market opportunity, team capabilities, and strategic fit required before final investment decision.`
   };
 }
