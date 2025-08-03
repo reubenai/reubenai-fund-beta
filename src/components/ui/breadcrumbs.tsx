@@ -22,7 +22,8 @@ export function useBreadcrumbs(): BreadcrumbItem[] {
     '/settings': 'Settings',
     '/help': 'Help & Support',
     '/admin': 'Administration',
-    '/funds': 'Fund Management'
+    '/funds': 'Fund Management',
+    '/what-is-reubenai': 'What is ReubenAI?'
   };
 
   const pathSegments = location.pathname.split('/').filter(Boolean);

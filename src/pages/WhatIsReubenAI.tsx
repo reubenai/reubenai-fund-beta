@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Layout } from '@/components/Layout';
+import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { 
   ArrowLeft, 
   Brain, 
@@ -145,6 +146,7 @@ const WhatIsReubenAI = () => {
   return (
     <Layout>
       <div className="max-w-6xl mx-auto space-y-12 px-6">
+        <Breadcrumbs />
         {/* Hero Section */}
         <div className="text-center space-y-8">
           <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-3xl flex items-center justify-center mx-auto shadow-lg">
