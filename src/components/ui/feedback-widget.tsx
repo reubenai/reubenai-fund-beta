@@ -42,28 +42,69 @@ export function FeedbackWidget() {
       const { data: { user } } = await supabase.auth.getUser();
       const { data: currentFund } = await supabase
         .from('funds')
-        .select('id')
+        .select('id, name')
         .limit(1)
         .single();
 
+      // Get user profile for additional info
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('user_id', user?.id)
+        .single();
+
+      const feedbackData = {
+        user_id: user?.id,
+        fund_id: currentFund?.id || null,
+        feedback_type: type,
+        rating,
+        message: message.trim(),
+        page_url: window.location.href,
+        user_agent: navigator.userAgent,
+        metadata: {
+          timestamp: new Date().toISOString(),
+          pathname: window.location.pathname,
+          referrer: document.referrer
+        }
+      };
+
+      // Save to database
       const { error } = await supabase
         .from('user_feedback')
-        .insert({
-          user_id: user?.id,
-          fund_id: currentFund?.id || null,
-          feedback_type: type,
-          rating,
-          message: message.trim(),
-          page_url: window.location.href,
-          user_agent: navigator.userAgent,
-          metadata: {
-            timestamp: new Date().toISOString(),
-            pathname: window.location.pathname,
-            referrer: document.referrer
-          }
-        });
+        .insert(feedbackData);
 
       if (error) throw error;
+
+      // Send email notification (don't block on this)
+      if (user) {
+        supabase.functions.invoke('send-feedback-notification', {
+          body: {
+            feedbackType: type,
+            rating,
+            message: message.trim(),
+            userInfo: {
+              id: user.id,
+              email: user.email || '',
+              firstName: profile?.first_name,
+              lastName: profile?.last_name,
+            },
+            fundInfo: currentFund ? {
+              id: currentFund.id,
+              name: currentFund.name
+            } : undefined,
+            pageUrl: window.location.href,
+            userAgent: navigator.userAgent,
+            metadata: {
+              timestamp: new Date().toISOString(),
+              pathname: window.location.pathname,
+              referrer: document.referrer
+            }
+          }
+        }).catch(error => {
+          console.error('Failed to send feedback notification email:', error);
+          // Don't show error to user - email notification is supplementary
+        });
+      }
       
       toast({
         title: "Thank you!",
