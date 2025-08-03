@@ -27,6 +27,13 @@ export const DealCardMetrics: React.FC<DealCardMetricsProps> = ({
           <span className="text-gray-700 font-medium">
             {formatAmount(deal.deal_size, deal.currency)}
           </span>
+          {/* Data confidence indicator */}
+          {deal.source_confidence_score && deal.source_confidence_score < 70 && (
+            <span className="text-amber-600 text-xs ml-1" title="Low confidence data">⚠️</span>
+          )}
+          {!deal.source_confidence_score && (
+            <span className="text-gray-400 text-xs ml-1" title="Unvalidated data">?</span>
+          )}
         </div>
       )}
       
