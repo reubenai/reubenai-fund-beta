@@ -1694,6 +1694,59 @@ export type Database = {
           },
         ]
       }
+      user_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          custom_message: string | null
+          email: string
+          expires_at: string
+          id: string
+          invitation_token: string
+          invited_by: string
+          is_active: boolean
+          organization_id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          custom_message?: string | null
+          email: string
+          expires_at?: string
+          id?: string
+          invitation_token: string
+          invited_by: string
+          is_active?: boolean
+          organization_id: string
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          custom_message?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          invitation_token?: string
+          invited_by?: string
+          is_active?: boolean
+          organization_id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_invitations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_preferences: {
         Row: {
           created_at: string
@@ -1768,6 +1821,10 @@ export type Database = {
           fund_id_param: string
           fund_type_param: Database["public"]["Enums"]["fund_type"]
         }
+        Returns: string
+      }
+      generate_invitation_token: {
+        Args: Record<PropertyKey, never>
         Returns: string
       }
       get_user_role: {
