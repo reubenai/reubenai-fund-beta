@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, FileText, Vote, Users, Plus, Clock, CheckCircle, XCircle, Clock3, Send, Eye, Edit, Trash2, TestTube } from 'lucide-react';
+import { Calendar, FileText, Vote, Users, Plus, Clock, CheckCircle, XCircle, Clock3, Send, Eye, Edit, Trash2 } from 'lucide-react';
 import { useFund } from '@/contexts/FundContext';
 import { ICMemoModal } from '@/components/ic/ICMemoModal';
 import { VotingModal } from '@/components/ic/VotingModal';
@@ -17,7 +17,7 @@ import { icMemoService, ICSession, ICVotingDecision } from '@/services/ICMemoSer
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
-import { testCompleteICWorkflow } from '@/utils/orchestratorTest';
+
 import { DataValidator, NetworkHandler } from '@/utils/edgeCaseHandler';
 import { performanceMonitor } from '@/utils/performanceMonitor';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
@@ -362,33 +362,6 @@ export default function EnhancedICPage() {
     }).format(amount);
   };
 
-  const handleTestOrchestrator = async () => {
-    if (!selectedFund) return;
-    
-    try {
-      const result = await testCompleteICWorkflow(selectedFund.id);
-      
-      if (result.success) {
-        toast({
-          title: "Orchestrator Test Successful",
-          description: `Tested with deal: ${result.dealTested}. Check console for details.`,
-        });
-      } else {
-        toast({
-          title: "Orchestrator Test Failed",
-          description: result.error || "Unknown error occurred",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error('Test error:', error);
-      toast({
-        title: "Test Error",
-        description: "Failed to run orchestrator test",
-        variant: "destructive"
-      });
-    }
-  };
 
   if (!selectedFund) {
     return (
@@ -432,15 +405,6 @@ export default function EnhancedICPage() {
               Manage IC meetings, memos, and decisions for {selectedFund.name}
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleTestOrchestrator}
-            className="gap-2"
-          >
-            <TestTube className="h-4 w-4" />
-            Test Orchestrator
-          </Button>
         </div>
       </div>
 
@@ -522,15 +486,14 @@ export default function EnhancedICPage() {
                             </Button>
                             <Button 
                               size="sm"
-                              onClick={() => {
-                                // Open ICMemoModal with pre-selected deal
-                                setSelectedDealForMemo(deal);
-                                setShowMemoModal(true);
-                              }}
+                               onClick={() => {
+                                 setSelectedDealForMemo(deal);
+                                 setShowMemoModal(true);
+                               }}
                             >
-                              <FileText className="h-4 w-4 mr-2" />
-                              Memo
-                            </Button>
+                               <FileText className="h-4 w-4 mr-2" />
+                               View / Edit Memo
+                             </Button>
                           </div>
                         </div>
                       </div>
@@ -982,7 +945,7 @@ export default function EnhancedICPage() {
         fundId={selectedFund.id}
       />
 
-      {selectedVotingDecision && (
+      {selectedVotingDecision && showVotingModal && (
         <VotingModal
           isOpen={showVotingModal}
           onClose={() => {
@@ -998,7 +961,7 @@ export default function EnhancedICPage() {
         />
       )}
 
-      {selectedSession && (
+      {selectedSession && showSessionDetailModal && (
         <SessionDetailModal
           isOpen={showSessionDetailModal}
           onClose={() => {

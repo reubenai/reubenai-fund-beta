@@ -44,52 +44,86 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
   fundId
 }) => {
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Fetch real deals at "Decision" stage
+  // If dealId is provided, show memo preview directly
   useEffect(() => {
-    const fetchDecisionStageDeals = async () => {
-      if (!fundId) return;
-      
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('deals')
-          .select('*')
-          .eq('fund_id', fundId)
-          .eq('status', 'investment_committee')
-          .order('updated_at', { ascending: false });
-
-        if (error) throw error;
-        setDeals(data || []);
-      } catch (error) {
-        console.error('Error fetching decision stage deals:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load deals ready for IC review",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (isOpen) {
+    if (isOpen && dealId) {
+      // Fetch the specific deal for direct memo preview
+      fetchSpecificDeal(dealId);
+    } else if (isOpen && !dealId) {
+      // Fetch all deals for selection
       fetchDecisionStageDeals();
     }
-  }, [isOpen, fundId, toast]);
+  }, [isOpen, dealId, fundId]);
 
-  const handlePreviewMemo = async (deal: Deal) => {
-    setSelectedDeal(deal);
-    setShowPreviewModal(true);
+  const fetchSpecificDeal = async (id: string) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('deals')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      setSelectedDeal(data);
+    } catch (error) {
+      console.error('Error fetching deal:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load deal data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const fetchDecisionStageDeals = async () => {
+    if (!fundId) return;
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('deals')
+        .select('*')
+        .eq('fund_id', fundId)
+        .eq('status', 'investment_committee')
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+      setDeals(data || []);
+    } catch (error) {
+      console.error('Error fetching decision stage deals:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load deals ready for IC review",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // If we have a specific deal (dealId provided), show MemoPreviewModal directly
+  if (dealId && selectedDeal) {
+    return (
+      <MemoPreviewModal
+        isOpen={isOpen}
+        onClose={onClose}
+        deal={selectedDeal}
+        fundId={fundId}
+      />
+    );
+  }
+
+  // Otherwise show the deal selection interface
   if (loading) {
     return (
-      <Dialog open={isOpen && !showPreviewModal} onOpenChange={onClose}>
+      <Dialog open={isOpen && !selectedDeal} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -108,7 +142,7 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
 
   return (
     <>
-      <Dialog open={isOpen && !showPreviewModal} onOpenChange={onClose}>
+      <Dialog open={isOpen && !selectedDeal} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -170,7 +204,7 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
                       </div>
                       
                       <Button
-                        onClick={() => handlePreviewMemo(deal)}
+                        onClick={() => setSelectedDeal(deal)}
                         className="gap-2"
                       >
                         <Eye className="w-4 h-4" />
@@ -201,15 +235,17 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
         </DialogContent>
       </Dialog>
 
-      <MemoPreviewModal
-        isOpen={showPreviewModal}
-        onClose={() => {
-          setShowPreviewModal(false);
-          setSelectedDeal(null);
-        }}
-        deal={selectedDeal!}
-        fundId={fundId}
-      />
+      {selectedDeal && (
+        <MemoPreviewModal
+          isOpen={isOpen}
+          onClose={() => {
+            setSelectedDeal(null);
+            onClose();
+          }}
+          deal={selectedDeal}
+          fundId={fundId}
+        />
+      )}
     </>
   );
 };
