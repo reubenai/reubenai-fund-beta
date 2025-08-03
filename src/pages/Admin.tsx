@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield, Archive, ArchiveRestore, Filter, Target, Upload } from 'lucide-react';
+import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield, Archive, ArchiveRestore, Filter, Target, Upload, Rocket } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,7 @@ import { AdminUserTable } from '@/components/admin/AdminUserTable';
 import { AdminActivityFeed } from '@/components/admin/AdminActivityFeed';
 import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModal';
 import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
+import { ProductionReadinessPanel } from '@/components/admin/ProductionReadinessPanel';
 import { AdminInviteUserModal } from '@/components/admin/AdminInviteUserModal';
 
 interface Organization {
@@ -476,6 +477,10 @@ export default function Admin() {
               <TabsTrigger value="organizations" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Organizations</TabsTrigger>
               <TabsTrigger value="users" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Users</TabsTrigger>
               <TabsTrigger value="funds" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Funds</TabsTrigger>
+              <TabsTrigger value="production" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Rocket className="h-4 w-4 mr-2" />
+                Production Readiness
+              </TabsTrigger>
             </TabsList>
 
         <TabsContent value="organizations" className="space-y-6">
@@ -761,6 +766,10 @@ export default function Admin() {
               </div>
             </CardContent>
             </Card>
+            </TabsContent>
+
+            <TabsContent value="production" className="space-y-6">
+              <ProductionReadinessPanel />
             </TabsContent>
           </Tabs>
         </div>
