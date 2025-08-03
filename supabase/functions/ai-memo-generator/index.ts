@@ -268,179 +268,202 @@ async function generateMemoContent(
 
   // Prepare validated data sources
   const marketData = analysisData?.engine_results?.market_engine || {};
+  const teamData = analysisData?.engine_results?.team_engine || {};
+  const productData = analysisData?.engine_results?.product_engine || {};
   const financialData = analysisData?.engine_results?.financial_engine || {};
-  const orchestratorInsights = orchestratorData?.analysis || {};
-  const ragAssessment = ragData || {};
-  const thesisAlignment = thesisData || {};
 
-  // Create comprehensive prompt with strict no-fabrication instructions
-  const prompt = `You are generating an Investment Committee memo for ${dealData.company_name}. 
-
-CRITICAL INSTRUCTIONS - ZERO FABRICATION POLICY:
-- NEVER fabricate, estimate, or invent any data points
-- If specific information is not provided in the source data, explicitly state "Data not available" or "N/A"
-- Only use information directly provided in the source materials
-- Mark any assumptions clearly as "Assumption based on available data"
-- Include data confidence levels where available
-
-COMPANY DATA (VALIDATED):
-Company: ${dealData.company_name}
-Industry: ${dealData.industry || 'N/A'}
-Location: ${dealData.location || 'N/A'}
-Business Model: ${dealData.business_model || 'N/A'}
-Deal Size: ${dealData.deal_size ? `$${(dealData.deal_size / 1000000).toFixed(1)}M` : 'N/A'}
-Valuation: ${dealData.valuation ? `$${(dealData.valuation / 1000000).toFixed(1)}M` : 'N/A'}
-Employee Count: ${dealData.employee_count || 'N/A'}
-Website: ${dealData.website || 'N/A'}
-Description: ${dealData.description || 'N/A'}
-
-FUND STRATEGY (THESIS CRITERIA):
-Fund Type: ${fundData?.fund_type || 'N/A'}
-Investment Focus: ${JSON.stringify(enhancedCriteria, null, 2)}
-Key Investment Criteria: ${fundData?.investment_strategies?.[0]?.key_signals?.join(', ') || 'N/A'}
-
-ANALYSIS SCORES (VALIDATED):
-${analysisData ? `
-Market Score: ${analysisData.market_score || 'N/A'}/100
-Financial Score: ${analysisData.financial_score || 'N/A'}/100  
-Product Score: ${analysisData.product_score || 'N/A'}/100
-Leadership Score: ${analysisData.leadership_score || 'N/A'}/100
-Traction Score: ${analysisData.traction_score || 'N/A'}/100
-Thesis Alignment Score: ${analysisData.thesis_alignment_score || 'N/A'}/100
-` : 'Analysis data not available'}
-
-MARKET RESEARCH (VALIDATED):
-${JSON.stringify(marketData, null, 2) || 'Market data not available'}
-
-FINANCIAL ANALYSIS (VALIDATED):
-${JSON.stringify(financialData, null, 2) || 'Financial data not available'}
-
-RAG ASSESSMENT (VALIDATED):
-Status: ${ragAssessment.ragStatus || 'N/A'}
-Confidence: ${ragAssessment.confidence || 'N/A'}%
-Data Quality: ${ragAssessment.dataQuality || 'N/A'}
-
-THESIS ALIGNMENT (VALIDATED):
-${JSON.stringify(thesisAlignment, null, 2) || 'Thesis alignment data not available'}
-
-ORCHESTRATOR INSIGHTS (VALIDATED):
-${JSON.stringify(orchestratorInsights, null, 2) || 'Orchestrator analysis not available'}
-
-DEAL NOTES (VALIDATED):
-${dealNotes.map(note => `- ${note.content}`).join('\n') || 'No deal notes available'}
-
-Generate a comprehensive investment memo with the following sections: ${sections.map(s => s.title).join(', ')}.
-
-For each section, use ONLY the validated data provided above. If information is missing, explicitly state "Data not available" or "Requires further due diligence". Include data source attribution where possible.
-
-Focus on:
-1. How well this investment aligns with the fund's thesis and criteria
-2. Validated analysis scores and their implications  
-3. Risk factors based on available data
-4. Clear investment recommendation with rationale
-5. Data quality assessment and areas requiring additional validation`;
-
-  const systemMessage = `You are an expert investment analyst creating professional Investment Committee memos. Your responses must be:
-
-1. FACTUAL: Only use information provided in the prompt - NEVER fabricate data
-2. STRUCTURED: Follow professional VC/PE memo format
-3. ANALYTICAL: Provide clear reasoning for assessments
-4. HONEST: Explicitly note when data is missing or requires validation
-5. STRATEGIC: Focus on fund thesis alignment and investment rationale
-
-Use professional tone appropriate for investment committee presentation. Include data source attribution and confidence levels where available.`;
-
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemMessage },
-          { role: 'user', content: prompt }
-        ],
-        functions: [{
-          name: 'generate_memo_content',
-          description: 'Generate structured investment memo content',
-          parameters: {
-            type: 'object',
-            properties: {
-              sections: {
-                type: 'object',
-                description: 'Memo sections with content',
-                additionalProperties: { type: 'string' }
-              },
-              executive_summary: {
-                type: 'string',
-                description: 'Executive summary of the investment opportunity'
-              },
-              investment_recommendation: {
-                type: 'string',
-                description: 'Final investment recommendation with rationale'
-              },
-              key_metrics: {
-                type: 'object',
-                description: 'Key validated metrics and scores'
-              },
-              data_quality_assessment: {
-                type: 'string',
-                description: 'Assessment of data completeness and validation status'
-              }
-            },
-            required: ['sections', 'executive_summary', 'investment_recommendation']
-          }
-        }],
-        function_call: { name: 'generate_memo_content' },
-        temperature: 0.1
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error(`OpenAI API error ${response.status}:`, errorData);
-      
-      if (response.status === 429) {
-        throw new Error('OpenAI API rate limit exceeded. Please try again in a few moments.');
-      } else if (response.status === 401) {
-        throw new Error('OpenAI API authentication failed. Please check API key.');
-      } else {
-        throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
+  console.log('🔍 Generating memo content with zero-fabrication policy...');
+  
+  const maxRetries = 3;
+  const baseDelay = 2000; // 2 seconds
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 1) {
+        const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+        console.log(`⏳ Retrying OpenAI call (attempt ${attempt}/${maxRetries}) after ${delay}ms delay...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
-    }
 
-    const data = await response.json();
-    const functionCall = data.choices[0].message.function_call;
+      // Create comprehensive prompt with strict no-fabrication instructions
+      const prompt = `You are generating an Investment Committee memo for ${dealData.company_name}. 
+
+      CRITICAL INSTRUCTIONS - ZERO FABRICATION POLICY:
+      - NEVER fabricate, estimate, or invent any data points
+      - If specific information is not provided in the source data, explicitly state "Data not available" or "N/A"
+      - Only use information directly provided in the source materials
+      - Mark any assumptions clearly as "Assumption based on available data"
+      - Include data confidence levels where available
+
+      COMPANY DATA (VALIDATED):
+      Company: ${dealData.company_name}
+      Industry: ${dealData.industry || 'N/A'}
+      Location: ${dealData.location || 'N/A'}
+      Business Model: ${dealData.business_model || 'N/A'}
+      Deal Size: ${dealData.deal_size ? `$${(dealData.deal_size / 1000000).toFixed(1)}M` : 'N/A'}
+      Valuation: ${dealData.valuation ? `$${(dealData.valuation / 1000000).toFixed(1)}M` : 'N/A'}
+      Employee Count: ${dealData.employee_count || 'N/A'}
+      Website: ${dealData.website || 'N/A'}
+      Description: ${dealData.description || 'N/A'}
+
+      FUND STRATEGY (THESIS CRITERIA):
+      Fund Type: ${fundData?.fund_type || 'N/A'}
+      Investment Focus: ${JSON.stringify(enhancedCriteria, null, 2)}
+      Key Investment Criteria: ${fundData?.investment_strategies?.[0]?.key_signals?.join(', ') || 'N/A'}
+
+      ANALYSIS SCORES (VALIDATED):
+      ${analysisData ? `
+      Market Score: ${analysisData.market_score || 'N/A'}/100
+      Financial Score: ${analysisData.financial_score || 'N/A'}/100  
+      Product Score: ${analysisData.product_score || 'N/A'}/100
+      Leadership Score: ${analysisData.leadership_score || 'N/A'}/100
+      Traction Score: ${analysisData.traction_score || 'N/A'}/100
+      Thesis Alignment Score: ${analysisData.thesis_alignment_score || 'N/A'}/100
+      ` : 'Analysis data not available'}
+
+      MARKET RESEARCH (VALIDATED):
+      ${JSON.stringify(marketData, null, 2) || 'Market data not available'}
+
+      FINANCIAL ANALYSIS (VALIDATED):
+      ${JSON.stringify(financialData, null, 2) || 'Financial data not available'}
+
+      RAG ASSESSMENT (VALIDATED):
+      Status: ${ragData?.ragStatus || 'N/A'}
+      Confidence: ${ragData?.confidence || 'N/A'}%
+      Data Quality: ${ragData?.dataQuality || 'N/A'}
+
+      THESIS ALIGNMENT (VALIDATED):
+      ${JSON.stringify(thesisData, null, 2) || 'Thesis alignment data not available'}
+
+      ORCHESTRATOR INSIGHTS (VALIDATED):
+      ${JSON.stringify(orchestratorData, null, 2) || 'Orchestrator analysis not available'}
+
+      DEAL NOTES (VALIDATED):
+      ${dealNotes.map(note => `- ${note.content}`).join('\n') || 'No deal notes available'}
+
+      Generate a comprehensive investment memo with the following sections: ${sections.map(s => s.title).join(', ')}.
+
+      For each section, use ONLY the validated data provided above. If information is missing, explicitly state "Data not available" or "Requires further due diligence". Include data source attribution where possible.
+
+      Focus on:
+      1. How well this investment aligns with the fund's thesis and criteria
+      2. Validated analysis scores and their implications  
+      3. Risk factors based on available data
+      4. Clear investment recommendation with rationale
+      5. Data quality assessment and areas requiring additional validation`;
+
+      const systemMessage = `You are an expert investment analyst creating professional Investment Committee memos. Your responses must be:
+
+      1. FACTUAL: Only use information provided in the prompt - NEVER fabricate data
+      2. STRUCTURED: Follow professional VC/PE memo format
+      3. ANALYTICAL: Provide clear reasoning for assessments
+      4. HONEST: Explicitly note when data is missing or requires validation
+      5. STRATEGIC: Focus on fund thesis alignment and investment rationale
+
+      Use professional tone appropriate for investment committee presentation. Include data source attribution and confidence levels where available.`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4.1-2025-04-14',
+          messages: [
+            { role: 'system', content: systemMessage },
+            { role: 'user', content: prompt }
+          ],
+          functions: [{
+            name: 'generate_memo_content',
+            description: 'Generate structured investment memo content',
+            parameters: {
+              type: 'object',
+              properties: {
+                sections: {
+                  type: 'object',
+                  description: 'Memo sections with content',
+                  additionalProperties: { type: 'string' }
+                },
+                executive_summary: {
+                  type: 'string',
+                  description: 'Executive summary of the investment opportunity'
+                },
+                investment_recommendation: {
+                  type: 'string',
+                  description: 'Final investment recommendation with rationale'
+                },
+                key_metrics: {
+                  type: 'object',
+                  description: 'Key validated metrics and scores'
+                },
+                data_quality_assessment: {
+                  type: 'string',
+                  description: 'Assessment of data completeness and validation status'
+                }
+              },
+              required: ['sections', 'executive_summary', 'investment_recommendation']
+            }
+          }],
+          function_call: { name: 'generate_memo_content' },
+          temperature: 0.1
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error(`OpenAI API error ${response.status}:`, errorData);
+        
+        if (response.status === 429) {
+          if (attempt === maxRetries) {
+            throw new Error('OpenAI API rate limit exceeded after multiple retries. Please try again in a few minutes.');
+          }
+          continue; // Retry with backoff
+        } else if (response.status === 401) {
+          throw new Error('OpenAI API authentication failed. Please check API key.');
+        } else {
+          throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
+        }
+      }
+
+      const data = await response.json();
+      const functionCall = data.choices[0].message.function_call;
     
     if (!functionCall || !functionCall.arguments) {
       throw new Error('Invalid response from OpenAI');
     }
 
-    const memoData = JSON.parse(functionCall.arguments);
-    
-    return {
-      content: {
-        sections: memoData.sections,
-        key_metrics: memoData.key_metrics,
-        data_quality_assessment: memoData.data_quality_assessment,
-        generated_at: new Date().toISOString(),
-        data_sources: {
-          deal_analysis: !!analysisData,
-          orchestrator: !!orchestratorData,
-          rag_assessment: !!ragData,
-          thesis_alignment: !!thesisData,
-          deal_notes: dealNotes.length
-        }
-      },
-      executive_summary: memoData.executive_summary,
-      investment_recommendation: memoData.investment_recommendation
-    };
+      const memoData = JSON.parse(functionCall.arguments);
+      
+      console.log('✅ Successfully generated memo content');
+      
+      return {
+        content: {
+          sections: memoData.sections,
+          key_metrics: memoData.key_metrics,
+          data_quality_assessment: memoData.data_quality_assessment,
+          generated_at: new Date().toISOString(),
+          data_sources: {
+            deal_analysis: !!analysisData,
+            orchestrator: !!orchestratorData,
+            rag_assessment: !!ragData,
+            thesis_alignment: !!thesisData,
+            deal_notes: dealNotes.length
+          }
+        },
+        executive_summary: memoData.executive_summary,
+        investment_recommendation: memoData.investment_recommendation
+      };
 
-  } catch (error) {
-    console.error('Error calling OpenAI:', error);
-    throw new Error('Failed to generate memo content: ' + error.message);
+    } catch (error) {
+      console.error(`Error on attempt ${attempt}:`, error);
+      
+      if (attempt === maxRetries) {
+        console.error('All retry attempts failed');
+        throw new Error('Failed to generate memo content after multiple attempts: ' + error.message);
+      }
+      
+      // Continue to next retry attempt
+    }
   }
 }

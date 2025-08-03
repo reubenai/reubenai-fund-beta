@@ -91,8 +91,8 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50/30 ml-12 max-h-screen overflow-y-auto">
-      <div className="px-6 py-6">
+    <div className="bg-slate-50/30 ml-12">
+      <div className="px-6 py-6 min-h-screen">
         <Breadcrumbs />
         {/* Top Bar with What is ReubenAI Button */}
         <div className="flex justify-end mb-8">
