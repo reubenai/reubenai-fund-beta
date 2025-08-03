@@ -23,7 +23,7 @@ import { AdminUserTable } from '@/components/admin/AdminUserTable';
 import { AdminActivityFeed } from '@/components/admin/AdminActivityFeed';
 import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModal';
 import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
-import { ProductionReadinessPanel } from '@/components/admin/ProductionReadinessPanel';
+import { ComprehensiveProductionReadiness } from '@/components/admin/ComprehensiveProductionReadiness';
 import { AdminInviteUserModal } from '@/components/admin/AdminInviteUserModal';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 
@@ -771,7 +771,7 @@ export default function Admin() {
             </TabsContent>
 
             <TabsContent value="production" className="space-y-6">
-              <ProductionReadinessPanel />
+              <ComprehensiveProductionReadiness />
             </TabsContent>
           </Tabs>
         </div>
