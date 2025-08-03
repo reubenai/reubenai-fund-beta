@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
 import { 
   Brain, 
   Save, 
@@ -203,16 +205,18 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[90vh] p-0">
-        <DialogHeader className="px-6 py-4 border-b">
+      <DialogContent className="max-w-7xl h-[95vh] p-0 overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-background to-muted/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <DialogTitle className="text-xl">IC Memo - {editedMemo.company}</DialogTitle>
-              <Badge className={getStatusColor(editedMemo.status)}>
+              <DialogTitle className="text-xl font-semibold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                IC Memo - {editedMemo.company}
+              </DialogTitle>
+              <Badge className={`${getStatusColor(editedMemo.status)} transition-all duration-200 hover:scale-105`}>
                 {editedMemo.status}
               </Badge>
               {editedMemo.createdByAi && (
-                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                <Badge variant="outline" className="bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border-purple-200 animate-pulse">
                   <Brain className="w-3 h-3 mr-1" />
                   AI Enhanced
                 </Badge>
@@ -224,9 +228,10 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => setIsPreviewMode(!isPreviewMode)}
+                className="transition-all duration-200 hover:scale-105 hover:shadow-md"
               >
                 {isPreviewMode ? <Edit3 className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-                {isPreviewMode ? 'Edit' : 'Preview Memo'}
+                {isPreviewMode ? 'Edit' : 'Preview'}
               </Button>
               
               <Button
@@ -234,13 +239,14 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                 size="sm"
                 onClick={handleExportPDF}
                 disabled={isExportingPDF}
+                className="transition-all duration-200 hover:scale-105 hover:shadow-md"
               >
                 {isExportingPDF ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
                   <Download className="w-4 h-4 mr-2" />
                 )}
-                Export to PDF
+                Export PDF
               </Button>
               
               <Button
@@ -248,15 +254,17 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                 size="sm"
                 onClick={handleGenerateWithAI}
                 disabled={isGenerating}
+                className="transition-all duration-200 hover:scale-105 hover:shadow-md bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100"
               >
-                <Brain className="w-4 h-4 mr-2" />
-                {isGenerating ? 'Enhancing...' : 'Enhance with ReubenAI'}
+                <Brain className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-pulse' : ''}`} />
+                {isGenerating ? 'Enhancing...' : 'AI Enhance'}
               </Button>
               
               <Button
                 size="sm"
                 onClick={handleSave}
                 disabled={isSaving}
+                className="transition-all duration-200 hover:scale-105 hover:shadow-md bg-gradient-to-r from-primary to-primary/80"
               >
                 <Save className="w-4 h-4 mr-2" />
                 {isSaving ? 'Saving...' : 'Save'}
@@ -265,8 +273,32 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
           </div>
         </DialogHeader>
 
-        {/* Data Quality Dashboard */}
-        <div className="px-6 py-4">
+        {/* Enhanced Data Quality Dashboard */}
+        <div className="px-6 py-4 bg-gradient-to-r from-muted/30 to-muted/10">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-foreground mb-2">Analysis Quality Overview</h3>
+            <div className="grid grid-cols-4 gap-4 mb-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">{editedMemo?.overall_score || 0}%</div>
+                <div className="text-sm text-muted-foreground">Overall Score</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{editedMemo?.rag_confidence || 0}%</div>
+                <div className="text-sm text-muted-foreground">RAG Confidence</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{editedMemo?.thesis_alignment_score || 0}%</div>
+                <div className="text-sm text-muted-foreground">Thesis Alignment</div>
+              </div>
+              <div className="text-center">
+                <Badge variant={editedMemo?.rag_status === 'exciting' ? 'default' : 'secondary'} className="text-xs">
+                  {editedMemo?.rag_status || 'pending'}
+                </Badge>
+                <div className="text-sm text-muted-foreground mt-1">RAG Status</div>
+              </div>
+            </div>
+            <Progress value={editedMemo?.overall_score || 0} className="h-2" />
+          </div>
           <DataQualityDashboard
             ragStatus={editedMemo?.rag_status || 'pending'}
             ragConfidence={editedMemo?.rag_confidence || 0}
@@ -284,39 +316,61 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
 
         <div className="flex-1 flex overflow-hidden">
           <Tabs value={activeSection} onValueChange={setActiveSection} className="flex-1 flex flex-col">
-            <TabsList className="mx-6 mt-4 grid grid-cols-7 lg:grid-cols-14">
-              {STANDARD_SECTIONS.map((section) => (
-                <TabsTrigger
-                  key={section.key}
-                  value={section.key}
-                  className="text-xs"
-                  title={section.title}
-                >
-                  <section.icon className={`w-3 h-3 ${section.color}`} />
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            <div className="px-6 pt-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Memo Sections</h3>
+                <div className="text-sm text-muted-foreground">
+                  {STANDARD_SECTIONS.findIndex(s => s.key === activeSection) + 1} of {STANDARD_SECTIONS.length}
+                </div>
+              </div>
+              <TabsList className="grid grid-cols-7 lg:grid-cols-14 h-auto p-1">
+                {STANDARD_SECTIONS.map((section, index) => (
+                  <TabsTrigger
+                    key={section.key}
+                    value={section.key}
+                    className="text-xs p-2 transition-all duration-200 hover:scale-105"
+                    title={section.title}
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <section.icon className={`w-3 h-3 ${section.color}`} />
+                      <div className="text-[10px] leading-none">{index + 1}</div>
+                    </div>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
 
             <div className="flex-1 overflow-hidden p-6">
               {STANDARD_SECTIONS.map((section) => (
                 <TabsContent
                   key={section.key}
                   value={section.key}
-                  className="h-full"
+                  className="h-full animate-in fade-in-50 duration-300"
                 >
-                  <Card className="h-full">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <section.icon className={`w-5 h-5 ${section.color}`} />
-                        {section.title}
+                  <Card className="h-full shadow-lg border-0 bg-gradient-to-br from-background to-muted/20">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <section.icon className={`w-5 h-5 ${section.color}`} />
+                          {section.title}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {editedMemo.content?.[section.key] && (
+                            <Badge variant="outline" className="text-xs">
+                              {editedMemo.content[section.key].length} chars
+                            </Badge>
+                          )}
+                        </div>
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="flex-1">
+                    <CardContent className="flex-1 pt-0">
                       {isPreviewMode ? (
-                        <div className="prose max-w-none">
-                          <div dangerouslySetInnerHTML={{ 
-                            __html: editedMemo.content?.[section.key] || '<p className="text-muted-foreground">No content yet. Click "Edit" to add content.</p>'
-                          }} />
+                        <div className="prose prose-sm max-w-none bg-white/50 rounded-lg p-4 min-h-[400px] border">
+                          {editedMemo.content?.[section.key] ? (
+                            <div className="whitespace-pre-wrap">{editedMemo.content[section.key]}</div>
+                          ) : (
+                            <p className="text-muted-foreground italic">No content yet. Click "Edit" to add content.</p>
+                          )}
                         </div>
                       ) : (
                         <Textarea
@@ -328,8 +382,8 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                               [section.key]: e.target.value
                             }
                           } : null)}
-                          placeholder={`Enter ${section.title.toLowerCase()} content...`}
-                          className="min-h-[400px] resize-none"
+                          placeholder={`Enter ${section.title.toLowerCase()} content...\n\nTip: Use clear headings and bullet points for better readability.`}
+                          className="min-h-[400px] resize-none border-0 bg-white/50 focus:bg-white transition-colors duration-200"
                         />
                       )}
                     </CardContent>
@@ -339,89 +393,112 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
             </div>
           </Tabs>
 
-          {/* Side Panel for Deal Overview */}
-          <div className="w-80 border-l bg-muted/30 p-4 overflow-y-auto">
-            <h3 className="font-semibold mb-4">Deal Overview</h3>
+          {/* Enhanced Side Panel for Deal Overview */}
+          <div className="w-80 border-l bg-gradient-to-b from-muted/20 to-muted/40 p-6 overflow-y-auto">
+            <div className="flex items-center gap-2 mb-6">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+              <h3 className="font-semibold text-lg">Deal Overview</h3>
+            </div>
             
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Company</label>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <div className="w-1 h-4 bg-primary rounded"></div>
+                  Company
+                </label>
                 <Input
                   value={editedMemo.company}
                   onChange={(e) => setEditedMemo(prev => prev ? { ...prev, company: e.target.value } : null)}
-                  className="mt-1"
+                  className="transition-all duration-200 focus:scale-[1.02] focus:shadow-md"
                 />
               </div>
               
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Founder</label>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <div className="w-1 h-4 bg-green-500 rounded"></div>
+                  Founder
+                </label>
                 <Input
                   value={editedMemo.founder}
                   onChange={(e) => setEditedMemo(prev => prev ? { ...prev, founder: e.target.value } : null)}
-                  className="mt-1"
+                  className="transition-all duration-200 focus:scale-[1.02] focus:shadow-md"
                 />
               </div>
               
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Investment Amount</label>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <div className="w-1 h-4 bg-blue-500 rounded"></div>
+                  Investment Amount
+                </label>
                 <Input
                   value={editedMemo.amount}
                   onChange={(e) => setEditedMemo(prev => prev ? { ...prev, amount: e.target.value } : null)}
-                  className="mt-1"
+                  className="transition-all duration-200 focus:scale-[1.02] focus:shadow-md"
                 />
               </div>
               
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Valuation</label>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <div className="w-1 h-4 bg-purple-500 rounded"></div>
+                  Valuation
+                </label>
                 <Input
                   value={editedMemo.valuation}
                   onChange={(e) => setEditedMemo(prev => prev ? { ...prev, valuation: e.target.value } : null)}
-                  className="mt-1"
+                  className="transition-all duration-200 focus:scale-[1.02] focus:shadow-md"
                 />
               </div>
               
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Stage</label>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <div className="w-1 h-4 bg-orange-500 rounded"></div>
+                  Stage
+                </label>
                 <Input
                   value={editedMemo.stage}
                   onChange={(e) => setEditedMemo(prev => prev ? { ...prev, stage: e.target.value } : null)}
-                  className="mt-1"
+                  className="transition-all duration-200 focus:scale-[1.02] focus:shadow-md"
                 />
               </div>
               
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Sector</label>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <div className="w-1 h-4 bg-red-500 rounded"></div>
+                  Sector
+                </label>
                 <Input
                   value={editedMemo.sector}
                   onChange={(e) => setEditedMemo(prev => prev ? { ...prev, sector: e.target.value } : null)}
-                  className="mt-1"
+                  className="transition-all duration-200 focus:scale-[1.02] focus:shadow-md"
                 />
               </div>
 
-              <div className="pt-4 border-t">
+              <Separator className="my-6" />
+
+              <div className="space-y-3">
                 <Button 
                   variant="outline" 
-                  className="w-full gap-2"
+                  className="w-full gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100"
                   onClick={() => {/* Schedule IC meeting functionality */}}
                 >
                   <Calendar className="w-4 h-4" />
                   Schedule IC Meeting
                 </Button>
-              </div>
               
-              <Button 
-                variant="outline" 
-                className="w-full gap-2"
-                onClick={handleExportPDF}
-                disabled={isExportingPDF}
-              >
-                {isExportingPDF ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Download className="w-4 h-4" />
-                )}
-                Export PDF
-              </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                  onClick={handleExportPDF}
+                  disabled={isExportingPDF}
+                >
+                  {isExportingPDF ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  Export Professional PDF
+                </Button>
+              </div>
             </div>
           </div>
         </div>
