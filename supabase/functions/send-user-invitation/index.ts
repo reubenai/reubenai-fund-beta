@@ -204,7 +204,16 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Send welcome email with login credentials
-    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error('RESEND_API_KEY environment variable is not set');
+      return new Response(
+        JSON.stringify({ error: 'Email service not configured. Please contact administrator.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const resend = new Resend(resendApiKey);
     const origin = req.headers.get('origin') || 'https://localhost:3000';
     const loginUrl = `${origin}/auth`;
 
