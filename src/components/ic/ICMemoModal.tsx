@@ -12,7 +12,7 @@ import {
   Eye
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { MemoPreviewModal } from './MemoPreviewModal';
+import { EnhancedMemoPreviewModal } from './EnhancedMemoPreviewModal';
 import { supabase } from '@/integrations/supabase/client';
 import { icMemoService } from '@/services/ICMemoService';
 
@@ -111,7 +111,7 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
   // If we have a specific deal (dealId provided), show MemoPreviewModal directly
   if (dealId && selectedDeal) {
     return (
-      <MemoPreviewModal
+      <EnhancedMemoPreviewModal
         isOpen={isOpen}
         onClose={onClose}
         deal={selectedDeal}
@@ -236,7 +236,7 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
       </Dialog>
 
       {selectedDeal && (
-        <MemoPreviewModal
+        <EnhancedMemoPreviewModal
           isOpen={isOpen}
           onClose={() => {
             setSelectedDeal(null);
