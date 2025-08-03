@@ -471,30 +471,19 @@ export default function EnhancedICPage() {
                             <div className="text-sm font-medium text-foreground">
                               {deal.overall_score ? getRAGCategory(deal.overall_score).label : 'N/A'}
                             </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
-                                // Navigate to deal analysis view
-                                window.open(`/deals?deal=${deal.id}`, '_blank');
-                              }}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              Review
-                            </Button>
-                            <Button 
-                              size="sm"
+                           </div>
+                           <div className="flex gap-2">
+                             <Button 
+                               size="sm"
                                onClick={() => {
                                  setSelectedDealForMemo(deal);
                                  setShowMemoModal(true);
                                }}
-                            >
+                             >
                                <FileText className="h-4 w-4 mr-2" />
                                View / Edit Memo
                              </Button>
-                          </div>
+                           </div>
                         </div>
                       </div>
                     </CardContent>

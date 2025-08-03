@@ -107,7 +107,12 @@ export const MemoPreviewModal: React.FC<MemoPreviewModalProps> = ({
         .single();
 
       if (existingMemo?.memo_content) {
-        setMemoContent(existingMemo.memo_content as MemoContent);
+        const memoContent = existingMemo.memo_content as any;
+        if (memoContent?.sections) {
+          setMemoContent(memoContent.sections as MemoContent);
+        } else {
+          setMemoContent(memoContent as MemoContent);
+        }
         toast({
           title: "Memo Loaded",
           description: "Existing memo loaded for preview and editing",
@@ -129,6 +134,10 @@ export const MemoPreviewModal: React.FC<MemoPreviewModalProps> = ({
     try {
       setIsGenerating(true);
       
+      if (!deal?.id || !fundId) {
+        throw new Error('Missing required parameters: deal ID or fund ID');
+      }
+      
       console.log('Generating memo for deal:', deal.id, 'fund:', fundId);
       
       const { data, error } = await supabase.functions.invoke('ai-memo-generator', {
@@ -138,16 +147,20 @@ export const MemoPreviewModal: React.FC<MemoPreviewModalProps> = ({
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('AI memo generation error:', error);
+        throw error;
+      }
 
-      if (data.success && data.memo_content) {
-        setMemoContent(data.memo_content);
+      if (data?.success && data?.memo?.memo_content?.sections) {
+        setMemoContent(data.memo.memo_content.sections);
         toast({
           title: "AI Memo Generated",
           description: `Institutional-grade memo generated for ${deal.company_name}`,
         });
       } else {
-        throw new Error('Failed to generate memo');
+        console.error('Memo generation failed:', data);
+        throw new Error(data?.error || 'Failed to generate memo content');
       }
     } catch (error) {
       console.error('Error generating memo:', error);
@@ -200,6 +213,10 @@ export const MemoPreviewModal: React.FC<MemoPreviewModalProps> = ({
       
       // First ensure memo is saved
       await handleSaveMemo();
+      
+      if (!deal?.id || !fundId) {
+        throw new Error('Missing required parameters for PDF export');
+      }
       
       console.log('Exporting PDF for deal:', deal.id, 'fund:', fundId);
       
