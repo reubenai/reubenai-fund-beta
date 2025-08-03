@@ -358,7 +358,7 @@ Use professional tone appropriate for investment committee presentation. Include
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemMessage },
           { role: 'user', content: prompt }
@@ -400,7 +400,16 @@ Use professional tone appropriate for investment committee presentation. Include
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorData = await response.text();
+      console.error(`OpenAI API error ${response.status}:`, errorData);
+      
+      if (response.status === 429) {
+        throw new Error('OpenAI API rate limit exceeded. Please try again in a few moments.');
+      } else if (response.status === 401) {
+        throw new Error('OpenAI API authentication failed. Please check API key.');
+      } else {
+        throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
+      }
     }
 
     const data = await response.json();

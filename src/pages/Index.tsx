@@ -91,32 +91,33 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50/30 ml-6">
-      <Breadcrumbs />
-      {/* Top Bar with What is ReubenAI Button */}
-      <div className="flex justify-end mb-6">
-        <Link to="/what-is-reubenai">
-          <Button variant="outline" size="sm" className="gap-2 bg-white hover:bg-slate-50">
-            <HelpCircle className="h-4 w-4" />
-            What is ReubenAI?
-          </Button>
-        </Link>
-      </div>
-
-      {/* Welcome Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-6 h-6 bg-emerald-500 rounded flex items-center justify-center">
-            <span className="text-white text-xs font-bold">R</span>
-          </div>
-        <h1 className="text-2xl font-semibold text-slate-900">
-          Welcome back, {profile?.first_name || user?.email?.split('@')[0] || 'demo'}
-        </h1>
+    <div className="min-h-screen bg-slate-50/30 ml-12 max-h-screen overflow-y-auto">
+      <div className="px-6 py-6">
+        <Breadcrumbs />
+        {/* Top Bar with What is ReubenAI Button */}
+        <div className="flex justify-end mb-8">
+          <Link to="/what-is-reubenai">
+            <Button variant="outline" size="sm" className="gap-2 bg-white hover:bg-slate-50">
+              <HelpCircle className="h-4 w-4" />
+              What is ReubenAI?
+            </Button>
+          </Link>
         </div>
-        <p className="text-slate-600">
-          Your AI-powered investment platform for smarter decisions
-        </p>
-      </div>
+
+        {/* Welcome Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-6 h-6 bg-emerald-500 rounded flex items-center justify-center">
+              <span className="text-white text-xs font-bold">R</span>
+            </div>
+          <h1 className="text-3xl font-semibold text-slate-900">
+            Welcome back, {profile?.first_name || user?.email?.split('@')[0] || 'demo'}
+          </h1>
+          </div>
+          <p className="text-slate-600">
+            Your AI-powered investment platform for smarter decisions
+          </p>
+        </div>
 
       {/* Search Section */}
       <div className="mb-8">
@@ -297,28 +298,29 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Need Help Getting Started */}
-      <div className="bg-white p-8 border border-slate-200 rounded-lg text-center">
-        <h3 className="text-lg font-semibold text-slate-900 mb-2">Need Help Getting Started?</h3>
-        <p className="text-slate-600 mb-6">Explore our resources to take the most of Reuben AI's powerful features</p>
-        <div className="flex items-center justify-center gap-3">
-          <Link to="/help">
-            <Button variant="outline" size="sm">
-              View How Reuben Works
-            </Button>
-          </Link>
-          <Link to="/help">
-            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
-              View Help Center
-            </Button>
-          </Link>
+        {/* Need Help Getting Started */}
+        <div className="bg-white p-8 border border-slate-200 rounded-lg text-center mb-8">
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">Need Help Getting Started?</h3>
+          <p className="text-slate-600 mb-6">Explore our resources to take the most of Reuben AI's powerful features</p>
+          <div className="flex items-center justify-center gap-3">
+            <Link to="/help">
+              <Button variant="outline" size="sm">
+                View How Reuben Works
+              </Button>
+            </Link>
+            <Link to="/help">
+              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                View Help Center
+              </Button>
+            </Link>
+          </div>
         </div>
-      </div>
 
-      <FundCreationWizard 
-        isOpen={showFundWizard} 
-        onClose={() => setShowFundWizard(false)} 
-      />
+        <FundCreationWizard 
+          isOpen={showFundWizard} 
+          onClose={() => setShowFundWizard(false)} 
+        />
+      </div>
     </div>
   );
 };
