@@ -92,6 +92,62 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_human_decision_divergence: {
+        Row: {
+          ai_confidence_score: number | null
+          ai_recommendation: string
+          created_at: string
+          deal_id: string
+          decision_context_id: string | null
+          divergence_type: string
+          fund_id: string
+          human_decision: string
+          human_reasoning: string | null
+          id: string
+          learning_insights: Json | null
+          outcome_validation: string | null
+          validated_at: string | null
+        }
+        Insert: {
+          ai_confidence_score?: number | null
+          ai_recommendation: string
+          created_at?: string
+          deal_id: string
+          decision_context_id?: string | null
+          divergence_type: string
+          fund_id: string
+          human_decision: string
+          human_reasoning?: string | null
+          id?: string
+          learning_insights?: Json | null
+          outcome_validation?: string | null
+          validated_at?: string | null
+        }
+        Update: {
+          ai_confidence_score?: number | null
+          ai_recommendation?: string
+          created_at?: string
+          deal_id?: string
+          decision_context_id?: string | null
+          divergence_type?: string
+          fund_id?: string
+          human_decision?: string
+          human_reasoning?: string | null
+          id?: string
+          learning_insights?: Json | null
+          outcome_validation?: string | null
+          validated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_human_decision_divergence_decision_context_id_fkey"
+            columns: ["decision_context_id"]
+            isOneToOne: false
+            referencedRelation: "ic_decision_contexts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_service_interactions: {
         Row: {
           created_at: string | null
@@ -886,6 +942,101 @@ export type Database = {
         }
         Relationships: []
       }
+      decision_supporting_evidence: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          decision_context_id: string
+          evidence_content: Json | null
+          evidence_type: string
+          id: string
+          relevance_weight: number | null
+          source_reference: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          decision_context_id: string
+          evidence_content?: Json | null
+          evidence_type: string
+          id?: string
+          relevance_weight?: number | null
+          source_reference?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          decision_context_id?: string
+          evidence_content?: Json | null
+          evidence_type?: string
+          id?: string
+          relevance_weight?: number | null
+          source_reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_supporting_evidence_decision_context_id_fkey"
+            columns: ["decision_context_id"]
+            isOneToOne: false
+            referencedRelation: "ic_decision_contexts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fund_decision_patterns: {
+        Row: {
+          actionable_insights: string | null
+          confidence_score: number | null
+          created_at: string
+          decisions_analyzed: number | null
+          fund_id: string
+          id: string
+          is_active: boolean | null
+          last_updated: string
+          pattern_data: Json
+          pattern_description: string | null
+          pattern_name: string
+          pattern_strength: number | null
+          pattern_type: string
+          recommended_adjustments: Json | null
+          validation_status: string | null
+        }
+        Insert: {
+          actionable_insights?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          decisions_analyzed?: number | null
+          fund_id: string
+          id?: string
+          is_active?: boolean | null
+          last_updated?: string
+          pattern_data?: Json
+          pattern_description?: string | null
+          pattern_name: string
+          pattern_strength?: number | null
+          pattern_type: string
+          recommended_adjustments?: Json | null
+          validation_status?: string | null
+        }
+        Update: {
+          actionable_insights?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          decisions_analyzed?: number | null
+          fund_id?: string
+          id?: string
+          is_active?: boolean | null
+          last_updated?: string
+          pattern_data?: Json
+          pattern_description?: string | null
+          pattern_name?: string
+          pattern_strength?: number | null
+          pattern_type?: string
+          recommended_adjustments?: Json | null
+          validation_status?: string | null
+        }
+        Relationships: []
+      }
       fund_memory_entries: {
         Row: {
           ai_service_name: string | null
@@ -903,10 +1054,15 @@ export type Database = {
           id: string
           importance_level: string | null
           is_active: boolean | null
+          last_triggered_at: string | null
           memory_content: Json
+          memory_effectiveness_score: number | null
           memory_type: string
           retention_period: unknown | null
+          similarity_scores: Json | null
           title: string
+          trigger_contexts: Json | null
+          trigger_count: number | null
           validation_status: string | null
         }
         Insert: {
@@ -925,10 +1081,15 @@ export type Database = {
           id?: string
           importance_level?: string | null
           is_active?: boolean | null
+          last_triggered_at?: string | null
           memory_content?: Json
+          memory_effectiveness_score?: number | null
           memory_type: string
           retention_period?: unknown | null
+          similarity_scores?: Json | null
           title: string
+          trigger_contexts?: Json | null
+          trigger_count?: number | null
           validation_status?: string | null
         }
         Update: {
@@ -947,10 +1108,15 @@ export type Database = {
           id?: string
           importance_level?: string | null
           is_active?: boolean | null
+          last_triggered_at?: string | null
           memory_content?: Json
+          memory_effectiveness_score?: number | null
           memory_type?: string
           retention_period?: unknown | null
+          similarity_scores?: Json | null
           title?: string
+          trigger_contexts?: Json | null
+          trigger_count?: number | null
           validation_status?: string | null
         }
         Relationships: [
@@ -1116,6 +1282,66 @@ export type Database = {
           updated_at?: string
           user_id?: string
           voting_weight?: number | null
+        }
+        Relationships: []
+      }
+      ic_decision_contexts: {
+        Row: {
+          ai_recommendations: Json | null
+          created_at: string
+          deal_id: string | null
+          decision_maker: string
+          decision_outcome: string | null
+          decision_rationale: string | null
+          decision_type: string
+          dissenting_opinions: Json | null
+          follow_up_date: string | null
+          follow_up_required: boolean | null
+          fund_id: string
+          ic_session_id: string | null
+          id: string
+          market_context: Json | null
+          memo_id: string | null
+          supporting_evidence: Json | null
+          updated_at: string
+        }
+        Insert: {
+          ai_recommendations?: Json | null
+          created_at?: string
+          deal_id?: string | null
+          decision_maker: string
+          decision_outcome?: string | null
+          decision_rationale?: string | null
+          decision_type: string
+          dissenting_opinions?: Json | null
+          follow_up_date?: string | null
+          follow_up_required?: boolean | null
+          fund_id: string
+          ic_session_id?: string | null
+          id?: string
+          market_context?: Json | null
+          memo_id?: string | null
+          supporting_evidence?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          ai_recommendations?: Json | null
+          created_at?: string
+          deal_id?: string | null
+          decision_maker?: string
+          decision_outcome?: string | null
+          decision_rationale?: string | null
+          decision_type?: string
+          dissenting_opinions?: Json | null
+          follow_up_date?: string | null
+          follow_up_required?: boolean | null
+          fund_id?: string
+          ic_session_id?: string | null
+          id?: string
+          market_context?: Json | null
+          memo_id?: string | null
+          supporting_evidence?: Json | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1705,6 +1931,90 @@ export type Database = {
           },
         ]
       }
+      market_signal_responses: {
+        Row: {
+          created_at: string
+          deals_affected: Json | null
+          fund_id: string
+          fund_response: Json | null
+          id: string
+          response_effectiveness: number | null
+          signal_data: Json | null
+          signal_date: string
+          signal_description: string | null
+          signal_type: string
+          strategic_adjustments: Json | null
+        }
+        Insert: {
+          created_at?: string
+          deals_affected?: Json | null
+          fund_id: string
+          fund_response?: Json | null
+          id?: string
+          response_effectiveness?: number | null
+          signal_data?: Json | null
+          signal_date: string
+          signal_description?: string | null
+          signal_type: string
+          strategic_adjustments?: Json | null
+        }
+        Update: {
+          created_at?: string
+          deals_affected?: Json | null
+          fund_id?: string
+          fund_response?: Json | null
+          id?: string
+          response_effectiveness?: number | null
+          signal_data?: Json | null
+          signal_date?: string
+          signal_description?: string | null
+          signal_type?: string
+          strategic_adjustments?: Json | null
+        }
+        Relationships: []
+      }
+      memory_prompt_triggers: {
+        Row: {
+          created_at: string
+          effectiveness_score: number | null
+          fund_id: string
+          id: string
+          is_active: boolean | null
+          last_triggered: string | null
+          memory_entry_ids: string[] | null
+          prompt_template: string | null
+          trigger_conditions: Json
+          trigger_priority: number | null
+          trigger_type: string
+        }
+        Insert: {
+          created_at?: string
+          effectiveness_score?: number | null
+          fund_id: string
+          id?: string
+          is_active?: boolean | null
+          last_triggered?: string | null
+          memory_entry_ids?: string[] | null
+          prompt_template?: string | null
+          trigger_conditions?: Json
+          trigger_priority?: number | null
+          trigger_type: string
+        }
+        Update: {
+          created_at?: string
+          effectiveness_score?: number | null
+          fund_id?: string
+          id?: string
+          is_active?: boolean | null
+          last_triggered?: string | null
+          memory_entry_ids?: string[] | null
+          prompt_template?: string | null
+          trigger_conditions?: Json
+          trigger_priority?: number | null
+          trigger_type?: string
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           created_at: string
@@ -1728,6 +2038,59 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      outcome_correlation_tracking: {
+        Row: {
+          actual_outcome: Json | null
+          correlation_score: number | null
+          created_at: string
+          deal_id: string
+          decision_context_id: string | null
+          fund_id: string
+          id: string
+          learning_extracted: Json | null
+          outcome_delta: Json | null
+          predicted_outcome: Json | null
+          updated_at: string
+          validation_date: string | null
+        }
+        Insert: {
+          actual_outcome?: Json | null
+          correlation_score?: number | null
+          created_at?: string
+          deal_id: string
+          decision_context_id?: string | null
+          fund_id: string
+          id?: string
+          learning_extracted?: Json | null
+          outcome_delta?: Json | null
+          predicted_outcome?: Json | null
+          updated_at?: string
+          validation_date?: string | null
+        }
+        Update: {
+          actual_outcome?: Json | null
+          correlation_score?: number | null
+          created_at?: string
+          deal_id?: string
+          decision_context_id?: string | null
+          fund_id?: string
+          id?: string
+          learning_extracted?: Json | null
+          outcome_delta?: Json | null
+          predicted_outcome?: Json | null
+          updated_at?: string
+          validation_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outcome_correlation_tracking_decision_context_id_fkey"
+            columns: ["decision_context_id"]
+            isOneToOne: false
+            referencedRelation: "ic_decision_contexts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pattern_insights: {
         Row: {
