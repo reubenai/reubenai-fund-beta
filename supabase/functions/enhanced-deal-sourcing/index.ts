@@ -103,7 +103,7 @@ async function callOpenAI(messages: any[], model = 'gpt-4.1-2025-04-14') {
   return data.choices[0].message.content;
 }
 
-async function callPerplexityAPI(prompt: string, model = 'sonar-reasoning') {
+async function callPerplexityAPI(prompt: string, model = 'sonar') {
   if (!perplexityApiKey) {
     throw new Error('Perplexity API key not configured');
   }
@@ -1273,6 +1273,80 @@ function generateRevenueMetric(stage: string): string {
   
   const ranges = revenueRanges[stage] || revenueRanges['Seed'];
   return ranges[Math.floor(Math.random() * ranges.length)];
+}
+
+function generateBackupMockCompanies(request: SourcingRequest, strategy: any): any[] {
+  console.log('🎭 Generating backup mock companies as final fallback');
+  
+  const count = request.batchSize || 5;
+  const targetIndustries = request.industries || strategy?.industries || ['Technology', 'SaaS', 'AI/ML', 'FinTech'];
+  const targetGeographies = request.geographies || strategy?.geography || ['San Francisco', 'New York', 'London', 'Berlin'];
+  
+  const mockCompanyNames = [
+    'TechFlow Systems', 'DataVault Analytics', 'CloudBridge Solutions', 'AI Nexus Labs', 'FinStream Technology',
+    'HealthLink Digital', 'EcoSync Energy', 'SmartChain Logistics', 'CyberGuard Security', 'PropTech Dynamics',
+    'AgriTech Innovations', 'EduFlow Platform', 'RetailSync Systems', 'BioLink Research', 'MedTech Solutions'
+  ];
+
+  const mockFounders = [
+    'Alex Chen (ex-Google, Stanford MBA)',
+    'Sarah Rodriguez (former Meta PM, MIT)',
+    'David Kim (ex-Amazon architect, CMU)',
+    'Maria Gonzalez (Serial entrepreneur, Harvard)',
+    'James Park (former Uber engineer, Berkeley)'
+  ];
+
+  const companies = [];
+  
+  for (let i = 0; i < count; i++) {
+    const industry = targetIndustries[i % targetIndustries.length];
+    const location = targetGeographies[i % targetGeographies.length];
+    const companyName = mockCompanyNames[i % mockCompanyNames.length];
+    const founder = mockFounders[i % mockFounders.length];
+    
+    const stages = ['Pre-Seed', 'Seed', 'Series A'];
+    const stage = stages[i % stages.length];
+    const dealSize = generateRealisticDealSize(stage);
+    
+    companies.push({
+      company_name: companyName,
+      description: `${companyName} is an innovative ${industry} company developing cutting-edge solutions for modern business challenges. They focus on scalable technology that delivers measurable value to their customers.`,
+      industry: industry,
+      location: location,
+      website: generateSafeWebsiteUrl(companyName),
+      funding_stage: stage,
+      deal_size: dealSize,
+      valuation: dealSize * (Math.random() * 5 + 3),
+      funding_date: new Date().toISOString().split('T')[0],
+      lead_investor: 'Strategic investor',
+      founder: founder,
+      traction_metrics: {
+        revenue: generateRevenueMetric(stage),
+        customers: Math.floor(Math.random() * 1000) + 100,
+        growth_rate: `${Math.floor(Math.random() * 200) + 50}% YoY`
+      },
+      founding_team: `Professional team with deep expertise in ${industry}`,
+      competitive_advantage: 'Innovative technology and strong market position',
+      source_credibility: 40, // Lower credibility for backup mock data
+      search_source: 'backup-mock-generation'
+    });
+  }
+  
+  console.log(`✅ Generated ${companies.length} backup mock companies`);
+  return companies;
+}
+
+function generateRevenueMetric(stage: string): string {
+  const revenueRanges = {
+    'Pre-Seed': ['$0-10K MRR', '$5-20K MRR', 'Early traction'],
+    'Seed': ['$20-50K MRR', '$50-100K MRR', '$100K+ MRR'],
+    'Series A': ['$200K+ MRR', '$500K+ MRR', '$1M+ ARR'],
+    'Series B': ['$2M+ ARR', '$5M+ ARR', '$10M+ ARR']
+  };
+  
+  const ranges = revenueRanges[stage] || revenueRanges['Seed'];
+  return ranges[Math.floor(Math.random() * ranges.length)];
+}
 }
 
 async function validateCompanies(deals: any[]) {
