@@ -74,10 +74,11 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [activeSection, setActiveSection] = useState('executive_summary');
+  const [activeSection, setActiveSection] = useState<string>('executive_summary');
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
   
   const { memoState, loadMemo, generateMemo, cancelGeneration, updateContent } = useMemoCache(deal.id, fundId);
-  const { versionState, loadVersions, saveVersion } = useMemoVersions(deal.id, fundId);
+  const { versionState, loadVersions, saveVersion, restoreVersion } = useMemoVersions(deal.id, fundId);
   const { 
     showMemoGenerationToast, 
     showAnalysisOutdatedToast, 
@@ -312,7 +313,17 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 ) : (
                   <Save className="w-4 h-4 mr-2" />
                 )}
-                Save
+              Save
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowVersionHistory(true)}
+                className="flex items-center gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                History ({versionState.versions.length})
               </Button>
               
               <Button
@@ -444,6 +455,16 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
           </div>
         </div>
       </DialogContent>
+
+      <MemoVersionHistoryModal
+        isOpen={showVersionHistory}
+        onClose={() => setShowVersionHistory(false)}
+        versions={versionState.versions}
+        currentVersion={versionState.currentVersion}
+        isLoading={versionState.isLoading}
+        onRestoreVersion={restoreVersion}
+        dealName={deal.company_name}
+      />
     </Dialog>
   );
 };

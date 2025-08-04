@@ -225,6 +225,48 @@ export type Database = {
           },
         ]
       }
+      analysis_execution_log: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          deal_id: string
+          error_message: string | null
+          execution_type: string
+          fund_id: string
+          id: string
+          metadata: Json | null
+          stage_name: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          deal_id: string
+          error_message?: string | null
+          execution_type?: string
+          fund_id: string
+          id?: string
+          metadata?: Json | null
+          stage_name: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          deal_id?: string
+          error_message?: string | null
+          execution_type?: string
+          fund_id?: string
+          id?: string
+          metadata?: Json | null
+          stage_name?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       analysis_queue: {
         Row: {
           attempts: number
@@ -1314,11 +1356,15 @@ export type Database = {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          content_quality_score: number | null
+          content_word_count: number | null
           created_at: string
           created_by: string
+          data_richness_score: number | null
           deal_id: string
           executive_summary: string | null
           fund_id: string
+          generation_metadata: Json | null
           id: string
           investment_recommendation: string | null
           memo_content: Json
@@ -1334,11 +1380,15 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          content_quality_score?: number | null
+          content_word_count?: number | null
           created_at?: string
           created_by: string
+          data_richness_score?: number | null
           deal_id: string
           executive_summary?: string | null
           fund_id: string
+          generation_metadata?: Json | null
           id?: string
           investment_recommendation?: string | null
           memo_content?: Json
@@ -1354,11 +1404,15 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          content_quality_score?: number | null
+          content_word_count?: number | null
           created_at?: string
           created_by?: string
+          data_richness_score?: number | null
           deal_id?: string
           executive_summary?: string | null
           fund_id?: string
+          generation_metadata?: Json | null
           id?: string
           investment_recommendation?: string | null
           memo_content?: Json
