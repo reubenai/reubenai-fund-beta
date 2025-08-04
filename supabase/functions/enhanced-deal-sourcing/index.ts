@@ -174,46 +174,94 @@ async function searchRealCompanies(request: SourcingRequest, strategy: any) {
   }
 }
 
-// Generate targeted search queries for real funding announcements
+// Enhanced search with multiple targeted data sources for real company discovery
 function generateTargetedSearchQueries(request: SourcingRequest, strategy: any): string[] {
-  const { industries, geographies } = request;
-  const currentYear = new Date().getFullYear();
-  const lastYear = currentYear - 1;
-  
+  const { industries, geographies, investmentSizeRange } = request;
   const queries: string[] = [];
   
-  // High-quality funding announcement searches
-  industries.forEach(industry => {
-    queries.push(
-      `"Series A funding" "${industry}" "${currentYear}" site:techcrunch.com`,
-      `"seed funding" "${industry}" "startup" "${currentYear}" site:crunchbase.com`,
-      `"investment round" "${industry}" "raised" "${currentYear}" site:venturebeat.com`,
-      `"funding announcement" "${industry}" "${lastYear}" OR "${currentYear}" site:techcrunch.com`,
-      `"startup funding" "${industry}" "million" "${currentYear}"`
-    );
-  });
+  // Primary high-credibility sources with funding data
+  const primarySources = [
+    'site:techcrunch.com',
+    'site:crunchbase.com', 
+    'site:venturebeat.com',
+    'site:angel.co'
+  ];
   
-  // Geography-specific searches
-  geographies.forEach(geo => {
-    industries.forEach(industry => {
-      queries.push(
-        `"startup" "${industry}" "${geo}" "funding" "${currentYear}"`,
-        `"Series A" "${geo}" "${industry}" "investment" "${currentYear}"`
-      );
+  // Regional sources based on geography
+  const regionalSources = [];
+  if (geographies.some(geo => geo.toLowerCase().includes('europe') || geo.toLowerCase().includes('uk'))) {
+    regionalSources.push('site:sifted.eu');
+  }
+  if (geographies.some(geo => geo.toLowerCase().includes('asia') || geo.toLowerCase().includes('india'))) {
+    regionalSources.push('site:inc42.com', 'site:e27.co');
+  }
+  
+  // Industry-specific sources
+  const industrySources = [];
+  if (industries.some(ind => ind.toLowerCase().includes('tech') || ind.toLowerCase().includes('product'))) {
+    industrySources.push('site:producthunt.com');
+  }
+  if (industries.some(ind => ind.toLowerCase().includes('ai') || ind.toLowerCase().includes('machine learning'))) {
+    industrySources.push('site:ycombinator.com');
+  }
+  
+  // Funding stage and amount terms
+  const fundingTerms = [
+    '"raised funding"', '"Series A"', '"Series B"', '"seed funding"', '"pre-seed"',
+    '"investment round"', '"funding announcement"', '"startup raises"',
+    '"announced funding"', '"closes funding"', '"secures investment"'
+  ];
+  
+  // Investment size terms based on range
+  const sizeTerms = [];
+  if (investmentSizeRange) {
+    if (investmentSizeRange.min <= 1000000) sizeTerms.push('"$500K"', '"$1M"');
+    if (investmentSizeRange.min <= 5000000) sizeTerms.push('"$2M"', '"$5M"');
+    if (investmentSizeRange.min <= 15000000) sizeTerms.push('"$10M"', '"$15M"');
+    if (investmentSizeRange.max >= 25000000) sizeTerms.push('"$25M"', '"$50M"');
+  } else {
+    sizeTerms.push('"$1M"', '"$5M"', '"$10M"');
+  }
+  
+  // Current year for recent funding
+  const currentYear = new Date().getFullYear();
+  const lastYear = currentYear - 1;
+  const yearTerms = [`"${currentYear}"`, `"${lastYear}"`];
+  
+  // Generate targeted queries for primary sources
+  [...primarySources, ...regionalSources, ...industrySources].forEach(source => {
+    industries.slice(0, 2).forEach(industry => {
+      fundingTerms.slice(0, 3).forEach(fundingTerm => {
+        yearTerms.forEach(year => {
+          queries.push(`${source} ${fundingTerm} "${industry}" ${year}`);
+          if (sizeTerms.length > 0) {
+            queries.push(`${source} ${fundingTerm} "${industry}" ${sizeTerms[0]} ${year}`);
+          }
+        });
+      });
     });
   });
   
-  // Stage-specific searches
-  const stages = ['seed', 'series a', 'series b', 'pre-seed'];
-  stages.forEach(stage => {
-    queries.push(
-      `"${stage} funding" "startup" "${industries[0]}" "${currentYear}"`,
-      `"${stage} round" "raised" "million" "${industries[0]}" "${currentYear}"`
-    );
-  });
+  // Add specialized funding database searches
+  queries.push(
+    `site:dealroom.co "funding" "${industries[0]}" "${currentYear}"`,
+    `site:pitchbook.com "investment" "${industries[0]}" "${currentYear}"`,
+    `site:tracxn.com "startup funding" "${industries[0]}" "${currentYear}"`,
+    `site:harmonic.ai "early stage" "${industries[0]}" "${currentYear}"`,
+    `site:openvc.app "investment" "${industries[0]}" "${currentYear}"`
+  );
   
-  // Return top 8 most targeted queries to avoid rate limits
-  return queries.slice(0, 8);
+  // Add crowdfunding platforms for early-stage deals
+  if (investmentSizeRange?.max <= 5000000) {
+    queries.push(
+      `site:wefunder.com "equity crowdfunding" "${industries[0]}"`,
+      `site:seedinvest.com "investment" "${industries[0]}"`,
+      `site:startengine.com "crowdfunding" "${industries[0]}"`
+    );
+  }
+  
+  // Return top 15 most targeted queries
+  return queries.slice(0, 15);
 }
 
 async function performGoogleSearch(query: string) {
@@ -380,12 +428,24 @@ function extractGrowthRate(snippet: string): string | null {
 }
 
 function calculateSourceCredibility(link: string): number {
-  const highCredibilitySources = ['crunchbase.com', 'techcrunch.com', 'bloomberg.com', 'forbes.com', 'reuters.com'];
-  const mediumCredibilitySources = ['venturebeat.com', 'techstartups.com', 'startupwatch.com'];
+  // Tier 1: Premium financial/startup databases and major tech publications
+  const tier1Sources = ['crunchbase.com', 'techcrunch.com', 'bloomberg.com', 'forbes.com', 'reuters.com', 'dealroom.co', 'pitchbook.com'];
   
-  if (highCredibilitySources.some(source => link.includes(source))) return 90;
-  if (mediumCredibilitySources.some(source => link.includes(source))) return 75;
-  return 60;
+  // Tier 2: Established startup/tech news platforms
+  const tier2Sources = ['venturebeat.com', 'angel.co', 'sifted.eu', 'inc42.com', 'e27.co', 'tracxn.com', 'harmonic.ai'];
+  
+  // Tier 3: Community platforms and emerging sources
+  const tier3Sources = ['producthunt.com', 'ycombinator.com', 'ventureradar.com', 'openvc.app', 'tnw.com', 'yourstory.com'];
+  
+  // Tier 4: Crowdfunding and investment platforms
+  const tier4Sources = ['wefunder.com', 'seedinvest.com', 'startengine.com', 'businessinsider.com', 'wired.com', 'axios.com'];
+  
+  if (tier1Sources.some(source => link.includes(source))) return 95;
+  if (tier2Sources.some(source => link.includes(source))) return 85;
+  if (tier3Sources.some(source => link.includes(source))) return 75;
+  if (tier4Sources.some(source => link.includes(source))) return 65;
+  
+  return 50; // Unknown sources get lower credibility
 }
 
 function extractCompanyName(title: string, snippet: string): string | null {
