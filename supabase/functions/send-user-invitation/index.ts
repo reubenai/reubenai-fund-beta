@@ -142,6 +142,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (inviteError) {
       console.error('Error sending invitation:', inviteError);
+      
+      // Handle specific error cases gracefully
+      if (inviteError.message?.includes('already been registered') || inviteError.message?.includes('email_exists')) {
+        return new Response(
+          JSON.stringify({ 
+            error: `A user with email ${email} already exists. They can log in directly or you can assign them to this organization from the Users tab.`,
+            errorType: 'user_exists'
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ error: `Failed to send invitation: ${inviteError.message}` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
