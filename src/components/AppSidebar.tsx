@@ -221,8 +221,8 @@ export function AppSidebar() {
                       <div className={`w-5 h-5 rounded-md flex items-center justify-center mx-auto mb-2 ${item.disabled ? 'bg-muted/50' : 'bg-muted/80 group-hover:bg-muted'} transition-colors`}>
                         <item.icon className={`h-3 w-3 ${item.disabled ? 'text-muted-foreground/50' : 'text-muted-foreground group-hover:text-foreground'} transition-colors`} />
                       </div>
-                      <p className={`text-xs font-medium mb-1 ${item.disabled ? 'text-muted-foreground/50' : 'text-foreground'}`}>{item.title}</p>
-                      <p className={`text-xs ${item.disabled ? 'text-muted-foreground/50' : 'text-muted-foreground'} text-center flex-1`}>{item.description}</p>
+                      <p className={`text-xs font-medium mb-1 ${item.disabled ? 'text-foreground/70' : 'text-foreground'}`}>{item.title}</p>
+                      <p className={`text-xs ${item.disabled ? 'text-foreground/60' : 'text-muted-foreground'} text-center flex-1`}>{item.description}</p>
                     </div>
                     {(item as any).badge && (
                       <div className="mt-2">
@@ -267,7 +267,7 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     {(item as any).disabled ? (
-                      <div className={`flex items-center justify-between space-x-3 rounded-md px-3 py-2 text-sm opacity-50 cursor-not-allowed text-muted-foreground`}>
+                      <div className={`flex items-center justify-between space-x-3 rounded-md px-3 py-2 text-sm opacity-70 cursor-not-allowed text-foreground/70`}>
                         <div className="flex items-center space-x-3">
                           <item.icon className="h-4 w-4" />
                           <span className="font-medium">{item.title}</span>
