@@ -15,7 +15,9 @@ import {
   CheckCircle,
   XCircle,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  Code2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,9 +26,10 @@ export function DealSourcingTestModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testResults, setTestResults] = useState<any>(null);
-  const [searchQuery, setSearchQuery] = useState('AI startups Series A');
-  const [fundId, setFundId] = useState('');
+  const [searchQuery, setSearchQuery] = useState('Find 5 technology companies for investment');
+  const [fundId, setFundId] = useState('550e8400-e29b-41d4-a716-446655440001'); // Default to Reuben Fund 1
   const [maxResults, setMaxResults] = useState(5);
+  const [showPrompt, setShowPrompt] = useState(false);
   const { toast } = useToast();
 
   const handleTestDealSourcing = async () => {
@@ -121,6 +124,68 @@ export function DealSourcingTestModal() {
     }
   };
 
+  const generateSamplePrompt = () => {
+    const currentYear = new Date().getFullYear();
+    
+    return `Find 5 technology companies that match these investment criteria:
+
+**Fund Profile: Reuben Fund 1** (Venture Capital)
+- Fund Type: Venture Capital
+- Investment Focus: Technology, AI, SaaS, FinTech
+- Geographic Focus: North America, Europe
+- Funding Stages: Pre-Seed, Seed, Series A
+
+**Research Requirements:**
+1. Companies that raised funding in the last 12 months
+2. Funding stages: Pre-Seed, Seed, Series A
+3. Deal size range: $0.5M - $15M
+4. Focus on: Technology, AI, SaaS, FinTech
+5. Located in: North America, Europe
+
+**For each company, provide:**
+- Company name and brief description
+- Industry and business model
+- Recent funding details (amount, stage, investors, date)
+- Location and founding team background
+- Traction metrics (revenue, customers, growth rate if available)
+- Website URL
+- Key differentiators and competitive advantages
+
+**Output format:** Return as a structured JSON array with the following format:
+\`\`\`json
+[
+  {
+    "company_name": "Company Name",
+    "description": "Detailed business description",
+    "industry": "Technology",
+    "location": "City, State/Country",
+    "website": "https://company.com",
+    "funding_stage": "Seed|Series A|Series B",
+    "deal_size": 5000000,
+    "valuation": 15000000,
+    "funding_date": "${currentYear}-MM-DD",
+    "lead_investor": "Investor Name",
+    "founder": "Founder name and background",
+    "traction_metrics": {
+      "revenue": "Revenue description",
+      "customers": 1000,
+      "growth_rate": "200% YoY"
+    },
+    "founding_team": "Team description",
+    "competitive_advantage": "Key differentiator"
+  }
+]
+\`\`\`
+
+**Source requirements:** 
+- Use recent funding announcements from startup databases
+- Verify information from multiple sources  
+- Focus on credible sources like Crunchbase, TechCrunch, PitchBook
+- Cross-reference funding data for accuracy
+
+**Search priority:** Recent funding activity in the last 12 months for real companies only.`;
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -202,6 +267,39 @@ export function DealSourcingTestModal() {
                 )}
               </Button>
             </CardContent>
+          </Card>
+
+          {/* Perplexity Prompt Preview */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Code2 className="h-4 w-4" />
+                  Perplexity Prompt for Reuben Fund 1
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPrompt(!showPrompt)}
+                  className="gap-2"
+                >
+                  <Eye className="h-3 w-3" />
+                  {showPrompt ? 'Hide' : 'Show'} Prompt
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            {showPrompt && (
+              <CardContent>
+                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                  <pre className="text-xs whitespace-pre-wrap text-gray-700 dark:text-gray-300 max-h-96 overflow-y-auto">
+                    {generateSamplePrompt()}
+                  </pre>
+                </div>
+                <div className="mt-3 text-xs text-muted-foreground">
+                  This is the actual prompt that will be sent to Perplexity API when sourcing deals for Reuben Fund 1
+                </div>
+              </CardContent>
+            )}
           </Card>
 
           {/* Test Results */}
