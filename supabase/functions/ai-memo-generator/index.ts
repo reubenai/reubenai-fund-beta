@@ -86,18 +86,16 @@ serve(async (req) => {
     const sections = templateData?.sections || [
       { key: 'executive_summary', title: 'Executive Summary' },
       { key: 'company_overview', title: 'Company Overview' },
-      { key: 'market_analysis', title: 'Market Analysis' },
+      { key: 'market_opportunity', title: 'Market Opportunity' },
       { key: 'financial_analysis', title: 'Financial Analysis' },
-      { key: 'team_assessment', title: 'Team Assessment' },
-      { key: 'product_technology', title: 'Product & Technology' },
+      { key: 'management_team', title: 'Management Team' },
+      { key: 'product_service', title: 'Product & Service' },
       { key: 'business_model', title: 'Business Model' },
-      { key: 'traction_metrics', title: 'Traction & Metrics' },
       { key: 'competitive_landscape', title: 'Competitive Landscape' },
-      { key: 'thesis_alignment', title: 'Investment Thesis Alignment' },
-      { key: 'risk_analysis', title: 'Risk Analysis' },
-      { key: 'deal_terms', title: 'Deal Terms & Valuation' },
-      { key: 'recommendation', title: 'Investment Recommendation' },
-      { key: 'next_steps', title: 'Next Steps & Due Diligence' }
+      { key: 'investment_terms', title: 'Investment Terms' },
+      { key: 'risks_mitigants', title: 'Risks & Mitigants' },
+      { key: 'exit_strategy', title: 'Exit Strategy' },
+      { key: 'investment_recommendation', title: 'Investment Recommendation' }
     ];
 
     // 4. Invoke Reuben Orchestrator for comprehensive analysis
