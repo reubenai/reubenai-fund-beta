@@ -161,7 +161,7 @@ export default function Auth() {
             </div>
             <div className="bg-background/50 rounded-md p-3 sm:p-4 text-xs sm:text-sm text-muted-foreground leading-relaxed">
               <p><strong>Please Note:</strong> Beta software will be imperfect by design. Our goal is to test core functionality and capture feedback to shape our product roadmap.</p>
-              <p className="mt-2 sm:mt-3"><strong>API Limitations:</strong> During beta, AI analysis depth is limited by OpenAI and Google Search API quotas. Full sophisticated analysis available with paid API access.</p>
+              <p className="mt-2 sm:mt-3"><strong>API Limitations:</strong> During beta, AI analysis depth is limited by large language model API quotas. Full sophisticated analysis available with paid API access.</p>
               <p className="mt-2 sm:mt-3"><strong>Confidentiality:</strong> By using this platform, you agree to maintain strict confidentiality of all proprietary AI capabilities and platform features.</p>
             </div>
           </div>

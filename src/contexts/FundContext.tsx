@@ -11,6 +11,9 @@ interface Fund {
   target_size?: number;
   currency?: string;
   is_active: boolean;
+  organization?: {
+    name: string;
+  };
 }
 
 interface FundContextType {
@@ -51,7 +54,10 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       let fundsQuery = supabase
         .from('funds')
-        .select('*')
+        .select(`
+          *,
+          organization:organizations(name)
+        `)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 

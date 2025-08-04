@@ -253,7 +253,7 @@ const Index = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-slate-600">{fund.organization_id}</span>
+                      <span className="text-sm text-slate-600">{fund.organization?.name || 'Unknown Organization'}</span>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
