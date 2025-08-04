@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MemoVersion {
   id: string;
@@ -22,33 +23,78 @@ export function useMemoVersions(dealId: string, fundId: string) {
   });
 
   const loadVersions = useCallback(async () => {
-    // For now, return empty versions until database types are updated
-    setVersionState(prev => ({ ...prev, isLoading: false }));
-  }, []);
+    try {
+      setVersionState(prev => ({ ...prev, isLoading: true }));
+      
+      const { data: versions, error } = await supabase
+        .from('ic_memo_versions')
+        .select('*')
+        .eq('deal_id', dealId)
+        .eq('fund_id', fundId)
+        .order('version', { ascending: false });
+
+      if (error) throw error;
+
+      const mappedVersions = versions?.map(v => ({
+        id: v.id,
+        version: v.version,
+        content: v.content,
+        created_at: v.created_at,
+        description: v.description || `Version ${v.version}`
+      })) || [];
+
+      const currentVersion = Math.max(...(versions?.map(v => v.version) || [0]), 1);
+
+      setVersionState({
+        versions: mappedVersions,
+        currentVersion,
+        isLoading: false
+      });
+    } catch (error) {
+      console.error('Error loading memo versions:', error);
+      setVersionState(prev => ({ ...prev, isLoading: false }));
+    }
+  }, [dealId, fundId]);
 
   const saveVersion = useCallback(async (content: any, description?: string) => {
     try {
-      // Create a simple in-memory version for now
-      const newVersion: MemoVersion = {
-        id: `version-${Date.now()}`,
-        version: versionState.currentVersion + 1,
-        content,
-        created_at: new Date().toISOString(),
-        description: description || `Version ${versionState.currentVersion + 1}`
+      const nextVersion = versionState.currentVersion + 1;
+      
+      const { data: newVersion, error } = await supabase
+        .from('ic_memo_versions')
+        .insert({
+          deal_id: dealId,
+          fund_id: fundId,
+          version: nextVersion,
+          content,
+          description: description || `Version ${nextVersion}`,
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const mappedVersion: MemoVersion = {
+        id: newVersion.id,
+        version: newVersion.version,
+        content: newVersion.content,
+        created_at: newVersion.created_at,
+        description: newVersion.description || `Version ${newVersion.version}`
       };
 
       setVersionState(prev => ({
         ...prev,
-        versions: [newVersion, ...prev.versions],
-        currentVersion: newVersion.version
+        versions: [mappedVersion, ...prev.versions],
+        currentVersion: nextVersion
       }));
 
-      return newVersion;
+      return mappedVersion;
     } catch (error) {
       console.error('Error saving memo version:', error);
       throw error;
     }
-  }, [versionState.currentVersion]);
+  }, [dealId, fundId, versionState.currentVersion]);
 
   const restoreVersion = useCallback(async (versionId: string) => {
     try {

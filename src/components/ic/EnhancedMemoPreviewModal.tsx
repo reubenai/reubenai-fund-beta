@@ -25,6 +25,8 @@ import { useMemoCache } from '@/hooks/useMemoCache';
 import { useEnhancedToast } from '@/hooks/useEnhancedToast';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useMemoVersions } from '@/hooks/useMemoVersions';
+import { useMemoProgressTracking } from '@/hooks/useMemoProgressTracking';
+import MemoVersionHistoryModal from './MemoVersionHistoryModal';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Deal {
