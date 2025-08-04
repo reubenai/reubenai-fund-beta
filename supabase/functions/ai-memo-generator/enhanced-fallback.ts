@@ -364,7 +364,10 @@ function generateRisksAndMitigants(dealData: any, riskData: any, orchestratorDat
   }
   
   if (riskData.mitigation_strategies) {
-    risks += `Mitigation Strategies: ${riskData.mitigation_strategies.substring(0, 150)}... `;
+    const mitigationStr = typeof riskData.mitigation_strategies === 'string' 
+      ? riskData.mitigation_strategies 
+      : JSON.stringify(riskData.mitigation_strategies);
+    risks += `Mitigation Strategies: ${mitigationStr.substring(0, 150)}... `;
   }
   
   risks += `Market Risk: ${dealData.industry} sector volatility and competitive dynamics. `;

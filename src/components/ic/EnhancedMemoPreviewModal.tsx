@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Download, 
   Edit3, 
@@ -20,7 +21,9 @@ import {
   RefreshCw,
   X,
   AlertTriangle,
-  History
+  History,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useMemoCache } from '@/hooks/useMemoCache';
 import { useEnhancedToast } from '@/hooks/useEnhancedToast';
@@ -417,14 +420,48 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
 
           {/* Main Content */}
           <div className="flex-1 overflow-y-auto">
-            {/* Data Quality Indicator */}
-            {showDataQuality && contentValidation && (
-              <div className="p-4 border-b bg-muted/20">
-                <DataQualityIndicator 
-                  validationResult={contentValidation}
-                  title="Memo Content Quality Assessment"
-                />
-              </div>
+            {/* Collapsible Data Quality Indicator */}
+            {contentValidation && (
+              <Collapsible open={showDataQuality} onOpenChange={setShowDataQuality}>
+                <CollapsibleTrigger className="w-full">
+                  <div className="flex items-center justify-between p-4 border-b bg-muted/20 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <Shield className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Data Quality Assessment</span>
+                      <Badge variant="outline" className={
+                        contentValidation.fabricationRisk === 'high' ? 'border-destructive text-destructive' :
+                        contentValidation.fabricationRisk === 'medium' ? 'border-warning text-warning' :
+                        'border-success text-success'
+                      }>
+                        {contentValidation.score}/100
+                      </Badge>
+                      {contentValidation.fabricationRisk === 'high' && (
+                        <Badge variant="destructive" className="text-xs">
+                          High Risk
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {showDataQuality ? 'Hide' : 'Show'} Details
+                      </span>
+                      {showDataQuality ? (
+                        <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="p-4 border-b bg-muted/10">
+                    <DataQualityIndicator 
+                      validationResult={contentValidation}
+                      title="Detailed Quality Analysis"
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
             {memoState.isGenerating ? (
               <div className="flex items-center justify-center h-full">
