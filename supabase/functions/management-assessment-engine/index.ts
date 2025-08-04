@@ -63,33 +63,190 @@ async function analyzeManagementTeam({
   dealData,
   teamResearch,
   webResearch,
-  supabase
+  supabase,
+  documentData
 }) {
-  // Extract founder and team information
-  const founders = extractFounderInformation(dealData, teamResearch);
-  const teamComposition = analyzeTeamComposition(dealData, teamResearch);
-  const leadershipCapabilities = assessLeadershipCapabilities(founders, teamResearch);
-  const teamGaps = identifyTeamGaps(teamComposition, dealData);
-  const advisoryBoard = analyzeAdvisoryBoard(dealData, teamResearch);
+  console.log('👥 Management Assessment Engine: Starting comprehensive analysis');
+  
+  // Enhanced document-driven management analysis
+  const documentInsights = documentData ? await extractManagementInsightsFromDocuments(documentData) : null;
+  console.log('📄 Management Assessment Engine: Document insights extracted');
+  
+  // Extract founder and team information with document context
+  const founders = extractFounderInformation(dealData, teamResearch, documentInsights);
+  const teamComposition = analyzeTeamComposition(dealData, teamResearch, documentInsights);
+  const leadershipCapabilities = assessLeadershipCapabilities(founders, teamResearch, documentInsights);
+  const teamGaps = identifyTeamGaps(teamComposition, dealData, documentInsights);
+  const advisoryBoard = analyzeAdvisoryBoard(dealData, teamResearch, documentInsights);
 
   const assessment = {
-    executive_summary: generateExecutiveSummary(founders, teamComposition, leadershipCapabilities),
+    executive_summary: generateExecutiveSummary(founders, teamComposition, leadershipCapabilities, documentInsights),
     founder_profiles: founders,
     team_composition: teamComposition,
     leadership_assessment: leadershipCapabilities,
-    team_strengths: identifyTeamStrengths(founders, teamComposition, teamResearch),
+    team_strengths: identifyTeamStrengths(founders, teamComposition, teamResearch, documentInsights),
     team_gaps_risks: teamGaps,
     advisory_board: advisoryBoard,
     succession_planning: assessSuccessionPlanning(teamComposition, dealData),
-    compensation_equity: analyzeCompensationStructure(dealData),
-    cultural_fit: assessCulturalFit(dealData, teamResearch),
+    compensation_equity: analyzeCompensationStructure(dealData, documentInsights),
+    cultural_fit: assessCulturalFit(dealData, teamResearch, documentInsights),
     hiring_plan: generateHiringPlan(teamGaps, dealData),
-    management_recommendations: generateManagementRecommendations(founders, teamGaps, dealData),
+    management_recommendations: generateManagementRecommendations(founders, teamGaps, dealData, documentInsights),
     due_diligence_focus: generateDueDiligenceFocus(founders, teamComposition),
-    confidence: calculateManagementConfidence(teamResearch, dealData)
+    document_intelligence_score: calculateDocumentIntelligenceScore(documentInsights),
+    confidence: calculateManagementConfidence(teamResearch, dealData, documentInsights)
   };
-
+  
+  console.log('✅ Management Assessment Engine: Analysis complete');
   return assessment;
+}
+
+async function extractManagementInsightsFromDocuments(documentData: any) {
+  if (!documentData || !documentData.extractedTexts || documentData.extractedTexts.length === 0) {
+    return null;
+  }
+  
+  const allText = documentData.extractedTexts.map(doc => `${doc.name}:\n${doc.extracted_text}`).join('\n\n');
+  
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4.1-2025-04-14',
+        messages: [
+          {
+            role: 'system',
+            content: `Extract comprehensive management and governance intelligence from documents. Parse for:
+            1. EXECUTIVE TEAM: Names, titles, backgrounds, tenure, compensation details
+            2. GOVERNANCE: Board structure, equity distribution, decision-making processes
+            3. MANAGEMENT EXPERIENCE: Previous roles, company exits, industry expertise
+            4. ORGANIZATIONAL STRUCTURE: Reporting lines, team sizes, departmental heads
+            5. COMPENSATION: Salary bands, equity pools, incentive structures
+            6. CULTURE: Values, work environment, team dynamics
+            Return structured management insights with specific details where available.`
+          },
+          {
+            role: 'user',
+            content: allText.substring(0, 20000)
+          }
+        ],
+        max_tokens: 1500,
+        temperature: 0.1
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      
+      return {
+        management_info: content,
+        executive_team_data: extractExecutiveTeamData(content),
+        governance_structure: extractGovernanceStructure(content),
+        compensation_data: extractCompensationData(content),
+        organizational_data: extractOrganizationalData(content),
+        culture_insights: extractCultureInsights(content),
+        hasValidatedData: true,
+        confidence: 95
+      };
+    }
+  } catch (error) {
+    console.error('❌ Management Assessment Engine - Document extraction error:', error);
+  }
+  
+  return {
+    management_info: 'Document analysis failed',
+    hasValidatedData: false,
+    confidence: 20
+  };
+}
+
+function extractExecutiveTeamData(content: string): any {
+  const executiveTerms = ['ceo', 'cto', 'cfo', 'coo', 'founder', 'president', 'vp'];
+  const foundExecutives = executiveTerms.filter(title => content.toLowerCase().includes(title));
+  
+  return {
+    hasExecutiveData: foundExecutives.length > 0,
+    executiveTitles: foundExecutives,
+    executiveCount: foundExecutives.length,
+    hasFounderInfo: content.toLowerCase().includes('founder')
+  };
+}
+
+function extractGovernanceStructure(content: string): any {
+  const governanceTerms = ['board', 'equity', 'shares', 'voting', 'governance'];
+  const hasGovernance = governanceTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasGovernanceData: hasGovernance,
+    boardMentions: (content.match(/board/gi) || []).length,
+    equityMentions: (content.match(/(equity|shares)/gi) || []).length,
+    hasVotingStructure: content.toLowerCase().includes('voting')
+  };
+}
+
+function extractCompensationData(content: string): any {
+  const compensationTerms = ['salary', 'compensation', 'equity', 'stock options', 'bonus'];
+  const hasCompData = compensationTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasCompensationData: hasCompData,
+    salaryMentions: content.toLowerCase().includes('salary'),
+    equityMentions: content.toLowerCase().includes('equity'),
+    bonusMentions: content.toLowerCase().includes('bonus')
+  };
+}
+
+function extractOrganizationalData(content: string): any {
+  const orgTerms = ['team', 'department', 'reports to', 'organization', 'structure'];
+  const hasOrgData = orgTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasOrganizationalData: hasOrgData,
+    teamMentions: (content.match(/team[s]?/gi) || []).length,
+    departmentMentions: (content.match(/department[s]?/gi) || []).length,
+    hasReportingStructure: content.toLowerCase().includes('reports to')
+  };
+}
+
+function extractCultureInsights(content: string): any {
+  const cultureTerms = ['culture', 'values', 'mission', 'vision', 'work environment'];
+  const hasCulture = cultureTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasCultureData: hasCulture,
+    valuesMentions: content.toLowerCase().includes('values'),
+    missionMentions: content.toLowerCase().includes('mission'),
+    environmentMentions: content.toLowerCase().includes('environment')
+  };
+}
+
+function calculateDocumentIntelligenceScore(documentInsights: any): number {
+  if (!documentInsights?.hasValidatedData) return 0;
+  
+  let score = 0;
+  
+  // Executive team data scoring
+  if (documentInsights.executive_team_data?.hasExecutiveData) score += 25;
+  if (documentInsights.executive_team_data?.executiveCount > 3) score += 15;
+  
+  // Governance structure scoring
+  if (documentInsights.governance_structure?.hasGovernanceData) score += 20;
+  
+  // Compensation data scoring
+  if (documentInsights.compensation_data?.hasCompensationData) score += 15;
+  
+  // Organizational data scoring
+  if (documentInsights.organizational_data?.hasOrganizationalData) score += 15;
+  
+  // Culture insights scoring
+  if (documentInsights.culture_insights?.hasCultureData) score += 10;
+  
+  return Math.min(score, 100);
 }
 
 function extractFounderInformation(dealData, teamResearch) {

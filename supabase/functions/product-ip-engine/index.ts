@@ -72,14 +72,16 @@ async function analyzeProductAndIP(dealData: any, strategyData: any, documentDat
   const aiAnalysis = await generateProductAnalysis(validatedData, {
     ipResearch,
     competitiveAnalysis,
-    technologyAssessment
+    technologyAssessment,
+    documentInsights
   });
   
-  // Calculate overall product strength score
+  // Calculate overall product strength score with heavy document weighting
   const productScore = calculateProductScore({
     ipResearch,
     competitiveAnalysis,
-    technologyAssessment
+    technologyAssessment,
+    documentInsights
   });
   
   // Determine confidence level
@@ -140,37 +142,97 @@ async function extractProductInsightsFromDocuments(documentData: any) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
           {
             role: 'system',
-            content: 'Extract product and technology information from these documents. Look for: product features, technology stack, IP mentions, competitive advantages, technical innovations, patents, and unique capabilities.'
+            content: `Extract structured product and IP intelligence from these documents. Parse for:
+            1. PRODUCT: Features, capabilities, technology stack, architecture, platforms
+            2. IP ASSETS: Patents filed/pending, trademarks, copyrights, trade secrets
+            3. COMPETITIVE MOAT: Unique technology, barriers to entry, defensibility
+            4. INNOVATION: Technical breakthroughs, R&D pipeline, innovation metrics
+            5. TECHNICAL DEPTH: Algorithm details, data advantages, technical complexity
+            Return structured insights with confidence scores for scoring.`
           },
           {
             role: 'user',
-            content: allText.substring(0, 15000)
+            content: allText.substring(0, 20000)
           }
         ],
-        max_tokens: 1000
+        max_tokens: 1500,
+        temperature: 0.1
       }),
     });
 
     if (response.ok) {
       const data = await response.json();
+      const content = data.choices[0].message.content;
+      
       return {
-        product_features: data.choices[0].message.content,
+        product_features: content,
+        ip_mentions: extractIPMentions(content),
+        technology_depth: extractTechnologyDepth(content),
+        competitive_advantages: extractCompetitiveAdvantages(content),
+        innovation_metrics: extractInnovationMetrics(content),
         source: 'extracted_documents',
-        confidence: 85
+        confidence: 90,
+        hasValidatedData: true
       };
     }
   } catch (error) {
-    console.error('Error extracting product insights:', error);
+    console.error('❌ Product Engine - Document extraction error:', error);
   }
   
   return {
-    product_features: 'Document analysis in progress',
+    product_features: 'Document analysis failed',
     source: 'extracted_documents',
-    confidence: 50
+    confidence: 20,
+    hasValidatedData: false
+  };
+}
+
+function extractIPMentions(content: string): any {
+  const ipKeywords = ['patent', 'trademark', 'copyright', 'proprietary', 'intellectual property'];
+  const hasIP = ipKeywords.some(keyword => content.toLowerCase().includes(keyword));
+  
+  return {
+    hasIPMentions: hasIP,
+    patentReferences: (content.match(/patent[s]?/gi) || []).length,
+    proprietaryTech: content.toLowerCase().includes('proprietary'),
+    trademarkMentions: (content.match(/trademark[s]?/gi) || []).length
+  };
+}
+
+function extractTechnologyDepth(content: string): any {
+  const techTerms = ['algorithm', 'machine learning', 'artificial intelligence', 'blockchain', 'api', 'platform', 'architecture'];
+  const techMentions = techTerms.filter(term => content.toLowerCase().includes(term));
+  
+  return {
+    technologyTerms: techMentions,
+    technicalComplexity: techMentions.length > 3 ? 'high' : techMentions.length > 1 ? 'medium' : 'low',
+    hasTechnicalDetails: techMentions.length > 0
+  };
+}
+
+function extractCompetitiveAdvantages(content: string): any {
+  const advantageKeywords = ['unique', 'first', 'only', 'exclusive', 'innovative', 'breakthrough', 'revolutionary'];
+  const advantages = advantageKeywords.filter(keyword => content.toLowerCase().includes(keyword));
+  
+  return {
+    claimedAdvantages: advantages,
+    advantageStrength: advantages.length > 3 ? 'strong' : advantages.length > 1 ? 'moderate' : 'weak',
+    hasAdvantagesClaimed: advantages.length > 0
+  };
+}
+
+function extractInnovationMetrics(content: string): any {
+  const innovationTerms = ['r&d', 'research', 'development', 'innovation', 'breakthrough', 'novel'];
+  const hasInnovation = innovationTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasInnovationMentions: hasInnovation,
+    innovationFocus: hasInnovation ? 'documented' : 'unclear',
+    rdInvestment: content.toLowerCase().includes('r&d') || content.toLowerCase().includes('research')
   };
 }
 
@@ -393,30 +455,81 @@ async function simulateTechnologyAssessment(industry: string, description: strin
 function calculateProductScore(data: any): number {
   let score = 50; // Base score
   
-  // IP Portfolio scoring
+  // MASSIVE DOCUMENT BONUS - Document intelligence is critical
+  if (data.documentInsights?.hasValidatedData) {
+    console.log('🔥 Product Engine: Document insights detected - applying heavy scoring boost');
+    
+    // IP and Patent scoring from documents (heavily weighted)
+    if (data.documentInsights.ip_mentions?.hasIPMentions) {
+      score += 25; // Major boost for validated IP mentions
+      console.log('💎 Product Engine: IP mentions found in documents (+25 points)');
+    }
+    
+    if (data.documentInsights.ip_mentions?.patentReferences > 0) {
+      score += 15; // Additional boost for patent references
+      console.log('📜 Product Engine: Patent references found (+15 points)');
+    }
+    
+    // Technology depth scoring from documents
+    if (data.documentInsights.technology_depth?.technicalComplexity === 'high') {
+      score += 20;
+      console.log('🔧 Product Engine: High technical complexity (+20 points)');
+    } else if (data.documentInsights.technology_depth?.technicalComplexity === 'medium') {
+      score += 12;
+      console.log('🔧 Product Engine: Medium technical complexity (+12 points)');
+    }
+    
+    // Competitive advantages from documents
+    if (data.documentInsights.competitive_advantages?.advantageStrength === 'strong') {
+      score += 18;
+      console.log('🏆 Product Engine: Strong competitive advantages claimed (+18 points)');
+    } else if (data.documentInsights.competitive_advantages?.advantageStrength === 'moderate') {
+      score += 10;
+      console.log('🏆 Product Engine: Moderate competitive advantages (+10 points)');
+    }
+    
+    // Innovation metrics from documents
+    if (data.documentInsights.innovation_metrics?.hasInnovationMentions) {
+      score += 12;
+      console.log('💡 Product Engine: Innovation mentions found (+12 points)');
+    }
+    
+    // Base document analysis bonus
+    score += 15; // Always reward document-driven analysis
+    console.log('📄 Product Engine: Document analysis completed (+15 points)');
+  } else {
+    console.log('⚠️ Product Engine: No document insights - limited scoring potential');
+  }
+  
+  // Traditional IP Portfolio scoring (lower weight if we have documents)
   if (data.ipResearch.quality !== 'limited') {
+    const ipBonus = data.documentInsights?.hasValidatedData ? 8 : 15; // Reduce if we have better data
     if (data.ipResearch.portfolio.patents && !data.ipResearch.portfolio.patents.includes('N/A')) {
-      score += 15;
+      score += ipBonus;
     }
   }
   
-  // Competitive advantage scoring
+  // Competitive advantage scoring (lower weight if we have documents)
+  const competitiveBonus = data.documentInsights?.hasValidatedData ? 5 : 10;
   if (data.competitiveAnalysis.advantages.length > 1) {
-    score += 10;
+    score += competitiveBonus;
   }
   if (data.competitiveAnalysis.moat_strength.includes('Strong')) {
-    score += 15;
+    const moatBonus = data.documentInsights?.hasValidatedData ? 8 : 15;
+    score += moatBonus;
   } else if (data.competitiveAnalysis.moat_strength.includes('Moderate')) {
-    score += 8;
+    score += Math.round(competitiveBonus * 0.8);
   }
   
-  // Technology assessment scoring
+  // Technology assessment scoring (lower weight if we have documents)
+  const techBonus = data.documentInsights?.hasValidatedData ? 6 : 12;
   if (data.technologyAssessment.innovation_level.includes('High')) {
-    score += 12;
+    score += techBonus;
   } else if (data.technologyAssessment.innovation_level.includes('Moderate')) {
-    score += 6;
+    score += Math.round(techBonus * 0.5);
   }
   
+  console.log(`🎯 Product Engine: Final score calculated: ${Math.min(score, 100)}`);
   return Math.min(score, 100);
 }
 

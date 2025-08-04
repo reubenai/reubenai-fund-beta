@@ -152,37 +152,125 @@ async function extractTeamInsightsFromDocuments(documentData: any) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
           {
             role: 'system',
-            content: 'Extract team and founder information from these documents. Look for: founder backgrounds, team composition, advisory board, previous experience, achievements, and leadership roles.'
+            content: `Extract comprehensive team and leadership intelligence from documents. Parse for:
+            1. FOUNDER PROFILES: Names, backgrounds, education, previous companies, achievements
+            2. TEAM COMPOSITION: Size, key roles, department structure, hiring plans
+            3. LEADERSHIP EXPERIENCE: Years of experience, management roles, industry expertise
+            4. ADVISORY BOARD: Advisor names, backgrounds, expertise areas, value-add
+            5. ACHIEVEMENTS: Awards, recognitions, successful exits, published work
+            6. TRACK RECORD: Previous startup experience, leadership successes, failures learned from
+            Return structured team insights with specific names and credentials where available.`
           },
           {
             role: 'user',
-            content: allText.substring(0, 15000)
+            content: allText.substring(0, 20000)
           }
         ],
-        max_tokens: 1000
+        max_tokens: 1500,
+        temperature: 0.1
       }),
     });
 
     if (response.ok) {
       const data = await response.json();
+      const content = data.choices[0].message.content;
+      
       return {
-        team_info: data.choices[0].message.content,
+        team_info: content,
+        founder_profiles: extractFounderProfiles(content),
+        team_composition_data: extractTeamCompositionData(content),
+        leadership_credentials: extractLeadershipCredentials(content),
+        advisory_information: extractAdvisoryInformation(content),
+        achievement_data: extractAchievementData(content),
         source: 'extracted_documents',
-        confidence: 85
+        confidence: 90,
+        hasValidatedData: true
       };
     }
   } catch (error) {
-    console.error('Error extracting team insights:', error);
+    console.error('❌ Team Research Engine - Document extraction error:', error);
   }
   
   return {
-    team_info: 'Document analysis in progress',
+    team_info: 'Document analysis failed',
     source: 'extracted_documents',
-    confidence: 50
+    confidence: 20,
+    hasValidatedData: false
+  };
+}
+
+function extractFounderProfiles(content: string): any {
+  const founderTerms = ['founder', 'ceo', 'co-founder', 'president'];
+  const hasFounderInfo = founderTerms.some(term => content.toLowerCase().includes(term));
+  
+  // Look for education mentions
+  const educationTerms = ['university', 'college', 'mba', 'phd', 'stanford', 'harvard', 'mit'];
+  const hasEducation = educationTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasFounderProfiles: hasFounderInfo,
+    hasEducationData: hasEducation,
+    founderMentions: (content.match(/founder[s]?/gi) || []).length,
+    ceoMentions: (content.match(/ceo[s]?/gi) || []).length,
+    educationMentions: educationTerms.filter(term => content.toLowerCase().includes(term))
+  };
+}
+
+function extractTeamCompositionData(content: string): any {
+  const teamSizeMatch = content.match(/team[s]?\s+of\s+(\d+)/gi);
+  const employeeMatch = content.match(/(\d+)\s+employee[s]?/gi);
+  
+  const roleTerms = ['engineer', 'developer', 'sales', 'marketing', 'operations', 'finance'];
+  const rolesFound = roleTerms.filter(role => content.toLowerCase().includes(role));
+  
+  return {
+    hasTeamSizeData: teamSizeMatch || employeeMatch,
+    teamSizeExtracted: teamSizeMatch || employeeMatch,
+    keyRolesMentioned: rolesFound,
+    hasDepartmentStructure: rolesFound.length > 2
+  };
+}
+
+function extractLeadershipCredentials(content: string): any {
+  const experienceTerms = ['years of experience', 'previously', 'former', 'ex-', 'veteran'];
+  const hasExperience = experienceTerms.some(term => content.toLowerCase().includes(term));
+  
+  const leadershipTerms = ['led', 'managed', 'directed', 'headed', 'executive', 'VP', 'director'];
+  const hasLeadership = leadershipTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasExperienceData: hasExperience,
+    hasLeadershipExperience: hasLeadership,
+    leadershipTerms: leadershipTerms.filter(term => content.toLowerCase().includes(term)),
+    seniorRoleMentions: (content.match(/(vp|vice president|director|executive)/gi) || []).length
+  };
+}
+
+function extractAdvisoryInformation(content: string): any {
+  const advisorTerms = ['advisor', 'advisory board', 'mentor', 'board member'];
+  const hasAdvisors = advisorTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasAdvisoryData: hasAdvisors,
+    advisorMentions: (content.match(/advisor[s]?/gi) || []).length,
+    boardMentions: (content.match(/board/gi) || []).length,
+    mentorMentions: (content.match(/mentor[s]?/gi) || []).length
+  };
+}
+
+function extractAchievementData(content: string): any {
+  const achievementTerms = ['award', 'recognition', 'achievement', 'success', 'exit', 'sold', 'acquired'];
+  const hasAchievements = achievementTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasAchievements: hasAchievements,
+    awardMentions: (content.match(/award[s]?/gi) || []).length,
+    successMentions: (content.match(/success/gi) || []).length,
+    exitMentions: (content.match(/(exit|sold|acquired)/gi) || []).length
   };
 }
 
@@ -480,33 +568,95 @@ function assessLeadershipFromBackground(profile: any): string {
 function calculateTeamScore(data: any): number {
   let score = 50; // Base score
   
-  // Founder research quality
-  if (data.founderResearch.research_quality === 'linkedin_available') {
-    score += 15;
-  } else if (data.founderResearch.research_quality === 'simulated') {
-    score += 5;
+  // MASSIVE DOCUMENT BONUS - Document team intelligence is critical
+  if (data.documentInsights?.hasValidatedData) {
+    console.log('🔥 Team Research Engine: Document insights detected - applying heavy scoring boost');
+    
+    // Founder profiles from documents (heavily weighted)
+    if (data.documentInsights.founder_profiles?.hasFounderProfiles) {
+      score += 25; // Major boost for validated founder profiles
+      console.log('👤 Team Research Engine: Founder profiles found in documents (+25 points)');
+      
+      if (data.documentInsights.founder_profiles.hasEducationData) {
+        score += 15; // Education credentials bonus
+        console.log('🎓 Team Research Engine: Education credentials found (+15 points)');
+      }
+    }
+    
+    // Team composition data from documents
+    if (data.documentInsights.team_composition_data?.hasTeamSizeData) {
+      score += 18; // Team structure is critical
+      console.log('👥 Team Research Engine: Team composition data found (+18 points)');
+      
+      if (data.documentInsights.team_composition_data.hasDepartmentStructure) {
+        score += 12; // Department structure bonus
+        console.log('🏢 Team Research Engine: Department structure documented (+12 points)');
+      }
+    }
+    
+    // Leadership credentials from documents
+    if (data.documentInsights.leadership_credentials?.hasLeadershipExperience) {
+      score += 20; // Leadership experience is critical
+      console.log('👔 Team Research Engine: Leadership experience found (+20 points)');
+      
+      if (data.documentInsights.leadership_credentials.seniorRoleMentions > 0) {
+        score += 10; // Senior role experience bonus
+        console.log('⭐ Team Research Engine: Senior roles mentioned (+10 points)');
+      }
+    }
+    
+    // Advisory board from documents
+    if (data.documentInsights.advisory_information?.hasAdvisoryData) {
+      score += 15;
+      console.log('🤝 Team Research Engine: Advisory board information found (+15 points)');
+    }
+    
+    // Achievement data from documents
+    if (data.documentInsights.achievement_data?.hasAchievements) {
+      score += 12;
+      console.log('🏆 Team Research Engine: Achievements documented (+12 points)');
+      
+      if (data.documentInsights.achievement_data.exitMentions > 0) {
+        score += 8; // Previous exits are valuable
+        console.log('💰 Team Research Engine: Previous exits mentioned (+8 points)');
+      }
+    }
+    
+    // Base document analysis bonus
+    score += 15; // Always reward document-driven analysis
+    console.log('📄 Team Research Engine: Document analysis completed (+15 points)');
+  } else {
+    console.log('⚠️ Team Research Engine: No document insights - limited scoring potential');
   }
   
-  // Domain expertise
-  if (data.teamComposition.assessment.domain_expertise.includes('Strong')) {
-    score += 20;
-  } else if (data.teamComposition.assessment.domain_expertise.includes('relevant')) {
-    score += 10;
-  }
+  // Traditional founder research quality (lower weight if we have documents)
+  const researchBonus = data.documentInsights?.hasValidatedData ? 
+    (data.founderResearch.research_quality === 'linkedin_available' ? 8 : 3) :
+    (data.founderResearch.research_quality === 'linkedin_available' ? 15 : 5);
+  score += researchBonus;
   
-  // Execution factors
+  // Traditional domain expertise (lower weight if we have documents)
+  const domainBonus = data.documentInsights?.hasValidatedData ? 
+    (data.teamComposition.assessment.domain_expertise.includes('Strong') ? 10 : 5) :
+    (data.teamComposition.assessment.domain_expertise.includes('Strong') ? 20 : 10);
+  score += domainBonus;
+  
+  // Execution factors (lower weight if we have documents)
   const executionFactors = Object.values(data.executionAssessment.factors);
   const positiveFactors = executionFactors.filter((factor: any) => 
     factor.includes('experience') || factor.includes('mentioned') || factor.includes('indicated')
-  ).length;
+  );
+  const executionBonus = data.documentInsights?.hasValidatedData ? 
+    positiveFactors.length * 3 : positiveFactors.length * 5;
+  score += executionBonus;
   
-  score += positiveFactors * 5;
-  
-  // Team composition
+  // Traditional team composition (lower weight if we have documents)
   if (data.teamComposition.assessment.key_roles_filled !== 'Unknown') {
-    score += 10;
+    const teamBonus = data.documentInsights?.hasValidatedData ? 5 : 10;
+    score += teamBonus;
   }
   
+  console.log(`🎯 Team Research Engine: Final score calculated: ${Math.min(score, 100)}`);
   return Math.min(score, 100);
 }
 

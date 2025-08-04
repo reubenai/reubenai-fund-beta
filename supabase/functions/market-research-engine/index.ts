@@ -139,37 +139,120 @@ async function extractMarketInsightsFromDocuments(documentData: any) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
           {
             role: 'system',
-            content: 'Extract market and business information from these documents. Look for: market size data, target customers, competitive analysis, market validation, growth opportunities, and business model details.'
+            content: `Extract comprehensive market intelligence from documents. Parse for:
+            1. MARKET SIZE: TAM/SAM/SOM data, market value, growth rates, CAGR
+            2. CUSTOMER VALIDATION: Customer interviews, testimonials, traction metrics
+            3. COMPETITIVE ANALYSIS: Competitor mentions, market share, positioning
+            4. MARKET TRENDS: Industry trends, market dynamics, growth drivers
+            5. GEOGRAPHIC MARKETS: Target regions, expansion plans, market penetration
+            6. BUSINESS MODEL: Revenue streams, pricing, customer acquisition
+            Return structured market insights with quantitative data where available.`
           },
           {
             role: 'user',
-            content: allText.substring(0, 15000)
+            content: allText.substring(0, 20000)
           }
         ],
-        max_tokens: 1000
+        max_tokens: 1500,
+        temperature: 0.1
       }),
     });
 
     if (response.ok) {
       const data = await response.json();
+      const content = data.choices[0].message.content;
+      
       return {
-        market_info: data.choices[0].message.content,
+        market_info: content,
+        market_size_data: extractMarketSizeData(content),
+        customer_validation: extractCustomerValidation(content),
+        competitive_intelligence: extractCompetitiveIntelligence(content),
+        growth_metrics: extractGrowthMetrics(content),
+        geographic_insights: extractGeographicInsights(content),
         source: 'extracted_documents',
-        confidence: 85
+        confidence: 90,
+        hasValidatedData: true
       };
     }
   } catch (error) {
-    console.error('Error extracting market insights:', error);
+    console.error('❌ Market Research Engine - Document extraction error:', error);
   }
   
   return {
-    market_info: 'Document analysis in progress',
+    market_info: 'Document analysis failed',
     source: 'extracted_documents',
-    confidence: 50
+    confidence: 20,
+    hasValidatedData: false
+  };
+}
+
+function extractMarketSizeData(content: string): any {
+  const marketTerms = ['tam', 'sam', 'som', 'market size', 'billion', 'million', 'cagr', 'growth rate'];
+  const hasMarketData = marketTerms.some(term => content.toLowerCase().includes(term));
+  
+  // Extract numerical market data
+  const billionMatches = content.match(/\$?(\d+\.?\d*)\s*billion/gi) || [];
+  const millionMatches = content.match(/\$?(\d+\.?\d*)\s*million/gi) || [];
+  const cagrMatches = content.match(/(\d+\.?\d*)%\s*cagr/gi) || [];
+  
+  return {
+    hasMarketSizeData: hasMarketData,
+    billionDollarMarkets: billionMatches.length,
+    millionDollarMarkets: millionMatches.length,
+    growthRatesMentioned: cagrMatches.length,
+    marketSizeConfidence: hasMarketData ? 'high' : 'low'
+  };
+}
+
+function extractCustomerValidation(content: string): any {
+  const validationTerms = ['customer', 'testimonial', 'validation', 'feedback', 'interview', 'survey', 'traction'];
+  const hasValidation = validationTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasCustomerValidation: hasValidation,
+    testimonialMentions: (content.match(/testimonial[s]?/gi) || []).length,
+    customerInterviews: content.toLowerCase().includes('interview'),
+    tractionData: content.toLowerCase().includes('traction')
+  };
+}
+
+function extractCompetitiveIntelligence(content: string): any {
+  const competitorTerms = ['competitor', 'competition', 'versus', 'alternative', 'differentiation'];
+  const hasCompetitive = competitorTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasCompetitiveAnalysis: hasCompetitive,
+    competitorMentions: (content.match(/competitor[s]?/gi) || []).length,
+    differentiationClaimed: content.toLowerCase().includes('differentiation'),
+    competitiveAdvantage: content.toLowerCase().includes('advantage')
+  };
+}
+
+function extractGrowthMetrics(content: string): any {
+  const growthTerms = ['growth', 'increase', 'expansion', 'scaling', 'revenue'];
+  const hasGrowth = growthTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasGrowthMetrics: hasGrowth,
+    revenueGrowth: content.toLowerCase().includes('revenue'),
+    expansionPlans: content.toLowerCase().includes('expansion'),
+    scalingMentions: content.toLowerCase().includes('scaling')
+  };
+}
+
+function extractGeographicInsights(content: string): any {
+  const regions = ['north america', 'europe', 'asia', 'global', 'international', 'regional'];
+  const foundRegions = regions.filter(region => content.toLowerCase().includes(region));
+  
+  return {
+    hasGeographicData: foundRegions.length > 0,
+    targetRegions: foundRegions,
+    globalMentions: content.toLowerCase().includes('global'),
+    internationalFocus: content.toLowerCase().includes('international')
   };
 }
 
@@ -332,8 +415,64 @@ async function simulateMarketTrends(industry: string): Promise<string[]> {
 function calculateMarketScore(intelligence: any, enhancedContext: any = null): number {
   let score = 50; // Base score
   
-  // Adjust based on available data quality
-  if (intelligence.data_quality === 'limited') {
+  // MASSIVE DOCUMENT BONUS - Document market intelligence is critical
+  if (intelligence.documentInsights?.hasValidatedData) {
+    console.log('🔥 Market Research Engine: Document insights detected - applying heavy scoring boost');
+    
+    // Market size data from documents (heavily weighted)
+    if (intelligence.documentInsights.market_size_data?.hasMarketSizeData) {
+      score += 25; // Major boost for validated market size data
+      console.log('📊 Market Research Engine: Market size data found in documents (+25 points)');
+      
+      if (intelligence.documentInsights.market_size_data.billionDollarMarkets > 0) {
+        score += 15; // Additional boost for billion-dollar market mentions
+        console.log('💰 Market Research Engine: Billion-dollar market mentions (+15 points)');
+      }
+      
+      if (intelligence.documentInsights.market_size_data.growthRatesMentioned > 0) {
+        score += 12; // Growth rate data bonus
+        console.log('📈 Market Research Engine: Growth rates mentioned (+12 points)');
+      }
+    }
+    
+    // Customer validation from documents
+    if (intelligence.documentInsights.customer_validation?.hasCustomerValidation) {
+      score += 20; // Strong validation is critical for market confidence
+      console.log('✅ Market Research Engine: Customer validation found (+20 points)');
+      
+      if (intelligence.documentInsights.customer_validation.tractionData) {
+        score += 10; // Traction data bonus
+        console.log('🚀 Market Research Engine: Traction data mentioned (+10 points)');
+      }
+    }
+    
+    // Competitive intelligence from documents
+    if (intelligence.documentInsights.competitive_intelligence?.hasCompetitiveAnalysis) {
+      score += 15;
+      console.log('🥊 Market Research Engine: Competitive analysis found (+15 points)');
+    }
+    
+    // Growth metrics from documents
+    if (intelligence.documentInsights.growth_metrics?.hasGrowthMetrics) {
+      score += 12;
+      console.log('📊 Market Research Engine: Growth metrics found (+12 points)');
+    }
+    
+    // Geographic insights bonus
+    if (intelligence.documentInsights.geographic_insights?.hasGeographicData) {
+      score += 8;
+      console.log('🌍 Market Research Engine: Geographic insights found (+8 points)');
+    }
+    
+    // Base document analysis bonus
+    score += 15; // Always reward document-driven analysis
+    console.log('📄 Market Research Engine: Document analysis completed (+15 points)');
+  } else {
+    console.log('⚠️ Market Research Engine: No document insights - limited scoring potential');
+  }
+  
+  // Adjust based on available data quality (lower weight if we have documents)
+  if (intelligence.data_quality === 'limited' && !intelligence.documentInsights?.hasValidatedData) {
     return 45; // Low score for insufficient data
   }
   
@@ -341,20 +480,22 @@ function calculateMarketScore(intelligence: any, enhancedContext: any = null): n
   const marketWeight = enhancedContext?.marketCriteria?.weight || 20;
   const weightMultiplier = marketWeight / 20; // Normalize to base weight of 20
   
-  // Simulate scoring based on market characteristics with enhanced weights
+  // Traditional growth rate scoring (lower weight if we have documents)
   if (intelligence.growth_rate && intelligence.growth_rate.includes('CAGR')) {
     const cagrMatch = intelligence.growth_rate.match(/(\d+\.?\d*)%/);
     if (cagrMatch) {
       const cagr = parseFloat(cagrMatch[1]);
       const growthBonus = cagr >= 20 ? 25 : cagr >= 15 ? 20 : cagr >= 10 ? 15 : cagr >= 5 ? 10 : 0;
-      score += Math.round(growthBonus * weightMultiplier);
+      const adjustedBonus = intelligence.documentInsights?.hasValidatedData ? Math.round(growthBonus * 0.5) : growthBonus;
+      score += Math.round(adjustedBonus * weightMultiplier);
     }
   }
   
-  // Adjust for market size with enhanced weighting
+  // Traditional market size scoring (lower weight if we have documents)  
   const sizeBonus = intelligence.market_size?.includes('T') ? 15 : 
                    intelligence.market_size?.includes('B') ? 10 : 0;
-  score += Math.round(sizeBonus * weightMultiplier);
+  const adjustedSizeBonus = intelligence.documentInsights?.hasValidatedData ? Math.round(sizeBonus * 0.5) : sizeBonus;
+  score += Math.round(adjustedSizeBonus * weightMultiplier);
   
   // Enhanced fund alignment scoring
   if (intelligence.fund_alignment) {
@@ -364,9 +505,9 @@ function calculateMarketScore(intelligence: any, enhancedContext: any = null): n
     }
   }
   
-  // Bonus for document-driven insights
-  if (intelligence.sources.some((s: any) => s.source === 'extracted_documents')) {
-    score += 10; // Document analysis bonus
+  // Legacy document bonus (only if not already counted)
+  if (intelligence.sources.some((s: any) => s.source === 'extracted_documents') && !intelligence.documentInsights?.hasValidatedData) {
+    score += 10; // Legacy document analysis bonus
   }
   
   // VC vs PE adjustments
@@ -385,7 +526,7 @@ function calculateMarketScore(intelligence: any, enhancedContext: any = null): n
     }
   }
   
-  // Cap at 100
+  console.log(`🎯 Market Research Engine: Final score calculated: ${Math.min(score, 100)}`);
   return Math.min(score, 100);
 }
 
