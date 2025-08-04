@@ -1347,7 +1347,6 @@ function generateRevenueMetric(stage: string): string {
   const ranges = revenueRanges[stage] || revenueRanges['Seed'];
   return ranges[Math.floor(Math.random() * ranges.length)];
 }
-}
 
 async function validateCompanies(deals: any[]) {
   console.log(`Validating ${deals.length} companies`);
