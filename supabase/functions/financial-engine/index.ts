@@ -302,6 +302,70 @@ async function analyzePitchDeckFinancials(pitchDeckText: string) {
 
 function extractMetricFromText(text: string, metric: string): string {
   const lines = text.split('\n');
+  
+  // Enhanced pattern matching for financial data
+  if (metric.toLowerCase().includes('revenue')) {
+    // Look for revenue patterns like "$10M", "$20,000,000", "5 Year Sales Growth"
+    const revenuePatterns = [
+      /\$[0-9,]+(?:M|million|K|thousand|B|billion)/gi,
+      /sales.*\$[0-9,]+/gi,
+      /revenue.*\$[0-9,]+/gi,
+      /\$[0-9,]+.*sales/gi,
+      /\$[0-9,]+.*revenue/gi,
+      /year.*sales.*\$[0-9,]+/gi
+    ];
+    
+    for (const pattern of revenuePatterns) {
+      const matches = text.match(pattern);
+      if (matches && matches.length > 0) {
+        return matches.join(', ').substring(0, 100);
+      }
+    }
+    
+    // Look for sales growth tables
+    const salesGrowthMatch = text.match(/Year.*Sales.*\$[0-9,]+/gi);
+    if (salesGrowthMatch) {
+      return `Sales projections found: ${salesGrowthMatch[0].substring(0, 80)}`;
+    }
+  }
+  
+  if (metric.toLowerCase().includes('growth')) {
+    // Look for growth percentages and year-over-year projections
+    const growthPatterns = [
+      /[0-9]+%.*growth/gi,
+      /growth.*[0-9]+%/gi,
+      /CAGR.*[0-9]+%/gi,
+      /[0-9]+%.*CAGR/gi,
+      /year.*[0-9]+%/gi
+    ];
+    
+    for (const pattern of growthPatterns) {
+      const matches = text.match(pattern);
+      if (matches && matches.length > 0) {
+        return matches.join(', ').substring(0, 100);
+      }
+    }
+  }
+  
+  if (metric.toLowerCase().includes('funding')) {
+    // Look for funding usage and requirements
+    const fundingPatterns = [
+      /\$[0-9,]+.*[Mm].*fuel/gi,
+      /raise.*\$[0-9,]+/gi,
+      /\$[0-9,]+.*will.*fuel/gi,
+      /funding.*\$[0-9,]+/gi,
+      /investment.*\$[0-9,]+/gi
+    ];
+    
+    for (const pattern of fundingPatterns) {
+      const matches = text.match(pattern);
+      if (matches && matches.length > 0) {
+        return matches.join(', ').substring(0, 100);
+      }
+    }
+  }
+  
+  // Fallback to original logic
   const metricLine = lines.find(line => 
     line.toLowerCase().includes(metric.toLowerCase()) && 
     (line.includes('$') || line.includes('%') || line.includes('month'))
@@ -628,8 +692,57 @@ function estimateRunwayExtension(dealSize: number): string {
 
 function calculateFinancialScore(data: any): number {
   let score = 50; // Base score
+  let documentBonus = 0;
+  let financialMetricsBonus = 0;
   
-  // Business model scoring
+  // Enhanced document-based scoring
+  if (data.documentAnalysis.documents_found) {
+    documentBonus = 5; // Base document bonus
+    
+    // Analyze extracted financial data for significant scoring adjustments
+    const extractedData = data.documentAnalysis.financial_data;
+    
+    // Revenue projections and growth rate analysis
+    if (extractedData) {
+      // Parse revenue information from extracted text
+      const revenueInfo = extractedData.revenue || '';
+      const growthInfo = extractedData.growth_rate || '';
+      
+      // Strong revenue projections (+15 points)
+      if (revenueInfo.includes('$') && (
+        revenueInfo.match(/(\$[0-9,]+[MB])|(\$[0-9]+\.[0-9]+[MB])/i) ||
+        revenueInfo.includes('million') || revenueInfo.includes('billion')
+      )) {
+        financialMetricsBonus += 15;
+        console.log('📊 Found significant revenue projections in documents');
+      }
+      
+      // Growth rate analysis (+10 points for strong growth)
+      if (growthInfo.includes('%') && (
+        growthInfo.match(/[0-9]+%/) &&
+        parseInt(growthInfo.match(/([0-9]+)%/)?.[1] || '0') > 50
+      )) {
+        financialMetricsBonus += 10;
+        console.log('📈 Found strong growth projections in documents');
+      }
+      
+      // Unit economics indicators (+10 points)
+      const unitEconomics = extractedData.unit_economics || '';
+      if (unitEconomics.includes('LTV') || unitEconomics.includes('CAC') || 
+          unitEconomics.includes('margin') || unitEconomics.includes('gross')) {
+        financialMetricsBonus += 10;
+        console.log('💰 Found unit economics data in documents');
+      }
+      
+      // Business model clarity from documents (+5 points)
+      if (extractedData.funding_usage && extractedData.funding_usage !== 'Document text processed') {
+        financialMetricsBonus += 5;
+        console.log('🎯 Found clear funding usage plan in documents');
+      }
+    }
+  }
+  
+  // Business model scoring (adjusted with document insights)
   if (data.businessModelAnalysis.monetization.includes('Strong')) {
     score += 20;
   } else if (data.businessModelAnalysis.monetization.includes('Moderate')) {
@@ -643,15 +756,16 @@ function calculateFinancialScore(data: any): number {
     score += 8;
   }
   
-  // Document availability bonus
-  if (data.documentAnalysis.documents_found) {
-    score += 10;
-  }
+  // Apply document bonuses (can significantly impact score)
+  score += documentBonus + financialMetricsBonus;
   
   // Funding alignment
   if (data.fundingAnalysis.alignment_with_fund.includes('Well-aligned')) {
     score += 5;
   }
+  
+  // Log scoring breakdown for transparency
+  console.log(`💯 Financial Score Breakdown: Base(50) + Business(${score-50-documentBonus-financialMetricsBonus}) + Documents(${documentBonus}) + Metrics(${financialMetricsBonus}) = ${Math.min(score, 100)}`);
   
   return Math.min(score, 100);
 }
