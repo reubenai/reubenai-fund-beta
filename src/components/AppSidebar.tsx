@@ -35,7 +35,6 @@ const secondaryFunctions = [
   { title: "Analytics", url: "/analytics", icon: BarChart3, description: "LP-ready metrics", badge: "Soon", disabled: true },
   { title: "Fund Memory", url: "/fund-memory", icon: Brain, description: "Institutional intelligence", badge: "Soon", disabled: true },
   { title: "Due Diligence Hub", url: "/dd", icon: Briefcase, description: "DD workflows", badge: "Soon", disabled: true },
-  { title: "LP Reporting", url: "/lp-reporting", icon: PieChart, description: "LP reports", badge: "Soon", disabled: true },
   { title: "Founder Workflows", url: "/founder-workflows", icon: Users, description: "Founder tools", badge: "Soon", disabled: true },
 ];
 
@@ -211,10 +210,10 @@ export function AppSidebar() {
         {/* Secondary Functions - Compact Grid */}
         <SidebarGroup className="px-4 py-2">
           <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-            Analytics & Insights
+            Upcoming Features
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <div className="grid grid-cols-1 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {secondaryFunctions.map((item) => (
                 <div key={item.title} className="h-full">
                   <div className={`group relative rounded-lg border border-border/60 p-3 text-center transition-all duration-200 h-full flex flex-col justify-between ${item.disabled ? 'opacity-50 cursor-not-allowed bg-muted/20' : 'bg-background/80 hover:border-border hover:bg-background hover:shadow-sm cursor-pointer'}`}>
