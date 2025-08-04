@@ -538,66 +538,77 @@ export function DealSourcingModal({ open, onClose, fundId, fundName }: DealSourc
           </p>
         </div>
 
-        <div className="grid gap-4 max-h-[400px] overflow-y-auto pr-2">
-          {sourcedCompanies.map((company) => (
-            <Card key={company.id} className={company.removed_by_user ? 'opacity-50' : ''}>
-              <CardContent className="pt-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <h4 className="font-semibold truncate">{company.company_name}</h4>
-                      <Badge variant={company.priority_level === 'HIGH' ? 'default' : 'secondary'}>
-                        {company.priority_level}
-                      </Badge>
-                      {company.website && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => window.open(company.website, '_blank')}
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                      {company.description}
-                    </p>
+        <div className="space-y-4 min-h-[300px] max-h-[500px] overflow-y-auto pr-2">
+          {sourcedCompanies.length > 0 ? (
+            sourcedCompanies.map((company) => (
+              <Card key={company.id} className={company.removed_by_user ? 'opacity-50' : ''}>
+                <CardContent className="pt-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <h4 className="font-semibold truncate">{company.company_name}</h4>
+                        <Badge variant={company.priority_level === 'HIGH' ? 'default' : 'secondary'}>
+                          {company.priority_level || 'MEDIUM'}
+                        </Badge>
+                        {company.website && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(company.website, '_blank')}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                      
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-3 leading-relaxed">
+                        {company.description}
+                      </p>
 
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <span className="font-medium text-muted-foreground">Industry:</span>
-                        <p className="truncate">{company.industry}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium text-muted-foreground">Location:</span>
-                        <p className="truncate">{company.location}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium text-muted-foreground">Stage:</span>
-                        <p>{company.funding_stage}</p>
-                      </div>
-                      <div>
-                        <span className="font-medium text-muted-foreground">ReubenAI Score:</span>
-                        <p>{company.ai_analysis_score}/100</p>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="font-medium text-muted-foreground">Industry:</span>
+                          <p className="truncate">{company.industry}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Location:</span>
+                          <p className="truncate">{company.location}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">Stage:</span>
+                          <p>{company.funding_stage}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-muted-foreground">ReubenAI Score:</span>
+                          <p>{company.ai_analysis_score || 'TBD'}/100</p>
+                        </div>
                       </div>
                     </div>
+
+                    {!company.removed_by_user && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeCompany(company.id)}
+                        className="text-destructive hover:text-destructive flex-shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
-
-                  {!company.removed_by_user && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeCompany(company.id)}
-                      className="text-destructive hover:text-destructive ml-2 flex-shrink-0"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="flex items-center justify-center h-48 text-center">
+              <div className="space-y-2">
+                <p className="text-muted-foreground">No companies found</p>
+                <p className="text-sm text-muted-foreground">
+                  Try adjusting your search criteria or thesis configuration
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-between">
