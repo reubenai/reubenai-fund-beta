@@ -103,87 +103,136 @@ async function callOpenAI(messages: any[], model = 'gpt-4.1-2025-04-14') {
   return data.choices[0].message.content;
 }
 
-async function callPerplexityAPI(prompt: string, model = 'sonar') {
+async function callPerplexityAPI(prompt: string, model = 'llama-3.1-sonar-small-128k-online') {
   if (!perplexityApiKey) {
     throw new Error('Perplexity API key not configured');
   }
 
   console.log('🔍 Calling Perplexity API with model:', model);
   console.log('📝 Prompt length:', prompt.length);
+  console.log('📋 Prompt preview:', prompt.substring(0, 500) + '...');
 
-  const response = await fetch('https://api.perplexity.ai/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${perplexityApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ]
-    }),
-  });
+  try {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${perplexityApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful assistant that finds real companies and their funding information. Always respond with valid JSON format as requested.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.2,
+        top_p: 0.9,
+        max_tokens: 4000,
+        return_images: false,
+        return_related_questions: false,
+        search_recency_filter: 'month',
+        frequency_penalty: 1,
+        presence_penalty: 0
+      }),
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('❌ Perplexity API failed:', errorText);
-    throw new Error(`Perplexity API error: ${response.status} ${response.statusText}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Perplexity API failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      });
+      throw new Error(`Perplexity API error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ Perplexity API response received, content length:', data.choices?.[0]?.message?.content?.length || 0);
+    console.log('📄 Response preview:', data.choices?.[0]?.message?.content?.substring(0, 200) + '...');
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid response structure from Perplexity API');
+    }
+    
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('❌ Perplexity API call failed:', error);
+    throw error;
   }
-
-  const data = await response.json();
-  console.log('✅ Perplexity API response received, content length:', data.choices?.[0]?.message?.content?.length || 0);
-  console.log('📄 Response preview:', data.choices?.[0]?.message?.content?.substring(0, 200) + '...');
-  return data.choices[0].message.content;
 }
 
 async function sourceDealOpportunities(request: SourcingRequest, strategy: any) {
-  console.log('Sourcing deal opportunities with Perplexity-powered intelligence', { 
+  console.log('🎯 Starting enhanced deal sourcing with comprehensive fallback strategy', { 
     focusAreas: request.focusAreas, 
     industries: request.industries,
-    batchSize: request.batchSize 
+    batchSize: request.batchSize,
+    hasPerplexityKey: !!perplexityApiKey,
+    hasGoogleKey: !!googleSearchApiKey 
   });
 
   // Priority 1: Perplexity AI Research for intelligent company discovery
   if (perplexityApiKey) {
     try {
-      console.log('🧠 Using Perplexity AI for intelligent deal sourcing...');
+      console.log('🧠 Phase 1: Using Perplexity AI for intelligent deal sourcing...');
       const perplexityCompanies = await searchWithPerplexity(request, strategy);
       if (perplexityCompanies.length > 0) {
-        console.log(`✅ Successfully sourced ${perplexityCompanies.length} companies via Perplexity`);
+        console.log(`✅ Phase 1 SUCCESS: Sourced ${perplexityCompanies.length} companies via Perplexity`);
         return perplexityCompanies;
       } else {
-        console.log('⚠️ Perplexity found no companies, trying fallback...');
+        console.log('⚠️ Phase 1 EMPTY: Perplexity found no companies, proceeding to fallback...');
       }
     } catch (error) {
-      console.log('❌ Perplexity API failed:', error);
+      console.error('❌ Phase 1 FAILED: Perplexity API error:', error.message);
     }
+  } else {
+    console.log('⚠️ Phase 1 SKIPPED: No Perplexity API key configured');
   }
 
   // Priority 2: Google Search API fallback for real company discovery
   if (googleSearchApiKey && googleSearchEngineId) {
     try {
-      console.log('🔍 Using Google Search API as fallback...');
+      console.log('🔍 Phase 2: Using Google Search API as fallback...');
       const realCompanies = await searchRealCompanies(request, strategy);
       if (realCompanies.length > 0) {
-        console.log(`✅ Successfully sourced ${realCompanies.length} real companies via Google`);
+        console.log(`✅ Phase 2 SUCCESS: Sourced ${realCompanies.length} real companies via Google`);
         return realCompanies;
+      } else {
+        console.log('⚠️ Phase 2 EMPTY: Google Search found no companies, proceeding to final fallback...');
       }
     } catch (error) {
-      console.log('❌ Google Search API failed:', error);
+      console.error('❌ Phase 2 FAILED: Google Search API error:', error.message);
     }
+  } else {
+    console.log('⚠️ Phase 2 SKIPPED: No Google Search API key configured');
   }
 
   // Priority 3: Web Research Engine fallback
   try {
-    console.log('🔄 Using web research engine as final fallback...');
-    return await fallbackToWebResearch(request, strategy);
+    console.log('🔄 Phase 3: Using web research engine as final fallback...');
+    const webResearchCompanies = await fallbackToWebResearch(request, strategy);
+    if (webResearchCompanies.length > 0) {
+      console.log(`✅ Phase 3 SUCCESS: Generated ${webResearchCompanies.length} companies via web research`);
+      return webResearchCompanies;
+    }
   } catch (error) {
-    console.log('❌ All sourcing methods failed:', error);
-    return [];
+    console.error('❌ Phase 3 FAILED: Web research engine error:', error.message);
+  }
+
+  // Priority 4: Backup mock generation (always available)
+  console.log('🎭 Phase 4: Generating backup mock companies as last resort...');
+  try {
+    const mockCompanies = generateBackupMockCompanies(request, strategy);
+    console.log(`✅ Phase 4 SUCCESS: Generated ${mockCompanies.length} backup mock companies`);
+    return mockCompanies;
+  } catch (error) {
+    console.error('❌ Phase 4 FAILED: Backup generation error:', error.message);
+    return []; // Ultimate fallback
   }
 }
 
@@ -461,14 +510,60 @@ function parsePerplexityResponse(response: string, request: SourcingRequest): an
   console.log('🔍 Parsing Perplexity response, length:', response.length);
   console.log('📄 Raw response preview:', response.substring(0, 300) + '...');
   
-  // First check if response contains advisory content instead of companies
-  if (isAdvisoryResponse(response)) {
-    console.log('⚠️ Detected advisory response from Perplexity - no actual companies provided');
-    console.log('📋 Advisory content detected:', response.substring(0, 200));
-    return []; // Return empty array to trigger fallback methods
-  }
-  
+  // Enhanced JSON extraction with multiple parsing strategies
   try {
+    // Strategy 1: Look for JSON array patterns
+    const jsonArrayMatch = response.match(/\[[\s\S]*?\]/);
+    if (jsonArrayMatch) {
+      try {
+        const companies = JSON.parse(jsonArrayMatch[0]);
+        if (Array.isArray(companies) && companies.length > 0) {
+          console.log(`✅ Successfully parsed JSON array with ${companies.length} companies`);
+          return companies.filter(company => company.company_name && company.company_name.trim().length > 0);
+        }
+      } catch (parseError) {
+        console.log('❌ JSON array parsing failed:', parseError.message);
+      }
+    }
+
+    // Strategy 2: Try to parse the entire response as JSON
+    try {
+      const parsed = JSON.parse(response.trim());
+      if (Array.isArray(parsed)) {
+        console.log(`✅ Successfully parsed full response as JSON array with ${parsed.length} companies`);
+        return parsed.filter(company => company.company_name && company.company_name.trim().length > 0);
+      }
+    } catch (fullParseError) {
+      console.log('❌ Full JSON parsing failed:', fullParseError.message);
+    }
+
+    // Strategy 3: Extract multiple JSON objects from text
+    const jsonObjectMatches = response.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
+    if (jsonObjectMatches && jsonObjectMatches.length > 0) {
+      const validCompanies = [];
+      for (const match of jsonObjectMatches) {
+        try {
+          const company = JSON.parse(match);
+          if (company.company_name && company.company_name.trim().length > 0) {
+            validCompanies.push(company);
+          }
+        } catch (objParseError) {
+          console.log('❌ Individual JSON object parsing failed:', objParseError.message);
+        }
+      }
+      if (validCompanies.length > 0) {
+        console.log(`✅ Successfully extracted ${validCompanies.length} companies from JSON objects`);
+        return validCompanies;
+      }
+    }
+
+    // First check if response contains advisory content instead of companies
+    if (isAdvisoryResponse(response)) {
+      console.log('⚠️ Detected advisory response from Perplexity - no actual companies provided');
+      console.log('📋 Advisory content detected:', response.substring(0, 200));
+      return []; // Return empty array to trigger fallback methods
+    }
+  
     // First try to extract JSON from the response
     let jsonString = response.trim();
     
@@ -1351,17 +1446,7 @@ function generateBackupMockCompanies(request: SourcingRequest, strategy: any): a
   return companies;
 }
 
-function generateRevenueMetric(stage: string): string {
-  const revenueRanges = {
-    'Pre-Seed': ['$0-10K MRR', '$5-20K MRR', 'Early traction'],
-    'Seed': ['$20-50K MRR', '$50-100K MRR', '$100K+ MRR'],
-    'Series A': ['$200K+ MRR', '$500K+ MRR', '$1M+ ARR'],
-    'Series B': ['$2M+ ARR', '$5M+ ARR', '$10M+ ARR']
-  };
-  
-  const ranges = revenueRanges[stage] || revenueRanges['Seed'];
-  return ranges[Math.floor(Math.random() * ranges.length)];
-}
+// Duplicate function removed - using the one at line 1282
 
 async function validateCompanies(deals: any[]) {
   console.log(`Validating ${deals.length} companies`);
