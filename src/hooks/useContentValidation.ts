@@ -29,11 +29,12 @@ export function useContentValidation() {
     // Validate each section
     sections.forEach((section) => {
       // Check content length and quality
-      if (!section.content || section.content.trim().length < 50) {
+      const contentStr = typeof section.content === 'string' ? section.content : JSON.stringify(section.content || '');
+      if (!contentStr || contentStr.trim().length < 50) {
         issues.push(`Section "${section.title}" has insufficient content`);
         score -= 15;
       } else {
-        totalContentLength += section.content.length;
+        totalContentLength += contentStr.length;
       }
 
       // Check for fabrication indicators
@@ -48,7 +49,7 @@ export function useContentValidation() {
 
       let sectionFabricationFlags = 0;
       fabricationIndicators.forEach(indicator => {
-        if (indicator.test(section.content)) {
+        if (indicator.test(contentStr)) {
           sectionFabricationFlags++;
           fabricationRiskFlags++;
         }
@@ -61,7 +62,7 @@ export function useContentValidation() {
       ];
       
       const hasUncertaintyLanguage = uncertaintyPhrases.some(phrase => 
-        section.content.toLowerCase().includes(phrase.toLowerCase())
+        contentStr.toLowerCase().includes(phrase.toLowerCase())
       );
 
       // Flag sections with specific claims but no uncertainty language
