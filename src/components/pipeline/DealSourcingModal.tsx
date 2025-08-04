@@ -313,18 +313,26 @@ export function DealSourcingModal({ open, onClose, fundId, fundName }: DealSourc
 
       setProgress(60);
 
-      // Run comprehensive analysis via Reuben Orchestrator
-      const { data: analysisResult, error: analysisError } = await supabase.functions
-        .invoke('reuben-orchestrator', {
+      // Run comprehensive analysis via Reuben Orchestrator for each deal
+      const analysisPromises = dealIds.map(dealId => 
+        supabase.functions.invoke('reuben-orchestrator', {
           body: {
-            action: 'batch_comprehensive_analysis',
-            dealIds,
-            fundId,
-            priority: 'high'
+            dealId: dealId,
+            fundId: fundId,
+            action: 'comprehensive_analysis',
+            priority: 'high',
+            source: 'deal_sourcing'
           }
-        });
+        })
+      );
 
-      if (analysisError) throw analysisError;
+      const analysisResults = await Promise.allSettled(analysisPromises);
+
+      // Check for any failed analyses
+      const failedAnalyses = analysisResults.filter(result => result.status === 'rejected');
+      if (failedAnalyses.length > 0) {
+        console.warn(`${failedAnalyses.length} analyses failed, but continuing with successful ones`);
+      }
       setProgress(90);
 
       // Update session as completed
@@ -530,14 +538,14 @@ export function DealSourcingModal({ open, onClose, fundId, fundName }: DealSourc
           </p>
         </div>
 
-        <div className="space-y-4 max-h-96 overflow-y-auto">
+        <div className="grid gap-4 max-h-[400px] overflow-y-auto pr-2">
           {sourcedCompanies.map((company) => (
             <Card key={company.id} className={company.removed_by_user ? 'opacity-50' : ''}>
               <CardContent className="pt-4">
                 <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-semibold">{company.company_name}</h4>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <h4 className="font-semibold truncate">{company.company_name}</h4>
                       <Badge variant={company.priority_level === 'HIGH' ? 'default' : 'secondary'}>
                         {company.priority_level}
                       </Badge>
@@ -552,25 +560,25 @@ export function DealSourcingModal({ open, onClose, fundId, fundName }: DealSourc
                       )}
                     </div>
                     
-                    <p className="text-sm text-muted-foreground mb-3">
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                       {company.description}
                     </p>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <span className="font-medium">Industry:</span>
-                        <p>{company.industry}</p>
+                        <span className="font-medium text-muted-foreground">Industry:</span>
+                        <p className="truncate">{company.industry}</p>
                       </div>
                       <div>
-                        <span className="font-medium">Location:</span>
-                        <p>{company.location}</p>
+                        <span className="font-medium text-muted-foreground">Location:</span>
+                        <p className="truncate">{company.location}</p>
                       </div>
                       <div>
-                        <span className="font-medium">Stage:</span>
+                        <span className="font-medium text-muted-foreground">Stage:</span>
                         <p>{company.funding_stage}</p>
                       </div>
                       <div>
-                        <span className="font-medium">ReubenAI Score:</span>
+                        <span className="font-medium text-muted-foreground">ReubenAI Score:</span>
                         <p>{company.ai_analysis_score}/100</p>
                       </div>
                     </div>
@@ -581,7 +589,7 @@ export function DealSourcingModal({ open, onClose, fundId, fundName }: DealSourc
                       variant="ghost"
                       size="sm"
                       onClick={() => removeCompany(company.id)}
-                      className="text-destructive hover:text-destructive"
+                      className="text-destructive hover:text-destructive ml-2 flex-shrink-0"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
