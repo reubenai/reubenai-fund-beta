@@ -193,13 +193,15 @@ serve(async (req) => {
       }
     } else {
       // Fallback calculation if orchestrator didn't provide overall score
-      overallScore = Math.round((
-        (analysisResult.founder_team_strength?.score || 50) +
-        (analysisResult.market_attractiveness?.score || 50) +
-        (analysisResult.product_strength_ip?.score || 50) +
-        (analysisResult.financial_feasibility?.score || 50) +
-        (analysisResult.investment_thesis_alignment?.score || 50)
-      ) / 5);
+      const validScores = [
+        analysisResult.founder_team_strength?.score,
+        analysisResult.market_attractiveness?.score,
+        analysisResult.product_strength_ip?.score,
+        analysisResult.financial_feasibility?.score,
+        analysisResult.investment_thesis_alignment?.score
+      ].filter(score => score !== null && score !== undefined);
+      
+      overallScore = validScores.length > 0 ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length) : null;
 
       // Determine RAG status based on fund strategy thresholds or defaults
       const strategy = fund?.investment_strategies?.[0];

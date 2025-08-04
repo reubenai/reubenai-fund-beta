@@ -294,7 +294,7 @@ serve(async (req) => {
         executive_summary: memoContent.executive_summary,
         investment_recommendation: memoContent.investment_recommendation,
         rag_status: finalRagStatus,
-        overall_score: dealData.overall_score || 50, // Ensure we have a valid score
+        overall_score: dealData.overall_score || null, // Use null when no valid score available
         created_by: '00000000-0000-0000-0000-000000000000' // System user
       })
       .select()
