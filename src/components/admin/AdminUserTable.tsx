@@ -33,6 +33,7 @@ interface AdminUserTableProps {
   onUpdateUserRole: (userId: string, newRole: string) => Promise<void>;
   onAssignUserToOrg: (userId: string, orgId: string) => Promise<void>;
   onInviteUser: () => void;
+  canModifyRoles: boolean;
 }
 
 export function AdminUserTable({ 
@@ -40,7 +41,8 @@ export function AdminUserTable({
   organizations, 
   onUpdateUserRole, 
   onAssignUserToOrg,
-  onInviteUser 
+  onInviteUser,
+  canModifyRoles
 }: AdminUserTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -78,6 +80,11 @@ export function AdminUserTable({
   };
 
   const handleBulkRoleUpdate = async (newRole: string) => {
+    if (!canModifyRoles) {
+      toast.error('You do not have permission to modify user roles');
+      return;
+    }
+
     if (selectedUsers.length === 0) {
       toast.error('Please select users first');
       return;
@@ -148,7 +155,7 @@ export function AdminUserTable({
         </div>
 
         {/* Bulk Actions */}
-        {selectedUsers.length > 0 && (
+        {selectedUsers.length > 0 && canModifyRoles && (
           <div className="flex flex-wrap gap-2 p-3 bg-muted/20 rounded-lg">
             <span className="text-sm font-medium text-muted-foreground">
               {selectedUsers.length} users selected:
@@ -244,24 +251,25 @@ export function AdminUserTable({
                       {new Date(profile.created_at).toLocaleDateString()}
                     </span>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Select 
-                        value={profile.role} 
-                        onValueChange={(newRole) => onUpdateUserRole(profile.user_id, newRole)}
-                      >
-                        <SelectTrigger className="w-32 h-8 border-0 bg-muted/30">
-                          <Shield className="h-3 w-3 mr-1" />
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="super_admin">Super Admin</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="fund_manager">Fund Manager</SelectItem>
-                          <SelectItem value="analyst">Analyst</SelectItem>
-                          <SelectItem value="viewer">Viewer</SelectItem>
-                        </SelectContent>
-                      </Select>
+                   <TableCell>
+                     <div className="flex space-x-2">
+                       <Select 
+                         value={profile.role} 
+                         onValueChange={(newRole) => onUpdateUserRole(profile.user_id, newRole)}
+                         disabled={!canModifyRoles}
+                       >
+                         <SelectTrigger className={`w-32 h-8 border-0 ${canModifyRoles ? 'bg-muted/30' : 'bg-muted/10 opacity-50'}`}>
+                           <Shield className="h-3 w-3 mr-1" />
+                           <SelectValue />
+                         </SelectTrigger>
+                         <SelectContent>
+                           <SelectItem value="super_admin">Super Admin</SelectItem>
+                           <SelectItem value="admin">Admin</SelectItem>
+                           <SelectItem value="fund_manager">Fund Manager</SelectItem>
+                           <SelectItem value="analyst">Analyst</SelectItem>
+                           <SelectItem value="viewer">Viewer</SelectItem>
+                         </SelectContent>
+                       </Select>
                       <Select 
                         value={profile.organization_id || 'none'} 
                         onValueChange={(orgId) => {

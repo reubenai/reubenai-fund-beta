@@ -307,6 +307,15 @@ export default function Admin() {
   };
 
   const updateUserRole = async (userId: string, newRole: 'super_admin' | 'admin' | 'fund_manager' | 'analyst' | 'viewer') => {
+    // Check if user has permission to change roles
+    const isReubenAdmin = user?.email?.includes('@goreuben.com') || user?.email?.includes('@reuben.com');
+    const isSuperAdmin = profile?.role === 'super_admin';
+    
+    if (!isReubenAdmin && !isSuperAdmin) {
+      toast.error('Only Super Admins or Reuben team members can modify user roles');
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('profiles')
@@ -590,6 +599,7 @@ export default function Admin() {
                 onUpdateUserRole={updateUserRole}
                 onAssignUserToOrg={assignUserToOrg}
                 onInviteUser={handleInviteUser}
+                canModifyRoles={user?.email?.includes('@goreuben.com') || user?.email?.includes('@reuben.com') || profile?.role === 'super_admin'}
               />
             </TabsContent>
 
