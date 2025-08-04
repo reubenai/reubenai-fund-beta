@@ -257,8 +257,11 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
                         variant="ghost" 
                         size="sm"
                         onClick={() => window.open(`/pipeline?fund=${deal.fund.id}`, '_blank')}
+                        className="flex items-center gap-2"
+                        title={`View ${deal.fund.name} pipeline`}
                       >
                         <ExternalLink className="h-4 w-4" />
+                        View Pipeline
                       </Button>
                     </TableCell>
                   </TableRow>
