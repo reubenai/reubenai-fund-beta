@@ -133,15 +133,21 @@ async function sourceDealOpportunities(request: SourcingRequest, strategy: any) 
 
 async function searchRealCompanies(request: SourcingRequest, strategy: any) {
   try {
-    console.log('🔍 Enhanced Deal Sourcing: Searching for real companies with improved strategy');
+    console.log('🔍 Enhanced Deal Sourcing: Searching for real companies with rate limiting protection');
     
     const searchQueries = generateTargetedSearchQueries(request, strategy);
     const allCompanies: any[] = [];
+    let successfulSearches = 0;
+    let rateLimitHit = false;
     
-    for (const query of searchQueries) {
+    // Reduce concurrent searches and implement better error handling
+    for (let i = 0; i < Math.min(searchQueries.length, 7); i++) {
+      const query = searchQueries[i];
+      
       try {
-        console.log(`🔍 Searching: ${query}`);
-        const searchResults = await performGoogleSearch(query);
+        console.log(`🔍 Searching (${i + 1}/${Math.min(searchQueries.length, 7)}): ${query}`);
+        const searchResults = await performGoogleSearchWithRetry(query, 3);
+        
         if (searchResults?.items?.length > 0) {
           const companies = await extractCompaniesFromSearch(searchResults.items, request);
           const validatedCompanies = await Promise.all(
@@ -150,27 +156,47 @@ async function searchRealCompanies(request: SourcingRequest, strategy: any) {
           const verifiedCompanies = validatedCompanies.filter(Boolean);
           console.log(`✅ Found ${verifiedCompanies.length} verified companies from query`);
           allCompanies.push(...verifiedCompanies);
+          successfulSearches++;
         }
         
-        // Add delay between searches to respect rate limits
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Increased delay to respect rate limits better
+        await new Promise(resolve => setTimeout(resolve, 3000 + Math.random() * 2000));
+        
       } catch (error) {
         console.log(`❌ Search failed for query "${query}":`, error.message);
+        
+        // Check if it's a rate limit error
+        if (error.message.includes('Too Many Requests') || error.message.includes('429')) {
+          rateLimitHit = true;
+          console.log('⚠️ Rate limit detected, switching to fallback strategy');
+          break;
+        }
         continue;
       }
     }
     
-    // Remove duplicates and limit results
-    const uniqueCompanies = allCompanies.filter((company, index, self) => 
-      index === self.findIndex(c => c.company_name.toLowerCase() === company.company_name.toLowerCase())
-    ).slice(0, request.batchSize);
+    // If we got some results from successful searches, use them
+    if (allCompanies.length > 0) {
+      const uniqueCompanies = allCompanies.filter((company, index, self) => 
+        index === self.findIndex(c => c.company_name.toLowerCase() === company.company_name.toLowerCase())
+      ).slice(0, request.batchSize);
+      
+      console.log(`✅ Final result: ${uniqueCompanies.length} unique real companies from ${successfulSearches} successful searches`);
+      return uniqueCompanies;
+    }
     
-    console.log(`✅ Final result: ${uniqueCompanies.length} unique real companies`);
-    return uniqueCompanies;
+    // If rate limit hit and no results, try fallback
+    if (rateLimitHit || successfulSearches === 0) {
+      console.log('🔄 Attempting fallback to web research engine...');
+      return await fallbackToWebResearch(request, strategy);
+    }
+    
+    console.log('⚠️ No companies found after all searches');
+    return [];
     
   } catch (error) {
     console.error('❌ Real company search failed:', error);
-    return [];
+    return await fallbackToWebResearch(request, strategy);
   }
 }
 
@@ -260,8 +286,8 @@ function generateTargetedSearchQueries(request: SourcingRequest, strategy: any):
     );
   }
   
-  // Return top 15 most targeted queries
-  return queries.slice(0, 15);
+  // Return top 7 most targeted queries to reduce API calls
+  return queries.slice(0, 7);
 }
 
 async function performGoogleSearch(query: string) {
@@ -274,6 +300,68 @@ async function performGoogleSearch(query: string) {
   }
   
   return await response.json();
+}
+
+async function performGoogleSearchWithRetry(query: string, maxRetries: number = 3) {
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await performGoogleSearch(query);
+    } catch (error) {
+      lastError = error;
+      
+      // If it's a rate limit error, implement exponential backoff
+      if (error.message.includes('Too Many Requests') || error.message.includes('429')) {
+        if (attempt < maxRetries) {
+          const backoffDelay = Math.pow(2, attempt) * 2000 + Math.random() * 1000; // 2s, 4s, 8s + jitter
+          console.log(`⏳ Rate limited, waiting ${Math.round(backoffDelay/1000)}s before retry ${attempt + 1}/${maxRetries}`);
+          await new Promise(resolve => setTimeout(resolve, backoffDelay));
+        }
+      } else {
+        // For other errors, don't retry
+        throw error;
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
+async function fallbackToWebResearch(request: SourcingRequest, strategy: any) {
+  try {
+    console.log('🔄 Using web research engine as fallback for company discovery');
+    
+    // Construct search query for web research
+    const searchQuery = `${request.industries?.[0] || 'Technology'} startups funding ${new Date().getFullYear()}`;
+    
+    const { data, error } = await supabase.functions.invoke('web-research-engine', {
+      body: {
+        query: searchQuery,
+        maxResults: request.batchSize || 5,
+        focusAreas: ['funding', 'startups', 'companies']
+      }
+    });
+    
+    if (error) {
+      console.log('❌ Web research fallback failed:', error);
+      return [];
+    }
+    
+    if (data?.companies?.length > 0) {
+      console.log(`✅ Fallback found ${data.companies.length} companies via web research`);
+      return data.companies.map(company => ({
+        ...company,
+        source_credibility: 70, // Lower credibility for fallback
+        search_source: 'web-research-engine'
+      }));
+    }
+    
+    return [];
+  } catch (error) {
+    console.log('❌ Fallback to web research failed:', error);
+    return [];
+  }
 }
 
 async function extractCompaniesFromSearch(searchResults: any[], request: SourcingRequest) {
