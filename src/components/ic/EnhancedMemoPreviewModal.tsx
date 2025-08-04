@@ -34,6 +34,7 @@ import { useContentValidation } from '@/hooks/useContentValidation';
 import { DataQualityIndicator } from '@/components/ui/data-quality-indicator';
 import MemoVersionHistoryModal from './MemoVersionHistoryModal';
 import { MemoPublishingControls } from './MemoPublishingControls';
+import { PDFTestingModal } from './PDFTestingModal';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Deal {
@@ -244,8 +245,8 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl h-[95vh] p-0">
-        <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-primary/5 to-primary/10">
+      <DialogContent className="max-w-7xl h-[95vh] p-0 overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-primary/5 to-primary/10 shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <DialogTitle className="text-xl font-semibold">
@@ -388,13 +389,15 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 )}
                 Export PDF
               </Button>
+              
+              <PDFTestingModal />
             </div>
           </div>
         </DialogHeader>
 
-        <div className="flex h-full">
+        <div className="flex h-full overflow-hidden">
           {/* Sidebar Navigation */}
-          <div className="w-80 border-r bg-muted/30 p-4 overflow-y-auto">
+          <div className="w-80 border-r bg-muted/30 p-4 overflow-y-auto shrink-0">
             <h3 className="font-semibold text-sm text-muted-foreground mb-4 uppercase tracking-wide">
               Memo Sections
             </h3>
@@ -435,7 +438,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 flex flex-col overflow-hidden">
             {/* Collapsible Data Quality Indicator */}
             {contentValidation && (
               <Collapsible open={showDataQuality} onOpenChange={setShowDataQuality}>
@@ -494,7 +497,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 </div>
               </div>
             ) : (
-              <div className="p-6">
+              <div className="p-6 overflow-y-auto flex-1">
                 {MEMO_SECTIONS.map((section) => {
                   if (activeSection !== section.key) return null;
                   

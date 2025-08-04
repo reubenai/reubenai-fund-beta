@@ -13,6 +13,7 @@ import { useFund } from '@/contexts/FundContext';
 import { ICMemoModal } from '@/components/ic/ICMemoModal';
 import { VotingModal } from '@/components/ic/VotingModal';
 import { SessionDetailModal } from '@/components/ic/SessionDetailModal';
+import { DealSourcingTestModal } from '@/components/ic/DealSourcingTestModal';
 import { icMemoService, ICSession, ICVotingDecision } from '@/services/ICMemoService';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -398,14 +399,17 @@ export default function EnhancedICPage() {
     <div className="flex-1 space-y-8 p-8">
       <Breadcrumbs />
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">Investment Committee</h1>
-            <p className="text-sm text-muted-foreground">
-              Manage IC meetings, memos, and decisions for {selectedFund.name}
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground">Investment Committee</h1>
+              <p className="text-sm text-muted-foreground">
+                Manage IC meetings, memos, and decisions for {selectedFund.name}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <DealSourcingTestModal />
+            </div>
           </div>
-        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">

@@ -1367,12 +1367,18 @@ export type Database = {
           generation_metadata: Json | null
           id: string
           investment_recommendation: string | null
+          is_published: boolean | null
           memo_content: Json
           overall_score: number | null
+          published_at: string | null
+          publishing_notes: string | null
           rag_status: string | null
+          review_notes: string | null
+          review_priority: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
+          submitted_for_review_at: string | null
           template_id: string | null
           title: string
           updated_at: string
@@ -1391,12 +1397,18 @@ export type Database = {
           generation_metadata?: Json | null
           id?: string
           investment_recommendation?: string | null
+          is_published?: boolean | null
           memo_content?: Json
           overall_score?: number | null
+          published_at?: string | null
+          publishing_notes?: string | null
           rag_status?: string | null
+          review_notes?: string | null
+          review_priority?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          submitted_for_review_at?: string | null
           template_id?: string | null
           title: string
           updated_at?: string
@@ -1415,12 +1427,18 @@ export type Database = {
           generation_metadata?: Json | null
           id?: string
           investment_recommendation?: string | null
+          is_published?: boolean | null
           memo_content?: Json
           overall_score?: number | null
+          published_at?: string | null
+          publishing_notes?: string | null
           rag_status?: string | null
+          review_notes?: string | null
+          review_priority?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          submitted_for_review_at?: string | null
           template_id?: string | null
           title?: string
           updated_at?: string
