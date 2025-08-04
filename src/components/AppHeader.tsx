@@ -3,9 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, Building2 } from "lucide-react";
 import { useFund } from '@/contexts/FundContext';
+import { GlobalSearchModal } from '@/components/search/GlobalSearchModal';
+import { useAppKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useEffect } from 'react';
 
 export function AppHeader() {
   const { selectedFund } = useFund();
+  const { searchVisible, setSearchVisible } = useAppKeyboardShortcuts();
 
   return (
     <header className="h-14 flex items-center border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/95 px-4 gap-4 relative">
@@ -34,10 +38,23 @@ export function AppHeader() {
         </div>
 
         {/* Quick Search */}
-        <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="gap-2 text-muted-foreground" 
+          onClick={() => setSearchVisible(true)}
+        >
           <Search className="h-4 w-4" />
-          Search
+          <span className="hidden sm:inline">Search</span>
+          <kbd className="hidden sm:inline ml-1 pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+            <span className="text-xs">⌘</span>K
+          </kbd>
         </Button>
+        
+        <GlobalSearchModal 
+          isOpen={searchVisible} 
+          onClose={() => setSearchVisible(false)} 
+        />
       </div>
     </header>
   );

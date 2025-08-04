@@ -33,6 +33,7 @@ import { useMemoProgressTracking } from '@/hooks/useMemoProgressTracking';
 import { useContentValidation } from '@/hooks/useContentValidation';
 import { DataQualityIndicator } from '@/components/ui/data-quality-indicator';
 import MemoVersionHistoryModal from './MemoVersionHistoryModal';
+import { MemoPublishingControls } from './MemoPublishingControls';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Deal {
@@ -158,6 +159,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
         title: `IC Memo - ${deal.company_name}`,
         memo_content: memoState.content as any,
         status: 'draft',
+        is_published: false,
         overall_score: deal.overall_score,
         rag_status: deal.rag_status,
         created_by: (await supabase.auth.getUser()).data.user?.id
@@ -274,11 +276,25 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                   <Badge variant="outline">
                     v{versionState.currentVersion}
                   </Badge>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
+                 )}
+                 
+                 {/* Memo Publishing Controls */}
+                 {memoState.existsInDb && (
+                   <MemoPublishingControls
+                     memoId={(memoState as any).id || ''}
+                     currentStatus={(memoState as any).status || 'draft'}
+                     isPublished={(memoState as any).isPublished || false}
+                     dealName={deal.company_name}
+                     onStatusUpdate={() => {
+                       // Refresh memo state after status update
+                       loadMemo();
+                     }}
+                   />
+                 )}
+               </div>
+             </div>
+             
+             <div className="flex items-center gap-2">
               {memoState.isGenerating && (
                 <Button
                   variant="outline"
