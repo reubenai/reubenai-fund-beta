@@ -19,13 +19,7 @@ serve(async (req) => {
     );
 
     const { memoId, dealId, fundId, memoContent, dealData } = await req.json();
-    console.log('Enhanced PDF Export Request:', { 
-      memoId, 
-      dealId, 
-      fundId, 
-      hasMemoContent: !!memoContent, 
-      hasDealData: !!dealData 
-    });
+    console.log('🔬 Enhanced PDF Generator: Processing request for deal:', dealId);
     
     if (!dealId && !memoId) {
       throw new Error('Either dealId or memoId is required');
@@ -91,24 +85,47 @@ serve(async (req) => {
       fund = fundData;
     }
 
-    // Generate enhanced PDF with better performance
-    const pdfContent = await generateEnhancedPDF(memo, deal, fund);
+    // Call enhanced IC Analysis Enhancer for deeper insights
+    let enhancedInsights = null;
+    try {
+      console.log('🔬 Calling Investment Committee Analysis Enhancer for deeper insights...');
+      const { data: enhancedData } = await supabase.functions.invoke('investment-committee-analysis-enhancer', {
+        body: {
+          dealId,
+          fundId,
+          existingMemo: memo,
+          dealData: deal,
+          fundData: fund
+        }
+      });
+      
+      if (enhancedData?.success) {
+        enhancedInsights = enhancedData.enhancedAnalysis;
+        console.log('✅ Enhanced insights generated successfully');
+      }
+    } catch (error) {
+      console.warn('⚠️ Enhanced analysis failed, continuing with standard memo:', error);
+    }
 
-    return new Response(JSON.stringify({
-      success: true,
-      pdfUrl: pdfContent.url,
-      fileName: pdfContent.fileName,
+    // Call generateEnhancedPDF to create the PDF content with enhanced insights
+    const pdfResult = await generateEnhancedPDF(memo, deal, fund, enhancedInsights);
+    
+    return new Response(JSON.stringify({ 
+      success: true, 
+      pdfUrl: pdfResult.url,
+      fileName: pdfResult.fileName,
       metadata: {
-        company: deal?.company_name,
-        generatedAt: new Date().toISOString(),
-        version: '2.0'
+        pages: 1,
+        size: 'A4',
+        format: 'pdf',
+        enhanced: !!enhancedInsights
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in enhanced-pdf-generator:', error);
+    console.error('❌ Enhanced PDF Generator Error:', error);
     return new Response(JSON.stringify({
       success: false,
       error: error.message
@@ -119,35 +136,30 @@ serve(async (req) => {
   }
 });
 
-async function generateEnhancedPDF(memo: any, deal: any, fund: any): Promise<{ url: string; fileName: string }> {
+async function generateEnhancedPDF(memo: any, deal: any, fund: any, enhancedInsights?: any): Promise<{ url: string; fileName: string }> {
   try {
-    const htmlContent = generateEnhancedHTMLContent(memo, deal, fund);
+    const htmlContent = generateEnhancedHTMLContent(memo, deal, fund, enhancedInsights);
     
-    // Validate HTML content before encoding
-    if (!htmlContent || htmlContent.trim().length === 0) {
-      throw new Error('Generated HTML content is empty');
-    }
+    // Create a proper PDF file name
+    const fileName = `IC_Memo_${deal?.company_name?.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
     
-    // Fix Unicode encoding issue with proper UTF-8 base64 encoding
+    // For now, return as HTML with enhanced styling for PDF-like appearance
+    // In production, this would integrate with a PDF service like Puppeteer
     const encoder = new TextEncoder();
     const htmlBytes = encoder.encode(htmlContent);
-    
-    // Convert to base64 using a safe method for Unicode content
     const base64Html = btoa(String.fromCharCode(...htmlBytes));
-    
-    const fileName = `IC_Memo_${deal?.company_name?.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
     
     return {
       url: `data:text/html;base64,${base64Html}`,
       fileName
     };
   } catch (error) {
-    console.error('PDF Generation Error:', error);
+    console.error('❌ PDF Generation Error:', error);
     throw new Error(`PDF generation failed: ${error.message}`);
   }
 }
 
-function generateEnhancedHTMLContent(memo: any, deal: any, fund: any): string {
+function generateEnhancedHTMLContent(memo: any, deal: any, fund: any, enhancedInsights?: any): string {
   const sections = memo.memo_content?.sections || memo.memo_content || {};
   const company = deal?.company_name || 'Unknown Company';
   const fundName = fund?.name || 'Investment Fund';
@@ -171,402 +183,370 @@ function generateEnhancedHTMLContent(memo: any, deal: any, fund: any): string {
             }
         }
         
+        /* CSS variables for ReubenAI emerald + neutrals theme */
+        :root {
+          --reuben-emerald: #10b981; /* Main emerald brand color */
+          --reuben-emerald-light: #d1fae5; /* Light emerald */
+          --reuben-emerald-dark: #047857; /* Dark emerald */
+          --reuben-gray-50: #f9fafb;
+          --reuben-gray-100: #f3f4f6;
+          --reuben-gray-200: #e5e7eb;
+          --reuben-gray-300: #d1d5db;
+          --reuben-gray-600: #4b5563;
+          --reuben-gray-700: #374151;
+          --reuben-gray-900: #111827;
+        }
+        
         * { box-sizing: border-box; }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #2c3e50;
-            background: #ffffff;
-            margin: 0;
-            padding: 0;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          line-height: 1.6;
+          color: var(--reuben-gray-900);
+          background: white;
+          margin: 0;
+          padding: 40px;
+          font-size: 12px;
         }
         
         .header {
-            background: linear-gradient(135deg, hsl(217, 91%, 60%) 0%, hsl(217, 91%, 45%) 100%);
-            color: white;
-            padding: 2rem;
-            text-align: center;
-            position: relative;
-            margin-bottom: 2rem;
+          border-bottom: 3px solid var(--reuben-emerald);
+          padding-bottom: 20px;
+          margin-bottom: 30px;
+          background: linear-gradient(135deg, var(--reuben-emerald-light) 0%, white 100%);
+          padding: 20px;
+          border-radius: 8px;
         }
         
-        .header h1 {
-            margin: 0;
-            font-size: 2.2rem;
-            font-weight: 300;
-            letter-spacing: -0.5px;
+        .company-title {
+          font-size: 24px;
+          font-weight: 700;
+          color: var(--reuben-emerald-dark);
+          margin: 0 0 8px 0;
         }
         
-        .header .subtitle {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            margin-top: 0.5rem;
-            font-weight: 300;
+        .fund-info {
+          color: var(--reuben-gray-600);
+          font-size: 14px;
+          margin: 0;
         }
         
-        .header .logo {
-            position: absolute;
-            top: 2rem;
-            right: 2rem;
-            font-size: 1.2rem;
-            font-weight: 600;
-            opacity: 0.8;
+        .metadata-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 20px;
+          margin: 20px 0;
+          padding: 20px;
+          background: var(--reuben-gray-50);
+          border-radius: 8px;
+          border: 1px solid var(--reuben-gray-200);
         }
         
-        .memo-meta {
-            background: linear-gradient(135deg, hsl(220, 14%, 96%) 0%, hsl(220, 14%, 98%) 100%);
-            padding: 1.5rem;
-            border-left: 4px solid hsl(217, 91%, 60%);
-            margin-bottom: 2rem;
-            border-radius: 0 8px 8px 0;
+        .metadata-item h4 {
+          margin: 0 0 4px 0;
+          font-size: 11px;
+          text-transform: uppercase;
+          color: var(--reuben-gray-600);
+          letter-spacing: 0.5px;
+          font-weight: 600;
         }
         
-        .meta-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
+        .metadata-item p {
+          margin: 0;
+          font-size: 13px;
+          color: var(--reuben-gray-900);
+          font-weight: 500;
         }
         
-        .meta-item {
-            display: flex;
-            flex-direction: column;
+        .status-badge {
+          display: inline-block;
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
         
-        .meta-label {
-            font-weight: 600;
-            color: hsl(217, 32%, 35%);
-            font-size: 0.9rem;
-            margin-bottom: 0.25rem;
+        .status-exciting {
+          background: var(--reuben-emerald-light);
+          color: var(--reuben-emerald-dark);
+          border: 1px solid var(--reuben-emerald);
         }
         
-        .meta-value {
-            color: hsl(217, 32%, 17%);
-            font-size: 1rem;
+        .status-promising {
+          background: #dbeafe;
+          color: #1e40af;
+          border: 1px solid #bfdbfe;
         }
         
-        .executive-summary {
-            background: linear-gradient(135deg, hsl(217, 91%, 97%) 0%, white 100%);
-            border: 2px solid hsl(217, 91%, 60%);
-            padding: 2rem;
-            margin: 2rem 0;
-            border-radius: 12px;
-        }
-        
-        .executive-summary h2 {
-            color: hsl(217, 91%, 45%);
-            margin-top: 0;
-            margin-bottom: 1rem;
-            font-size: 1.5rem;
-        }
-        
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin: 1.5rem 0;
-        }
-        
-        .metric-card {
-            background: white;
-            padding: 1.2rem;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid hsl(217, 32%, 89%);
-            box-shadow: 0 2px 4px hsla(217, 32%, 17%, 0.05);
-        }
-        
-        .metric-value {
-            font-size: 1.8rem;
-            font-weight: 600;
-            color: hsl(217, 91%, 60%);
-            margin-bottom: 0.25rem;
-        }
-        
-        .metric-label {
-            color: hsl(217, 32%, 53%);
-            font-size: 0.85rem;
-            font-weight: 500;
+        .status-development {
+          background: #fef3c7;
+          color: #92400e;
+          border: 1px solid #fde68a;
         }
         
         .section {
-            margin-bottom: 2.5rem;
-            page-break-inside: avoid;
+          margin: 25px 0;
+          padding: 20px;
+          border: 1px solid var(--reuben-gray-200);
+          border-radius: 8px;
+          background: white;
+          page-break-inside: avoid;
         }
         
-        .section h2 {
-            color: hsl(217, 91%, 45%);
-            border-bottom: 2px solid hsl(217, 91%, 60%);
-            padding-bottom: 0.5rem;
-            margin-bottom: 1rem;
-            font-size: 1.4rem;
-            font-weight: 500;
-        }
-        
-        .section h3 {
-            color: hsl(217, 32%, 35%);
-            margin-top: 1.5rem;
-            margin-bottom: 0.75rem;
-            font-size: 1.1rem;
+        .section-title {
+          font-size: 16px;
+          font-weight: 700;
+          color: var(--reuben-emerald-dark);
+          margin: 0 0 15px 0;
+          padding-bottom: 8px;
+          border-bottom: 2px solid var(--reuben-emerald-light);
         }
         
         .section-content {
-            line-height: 1.7;
-            color: hsl(217, 32%, 17%);
+          color: var(--reuben-gray-900);
+          line-height: 1.7;
         }
         
-        .rag-status {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
+        .executive-summary {
+          background: linear-gradient(135deg, var(--reuben-emerald-light) 0%, white 100%);
+          border-left: 4px solid var(--reuben-emerald);
+          margin: 30px 0;
         }
         
-        .rag-green { 
-            background: hsl(142, 69%, 85%); 
-            color: hsl(142, 69%, 25%); 
-            border: 1px solid hsl(142, 69%, 65%);
-        }
-        .rag-amber { 
-            background: hsl(45, 100%, 85%); 
-            color: hsl(45, 100%, 25%); 
-            border: 1px solid hsl(45, 100%, 65%);
-        }
-        .rag-red { 
-            background: hsl(0, 65%, 85%); 
-            color: hsl(0, 65%, 25%); 
-            border: 1px solid hsl(0, 65%, 65%);
+        .recommendation-box {
+          background: linear-gradient(135deg, var(--reuben-emerald-light) 0%, white 100%);
+          border: 2px solid var(--reuben-emerald);
+          border-radius: 8px;
+          padding: 20px;
+          margin: 20px 0;
+          text-align: center;
         }
         
-        .recommendation {
-            background: linear-gradient(135deg, hsl(217, 91%, 97%) 0%, hsl(142, 69%, 97%) 100%);
-            border: 2px solid hsl(217, 91%, 60%);
-            padding: 2rem;
-            margin: 2rem 0;
-            text-align: center;
-            border-radius: 12px;
+        .recommendation-title {
+          font-size: 18px;
+          font-weight: 700;
+          color: var(--reuben-emerald-dark);
+          margin: 0 0 10px 0;
         }
         
-        .recommendation h2 {
-            color: hsl(217, 91%, 45%);
-            margin-top: 0;
-            margin-bottom: 1rem;
+        .table-of-contents {
+          background: white;
+          border: 1px solid var(--reuben-gray-200);
+          border-radius: 8px;
+          padding: 20px;
+          margin: 20px 0;
         }
         
-        .analysis-insights {
-            background: hsl(220, 14%, 98%);
-            border-left: 4px solid hsl(217, 91%, 60%);
-            padding: 1.5rem;
-            margin: 1.5rem 0;
-            border-radius: 0 8px 8px 0;
+        .toc-title {
+          color: var(--reuben-emerald-dark);
+          font-size: 16px;
+          font-weight: 700;
+          margin: 0 0 15px 0;
+          padding-bottom: 8px;
+          border-bottom: 2px solid var(--reuben-emerald-light);
         }
         
-        .insights-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
+        .toc-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
         }
         
-        .insight-item {
-            background: white;
-            padding: 1rem;
-            border-radius: 6px;
-            border: 1px solid hsl(217, 32%, 89%);
-        }
-        
-        .insight-label {
-            font-weight: 600;
-            color: hsl(217, 32%, 35%);
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .insight-value {
-            color: hsl(217, 32%, 17%);
+        .toc-item {
+          display: flex;
+          justify-content: space-between;
+          padding: 8px 0;
+          border-bottom: 1px dotted var(--reuben-gray-200);
         }
         
         .footer {
-            background: hsl(217, 91%, 60%);
-            color: white;
-            padding: 1.5rem;
-            text-align: center;
-            font-size: 0.9rem;
-            margin-top: 3rem;
-            border-radius: 8px;
+          margin-top: 40px;
+          padding-top: 20px;
+          border-top: 1px solid var(--reuben-gray-200);
+          text-align: center;
+          color: var(--reuben-gray-600);
+          font-size: 10px;
         }
         
-        .reuben-branding {
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
+        .logo {
+          font-size: 18px;
+          font-weight: 700;
+          color: var(--reuben-emerald);
+          margin-bottom: 5px;
         }
         
-        .page-break {
-            page-break-before: always;
+        .enhanced-insights {
+          background: var(--reuben-gray-50);
+          border: 1px solid var(--reuben-gray-200);
+          border-radius: 8px;
+          padding: 20px;
+          margin: 20px 0;
         }
         
-        .toc {
-            background: white;
-            border: 1px solid hsl(217, 32%, 89%);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            border-radius: 8px;
+        .enhanced-insights-title {
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--reuben-emerald-dark);
+          margin: 0 0 15px 0;
+          display: flex;
+          align-items: center;
         }
         
-        .toc h2 {
-            color: hsl(217, 91%, 45%);
-            border-bottom: 2px solid hsl(217, 91%, 60%);
-            padding-bottom: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        
-        .toc ul {
-            list-style: none;
-            padding: 0;
-        }
-        
-        .toc li {
-            padding: 0.5rem 0;
-            border-bottom: 1px dotted hsl(217, 32%, 89%);
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        @media print {
-            .page-break { page-break-before: always; }
+        .enhanced-insights-badge {
+          background: var(--reuben-emerald);
+          color: white;
+          font-size: 10px;
+          padding: 2px 8px;
+          border-radius: 12px;
+          margin-left: 10px;
         }
     </style>
 </head>
 <body>
+    <!-- Header -->
     <div class="header">
-        <div class="logo">Reuben AI</div>
-        <h1>INVESTMENT COMMITTEE MEMORANDUM</h1>
-        <div class="subtitle">${company} • ${fundName}</div>
-    </div>
-    
-    <div class="memo-meta">
-        <div class="meta-grid">
-            <div class="meta-item">
-                <div class="meta-label">Company</div>
-                <div class="meta-value">${company}</div>
+        <div style="display: flex; justify-content: between; align-items: center;">
+            <div>
+                <div class="company-title">Investment Committee Memorandum</div>
+                <div class="fund-info">${company} • ${fundName}</div>
             </div>
-            <div class="meta-item">
-                <div class="meta-label">Industry</div>
-                <div class="meta-value">${deal?.industry || 'N/A'}</div>
-            </div>
-            <div class="meta-item">
-                <div class="meta-label">Deal Size</div>
-                <div class="meta-value">${deal?.deal_size ? `$${(deal.deal_size / 1000000).toFixed(1)}M` : 'N/A'}</div>
-            </div>
-            <div class="meta-item">
-                <div class="meta-label">Valuation</div>
-                <div class="meta-value">${deal?.valuation ? `$${(deal.valuation / 1000000).toFixed(1)}M` : 'N/A'}</div>
-            </div>
-            <div class="meta-item">
-                <div class="meta-label">Overall Score</div>
-                <div class="meta-value">${deal?.overall_score || analysisData?.overall_score || 'N/A'}/100</div>
-            </div>
-            <div class="meta-item">
-                <div class="meta-label">RAG Status</div>
-                <div class="meta-value"><span class="rag-status rag-${deal?.rag_status || analysisData?.rag_status || 'amber'}">${deal?.rag_status || analysisData?.rag_status || 'N/A'}</span></div>
-            </div>
-            <div class="meta-item">
-                <div class="meta-label">Generated</div>
-                <div class="meta-value">${new Date().toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}</div>
-            </div>
-            <div class="meta-item">
-                <div class="meta-label">Fund</div>
-                <div class="meta-value">${fundName}</div>
-            </div>
+            <div class="logo" style="margin-left: auto;">ReubenAI</div>
         </div>
     </div>
-    
-    <div class="toc">
-        <h2>Table of Contents</h2>
-        <ul>
-            <li><span>Executive Summary</span><span>2</span></li>
+
+    <!-- Deal Metadata -->
+    <div class="metadata-grid">
+        <div class="metadata-item">
+            <h4>Company</h4>
+            <p>${company}</p>
+        </div>
+        <div class="metadata-item">
+            <h4>Industry</h4>
+            <p>${deal?.industry || 'N/A'}</p>
+        </div>
+        <div class="metadata-item">
+            <h4>Deal Size</h4>
+            <p>${deal?.deal_size ? `$${(deal.deal_size / 1000000).toFixed(1)}M` : 'N/A'}</p>
+        </div>
+        <div class="metadata-item">
+            <h4>Valuation</h4>
+            <p>${deal?.valuation ? `$${(deal.valuation / 1000000).toFixed(1)}M` : 'N/A'}</p>
+        </div>
+        <div class="metadata-item">
+            <h4>Overall Score</h4>
+            <p>${deal?.overall_score || 'N/A'}/100</p>
+        </div>
+        <div class="metadata-item">
+            <h4>RAG Status</h4>
+            <p><span class="status-badge status-${deal?.rag_status || 'development'}">${deal?.rag_status || 'N/A'}</span></p>
+        </div>
+    </div>
+
+    <!-- Table of Contents -->
+    <div class="table-of-contents">
+        <h2 class="toc-title">Table of Contents</h2>
+        <ul class="toc-list">
+            <li class="toc-item"><span>Executive Summary</span><span>1</span></li>
             ${Object.keys(sections).map((key, index) => 
-              `<li><span>${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span><span>${index + 3}</span></li>`
+              `<li class="toc-item"><span>${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span><span>${index + 2}</span></li>`
             ).join('')}
-            <li><span>Investment Recommendation</span><span>${Object.keys(sections).length + 3}</span></li>
-            <li><span>Analysis Insights</span><span>${Object.keys(sections).length + 4}</span></li>
+            <li class="toc-item"><span>Investment Recommendation</span><span>${Object.keys(sections).length + 2}</span></li>
         </ul>
     </div>
-    
-    <div class="page-break"></div>
-    
-    <div class="executive-summary">
-        <h2>Executive Summary</h2>
+
+    <!-- Executive Summary -->
+    <div class="section executive-summary">
+        <h2 class="section-title">Executive Summary</h2>
         <div class="section-content">
-            ${memo.executive_summary || sections.executive_summary || 'Executive summary provides a high-level overview of the investment opportunity, highlighting key strengths and considerations for the investment committee.'}
-        </div>
-        
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-value">${deal?.overall_score || analysisData?.overall_score || 'N/A'}</div>
-                <div class="metric-label">Overall Score</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-value">${deal?.deal_size ? `$${(deal.deal_size / 1000000).toFixed(1)}M` : 'N/A'}</div>
-                <div class="metric-label">Deal Size</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-value">${deal?.valuation ? `$${(deal.valuation / 1000000).toFixed(1)}M` : 'N/A'}</div>
-                <div class="metric-label">Valuation</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-value"><span class="rag-status rag-${deal?.rag_status || analysisData?.rag_status || 'amber'}">${deal?.rag_status || analysisData?.rag_status || 'N/A'}</span></div>
-                <div class="metric-label">RAG Status</div>
-            </div>
+            ${memo.executive_summary || sections.executive_summary || 'Executive summary provides a high-level overview of the investment opportunity, highlighting key strengths, considerations, and strategic alignment with fund investment criteria.'}
         </div>
     </div>
-    
+
+    <!-- Enhanced AI Analysis Section -->
+    ${enhancedInsights ? `
+      <div class="enhanced-insights">
+        <h2 class="enhanced-insights-title">
+          🔬 Enhanced Investment Committee Analysis
+          <span class="enhanced-insights-badge">AI ENHANCED</span>
+        </h2>
+        <div class="section-content">
+          ${enhancedInsights.strategicInsights ? `
+            <h3 style="color: var(--reuben-emerald-dark); margin: 15px 0 10px 0; font-size: 14px;">Strategic Insights</h3>
+            <p>${enhancedInsights.strategicInsights}</p>
+          ` : ''}
+          
+          ${enhancedInsights.soWhatAnalysis ? `
+            <h3 style="color: var(--reuben-emerald-dark); margin: 15px 0 10px 0; font-size: 14px;">"So What?" Analysis</h3>
+            <p>${enhancedInsights.soWhatAnalysis}</p>
+          ` : ''}
+          
+          ${enhancedInsights.comparativeAnalysis ? `
+            <h3 style="color: var(--reuben-emerald-dark); margin: 15px 0 10px 0; font-size: 14px;">Comparative Portfolio Analysis</h3>
+            <p>${enhancedInsights.comparativeAnalysis}</p>
+          ` : ''}
+          
+          ${enhancedInsights.riskAdjustedReturns ? `
+            <h3 style="color: var(--reuben-emerald-dark); margin: 15px 0 10px 0; font-size: 14px;">Risk-Adjusted Return Projections</h3>
+            <p>${enhancedInsights.riskAdjustedReturns}</p>
+          ` : ''}
+          
+          ${enhancedInsights.scenarioAnalysis ? `
+            <h3 style="color: var(--reuben-emerald-dark); margin: 15px 0 10px 0; font-size: 14px;">Scenario Analysis</h3>
+            <p>${enhancedInsights.scenarioAnalysis}</p>
+          ` : ''}
+        </div>
+      </div>
+    ` : ''}
+
+    <!-- Memo Sections -->
     ${Object.entries(sections).map(([key, content]) => `
     <div class="section">
-        <h2>${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h2>
+        <h2 class="section-title">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h2>
         <div class="section-content">
             ${content || `This section provides detailed analysis of ${key.replace(/_/g, ' ').toLowerCase()}, including key insights and strategic considerations relevant to the investment decision.`}
         </div>
     </div>
     `).join('')}
-    
-    <div class="page-break"></div>
-    
-    <div class="recommendation">
-        <h2>Investment Recommendation</h2>
+
+    <!-- Investment Recommendation -->
+    <div class="recommendation-box">
+        <h2 class="recommendation-title">Investment Recommendation</h2>
         <div class="section-content">
             ${memo.investment_recommendation || sections.investment_recommendation || 'Investment recommendation provides the committee with a clear recommendation based on comprehensive analysis of the opportunity, including rationale and next steps.'}
         </div>
     </div>
-    
-    ${Object.keys(analysisData).length > 0 ? `
-    <div class="analysis-insights">
-        <h3>AI Analysis Insights</h3>
-        <div class="insights-grid">
-            ${Object.entries(analysisData).slice(0, 6).map(([key, value]) => `
-            <div class="insight-item">
-                <div class="insight-label">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</div>
-                <div class="insight-value">${typeof value === 'object' ? JSON.stringify(value).slice(0, 100) + '...' : value}</div>
-            </div>
-            `).join('')}
+      
+    <!-- Standard AI Analysis Section -->
+    ${Object.keys(memo.memo_content || {}).length > 0 ? `
+      <div class="section">
+        <h2 class="section-title">AI Analysis Summary</h2>
+        <div class="section-content">
+          <p><strong>Analysis Confidence:</strong> ${memo.overall_score || 'N/A'}/100</p>
+          <p><strong>RAG Status:</strong> ${memo.rag_status || 'Under Review'}</p>
+          <p><strong>Data Quality Score:</strong> ${memo.content_quality_score || 'N/A'}/100</p>
+          ${memo.generation_metadata?.insights ? `
+            <p><strong>Key AI Insights:</strong></p>
+            <ul>
+              ${memo.generation_metadata.insights.map((insight: string) => `<li>${insight}</li>`).join('')}
+            </ul>
+          ` : ''}
         </div>
-    </div>
+      </div>
     ` : ''}
-    
+
+    <!-- Footer -->
     <div class="footer">
-        <div class="reuben-branding">Generated by Reuben AI Investment Platform</div>
-        <div>Confidential and Proprietary - For Investment Committee Use Only</div>
-        <div style="margin-top: 0.5rem; font-size: 0.8rem; opacity: 0.8;">
-            © ${new Date().getFullYear()} Reuben AI. Patent Pending Technology.
-        </div>
+        <div class="logo">ReubenAI Investment Platform</div>
+        <p>Confidential and Proprietary • Investment Committee Use Only</p>
+        <p style="margin-top: 10px; font-size: 9px; opacity: 0.7;">
+            Generated on ${new Date().toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })} • © ${new Date().getFullYear()} ReubenAI. Enhanced AI Analysis Technology.
+        </p>
     </div>
 </body>
 </html>`;

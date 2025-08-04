@@ -109,7 +109,28 @@ serve(async (req) => {
       console.warn('⚠️ Orchestrator warning:', orchestratorError);
     }
 
-    // 4.5. Call specialist AI engines for memo sections
+    // 4.5. Call enhanced Investment Committee Analysis Enhancer for deeper insights
+    console.log('🔬 Calling Investment Committee Analysis Enhancer for enhanced insights...');
+    let enhancedInsights = null;
+    try {
+      const { data: enhancedData } = await supabase.functions.invoke('investment-committee-analysis-enhancer', {
+        body: {
+          dealId,
+          fundId,
+          dealData,
+          fundData: dealData.funds
+        }
+      });
+      
+      if (enhancedData?.success) {
+        enhancedInsights = enhancedData.enhancedAnalysis;
+        console.log('✅ Enhanced insights generated for memo enhancement');
+      }
+    } catch (error) {
+      console.warn('⚠️ Enhanced analysis failed, proceeding with standard analysis:', error);
+    }
+
+    // 4.6. Call specialist AI engines for memo sections
     console.log('🔬 Calling specialist AI engines for detailed analysis...');
     
     const [marketResearchData, managementData, investmentTermsData, riskMitigationData, exitStrategyData] = await Promise.allSettled([
@@ -244,7 +265,8 @@ serve(async (req) => {
         thesisData,
         enhancedCriteria,
         dealData.deal_notes || [],
-        specialistEngines
+        specialistEngines,
+        enhancedInsights
       );
       
       // Validate memo content structure
@@ -262,7 +284,8 @@ serve(async (req) => {
         ragData, 
         thesisData, 
         specialistEngines,
-        orchestratorData
+        orchestratorData,
+        enhancedInsights
       );
     }
 
@@ -373,7 +396,8 @@ async function generateMemoContent(
   thesisData: any,
   enhancedCriteria: any,
   dealNotes: any[],
-  specialistEngines: any
+  specialistEngines: any,
+  enhancedInsights?: any
 ): Promise<{ content: any; executive_summary: string; investment_recommendation: string }> {
   
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -421,7 +445,19 @@ async function generateMemoContent(
       
       const recentNotes = dealNotes.slice(0, 3).map(note => note.content.slice(0, 100)).join(' | ') || 'No notes';
 
+      const enhancedContext = enhancedInsights ? `
+ENHANCED STRATEGIC INTELLIGENCE:
+Strategic Insights: ${enhancedInsights.strategicInsights || 'N/A'}
+"So What?" Analysis: ${enhancedInsights.soWhatAnalysis || 'N/A'}
+Comparative Analysis: ${enhancedInsights.comparativeAnalysis || 'N/A'}
+Risk-Adjusted Returns: ${enhancedInsights.riskAdjustedReturns || 'N/A'}
+Scenario Analysis: ${enhancedInsights.scenarioAnalysis || 'N/A'}
+Enhancement Level: ${enhancedInsights.enhancementLevel || 'N/A'}
+` : '';
+
       const prompt = `Generate Investment Committee memo for ${dealData.company_name}.
+
+${enhancedContext}
 
 ZERO FABRICATION: Only use provided data. State "N/A" if data missing.
 
@@ -450,7 +486,9 @@ NOTES: ${recentNotes}
 
 Generate sections: ${sections.map(s => s.title).join(', ')}.
 
-Focus on thesis alignment, validated scores, clear recommendation.`;
+Focus on thesis alignment, validated scores, clear recommendation.
+
+${enhancedInsights ? 'INCORPORATE ENHANCED INSIGHTS: Use the strategic intelligence and "so what?" analysis to enrich memo content with deeper insights and comparative analysis.' : ''}`;
 
       const systemMessage = `ZERO FABRICATION IC MEMO ANALYST: Expert investment analyst with strict anti-fabrication protocols. CRITICAL REQUIREMENTS:
 1. FACTUAL ONLY: Use only provided data, never fabricate metrics, financials, or market data
