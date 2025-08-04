@@ -13,19 +13,31 @@ export function generateEnhancedFallbackMemo(
   
   const memoSections: any = {};
   
-  // Extract specialist engine data
-  const marketData = specialistEngines?.marketResearch?.data || {};
-  const managementData = specialistEngines?.management?.data || {};
-  const investmentTermsData = specialistEngines?.investmentTerms?.data || {};
-  const riskData = specialistEngines?.riskMitigation?.data || {};
-  const exitData = specialistEngines?.exitStrategy?.data || {};
+  // Extract specialist engine data with comprehensive null checking and error handling
+  const safeSpecialistEngines = specialistEngines || {};
   
-  // Generate enhanced content for each section
+  const marketData = safeSpecialistEngines.marketResearch?.data || {};
+  const managementData = safeSpecialistEngines.management?.data || {};
+  const investmentTermsData = safeSpecialistEngines.investmentTerms?.data || {};
+  const riskData = safeSpecialistEngines.riskMitigation?.data || {};
+  const exitData = safeSpecialistEngines.exitStrategy?.data || {};
+  
+  // Add validation logging
+  console.log('📊 Specialist engine data validation:', {
+    marketData: !!marketData && Object.keys(marketData).length > 0,
+    managementData: !!managementData && Object.keys(managementData).length > 0,
+    investmentTermsData: !!investmentTermsData && Object.keys(investmentTermsData).length > 0,
+    riskData: !!riskData && Object.keys(riskData).length > 0,
+    exitData: !!exitData && Object.keys(exitData).length > 0
+  });
+  
+  // Generate enhanced content for each section with error handling
   sections.forEach(section => {
-    switch (section.key) {
-      case 'executive_summary':
-        memoSections[section.key] = generateExecutiveSummary(dealData, analysisData, ragData, thesisData, orchestratorData);
-        break;
+    try {
+      switch (section.key) {
+        case 'executive_summary':
+          memoSections[section.key] = generateExecutiveSummary(dealData, analysisData, ragData, thesisData, orchestratorData);
+          break;
       
       case 'company_overview':
         memoSections[section.key] = generateCompanyOverview(dealData, analysisData);
@@ -71,8 +83,12 @@ export function generateEnhancedFallbackMemo(
         memoSections[section.key] = generateInvestmentRecommendation(dealData, ragData, thesisData, orchestratorData);
         break;
       
-      default:
-        memoSections[section.key] = `${section.title} analysis for ${dealData.company_name}: Comprehensive evaluation pending. This section will be populated with detailed analysis based on specialist engine assessments and validated market data.`;
+        default:
+          memoSections[section.key] = `${section.title} analysis for ${dealData.company_name}: Comprehensive evaluation pending. This section will be populated with detailed analysis based on specialist engine assessments and validated market data.`;
+      }
+    } catch (error) {
+      console.error(`❌ Error generating section ${section.key}:`, error);
+      memoSections[section.key] = `${section.title} analysis for ${dealData.company_name}: Section generation temporarily unavailable. Data processing will resume shortly.`;
     }
   });
   
@@ -353,21 +369,48 @@ function generateInvestmentTerms(dealData: any, investmentTermsData: any): strin
 function generateRisksAndMitigants(dealData: any, riskData: any, orchestratorData: any): string {
   let risks = `Risk Assessment & Mitigation: `;
   
-  if (riskData.risk_score) {
-    risks += `Overall Risk Score: ${riskData.risk_score}/100. `;
+  // Robust null checking and type validation
+  const safeRiskData = riskData || {};
+  const safeOrchestratorData = orchestratorData || {};
+  
+  if (safeRiskData.risk_score && typeof safeRiskData.risk_score === 'number') {
+    risks += `Overall Risk Score: ${safeRiskData.risk_score}/100. `;
   }
   
-  if (riskData.primary_risks && Array.isArray(riskData.primary_risks)) {
-    risks += `Primary Risk Factors: ${riskData.primary_risks.slice(0, 3).join(', ')}. `;
-  } else if (orchestratorData?.risks) {
-    risks += `Identified Risks: ${orchestratorData.risks.slice(0, 3).join(', ')}. `;
+  // Handle primary risks with comprehensive type checking
+  if (safeRiskData.primary_risks && Array.isArray(safeRiskData.primary_risks) && safeRiskData.primary_risks.length > 0) {
+    const validRisks = safeRiskData.primary_risks.filter(risk => risk && typeof risk === 'string').slice(0, 3);
+    if (validRisks.length > 0) {
+      risks += `Primary Risk Factors: ${validRisks.join(', ')}. `;
+    }
+  } else if (safeOrchestratorData.risks && Array.isArray(safeOrchestratorData.risks) && safeOrchestratorData.risks.length > 0) {
+    const validRisks = safeOrchestratorData.risks.filter(risk => risk && typeof risk === 'string').slice(0, 3);
+    if (validRisks.length > 0) {
+      risks += `Identified Risks: ${validRisks.join(', ')}. `;
+    }
   }
   
-  if (riskData.mitigation_strategies) {
-    const mitigationStr = typeof riskData.mitigation_strategies === 'string' 
-      ? riskData.mitigation_strategies 
-      : JSON.stringify(riskData.mitigation_strategies);
-    risks += `Mitigation Strategies: ${mitigationStr.substring(0, 150)}... `;
+  // Comprehensive mitigation strategies handling
+  if (safeRiskData.mitigation_strategies) {
+    try {
+      let mitigationStr = '';
+      if (typeof safeRiskData.mitigation_strategies === 'string') {
+        mitigationStr = safeRiskData.mitigation_strategies;
+      } else if (Array.isArray(safeRiskData.mitigation_strategies)) {
+        mitigationStr = safeRiskData.mitigation_strategies.filter(strategy => strategy && typeof strategy === 'string').join(', ');
+      } else if (typeof safeRiskData.mitigation_strategies === 'object') {
+        mitigationStr = JSON.stringify(safeRiskData.mitigation_strategies);
+      } else {
+        mitigationStr = String(safeRiskData.mitigation_strategies);
+      }
+      
+      if (mitigationStr && mitigationStr.length > 0) {
+        risks += `Mitigation Strategies: ${mitigationStr.substring(0, 150)}... `;
+      }
+    } catch (error) {
+      console.warn('⚠️ Error processing mitigation strategies:', error);
+      risks += `Mitigation Strategies: Risk mitigation analysis in progress. `;
+    }
   }
   
   risks += `Market Risk: ${dealData.industry} sector volatility and competitive dynamics. `;

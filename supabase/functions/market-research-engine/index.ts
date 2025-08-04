@@ -38,6 +38,15 @@ serve(async (req) => {
       thresholds 
     } = await req.json();
     
+    // Validate required data with comprehensive error handling
+    if (!dealData || typeof dealData !== 'object') {
+      throw new Error('Invalid dealData: dealData must be provided as an object');
+    }
+    
+    if (!dealData.company_name) {
+      throw new Error('Invalid dealData: company_name is required');
+    }
+    
     console.log('📊 Market Research Engine: Enhanced analysis for:', dealData.company_name);
     console.log('🎯 Fund Type:', fundType, '| Enhanced Criteria:', !!enhancedCriteria);
     

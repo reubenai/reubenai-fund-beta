@@ -116,11 +116,13 @@ serve(async (req) => {
       supabase.functions.invoke('market-research-engine', {
         body: { 
           dealId,
-          companyData: {
-            name: dealData.company_name,
+          dealData: {
+            company_name: dealData.company_name,
             industry: dealData.industry,
             location: dealData.location,
-            website: dealData.website
+            website: dealData.website,
+            description: dealData.description,
+            business_model: dealData.business_model
           }
         }
       }),
@@ -264,10 +266,21 @@ serve(async (req) => {
       );
     }
 
-    // 8. Determine RAG status from validated data
-    const finalRagStatus = ragData?.ragStatus || dealData.rag_status || 'needs_review';
+    // 8. Determine RAG status from validated data with proper constraint validation
+    let finalRagStatus = 'needs_review'; // Default safe value
     
-    // 9. Store generated memo
+    // Validate RAG status against database constraints
+    const validRagStatuses = ['red', 'amber', 'green', 'needs_review'];
+    const proposedRagStatus = ragData?.ragStatus || dealData.rag_status || 'needs_review';
+    
+    if (typeof proposedRagStatus === 'string' && validRagStatuses.includes(proposedRagStatus.toLowerCase())) {
+      finalRagStatus = proposedRagStatus.toLowerCase();
+    } else {
+      console.warn('⚠️ Invalid RAG status detected, using default:', proposedRagStatus);
+      finalRagStatus = 'needs_review';
+    }
+    
+    // 9. Store generated memo with comprehensive error handling
     console.log('💾 Storing generated memo...');
     const { data: memo, error: memoError } = await supabase
       .from('ic_memos')
@@ -281,7 +294,7 @@ serve(async (req) => {
         executive_summary: memoContent.executive_summary,
         investment_recommendation: memoContent.investment_recommendation,
         rag_status: finalRagStatus,
-        overall_score: dealData.overall_score,
+        overall_score: dealData.overall_score || 50, // Ensure we have a valid score
         created_by: '00000000-0000-0000-0000-000000000000' // System user
       })
       .select()
