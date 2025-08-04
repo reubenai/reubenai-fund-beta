@@ -88,10 +88,10 @@ export const DocumentAnalysisIntegration: React.FC<DocumentAnalysisIntegrationPr
 
       onAnalysisTrigger?.();
       
-      // Poll for completion
+      // Poll for completion with longer timeout for comprehensive analysis
       setTimeout(() => {
         checkAnalysisStatus();
-      }, 5000);
+      }, 10000);
 
     } catch (error) {
       console.error('Failed to trigger analysis:', error);

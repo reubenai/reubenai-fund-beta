@@ -162,11 +162,12 @@ export function EnhancedDealDetailsModal({
 
     setIsEnriching(true);
     try {
-      // Use the enhanced deal analysis engine for comprehensive enrichment
-      const { data, error } = await supabase.functions.invoke('enhanced-deal-analysis', {
+      // Use the reuben-orchestrator for comprehensive analysis (same as Documents tab)
+      const { data, error } = await supabase.functions.invoke('reuben-orchestrator', {
         body: { 
           dealId: deal.id,
-          enrichmentLevel: 'comprehensive',
+          analysisType: 'comprehensive',
+          includeDocuments: true,
           includeWebResearch: true,
           includeFinancialAnalysis: true,
           includeMarketAnalysis: true,
