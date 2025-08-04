@@ -22,11 +22,6 @@ export const CleanKanbanView: React.FC<CleanKanbanViewProps> = ({
   onStageDelete,
   onAddDeal,
 }) => {
-  console.log('🔍 [CleanKanbanView] Rendering with:');
-  console.log('  - stages:', stages.length);
-  console.log('  - deals keys:', Object.keys(deals));
-  console.log('  - total deal count:', Object.values(deals).reduce((sum, arr) => sum + arr.length, 0));
-
   if (stages.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">
