@@ -25,6 +25,7 @@ import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModa
 import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
 import { ComprehensiveProductionReadiness } from '@/components/admin/ComprehensiveProductionReadiness';
 import { AdminInviteUserModal } from '@/components/admin/AdminInviteUserModal';
+import { AdminDealsTable } from '@/components/admin/AdminDealsTable';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 
 interface Organization {
@@ -479,6 +480,7 @@ export default function Admin() {
               <TabsTrigger value="organizations" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Organizations</TabsTrigger>
               <TabsTrigger value="users" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Users</TabsTrigger>
               <TabsTrigger value="funds" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Funds</TabsTrigger>
+              <TabsTrigger value="deals" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Deals</TabsTrigger>
               <TabsTrigger value="production" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <Rocket className="h-4 w-4 mr-2" />
                 Production Readiness
@@ -768,6 +770,10 @@ export default function Admin() {
               </div>
             </CardContent>
             </Card>
+            </TabsContent>
+
+            <TabsContent value="deals" className="space-y-6">
+              <AdminDealsTable />
             </TabsContent>
 
             <TabsContent value="production" className="space-y-6">
