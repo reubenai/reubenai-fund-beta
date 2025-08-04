@@ -206,7 +206,12 @@ class DocumentService {
     try {
       const { data, error } = await supabase.storage
         .from(document.bucket_name)
-        .createSignedUrl(document.file_path, 3600); // 1 hour expiry
+        .createSignedUrl(document.file_path, 3600, {
+          download: true,
+          transform: {
+            format: 'origin'
+          }
+        });
 
       if (error) {
         console.error('Error creating signed URL:', error);
@@ -216,6 +221,24 @@ class DocumentService {
       return data.signedUrl;
     } catch (error) {
       console.error('Error getting download URL:', error);
+      return null;
+    }
+  }
+
+  async downloadDocumentBlob(document: DealDocument): Promise<Blob | null> {
+    try {
+      const { data, error } = await supabase.storage
+        .from(document.bucket_name)
+        .download(document.file_path);
+
+      if (error) {
+        console.error('Error downloading file:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error downloading file:', error);
       return null;
     }
   }

@@ -72,15 +72,55 @@ export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTri
 
   const handleDownload = async (document: DealDocument) => {
     try {
+      // First try the direct download URL approach
       const url = await documentService.getDocumentDownloadUrl(document);
       if (url) {
+        try {
+          const link = window.document.createElement('a');
+          link.href = url;
+          link.download = document.name;
+          link.setAttribute('target', '_blank');
+          link.setAttribute('rel', 'noopener noreferrer');
+          window.document.body.appendChild(link);
+          link.click();
+          window.document.body.removeChild(link);
+          
+          // Log activity
+          await logActivity({
+            activity_type: 'deal_updated',
+            title: `Downloaded ${document.name}`,
+            description: `Downloaded document from ${companyName}`,
+            deal_id: dealId,
+            resource_type: 'document',
+            resource_id: document.id,
+            context_data: { 
+              company_name: companyName,
+              document_name: document.name,
+              document_type: document.document_type
+            },
+            priority: 'low',
+            tags: ['document', 'download']
+          });
+          return;
+        } catch (linkError) {
+          console.warn('Direct download failed, trying blob method:', linkError);
+        }
+      }
+
+      // Fallback: Use blob download method
+      const blob = await documentService.downloadDocumentBlob(document);
+      if (blob) {
+        const blobUrl = URL.createObjectURL(blob);
         const link = window.document.createElement('a');
-        link.href = url;
+        link.href = blobUrl;
         link.download = document.name;
         window.document.body.appendChild(link);
         link.click();
         window.document.body.removeChild(link);
-
+        
+        // Clean up the blob URL
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        
         // Log activity
         await logActivity({
           activity_type: 'deal_updated',
@@ -97,9 +137,11 @@ export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTri
           priority: 'low',
           tags: ['document', 'download']
         });
+      } else {
+        throw new Error('Failed to download document');
       }
     } catch (err) {
-      setError('Failed to download document');
+      setError('Failed to download document. Please try again or check your browser settings.');
       console.error('Download error:', err);
     }
   };

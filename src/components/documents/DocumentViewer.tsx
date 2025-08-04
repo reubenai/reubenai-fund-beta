@@ -38,14 +38,43 @@ export function DocumentViewer({ document, onClose }: DocumentViewerProps) {
     getDownloadUrl();
   }, [document]);
 
-  const handleDownload = () => {
-    if (downloadUrl) {
-      const link = window.document.createElement('a');
-      link.href = downloadUrl;
-      link.download = document.name;
-      window.document.body.appendChild(link);
-      link.click();
-      window.document.body.removeChild(link);
+  const handleDownload = async () => {
+    try {
+      if (downloadUrl) {
+        try {
+          const link = window.document.createElement('a');
+          link.href = downloadUrl;
+          link.download = document.name;
+          link.setAttribute('target', '_blank');
+          link.setAttribute('rel', 'noopener noreferrer');
+          window.document.body.appendChild(link);
+          link.click();
+          window.document.body.removeChild(link);
+          return;
+        } catch (linkError) {
+          console.warn('Direct download failed, trying blob method:', linkError);
+        }
+      }
+
+      // Fallback: Use blob download method
+      const blob = await documentService.downloadDocumentBlob(document);
+      if (blob) {
+        const blobUrl = URL.createObjectURL(blob);
+        const link = window.document.createElement('a');
+        link.href = blobUrl;
+        link.download = document.name;
+        window.document.body.appendChild(link);
+        link.click();
+        window.document.body.removeChild(link);
+        
+        // Clean up the blob URL
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+      } else {
+        throw new Error('Failed to download document');
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+      setError('Failed to download document. Please try again or check your browser settings.');
     }
   };
 
