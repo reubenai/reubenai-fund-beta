@@ -418,33 +418,40 @@ function generatePerplexityDealPrompt(request: SourcingRequest, strategy: any): 
   const geographies = request.geographies || strategy?.geography || ['North America'];
   const batchSize = request.batchSize || 5;
   
-  // Simplified, conversational prompt for sonar-reasoning model
-  return `I'm looking for ${batchSize} real companies in the ${industries.join(' and ')} sectors that have raised funding in ${currentYear} or late ${currentYear - 1}. 
+  // Enhanced prompt to explicitly request company names, not recommendations
+  return `Find ${batchSize} specific companies in ${industries.join(', ')} that have actually raised funding in ${currentYear} or late ${currentYear - 1}.
 
-Here are my investment criteria:
+Investment criteria:
 - Industries: ${industries.join(', ')}
-- Geographic regions: ${geographies.join(', ')} 
-- Funding stages: ${strategy?.fund_type === 'vc' ? 'Pre-Seed, Seed, Series A' : 'Growth stage, Series B+'}
+- Regions: ${geographies.join(', ')} 
+- Stages: ${strategy?.fund_type === 'vc' ? 'Pre-Seed, Seed, Series A' : 'Growth stage, Series B+'}
 - Deal size: ${request.investmentSizeRange ? `$${(request.investmentSizeRange.min/1000000).toFixed(1)}M to $${(request.investmentSizeRange.max/1000000).toFixed(1)}M` : '$500K to $15M'}
 
-Please find companies that actually raised funding recently and provide their basic information including company name, brief description, funding amount, stage, and website. Focus on real companies with verified funding data from sources like Crunchbase, TechCrunch, or PitchBook.
+IMPORTANT: Please provide actual company names and details, not recommendations to consult databases. I need specific companies with their information.
 
-Return the information in a simple format for each company:
+For each company, provide:
 1. Company name
-2. What they do (brief description)
-3. Industry/sector
-4. Location (city, country)
-5. Website
-6. Recent funding amount and stage
-7. When they raised funding
-8. Who led the round (if known)
+2. Business description
+3. Industry
+4. Location
+5. Website URL
+6. Funding amount and stage
+7. Funding date
+8. Lead investor
 
-Please focus on accuracy and real companies only.`;
+Do not suggest consulting Crunchbase or other databases - provide the actual company information directly.`;
 }
 
 function parsePerplexityResponse(response: string, request: SourcingRequest): any[] {
   console.log('🔍 Parsing Perplexity response, length:', response.length);
   console.log('📄 Raw response preview:', response.substring(0, 300) + '...');
+  
+  // First check if response contains advisory content instead of companies
+  if (isAdvisoryResponse(response)) {
+    console.log('⚠️ Detected advisory response from Perplexity - no actual companies provided');
+    console.log('📋 Advisory content detected:', response.substring(0, 200));
+    return []; // Return empty array to trigger fallback methods
+  }
   
   try {
     // First try to extract JSON from the response
@@ -479,28 +486,15 @@ function parsePerplexityResponse(response: string, request: SourcingRequest): an
       if (parsedData) break;
     }
     
-    // If JSON parsing successful, process the data
+    // If JSON parsing successful, validate and process the data
     if (Array.isArray(parsedData) && parsedData.length > 0) {
-      return parsedData.slice(0, request.batchSize || 5).map(company => ({
-        company_name: company.company_name || company.name || 'Unknown Company',
-        description: company.description || company.business || 'Company description not available',
-        industry: company.industry || company.sector || request.industries?.[0] || 'Technology',
-        location: company.location || company.city || 'Location TBD',
-        website: company.website || company.url || `https://${(company.company_name || company.name || 'company').toLowerCase().replace(/\s+/g, '')}.com`,
-        funding_stage: company.funding_stage || company.stage || 'Seed',
-        deal_size: company.deal_size || company.amount || generateRealisticDealSize(company.funding_stage || company.stage || 'Seed'),
-        valuation: company.valuation || (company.deal_size * (Math.random() * 5 + 3)),
-        funding_date: company.funding_date || company.date || new Date().toISOString().split('T')[0],
-        lead_investor: company.lead_investor || company.investor || 'Investor information available',
-        founder: company.founder || company.ceo || 'Founder information available on request',
-        traction_metrics: company.traction_metrics || {
-          revenue: company.revenue || 'Revenue information available',
-          customers: company.customers || Math.floor(Math.random() * 1000) + 100,
-          growth_rate: company.growth_rate || `${Math.floor(Math.random() * 200) + 50}% YoY`
-        },
-        founding_team: company.founding_team || company.team || `Professional team with expertise in ${company.industry || 'Technology'}`,
-        competitive_advantage: company.competitive_advantage || company.advantage || 'Innovative technology and market position'
-      }));
+      const processedCompanies = parsedData.slice(0, request.batchSize || 5)
+        .map(company => processCompanyData(company, request))
+        .filter(company => isValidCompany(company));
+      
+      if (processedCompanies.length > 0) {
+        return processedCompanies;
+      }
     }
     
     console.log('⚠️ No valid JSON found, attempting text extraction...');
@@ -515,8 +509,101 @@ function parsePerplexityResponse(response: string, request: SourcingRequest): an
   }
 }
 
+function isAdvisoryResponse(response: string): boolean {
+  const advisoryIndicators = [
+    'recommendation',
+    'consult specialized databases',
+    'crunchbase',
+    'pitchbook',
+    'suggest consulting',
+    'recommend using',
+    'try searching',
+    'check databases',
+    'for accurate results',
+    'specialized platforms',
+    'database platforms',
+    'suggest using'
+  ];
+  
+  const lowerResponse = response.toLowerCase();
+  return advisoryIndicators.some(indicator => lowerResponse.includes(indicator));
+}
+
+function processCompanyData(company: any, request: SourcingRequest): any {
+  const companyName = company.company_name || company.name;
+  
+  return {
+    company_name: companyName || 'Unknown Company',
+    description: company.description || company.business || 'Company description not available',
+    industry: company.industry || company.sector || request.industries?.[0] || 'Technology',
+    location: company.location || company.city || 'Location TBD',
+    website: generateSafeWebsiteUrl(companyName),
+    funding_stage: company.funding_stage || company.stage || 'Seed',
+    deal_size: company.deal_size || company.amount || generateRealisticDealSize(company.funding_stage || company.stage || 'Seed'),
+    valuation: company.valuation || (company.deal_size * (Math.random() * 5 + 3)),
+    funding_date: company.funding_date || company.date || new Date().toISOString().split('T')[0],
+    lead_investor: company.lead_investor || company.investor || 'Investor information available',
+    founder: company.founder || company.ceo || 'Founder information available on request',
+    traction_metrics: company.traction_metrics || {
+      revenue: company.revenue || 'Revenue information available',
+      customers: company.customers || Math.floor(Math.random() * 1000) + 100,
+      growth_rate: company.growth_rate || `${Math.floor(Math.random() * 200) + 50}% YoY`
+    },
+    founding_team: company.founding_team || company.team || `Professional team with expertise in ${company.industry || 'Technology'}`,
+    competitive_advantage: company.competitive_advantage || company.advantage || 'Innovative technology and market position'
+  };
+}
+
+function generateSafeWebsiteUrl(companyName: string): string {
+  if (!companyName || typeof companyName !== 'string') {
+    return 'https://example.com';
+  }
+  
+  // Clean company name for URL generation
+  const cleanName = companyName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')  // Remove special characters
+    .replace(/\s+/g, '')          // Remove spaces
+    .substring(0, 50);            // Limit length
+  
+  if (cleanName.length < 2) {
+    return 'https://example.com';
+  }
+  
+  return `https://${cleanName}.com`;
+}
+
+function isValidCompany(company: any): boolean {
+  if (!company || !company.company_name) {
+    return false;
+  }
+  
+  // Check if company name seems like advisory text
+  const name = company.company_name.toLowerCase();
+  const invalidNames = [
+    'recommendation',
+    'database',
+    'crunchbase',
+    'pitchbook',
+    'specialized',
+    'platform',
+    'consult',
+    'suggest'
+  ];
+  
+  return !invalidNames.some(invalid => name.includes(invalid)) && 
+         company.company_name.length > 2 && 
+         company.company_name.length < 100;
+}
+
 function extractCompaniesFromText(response: string, request: SourcingRequest): any[] {
   console.log('🔍 Attempting text extraction from response...');
+  
+  // First check if this is advisory content
+  if (isAdvisoryResponse(response)) {
+    console.log('⚠️ Text contains advisory content - skipping extraction');
+    return [];
+  }
   
   try {
     const companies = [];
@@ -535,7 +622,7 @@ function extractCompaniesFromText(response: string, request: SourcingRequest): a
     
     for (const line of lines) {
       const trimmedLine = line.trim();
-      if (!trimmedLine) continue;
+      if (!trimmedLine || isAdvisoryLine(trimmedLine)) continue;
       
       // Check if this line contains a company name
       let foundCompany = false;
@@ -543,20 +630,20 @@ function extractCompaniesFromText(response: string, request: SourcingRequest): a
       for (const pattern of companyPatterns) {
         const match = trimmedLine.match(pattern);
         if (match) {
-          // Save previous company if exists
-          if (currentCompany && currentCompany.company_name) {
+          // Save previous company if exists and valid
+          if (currentCompany && isValidCompany(currentCompany)) {
             companies.push(currentCompany);
           }
           
           const companyName = match[1].trim();
-          if (companyName.length > 2 && companyName.length < 80) {
+          if (isValidCompanyName(companyName)) {
             console.log('🏢 Found potential company:', companyName);
             currentCompany = {
               company_name: companyName,
               description: '',
               industry: request.industries?.[0] || 'Technology',
               location: 'Location TBD',
-              website: `https://${companyName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')}.com`,
+              website: generateSafeWebsiteUrl(companyName),
               funding_stage: 'Seed',
               deal_size: generateRealisticDealSize('Seed'),
               funding_date: new Date().toISOString().split('T')[0],
@@ -577,7 +664,7 @@ function extractCompaniesFromText(response: string, request: SourcingRequest): a
       }
       
       // If no company pattern matched but we have a current company, this might be description
-      if (!foundCompany && currentCompany && trimmedLine.length > 10) {
+      if (!foundCompany && currentCompany && trimmedLine.length > 10 && !isAdvisoryLine(trimmedLine)) {
         // Accumulate description from subsequent lines
         if (currentCompany.description) {
           currentCompany.description += ' ' + trimmedLine;
@@ -590,18 +677,59 @@ function extractCompaniesFromText(response: string, request: SourcingRequest): a
       }
     }
     
-    // Don't forget the last company
-    if (currentCompany && currentCompany.company_name) {
+    // Don't forget the last company if it's valid
+    if (currentCompany && isValidCompany(currentCompany)) {
       companies.push(currentCompany);
     }
     
-    console.log(`✅ Text extraction found ${companies.length} companies`);
-    return companies.slice(0, request.batchSize || 5);
+    console.log(`✅ Text extraction found ${companies.length} valid companies`);
+  return companies.slice(0, request.batchSize || 5);
     
   } catch (error) {
     console.log('❌ Text extraction failed:', error);
     return [];
   }
+}
+
+function isAdvisoryLine(line: string): boolean {
+  const advisoryPhrases = [
+    'recommendation',
+    'consult',
+    'database',
+    'crunchbase',
+    'pitchbook',
+    'specialized platforms',
+    'for accurate results',
+    'suggest using',
+    'try searching'
+  ];
+  
+  const lowerLine = line.toLowerCase();
+  return advisoryPhrases.some(phrase => lowerLine.includes(phrase));
+}
+
+function isValidCompanyName(name: string): boolean {
+  if (!name || typeof name !== 'string') return false;
+  
+  // Check length
+  if (name.length < 2 || name.length > 80) return false;
+  
+  // Check for advisory words
+  const advisoryWords = [
+    'recommendation',
+    'database',
+    'crunchbase',
+    'pitchbook',
+    'specialized',
+    'platform',
+    'consult',
+    'suggest',
+    'results',
+    'accurate'
+  ];
+  
+  const lowerName = name.toLowerCase();
+  return !advisoryWords.some(word => lowerName.includes(word));
 }
 
 function extractInfoFromLine(line: string, company: any): void {
