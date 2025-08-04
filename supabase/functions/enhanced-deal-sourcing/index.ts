@@ -103,7 +103,7 @@ async function callOpenAI(messages: any[], model = 'gpt-4.1-2025-04-14') {
   return data.choices[0].message.content;
 }
 
-async function callPerplexityAPI(prompt: string, model = 'llama-3.1-sonar-large-128k-online') {
+async function callPerplexityAPI(prompt: string, model = 'sonar-reasoning') {
   if (!perplexityApiKey) {
     throw new Error('Perplexity API key not configured');
   }
