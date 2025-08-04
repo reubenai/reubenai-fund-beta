@@ -60,7 +60,7 @@ const MEMO_SECTIONS = [
   { key: 'investment_terms', title: 'Investment Terms', icon: FileText, description: 'Deal structure, valuation, and terms' },
   { key: 'risks_mitigants', title: 'Risks & Mitigants', icon: Shield, description: 'Key risks and mitigation strategies' },
   { key: 'exit_strategy', title: 'Exit Strategy', icon: TrendingUp, description: 'Potential exit paths and timeline' },
-  { key: 'recommendation', title: 'Investment Recommendation', icon: Target, description: 'Final investment recommendation and rationale' }
+  { key: 'investment_recommendation', title: 'Investment Recommendation', icon: Target, description: 'Final investment recommendation and rationale' }
 ];
 
 export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> = ({

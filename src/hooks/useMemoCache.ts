@@ -13,7 +13,7 @@ interface MemoContent {
   investment_terms?: string;
   risks_mitigants?: string;
   exit_strategy?: string;
-  recommendation?: string;
+  investment_recommendation?: string;
 }
 
 interface CachedMemo {
@@ -133,6 +133,7 @@ export function useMemoCache(dealId: string, fundId: string) {
 
       if (existingMemo?.memo_content && !forceRegenerate) {
         const memoContent = existingMemo.memo_content as any;
+        // Extract content correctly - check for nested sections or use direct content
         const content = memoContent?.sections || memoContent;
         const { needsRefresh, dealLastUpdated, analysisVersion } = await checkAnalysisFreshness(dealId);
         
@@ -194,7 +195,8 @@ export function useMemoCache(dealId: string, fundId: string) {
         throw new Error(data?.error || 'Failed to generate memo');
       }
 
-      const content = data?.memo?.memo_content?.sections || data?.memo?.memo_content || {};
+      // Extract content properly - AI generator returns flat structure now
+      const content = data?.memo?.memo_content || {};
       const now = new Date().toISOString();
       const { dealLastUpdated, analysisVersion } = await checkAnalysisFreshness(dealId);
       

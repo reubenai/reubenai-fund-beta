@@ -518,24 +518,25 @@ Tone: Professional, suitable for investment committee.`;
       
       console.log('✅ Successfully generated memo content');
       
+      // Return flat structure that frontend expects
       return {
         content: {
-          sections: memoData.sections,
+          ...memoData.sections,
           key_metrics: memoData.key_metrics,
           data_quality_assessment: memoData.data_quality_assessment,
           generated_at: new Date().toISOString(),
-            data_sources: {
-              deal_analysis: !!analysisData,
-              orchestrator: !!orchestratorData,
-              rag_assessment: !!ragData,
-              thesis_alignment: !!thesisData,
-              deal_notes: dealNotes.length,
-              market_research: !!specialistEngines?.marketResearch,
-              management_assessment: !!specialistEngines?.management,
-              investment_terms: !!specialistEngines?.investmentTerms,
-              risk_mitigation: !!specialistEngines?.riskMitigation,
-              exit_strategy: !!specialistEngines?.exitStrategy
-            }
+          data_sources: {
+            deal_analysis: !!analysisData,
+            orchestrator: !!orchestratorData,
+            rag_assessment: !!ragData,
+            thesis_alignment: !!thesisData,
+            deal_notes: dealNotes.length,
+            market_research: !!specialistEngines?.marketResearch,
+            management_assessment: !!specialistEngines?.management,
+            investment_terms: !!specialistEngines?.investmentTerms,
+            risk_mitigation: !!specialistEngines?.riskMitigation,
+            exit_strategy: !!specialistEngines?.exitStrategy
+          }
         },
         executive_summary: memoData.executive_summary,
         investment_recommendation: memoData.investment_recommendation
@@ -626,24 +627,24 @@ function generateReliableFallbackMemo(dealData: any, fundData: any, sections: an
         memoSections[section.key] = `Business model analysis: ${dealData.business_model || 'Revenue model and go-to-market strategy pending detailed review.'} Scalability assessment, customer acquisition costs, lifetime value metrics, and path to profitability require comprehensive business model validation.`;
         break;
       
-      case 'traction_metrics':
-        memoSections[section.key] = `Growth and traction analysis: ${analysisData?.traction_score ? `Traction assessment score: ${analysisData.traction_score}/100.` : 'Customer growth metrics and market validation pending review.'} Key performance indicators, customer acquisition trends, revenue growth, and market penetration metrics require detailed analysis and validation.`;
+      case 'investment_terms':
+        memoSections[section.key] = `Investment terms and structure: ${dealData.deal_size ? `Deal size: $${(dealData.deal_size / 1000000).toFixed(1)}M.` : 'Investment amount TBD.'} ${dealData.valuation ? `Valuation: $${(dealData.valuation / 1000000).toFixed(1)}M.` : 'Valuation TBD.'} ${specialistEngines?.investmentTerms?.data ? 'Detailed terms analysis available.' : 'Investment terms structure, equity stake, board composition, liquidation preferences, and investor rights require detailed negotiation and legal review.'}`;
+        break;
+      
+      case 'risks_mitigants':
+        memoSections[section.key] = `Risk assessment and mitigation strategies: ${specialistEngines?.riskMitigation?.data ? 'Comprehensive risk analysis completed.' : 'Market risks, execution risks, financial risks, regulatory risks, and competitive risks require detailed assessment.'} Mitigation strategies and contingency planning to be developed based on identified risk factors.`;
+        break;
+      
+      case 'exit_strategy':
+        memoSections[section.key] = `Exit strategy analysis: ${specialistEngines?.exitStrategy?.data ? 'Exit scenarios evaluated.' : 'Potential exit paths including strategic acquisition, IPO timeline, and industry consolidation trends require market analysis.'} Expected returns, exit multiples, and timeline assessment pending market conditions and company performance metrics.`;
         break;
       
       case 'competitive_landscape':
         memoSections[section.key] = `Competitive analysis: Market positioning and competitive differentiation assessment pending. Direct and indirect competitors, competitive advantages, market share analysis, and sustainable competitive moats require comprehensive market research and analysis.`;
         break;
       
-      case 'thesis_alignment':
-        memoSections[section.key] = `Investment thesis alignment: ${thesisData?.alignment_score ? `Thesis alignment score: ${thesisData.alignment_score}/100.` : 'Strategic fit assessment pending.'} Alignment with ${fundData?.fund_type || 'fund'} investment criteria, sector focus, stage preferences, and strategic objectives requires detailed evaluation against fund thesis.`;
-        break;
-      
-      case 'risks_mitigants':
-        memoSections[section.key] = `Risk assessment: ${ragData?.ragStatus ? `Current risk status: ${ragData.ragStatus}.` : 'Comprehensive risk evaluation pending.'} Key identified risks include market timing, competitive threats, execution challenges, regulatory considerations, technology risks, and funding requirements. Risk mitigation strategies and contingency planning require detailed analysis.`;
-        break;
-      
-      case 'exit_strategy':
-        memoSections[section.key] = `Exit strategy analysis: Potential exit paths include strategic acquisition by industry leaders, public offering considerations, and secondary market opportunities. ${dealData.valuation ? `Current valuation of $${(dealData.valuation / 1000000).toFixed(1)}M provides baseline for exit planning.` : 'Exit valuation targets to be established.'} Market conditions, competitive landscape, and growth trajectory will influence optimal exit timing and strategy selection.`;
+      case 'competitive_landscape':
+        memoSections[section.key] = `Competitive analysis: Market positioning and competitive differentiation assessment pending. Direct and indirect competitors, competitive advantages, market share analysis, and sustainable competitive moats require comprehensive market research and analysis.`;
         break;
       
       case 'recommendation':
@@ -660,9 +661,10 @@ function generateReliableFallbackMemo(dealData: any, fundData: any, sections: an
     }
   });
   
+  // Return flat structure that frontend expects
   return {
     content: {
-      sections: memoSections,
+      ...memoSections,
       generated_at: new Date().toISOString(),
       fallback_mode: true,
       data_sources: {
