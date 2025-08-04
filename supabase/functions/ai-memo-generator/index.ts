@@ -267,17 +267,17 @@ serve(async (req) => {
     }
 
     // 8. Determine RAG status from validated data with proper constraint validation
-    let finalRagStatus = 'needs_review'; // Default safe value
+    let finalRagStatus = 'needs_development'; // Default safe value
     
-    // Validate RAG status against database constraints
-    const validRagStatuses = ['red', 'amber', 'green', 'needs_review'];
-    const proposedRagStatus = ragData?.ragStatus || dealData.rag_status || 'needs_review';
+    // Validate RAG status against actual database constraints
+    const validRagStatuses = ['exciting', 'promising', 'needs_development'];
+    const proposedRagStatus = ragData?.ragStatus || dealData.rag_status || 'needs_development';
     
     if (typeof proposedRagStatus === 'string' && validRagStatuses.includes(proposedRagStatus.toLowerCase())) {
       finalRagStatus = proposedRagStatus.toLowerCase();
     } else {
       console.warn('⚠️ Invalid RAG status detected, using default:', proposedRagStatus);
-      finalRagStatus = 'needs_review';
+      finalRagStatus = 'needs_development';
     }
     
     // 9. Store generated memo with comprehensive error handling
