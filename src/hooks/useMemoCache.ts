@@ -133,12 +133,8 @@ export function useMemoCache(dealId: string, fundId: string) {
 
       if (existingMemo?.memo_content && !forceRegenerate) {
         const memoContent = existingMemo.memo_content as any;
-        console.log('🎯 Market Opportunity Debug - Existing memo_content from DB:', JSON.stringify(memoContent, null, 2));
-        
         // Extract content correctly - check for nested sections or use direct content
         const content = memoContent?.sections || memoContent;
-        console.log('🎯 Market Opportunity Debug - Extracted content:', JSON.stringify(content, null, 2));
-        console.log('🎯 Market Opportunity value from DB:', content.market_opportunity);
         
         const { needsRefresh, dealLastUpdated, analysisVersion } = await checkAnalysisFreshness(dealId);
         
@@ -202,8 +198,6 @@ export function useMemoCache(dealId: string, fundId: string) {
 
       // Extract content properly - AI generator returns flat structure now
       const content = data?.memo?.memo_content || {};
-      console.log('🎯 Market Opportunity Debug - Generated content:', JSON.stringify(content, null, 2));
-      console.log('🎯 Market Opportunity value:', content.market_opportunity);
       
       const now = new Date().toISOString();
       const { dealLastUpdated, analysisVersion } = await checkAnalysisFreshness(dealId);

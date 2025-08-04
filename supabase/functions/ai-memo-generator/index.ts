@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { generateEnhancedFallbackMemo } from './enhanced-fallback.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -249,9 +250,18 @@ serve(async (req) => {
         throw new Error('Generated memo content is incomplete');
       }
     } catch (aiError) {
-      console.log('⚠️ AI generation failed, using fallback:', aiError.message);
-      // Use reliable fallback memo generation
-      memoContent = generateReliableFallbackMemo(dealData, dealData.funds, sections, dealData.deal_analyses?.[0], ragData, thesisData, specialistEngines);
+      console.log('⚠️ AI generation failed, using enhanced fallback:', aiError.message);
+      // Use enhanced fallback memo generation with available data
+      memoContent = generateEnhancedFallbackMemo(
+        dealData, 
+        dealData.funds, 
+        sections, 
+        dealData.deal_analyses?.[0], 
+        ragData, 
+        thesisData, 
+        specialistEngines,
+        orchestratorData
+      );
     }
 
     // 8. Determine RAG status from validated data

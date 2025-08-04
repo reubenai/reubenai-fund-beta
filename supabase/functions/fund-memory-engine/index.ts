@@ -23,12 +23,15 @@ interface MemoryEntry {
   id?: string;
   fund_id: string;
   deal_id?: string;
-  entry_type: string;
-  content: any;
-  source_service: string;
+  memory_type: string;
+  title: string;
+  description?: string;
+  content: string;
+  ai_service_name: string;
   confidence_score?: number;
-  metadata?: any;
-  tags?: string[];
+  contextual_tags?: string[];
+  correlation_score?: number;
+  created_by?: string | null;
   created_at?: string;
 }
 
@@ -57,6 +60,9 @@ serve(async (req) => {
       case 'contextual_memory':
         result = await getContextualMemory(request);
         break;
+      case 'store_memory':
+        result = await storeMemoryEntry(request);
+        break;
       case 'performance_tracking':
         result = await trackPerformance(request);
         break;
@@ -70,8 +76,14 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Fund Memory Engine error:', error);
+    // Log full error details for debugging
+    console.error('Error stack:', error.stack);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        action: 'fund_memory_error',
+        success: false
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -83,16 +95,33 @@ serve(async (req) => {
 async function storeMemoryEntry(request: MemoryRequest) {
   const { fundId, dealId, data } = request;
   
-  // Store memory entry
+  // Handle different request formats for backward compatibility
+  const memoryData = data?.memoryContent || data;
+  const memoryType = data?.memoryType || memoryData?.entryType || 'ai_service_interaction';
+  const aiServiceName = data?.aiServiceName || memoryData?.sourceService || 'unknown';
+  const confidenceScore = data?.confidenceScore || memoryData?.confidenceScore || 75;
+  
+  console.log('📝 Storing memory entry:', {
+    fundId,
+    dealId,
+    memoryType,
+    aiServiceName,
+    confidenceScore
+  });
+  
+  // Store memory entry with flexible data structure
   const entry: MemoryEntry = {
     fund_id: fundId,
     deal_id: dealId,
-    entry_type: data.entryType || 'analysis',
-    content: data.content || data,
-    source_service: data.sourceService || 'unknown',
-    confidence_score: data.confidenceScore || 0.5,
-    metadata: data.metadata || {},
-    tags: data.tags || []
+    memory_type: memoryType,
+    title: data?.title || 'AI Service Interaction',
+    description: data?.description || 'Automated memory entry',
+    content: JSON.stringify(memoryData),
+    ai_service_name: aiServiceName,
+    confidence_score: confidenceScore,
+    contextual_tags: data?.tags || [],
+    correlation_score: data?.correlationScore || 0.5,
+    created_by: data?.createdBy || null
   };
 
   const { data: memoryEntry, error } = await supabase
@@ -101,14 +130,29 @@ async function storeMemoryEntry(request: MemoryRequest) {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Memory storage error:', error);
+    throw error;
+  }
 
-  // Update fund memory insights
-  await updateFundInsights(fundId, data);
+  console.log('✅ Memory entry stored successfully:', memoryEntry.id);
+
+  // Update fund insights if applicable
+  if (memoryData && typeof memoryData === 'object') {
+    try {
+      await updateFundInsights(fundId, memoryData);
+    } catch (insightError) {
+      console.warn('Failed to update insights:', insightError);
+    }
+  }
 
   // Track service performance
-  if (data.sourceService && data.confidenceScore) {
-    await updateServicePerformance(data.sourceService, data.confidenceScore, fundId);
+  if (aiServiceName && confidenceScore) {
+    try {
+      await updateServicePerformance(aiServiceName, confidenceScore / 100, fundId);
+    } catch (perfError) {
+      console.warn('Failed to update performance:', perfError);
+    }
   }
 
   return {
