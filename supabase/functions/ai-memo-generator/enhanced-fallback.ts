@@ -399,7 +399,24 @@ function generateRisksAndMitigants(dealData: any, riskData: any, orchestratorDat
       } else if (Array.isArray(safeRiskData.mitigation_strategies)) {
         mitigationStr = safeRiskData.mitigation_strategies.filter(strategy => strategy && typeof strategy === 'string').join(', ');
       } else if (typeof safeRiskData.mitigation_strategies === 'object') {
-        mitigationStr = JSON.stringify(safeRiskData.mitigation_strategies);
+        // Parse structured mitigation data into readable format
+        const strategies = safeRiskData.mitigation_strategies;
+        const highPriority = strategies.high_priority || [];
+        const mediumPriority = strategies.medium_priority || [];
+        
+        const allStrategies = [];
+        if (Array.isArray(highPriority)) {
+          allStrategies.push(...highPriority.map((item: any) => 
+            typeof item === 'object' && item.risk ? `${item.risk}: ${item.mitigation_strategy || 'Strategy under development'}` : String(item)
+          ));
+        }
+        if (Array.isArray(mediumPriority)) {
+          allStrategies.push(...mediumPriority.map((item: any) => 
+            typeof item === 'object' && item.risk ? `${item.risk}: ${item.mitigation_strategy || 'Strategy under development'}` : String(item)
+          ));
+        }
+        
+        mitigationStr = allStrategies.length > 0 ? allStrategies.slice(0, 3).join('. ') : 'Risk mitigation strategies under development';
       } else {
         mitigationStr = String(safeRiskData.mitigation_strategies);
       }
