@@ -38,30 +38,37 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      // Get user's organization
+      // Get user's profile to check role and organization
       const { data: profile } = await supabase
         .from('profiles')
-        .select('organization_id')
+        .select('organization_id, role')
         .eq('user_id', user?.id)
         .single();
 
-      if (profile?.organization_id) {
-        // Fetch funds for the organization
-        const { data: fundsData, error } = await supabase
-          .from('funds')
-          .select('*')
-          .eq('organization_id', profile.organization_id)
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
+      // Check if user is Super Admin (can access all funds)
+      const isReubenAdmin = user?.email?.includes('@goreuben.com') || user?.email?.includes('@reuben.com');
+      const isSuperAdmin = profile?.role === 'super_admin' || isReubenAdmin;
 
-        if (error) throw error;
+      let fundsQuery = supabase
+        .from('funds')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
-        setFunds(fundsData || []);
-        
-        // Auto-select first fund if none selected
-        if (fundsData && fundsData.length > 0 && !selectedFund) {
-          setSelectedFund(fundsData[0]);
-        }
+      // If not Super Admin, filter by organization
+      if (!isSuperAdmin && profile?.organization_id) {
+        fundsQuery = fundsQuery.eq('organization_id', profile.organization_id);
+      }
+
+      const { data: fundsData, error } = await fundsQuery;
+
+      if (error) throw error;
+
+      setFunds(fundsData || []);
+      
+      // Auto-select first fund if none selected
+      if (fundsData && fundsData.length > 0 && !selectedFund) {
+        setSelectedFund(fundsData[0]);
       }
     } catch (error) {
       console.error('Error fetching funds:', error);
