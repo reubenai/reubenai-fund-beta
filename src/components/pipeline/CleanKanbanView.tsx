@@ -22,6 +22,22 @@ export const CleanKanbanView: React.FC<CleanKanbanViewProps> = ({
   onStageDelete,
   onAddDeal,
 }) => {
+  console.log('🔍 [CleanKanbanView] Rendering with:');
+  console.log('  - stages:', stages.length);
+  console.log('  - deals keys:', Object.keys(deals));
+  console.log('  - total deal count:', Object.values(deals).reduce((sum, arr) => sum + arr.length, 0));
+
+  if (stages.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
+          <p className="text-muted-foreground mb-4">No pipeline stages found for this fund.</p>
+          <p className="text-sm text-muted-foreground">Pipeline stages need to be created first.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full">
       <DragDropContext onDragEnd={onDragEnd}>

@@ -31,7 +31,20 @@ export const usePipelineDeals = (fundId?: string) => {
   const { stages } = usePipelineStages(fundId);
 
   const fetchDeals = useCallback(async () => {
-    if (!fundId) return;
+    if (!fundId) {
+      console.log('🔍 [usePipelineDeals] No fundId provided');
+      return;
+    }
+
+    if (stages.length === 0) {
+      console.log('🔍 [usePipelineDeals] No stages available yet, skipping fetch');
+      return;
+    }
+
+    console.log('🔍 [usePipelineDeals] Debugging deal fetch:');
+    console.log('  - fundId:', fundId);
+    console.log('  - stages available:', stages.length);
+    console.log('  - stage names:', stages.map(s => s.name));
 
     try {
       setLoading(true);
@@ -77,6 +90,11 @@ export const usePipelineDeals = (fundId?: string) => {
         
         groupedDeals[stageKey].push(deal);
       });
+
+      console.log('  - Grouped deals:', Object.keys(groupedDeals));
+      console.log('  - Deal counts per stage:', Object.fromEntries(
+        Object.entries(groupedDeals).map(([key, deals]) => [key, deals.length])
+      ));
 
       setDeals(groupedDeals);
     } catch (error) {
@@ -214,11 +232,14 @@ export const usePipelineDeals = (fundId?: string) => {
       );
     });
     return filtered;
-  }, [deals, searchQuery]);
+   }, [deals, searchQuery]);
 
+  // Only fetch deals when we have stages loaded
   useEffect(() => {
-    fetchDeals();
-  }, [fetchDeals]);
+    if (fundId && stages.length > 0) {
+      fetchDeals();
+    }
+  }, [fundId, stages.length]); // Remove fetchDeals from deps to avoid infinite loop
 
   // Set up real-time subscription
   useEffect(() => {
