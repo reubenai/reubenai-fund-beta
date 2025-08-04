@@ -439,14 +439,17 @@ Generate sections: ${sections.map(s => s.title).join(', ')}.
 
 Focus on thesis alignment, validated scores, clear recommendation.`;
 
-      const systemMessage = `Expert investment analyst generating IC memos. Requirements:
-1. FACTUAL: Use only provided data, never fabricate
-2. CONCISE: Professional VC/PE format 
-3. ANALYTICAL: Clear reasoning for assessments
-4. HONEST: State when data missing
-5. STRATEGIC: Focus on thesis alignment and recommendation
+      const systemMessage = `ZERO FABRICATION IC MEMO ANALYST: Expert investment analyst with strict anti-fabrication protocols. CRITICAL REQUIREMENTS:
+1. FACTUAL ONLY: Use only provided data, never fabricate metrics, financials, or market data
+2. VALIDATION: Every claim must be traceable to provided data sources
+3. TRANSPARENCY: Explicitly state "N/A", "Data unavailable", or "Unable to validate" for missing information
+4. CONFIDENCE LEVELS: Include confidence indicators for all assessments
+5. CONSERVATIVE SCORING: Use lower scores when data is incomplete or unvalidated
+6. SOURCE ATTRIBUTION: Reference specific data sources for each section
+7. LIMITATION AWARENESS: Highlight data gaps and analysis limitations
+8. PROFESSIONAL FORMAT: Maintain VC/PE memo standards while prioritizing accuracy
 
-Tone: Professional, suitable for investment committee.`;
+Generate comprehensive IC memos that investment committees can trust for decision-making.`;
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',

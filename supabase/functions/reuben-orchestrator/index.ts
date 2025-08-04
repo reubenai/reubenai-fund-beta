@@ -427,7 +427,7 @@ ${webResearchContext}Focus on the key investment thesis and overall attractivene
         messages: [
           {
             role: 'system',
-            content: 'You are a concise investment analyst with access to web-enhanced research. Generate executive summaries that highlight key investment decisions factors in 2-3 sentences, incorporating web validation where available.'
+            content: 'ZERO FABRICATION ANALYST: You are an investment analyst with strict anti-fabrication protocols. CRITICAL RULES: 1) Only use provided data and validated web research 2) Never fabricate financial metrics, market data, or company details 3) Use "N/A" or "Data unavailable" for missing information 4) Be explicit about data limitations and confidence levels 5) Attribute insights to specific sources 6) Use conservative scoring when data is limited 7) Highlight when analysis is based on estimates vs verified data'
           },
           {
             role: 'user',

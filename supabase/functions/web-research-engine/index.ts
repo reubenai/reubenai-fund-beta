@@ -109,12 +109,28 @@ async function conductWebResearch(dealData: any, researchType: string, searchDep
 
   } catch (error) {
     console.error(`❌ Web research failed for ${researchType}:`, error);
-    research.success = false;
-    research.confidence = 20;
-    research.data = { 
-      error: error.message,
-      fallback_message: 'Web research temporarily unavailable - using basic analysis'
-    };
+    console.log('🤖 Attempting AI-driven analysis fallback...');
+    
+    // Enhanced AI fallback with zero-fabrication safeguards
+    const aiAnalysis = await performAIAnalysisFallback(dealData, researchType);
+    if (aiAnalysis.success) {
+      research.success = true;
+      research.data = aiAnalysis.data;
+      research.confidence = aiAnalysis.confidence;
+      research.sources = aiAnalysis.sources;
+      research.ai_fallback_used = true;
+      research.data_limitations = aiAnalysis.limitations;
+      console.log('✅ AI fallback analysis completed successfully');
+    } else {
+      research.success = false;
+      research.confidence = 20;
+      research.data = { 
+        error: error.message,
+        fallback_message: 'Web research and AI fallback unavailable - manual research required',
+        analysis_status: 'failed',
+        data_limitations: ['Google Search API unavailable', 'AI analysis limited', 'Manual verification required']
+      };
+    }
   }
 
   return research;
@@ -557,5 +573,147 @@ async function storeSources(dealId: string, engineName: string, sources: any[]) 
     }
   } catch (error) {
     console.error('Error in storeSources:', error);
+  }
+}
+
+async function performAIAnalysisFallback(dealData: any, researchType: string) {
+  console.log(`🤖 AI Fallback: Generating ${researchType} analysis for ${dealData.company_name}`);
+  
+  if (!openAIApiKey) {
+    return {
+      success: false,
+      data: {},
+      sources: [],
+      confidence: 20,
+      limitations: ['OpenAI API key not configured']
+    };
+  }
+
+  try {
+    const prompt = `ZERO FABRICATION AI ANALYSIS: Generate conservative ${researchType} analysis for ${dealData.company_name}.
+
+STRICT RULES:
+1. Only use information that can be reasonably inferred from company name "${dealData.company_name}" and industry "${dealData.industry || 'Unknown'}"
+2. Use "N/A" or "Unable to determine" for any specific data not provided
+3. Focus on general industry insights rather than specific company claims
+4. Mark all analysis as "AI-estimated" or "Industry-based reasoning"
+5. Be explicit about limitations and need for verification
+
+Company: ${dealData.company_name}
+Industry: ${dealData.industry || 'N/A'}
+Location: ${dealData.location || 'N/A'}
+Business Model: ${dealData.business_model || 'N/A'}
+
+Generate ${researchType} analysis with clear disclaimers about data limitations.`;
+
+    const systemMessage = `ZERO FABRICATION AI ANALYST: You provide conservative analysis with strict anti-fabrication protocols. Rules:
+1. Never fabricate specific company data, financials, or market statistics
+2. Only provide general industry insights that are commonly known
+3. Use "AI-estimated", "Industry standard", or "Requires verification" disclaimers
+4. Be explicit about what cannot be determined from available data
+5. Focus on analytical frameworks rather than specific claims
+6. Maintain transparency about analysis limitations`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4.1-2025-04-14',
+        messages: [
+          { role: 'system', content: systemMessage },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.1, // Very conservative
+        max_tokens: 800
+      }),
+    });
+
+    if (!response.ok) throw new Error('OpenAI API error');
+    
+    const data = await response.json();
+    const analysis = data.choices[0].message.content;
+
+    // Structure the AI analysis based on research type
+    let structuredData = {};
+    const limitations = [
+      'AI-generated analysis without web verification',
+      'Based on general industry knowledge only',
+      'Requires manual verification and validation',
+      'No real-time data or specific company validation'
+    ];
+
+    switch (researchType) {
+      case 'company':
+        structuredData = {
+          company_validation: 'AI-estimated: Requires manual verification',
+          web_presence: 'Unable to determine without web research',
+          news_mentions: 'Not available - requires real-time search',
+          business_info: analysis,
+          analysis_disclaimer: 'AI-generated analysis based on limited inputs'
+        };
+        break;
+      case 'market':
+        structuredData = {
+          market_size_data: 'Industry estimates only - requires validation',
+          growth_trends: 'General industry trends - specific data N/A',
+          competitive_analysis: analysis,
+          industry_reports: 'N/A - requires research database access',
+          analysis_disclaimer: 'Conservative industry-based analysis'
+        };
+        break;
+      case 'founder':
+        structuredData = {
+          founder_profiles: 'N/A - requires web search',
+          professional_background: 'Unable to determine without research',
+          education_info: 'N/A',
+          previous_experience: 'Requires verification',
+          analysis_disclaimer: 'Founder research requires web validation'
+        };
+        break;
+      case 'competitive':
+        structuredData = {
+          direct_competitors: 'Industry-based estimation only',
+          indirect_competitors: analysis,
+          market_positioning: 'Requires market research validation',
+          competitive_advantages: 'Unable to determine without analysis',
+          analysis_disclaimer: 'General competitive framework only'
+        };
+        break;
+      case 'comprehensive':
+        structuredData = {
+          company: { analysis_disclaimer: 'Limited AI analysis without web verification' },
+          market: { analysis_disclaimer: 'Industry-based estimates only' },
+          founder: { analysis_disclaimer: 'Founder research unavailable' },
+          competitive: { analysis_disclaimer: 'General competitive insights only' },
+          comprehensive_note: analysis
+        };
+        break;
+    }
+
+    return {
+      success: true,
+      data: structuredData,
+      sources: [{
+        type: 'ai_analysis_fallback',
+        source: 'OpenAI GPT-4.1 Industry Analysis',
+        confidence: 40, // Conservative confidence for AI-only analysis
+        snippet: 'AI-generated analysis with zero-fabrication safeguards'
+      }],
+      confidence: 40, // Conservative confidence
+      limitations
+    };
+
+  } catch (error) {
+    console.error('AI fallback analysis failed:', error);
+    return {
+      success: false,
+      data: {},
+      sources: [],
+      confidence: 20,
+      limitations: ['AI analysis failed', 'Manual research required']
+    };
   }
 }

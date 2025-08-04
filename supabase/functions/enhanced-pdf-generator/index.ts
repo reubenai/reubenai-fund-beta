@@ -120,18 +120,31 @@ serve(async (req) => {
 });
 
 async function generateEnhancedPDF(memo: any, deal: any, fund: any): Promise<{ url: string; fileName: string }> {
-  const htmlContent = generateEnhancedHTMLContent(memo, deal, fund);
-  
-  // Convert HTML to blob for better handling
-  const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
-  const base64Html = btoa(htmlContent);
-  
-  const fileName = `IC_Memo_${deal?.company_name?.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
-  
-  return {
-    url: `data:text/html;base64,${base64Html}`,
-    fileName
-  };
+  try {
+    const htmlContent = generateEnhancedHTMLContent(memo, deal, fund);
+    
+    // Validate HTML content before encoding
+    if (!htmlContent || htmlContent.trim().length === 0) {
+      throw new Error('Generated HTML content is empty');
+    }
+    
+    // Fix Unicode encoding issue with proper UTF-8 base64 encoding
+    const encoder = new TextEncoder();
+    const htmlBytes = encoder.encode(htmlContent);
+    
+    // Convert to base64 using a safe method for Unicode content
+    const base64Html = btoa(String.fromCharCode(...htmlBytes));
+    
+    const fileName = `IC_Memo_${deal?.company_name?.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.html`;
+    
+    return {
+      url: `data:text/html;base64,${base64Html}`,
+      fileName
+    };
+  } catch (error) {
+    console.error('PDF Generation Error:', error);
+    throw new Error(`PDF generation failed: ${error.message}`);
+  }
 }
 
 function generateEnhancedHTMLContent(memo: any, deal: any, fund: any): string {

@@ -440,7 +440,7 @@ Instructions:
         messages: [
           {
             role: 'system',
-            content: 'You are a market research analyst. CRITICAL: Only use provided data. Never fabricate market statistics. Use "N/A" when data is missing. Be explicit about data limitations.'
+            content: 'ZERO FABRICATION POLICY: You are a market research analyst with strict anti-fabrication protocols. CRITICAL RULES: 1) Only use provided data 2) Never fabricate market statistics, growth rates, or company details 3) Use "N/A" or "Unable to validate" for missing data 4) Be explicit about data limitations 5) State confidence level for each claim 6) Attribute all data to specific sources 7) Use conservative language for estimates'
           },
           {
             role: 'user',

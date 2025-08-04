@@ -19,13 +19,16 @@ import {
   Target,
   RefreshCw,
   X,
-  AlertTriangle
+  AlertTriangle,
+  History
 } from 'lucide-react';
 import { useMemoCache } from '@/hooks/useMemoCache';
 import { useEnhancedToast } from '@/hooks/useEnhancedToast';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useMemoVersions } from '@/hooks/useMemoVersions';
 import { useMemoProgressTracking } from '@/hooks/useMemoProgressTracking';
+import { useContentValidation } from '@/hooks/useContentValidation';
+import { DataQualityIndicator } from '@/components/ui/data-quality-indicator';
 import MemoVersionHistoryModal from './MemoVersionHistoryModal';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -76,6 +79,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   const [isExporting, setIsExporting] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('executive_summary');
   const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showDataQuality, setShowDataQuality] = useState(false);
   
   const { memoState, loadMemo, generateMemo, cancelGeneration, updateContent } = useMemoCache(deal.id, fundId);
   const { versionState, loadVersions, saveVersion, restoreVersion } = useMemoVersions(deal.id, fundId);
@@ -86,6 +90,20 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     showLoadingToast,
     dismiss 
   } = useEnhancedToast();
+  const { validateMemoContent } = useContentValidation();
+
+  // Validate memo content for quality and fabrication prevention
+  const currentContent = (memoState.content as any)?.sections || memoState.content || {};
+  const hasContent = Object.keys(currentContent).length > 0;
+  
+  const contentValidation = hasContent ? validateMemoContent(
+    Object.entries(currentContent).map(([key, content]) => ({
+      key,
+      content: content as string,
+      title: MEMO_SECTIONS.find(s => s.key === key)?.title || key,
+      confidence: (memoState.content as any)?.confidence || 75
+    }))
+  ) : null;
 
   // Auto-save functionality
   const { isAutoSaveEnabled } = useAutoSave(memoState.content, {
@@ -322,9 +340,21 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 onClick={() => setShowVersionHistory(true)}
                 className="flex items-center gap-2"
               >
-                <FileText className="h-4 w-4" />
+                <History className="h-4 w-4" />
                 History ({versionState.versions.length})
               </Button>
+              
+              {contentValidation && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDataQuality(!showDataQuality)}
+                  className={contentValidation.fabricationRisk === 'high' ? 'border-destructive text-destructive' : ''}
+                >
+                  <Shield className="h-4 w-4 mr-2" />
+                  Quality ({contentValidation.score}/100)
+                </Button>
+              )}
               
               <Button
                 size="sm"
@@ -387,6 +417,15 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
 
           {/* Main Content */}
           <div className="flex-1 overflow-y-auto">
+            {/* Data Quality Indicator */}
+            {showDataQuality && contentValidation && (
+              <div className="p-4 border-b bg-muted/20">
+                <DataQualityIndicator 
+                  validationResult={contentValidation}
+                  title="Memo Content Quality Assessment"
+                />
+              </div>
+            )}
             {memoState.isGenerating ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
