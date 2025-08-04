@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -71,6 +72,7 @@ interface DbFund {
 }
 
 export default function Admin() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -717,7 +719,7 @@ export default function Admin() {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => window.open(`/pipeline?fund=${fund.id}`, '_blank')}
+                        onClick={() => navigate(`/pipeline?fund=${fund.id}`)}
                         className="text-primary hover:text-primary"
                       >
                         <Kanban className="h-4 w-4 mr-2" />

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,7 @@ interface AdminDealsTableProps {
 }
 
 export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
+  const navigate = useNavigate();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -256,7 +258,7 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => window.open(`/pipeline?fund=${deal.fund.id}`, '_blank')}
+                        onClick={() => navigate(`/pipeline?fund=${deal.fund.id}`)}
                         className="flex items-center gap-2"
                         title={`View ${deal.fund.name} pipeline`}
                       >
