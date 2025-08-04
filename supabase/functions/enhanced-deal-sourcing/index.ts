@@ -418,8 +418,33 @@ function generatePerplexityDealPrompt(request: SourcingRequest, strategy: any): 
   const geographies = request.geographies || strategy?.geography || ['North America'];
   const batchSize = request.batchSize || 5;
   
-  // Enhanced prompt to explicitly request company names, not recommendations
-  return `Find ${batchSize} specific companies in ${industries.join(', ')} that have actually raised funding in ${currentYear} or late ${currentYear - 1}.
+  return `**Output format:** Return as a structured JSON array with the following format:
+\`\`\`json
+[
+  {
+    "company_name": "Company Name",
+    "description": "Detailed business description",
+    "industry": "Technology",
+    "location": "City, State/Country", 
+    "website": "https://company.com",
+    "funding_stage": "Seed|Series A|Series B",
+    "deal_size": 5000000,
+    "valuation": 15000000,
+    "funding_date": "2025-MM-DD",
+    "lead_investor": "Investor Name",
+    "founder": "Founder name and background",
+    "traction_metrics": {
+      "revenue": "Revenue description",
+      "customers": 1000,
+      "growth_rate": "200% YoY"
+    },
+    "founding_team": "Team description",
+    "competitive_advantage": "Key differentiator"
+  }
+]
+\`\`\`
+
+Find ${batchSize} specific companies in ${industries.join(', ')} that have actually raised funding in ${currentYear} or late ${currentYear - 1}.
 
 Investment criteria:
 - Industries: ${industries.join(', ')}
@@ -427,19 +452,9 @@ Investment criteria:
 - Stages: ${strategy?.fund_type === 'vc' ? 'Pre-Seed, Seed, Series A' : 'Growth stage, Series B+'}
 - Deal size: ${request.investmentSizeRange ? `$${(request.investmentSizeRange.min/1000000).toFixed(1)}M to $${(request.investmentSizeRange.max/1000000).toFixed(1)}M` : '$500K to $15M'}
 
-IMPORTANT: Please provide actual company names and details, not recommendations to consult databases. I need specific companies with their information.
+For each company, provide the company name and all required details. Focus on real companies that recently raised funding, not general advice or database recommendations.
 
-For each company, provide:
-1. Company name
-2. Business description
-3. Industry
-4. Location
-5. Website URL
-6. Funding amount and stage
-7. Funding date
-8. Lead investor
-
-Do not suggest consulting Crunchbase or other databases - provide the actual company information directly.`;
+**IMPORTANT: Return ONLY valid JSON array format as specified above. Do not include any explanatory text, reasoning, or advisory content outside the JSON structure.**`;
 }
 
 function parsePerplexityResponse(response: string, request: SourcingRequest): any[] {
