@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         if (!mounted) return;
 
-        console.log('Auth state change:', event, session?.user?.email);
+        console.log('Auth state change:', event, session?.user?.email, 'Session exists:', !!session);
         
         if (event === 'SIGNED_OUT') {
           setSession(null);
@@ -56,6 +56,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (!mounted) return;
+
+        console.log('Initial session check:', session?.user?.email, 'Session exists:', !!session);
 
         if (error) {
           console.error('Auth initialization error:', error);

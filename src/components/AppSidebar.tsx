@@ -36,6 +36,7 @@ const secondaryFunctions = [
   { title: "Fund Memory", url: "/fund-memory", icon: Brain, description: "Institutional intelligence", badge: "Soon", disabled: true },
   { title: "Due Diligence Hub", url: "/dd", icon: Briefcase, description: "DD workflows", badge: "Soon", disabled: true },
   { title: "LP Reporting", url: "/lp-reporting", icon: PieChart, description: "LP reports", badge: "Soon", disabled: true },
+  { title: "Founder Workflows", url: "/founder-workflows", icon: Users, description: "Founder tools", badge: "Soon", disabled: true },
 ];
 
 // Administration Items
@@ -213,7 +214,7 @@ export function AppSidebar() {
             Analytics & Insights
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2">
               {secondaryFunctions.map((item) => (
                 <div key={item.title} className="h-full">
                   <div className={`group relative rounded-lg border border-border/60 p-3 text-center transition-all duration-200 h-full flex flex-col justify-between ${item.disabled ? 'opacity-50 cursor-not-allowed bg-muted/20' : 'bg-background/80 hover:border-border hover:bg-background hover:shadow-sm cursor-pointer'}`}>
@@ -221,8 +222,8 @@ export function AppSidebar() {
                       <div className={`w-5 h-5 rounded-md flex items-center justify-center mx-auto mb-2 ${item.disabled ? 'bg-muted/50' : 'bg-muted/80 group-hover:bg-muted'} transition-colors`}>
                         <item.icon className={`h-3 w-3 ${item.disabled ? 'text-muted-foreground/50' : 'text-muted-foreground group-hover:text-foreground'} transition-colors`} />
                       </div>
-                      <p className={`text-xs font-medium mb-1 ${item.disabled ? 'text-foreground/70' : 'text-foreground'}`}>{item.title}</p>
-                      <p className={`text-xs ${item.disabled ? 'text-foreground/60' : 'text-muted-foreground'} text-center flex-1`}>{item.description}</p>
+                      <p className={`text-xs font-medium mb-1 ${item.disabled ? 'text-foreground/90' : 'text-foreground'}`}>{item.title}</p>
+                      <p className={`text-xs ${item.disabled ? 'text-foreground/80' : 'text-muted-foreground'} text-center flex-1`}>{item.description}</p>
                     </div>
                     {(item as any).badge && (
                       <div className="mt-2">
@@ -267,7 +268,7 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     {(item as any).disabled ? (
-                      <div className={`flex items-center justify-between space-x-3 rounded-md px-3 py-2 text-sm opacity-70 cursor-not-allowed text-foreground/70`}>
+                      <div className={`flex items-center justify-between space-x-3 rounded-md px-3 py-2 text-sm opacity-80 cursor-not-allowed text-foreground/80`}>
                         <div className="flex items-center space-x-3">
                           <item.icon className="h-4 w-4" />
                           <span className="font-medium">{item.title}</span>
