@@ -169,7 +169,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
       // First ensure memo is saved
       await handleSaveMemo();
       
-      const { data, error } = await supabase.functions.invoke('ic-memo-pdf-exporter', {
+      const { data, error } = await supabase.functions.invoke('enhanced-pdf-generator', {
         body: { 
           dealId: deal.id,
           fundId: fundId,

@@ -20,7 +20,7 @@ export function useEnhancedToast() {
     
     // Add action hint to description if action provided
     if (options.actionLabel && options.onAction) {
-      description = `${options.description || ''}\n\nClick to ${options.actionLabel.toLowerCase()}`;
+      description = `${options.description || ''}\n\nClick anywhere to ${options.actionLabel.toLowerCase()}`;
     }
 
     const toastResult = toast({
