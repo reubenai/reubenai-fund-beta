@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface Fund {
   id: string;
@@ -27,31 +28,21 @@ const FundContext = createContext<FundContextType | undefined>(undefined);
 
 export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
+  const { isSuperAdmin, organizationId, loading: roleLoading } = useUserRole();
   const [funds, setFunds] = useState<Fund[]>([]);
   const [selectedFund, setSelectedFund] = useState<Fund | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    if (user && !roleLoading) {
       fetchFunds();
     }
-  }, [user]);
+  }, [user, roleLoading, isSuperAdmin, organizationId]);
 
   const fetchFunds = async () => {
     try {
       setLoading(true);
       
-      // Get user's profile to check role and organization
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('organization_id, role')
-        .eq('user_id', user?.id)
-        .single();
-
-      // Check if user is Super Admin (can access all funds)
-      const isReubenAdmin = user?.email?.includes('@goreuben.com') || user?.email?.includes('@reuben.com');
-      const isSuperAdmin = profile?.role === 'super_admin' || isReubenAdmin;
-
       let fundsQuery = supabase
         .from('funds')
         .select(`
@@ -61,9 +52,10 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      // If not Super Admin, filter by organization
-      if (!isSuperAdmin && profile?.organization_id) {
-        fundsQuery = fundsQuery.eq('organization_id', profile.organization_id);
+      // Super Admin can see all funds across all organizations
+      // Other roles are filtered by their organization via RLS policies
+      if (!isSuperAdmin && organizationId) {
+        fundsQuery = fundsQuery.eq('organization_id', organizationId);
       }
 
       const { data: fundsData, error } = await fundsQuery;

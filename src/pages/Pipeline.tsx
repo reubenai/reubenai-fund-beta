@@ -3,9 +3,12 @@ import { KanbanBoard } from '@/components/pipeline/KanbanBoard';
 import { useFund } from '@/contexts/FundContext';
 import { useSearchParams } from 'react-router-dom';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+import { useUserRole } from '@/hooks/useUserRole';
+import { Badge } from '@/components/ui/badge';
 
 export default function Pipeline() {
   const { selectedFund, funds, setSelectedFund } = useFund();
+  const { isSuperAdmin, role, organizationId } = useUserRole();
   const [searchParams] = useSearchParams();
   const fundIdParam = searchParams.get('fund');
 
@@ -37,6 +40,22 @@ export default function Pipeline() {
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
       <Breadcrumbs />
+      
+      {/* Debug info for super admin users */}
+      {isSuperAdmin && (
+        <div className="mb-4 p-4 bg-muted rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <Badge variant="secondary">Super Admin Access</Badge>
+            <span className="text-sm text-muted-foreground">
+              Role: {role} | Org ID: {organizationId} | Total Funds: {funds.length}
+            </span>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            You can see funds across all organizations: {funds.map(f => f.name).join(', ')}
+          </div>
+        </div>
+      )}
+      
       <KanbanBoard fundId={selectedFund.id} />
     </div>
   );
