@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { Building2, TrendingUp, FileText, Users, Zap, Target, BarChart3, Plus, BookOpen, Video, MessageSquare, HelpCircle, Search } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFund } from '@/contexts/FundContext';
@@ -200,64 +202,138 @@ const Index = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-medium text-slate-900">Your Funds ({funds.length})</h2>
+          <Button 
+            onClick={() => setShowFundWizard(true)}
+            size="sm"
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Create Fund
+          </Button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {funds.map((fund) => (
-            <div key={fund.id} className={`bg-white p-6 border rounded-lg hover:shadow-md transition-all ${
-              fund.is_active ? 'border-emerald-200 ring-2 ring-emerald-100 shadow-sm' : 'border-slate-200'
-            }`}>
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-semibold text-slate-900">{fund.name}</h3>
-                    <span className="inline-flex items-center px-2 py-1 bg-emerald-50 border border-emerald-200 rounded text-xs font-medium text-emerald-700">
-                      {fund.fund_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-600 mb-4 line-clamp-2">
-                    {fund.description || 'Investment fund focused on exceptional opportunities.'}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-slate-100">
-                <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Fund Size</p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {fund.target_size ? `$${(fund.target_size / 1000000).toFixed(0)}M` : 'TBD'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Status</p>
-                  <p className="text-sm font-semibold text-slate-900">{fund.is_active ? 'Active' : 'Inactive'}</p>
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <Link to={`/pipeline?fund=${fund.id}`} className="flex-1">
-                  <Button variant="ghost" size="sm" className="w-full text-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
-                    View Pipeline
-                  </Button>
-                </Link>
-                <Link to={`/strategy?fund=${fund.id}`}>
-                  <Button variant="outline" size="sm" className="text-sm">
-                    Strategy
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          ))}
-          
-          {/* Create New Fund Card */}
-          <div className="bg-white border-2 border-dashed border-slate-300 rounded-lg p-6 flex flex-col items-center justify-center hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors cursor-pointer" 
-               onClick={() => setShowFundWizard(true)}>
-            <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mb-3">
-              <Plus className="h-6 w-6 text-slate-400" />
-            </div>
-            <h3 className="font-medium text-slate-900 mb-1">Create New Fund</h3>
-            <p className="text-sm text-slate-600 text-center">Set up a new investment fund with AI-powered criteria</p>
+
+        {/* Admin Table View */}
+        {(profile?.role === 'super_admin' || profile?.role === 'admin') ? (
+          <div className="bg-white border border-slate-200 rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fund Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Size</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Organization</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {funds.map((fund) => (
+                  <TableRow key={fund.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium text-slate-900">{fund.name}</div>
+                        <div className="text-sm text-slate-600 line-clamp-1">
+                          {fund.description || 'Investment fund focused on exceptional opportunities.'}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {fund.fund_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">
+                        {fund.target_size ? `$${(fund.target_size / 1000000).toFixed(0)}M` : 'TBD'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={fund.is_active ? "default" : "secondary"}>
+                        {fund.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-slate-600">{fund.organization_id}</span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-2 justify-end">
+                        <Link to={`/pipeline?fund=${fund.id}`}>
+                          <Button variant="ghost" size="sm" className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
+                            Pipeline
+                          </Button>
+                        </Link>
+                        <Link to={`/strategy?fund=${fund.id}`}>
+                          <Button variant="outline" size="sm">
+                            Strategy
+                          </Button>
+                        </Link>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-        </div>
+        ) : (
+          /* Regular User Card View */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {funds.map((fund) => (
+              <div key={fund.id} className={`bg-white p-6 border rounded-lg hover:shadow-md transition-all ${
+                fund.is_active ? 'border-emerald-200 ring-2 ring-emerald-100 shadow-sm' : 'border-slate-200'
+              }`}>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-semibold text-slate-900">{fund.name}</h3>
+                      <span className="inline-flex items-center px-2 py-1 bg-emerald-50 border border-emerald-200 rounded text-xs font-medium text-emerald-700">
+                        {fund.fund_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-600 mb-4 line-clamp-2">
+                      {fund.description || 'Investment fund focused on exceptional opportunities.'}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-slate-100">
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Fund Size</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {fund.target_size ? `$${(fund.target_size / 1000000).toFixed(0)}M` : 'TBD'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Status</p>
+                    <p className="text-sm font-semibold text-slate-900">{fund.is_active ? 'Active' : 'Inactive'}</p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Link to={`/pipeline?fund=${fund.id}`} className="flex-1">
+                    <Button variant="ghost" size="sm" className="w-full text-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
+                      View Pipeline
+                    </Button>
+                  </Link>
+                  <Link to={`/strategy?fund=${fund.id}`}>
+                    <Button variant="outline" size="sm" className="text-sm">
+                      Strategy
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ))}
+            
+            {/* Create New Fund Card */}
+            <div className="bg-white border-2 border-dashed border-slate-300 rounded-lg p-6 flex flex-col items-center justify-center hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors cursor-pointer" 
+                 onClick={() => setShowFundWizard(true)}>
+              <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mb-3">
+                <Plus className="h-6 w-6 text-slate-400" />
+              </div>
+              <h3 className="font-medium text-slate-900 mb-1">Create New Fund</h3>
+              <p className="text-sm text-slate-600 text-center">Set up a new investment fund with AI-powered criteria</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Help & Support */}
