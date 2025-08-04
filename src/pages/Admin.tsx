@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield, Archive, ArchiveRestore, Filter, Target, Upload, Rocket } from 'lucide-react';
+import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield, Archive, ArchiveRestore, Filter, Target, Upload, Rocket, Kanban } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -704,7 +704,7 @@ export default function Admin() {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                     <div className="flex gap-2">
                       <Button 
                         variant="outline" 
                         size="sm"
@@ -713,6 +713,15 @@ export default function Admin() {
                       >
                         <Target className="h-4 w-4 mr-2" />
                         Configure Thesis
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.open(`/pipeline?fund=${fund.id}`, '_blank')}
+                        className="text-primary hover:text-primary"
+                      >
+                        <Kanban className="h-4 w-4 mr-2" />
+                        View Pipeline
                       </Button>
                       <Button 
                         variant="outline" 

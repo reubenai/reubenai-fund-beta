@@ -194,12 +194,12 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="fund-type-filter" className="text-sm font-medium">Fund Type</Label>
-            <Select value={filters.fundType} onValueChange={(value) => setFilters(prev => ({ ...prev, fundType: value }))}>
+            <Select value={filters.fundType} onValueChange={(value) => setFilters(prev => ({ ...prev, fundType: value === "all" ? "" : value }))}>
               <SelectTrigger>
                 <SelectValue placeholder="All fund types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All fund types</SelectItem>
+                <SelectItem value="all">All fund types</SelectItem>
                 <SelectItem value="venture_capital">Venture Capital</SelectItem>
                 <SelectItem value="private_equity">Private Equity</SelectItem>
               </SelectContent>
