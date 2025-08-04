@@ -85,9 +85,20 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setFunds(fundsData || []);
       
-      // Auto-select first fund if none selected
-      if (fundsData && fundsData.length > 0 && !selectedFund) {
-        setSelectedFund(fundsData[0]);
+      // Auto-select first fund if none selected or if current selection is invalid
+      if (fundsData && fundsData.length > 0) {
+        // Check if current selectedFund is still valid
+        const isCurrentFundValid = selectedFund && fundsData.find(f => f.id === selectedFund.id);
+        
+        if (!isCurrentFundValid) {
+          console.log('  - Auto-selecting first fund:', fundsData[0].name);
+          setSelectedFund(fundsData[0]);
+        } else {
+          console.log('  - Current fund selection is valid:', selectedFund.name);
+        }
+      } else {
+        console.log('  - No funds available, clearing selection');
+        setSelectedFund(null);
       }
     } catch (error) {
       console.error('❌ Error fetching funds:', error);
