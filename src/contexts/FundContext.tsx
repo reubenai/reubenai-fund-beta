@@ -43,6 +43,18 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
+      // Debug: Log authentication state
+      console.log('🔍 [FundContext] Debugging fund fetch:');
+      console.log('  - User:', user?.email);
+      console.log('  - isSuperAdmin:', isSuperAdmin);
+      console.log('  - organizationId:', organizationId);
+      console.log('  - roleLoading:', roleLoading);
+      
+      // Check auth session
+      const { data: session } = await supabase.auth.getSession();
+      console.log('  - Session valid:', !!session.session);
+      console.log('  - Session user:', session.session?.user?.email);
+      
       let fundsQuery = supabase
         .from('funds')
         .select(`
@@ -55,10 +67,19 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Super Admin can see all funds across all organizations
       // Other roles are filtered by their organization via RLS policies
       if (!isSuperAdmin && organizationId) {
+        console.log('  - Adding organization filter for non-super-admin');
         fundsQuery = fundsQuery.eq('organization_id', organizationId);
+      } else {
+        console.log('  - Super admin: no organization filter applied');
       }
 
+      console.log('  - Executing query...');
       const { data: fundsData, error } = await fundsQuery;
+
+      console.log('  - Query result:');
+      console.log('    - Error:', error);
+      console.log('    - Data count:', fundsData?.length || 0);
+      console.log('    - Fund names:', fundsData?.map(f => f.name) || []);
 
       if (error) throw error;
 
@@ -69,7 +90,7 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSelectedFund(fundsData[0]);
       }
     } catch (error) {
-      console.error('Error fetching funds:', error);
+      console.error('❌ Error fetching funds:', error);
     } finally {
       setLoading(false);
     }
