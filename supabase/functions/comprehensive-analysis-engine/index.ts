@@ -19,6 +19,36 @@ serve(async (req) => {
   try {
     const { dealId, fundId } = await req.json();
     
+    // Fetch deal data for enhanced context
+    const { data: dealData } = await supabase
+      .from('deals')
+      .select('*')
+      .eq('id', dealId)
+      .single();
+    
+    // Fetch document data for enhanced analysis
+    const { data: documentData } = await supabase
+      .from('deal_documents')
+      .select('*')
+      .eq('deal_id', dealId);
+    
+    const extractedTexts = documentData?.filter(doc => doc.extracted_text && doc.extracted_text.trim().length > 0)
+      .map(doc => ({ 
+        name: doc.name,
+        category: doc.document_category,
+        extracted_text: doc.extracted_text,
+        parsing_status: doc.parsing_status 
+      })) || [];
+    
+    const enhancedDocumentData = {
+      documents: documentData || [],
+      extractedTexts,
+      documentSummary: {
+        total_documents: documentData?.length || 0,
+        documents_with_text: extractedTexts.length
+      }
+    };
+    
     // Query fund memory for context
     const { data: memoryContext } = await supabase.functions.invoke('fund-memory-engine', {
       body: {
@@ -40,7 +70,12 @@ serve(async (req) => {
     const engineResults = await Promise.allSettled(
       engines.map(engine => 
         supabase.functions.invoke(engine, {
-          body: { dealId, fundId, context: memoryContext }
+          body: { 
+            dealId, 
+            fundId, 
+            context: dealData, 
+            documentData: enhancedDocumentData 
+          }
         })
       )
     );

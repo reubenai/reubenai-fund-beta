@@ -97,7 +97,8 @@ async function analyzeFounderAndTeam(dealData: any, strategyData: any, documentD
     teamComposition,
     backgroundResearch,
     executionAssessment,
-    webResearchData
+    webResearchData,
+    documentInsights
   });
   
   // Determine confidence level

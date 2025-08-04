@@ -17,7 +17,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { dealId, dealData, teamResearch, webResearch } = await req.json();
+    const { dealId, dealData, teamResearch, webResearch, documentData } = await req.json();
     
     console.log(`👥 Management Assessment Engine: Analyzing management team for: ${dealData?.company_name || dealId}`);
 
@@ -26,7 +26,8 @@ serve(async (req) => {
       dealData,
       teamResearch,
       webResearch,
-      supabase
+      supabase,
+      documentData
     });
 
     console.log(`✅ Management Assessment Engine: Analysis completed for ${dealData?.company_name}`);

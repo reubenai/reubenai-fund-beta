@@ -100,8 +100,11 @@ async function conductMarketResearch(dealData: any, strategyData: any, documentD
   // Generate AI-powered market analysis with enhanced criteria
   const aiAnalysis = await generateMarketAnalysis(validatedData, marketIntelligence, enhancedContext);
   
-  // Calculate market attractiveness score using enhanced weights
-  const marketScore = calculateMarketScore(marketIntelligence, enhancedContext);
+  // Calculate market attractiveness score using enhanced weights AND document insights
+  const marketScore = calculateMarketScore({
+    ...marketIntelligence,
+    documentInsights
+  }, enhancedContext);
   
   // Determine confidence based on data sources and validation
   const confidence = calculateMarketConfidence(marketIntelligence);

@@ -62,12 +62,25 @@ async function analyzeThesisAlignment(dealData: any, strategyData: any, document
   const validatedDeal = validateDealData(dealData);
   const validatedStrategy = validateStrategyData(strategyData);
   
+  // Enhanced document-driven thesis analysis
+  const documentInsights = documentData ? await extractThesisInsightsFromDocuments(documentData) : null;
+  console.log('📄 Thesis Alignment Engine: Document insights extracted');
+  
   // Enhance deal data with Google Search validation if API keys are available
   let webValidationData = null;
   let enhancedSources = [
     { type: 'database', source: 'investment_strategies', validated: true },
     { type: 'database', source: 'deals', validated: true }
   ];
+  
+  if (documentInsights?.hasValidatedData) {
+    enhancedSources.push({
+      type: 'document_intelligence',
+      source: 'extracted_documents',
+      validated: true,
+      confidence: documentInsights.confidence || 90
+    });
+  }
   
   if (googleSearchApiKey && googleSearchEngineId && validatedDeal.company_name !== 'N/A') {
     try {
@@ -95,12 +108,13 @@ async function analyzeThesisAlignment(dealData: any, strategyData: any, document
     stageAlignment
   }, webValidationData);
   
-  // Calculate overall alignment score
+  // Calculate overall alignment score with document intelligence boost
   const overallScore = calculateOverallAlignmentScore({
     sectorAlignment,
     geographyAlignment,
     sizeAlignment,
-    stageAlignment
+    stageAlignment,
+    documentInsights
   });
   
   // Determine confidence level based on data availability and web validation
@@ -274,12 +288,42 @@ function calculateOverallAlignmentScore(alignmentScores: any): number {
     stageAlignment: 0.1
   };
   
-  return Math.round(
+  let baseScore = Math.round(
     alignmentScores.sectorAlignment.score * weights.sectorAlignment +
     alignmentScores.geographyAlignment.score * weights.geographyAlignment +
     alignmentScores.sizeAlignment.score * weights.sizeAlignment +
     alignmentScores.stageAlignment.score * weights.stageAlignment
   );
+  
+  // MASSIVE DOCUMENT BONUS - Document intelligence boosts thesis alignment significantly
+  if (alignmentScores.documentInsights?.hasValidatedData) {
+    console.log('🔥 Thesis Alignment Engine: Document insights detected - applying heavy alignment boost');
+    
+    // Strategy alignment from documents (heavily weighted)
+    if (alignmentScores.documentInsights.strategy_alignment?.hasStrategyData) {
+      baseScore += 15; // Major boost for validated strategy alignment
+      console.log('🎯 Thesis Alignment Engine: Strategy alignment found in documents (+15 points)');
+    }
+    
+    // Business model alignment from documents
+    if (alignmentScores.documentInsights.business_model?.hasBusinessModel) {
+      baseScore += 10; // Business model clarity boost
+      console.log('💼 Thesis Alignment Engine: Business model documented (+10 points)');
+    }
+    
+    // Market focus alignment from documents
+    if (alignmentScores.documentInsights.market_focus?.hasMarketData) {
+      baseScore += 12; // Market alignment boost
+      console.log('🎯 Thesis Alignment Engine: Market focus documented (+12 points)');
+    }
+    
+    // Base document analysis bonus
+    baseScore += 8; // Always reward document-driven analysis
+    console.log('📄 Thesis Alignment Engine: Document analysis completed (+8 points)');
+  }
+  
+  console.log(`🎯 Thesis Alignment Engine: Final score calculated: ${Math.min(baseScore, 100)}`);
+  return Math.min(baseScore, 100);
 }
 
 function calculateConfidence(dealData: any, strategyData: any, webValidationData: any = null): number {
@@ -526,4 +570,127 @@ function formatCurrency(amount: number): string {
     notation: amount >= 1000000 ? 'compact' : 'standard',
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+async function extractThesisInsightsFromDocuments(documentData: any) {
+  if (!documentData || !documentData.extractedTexts || documentData.extractedTexts.length === 0) {
+    return null;
+  }
+  
+  const allText = documentData.extractedTexts.map(doc => `${doc.name}:\n${doc.extracted_text}`).join('\n\n');
+  
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4.1-2025-04-14',
+        messages: [
+          {
+            role: 'system',
+            content: `Extract investment thesis and strategy alignment data from documents. Parse for:
+            1. STRATEGIC FIT: Business model alignment, investment stage readiness, fund thesis match
+            2. MARKET FOCUS: Target markets, customer segments, geographic focus, market positioning
+            3. BUSINESS MODEL: Revenue streams, scalability, growth strategy, monetization
+            4. INVESTMENT READINESS: Funding history, use of funds, growth plans, strategic priorities
+            5. COMPETITIVE POSITIONING: Market differentiation, competitive advantages, strategic moats
+            Return structured insights for thesis alignment scoring.`
+          },
+          {
+            role: 'user',
+            content: allText.substring(0, 20000)
+          }
+        ],
+        max_tokens: 1500,
+        temperature: 0.1
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      
+      return {
+        thesis_intelligence: content,
+        strategy_alignment: extractStrategyAlignment(content),
+        business_model: extractBusinessModel(content),
+        market_focus: extractMarketFocus(content),
+        investment_readiness: extractInvestmentReadiness(content),
+        competitive_positioning: extractCompetitivePositioning(content),
+        hasValidatedData: true,
+        confidence: 95
+      };
+    }
+  } catch (error) {
+    console.error('❌ Thesis Alignment Engine - Document extraction error:', error);
+  }
+  
+  return {
+    thesis_intelligence: 'Document analysis failed',
+    hasValidatedData: false,
+    confidence: 20
+  };
+}
+
+function extractStrategyAlignment(content: string): any {
+  const strategyTerms = ['strategy', 'vision', 'mission', 'goals', 'objectives', 'thesis'];
+  const hasStrategy = strategyTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasStrategyData: hasStrategy,
+    visionMentions: content.toLowerCase().includes('vision'),
+    missionMentions: content.toLowerCase().includes('mission'),
+    strategicGoals: content.toLowerCase().includes('goals')
+  };
+}
+
+function extractBusinessModel(content: string): any {
+  const businessTerms = ['revenue', 'business model', 'monetization', 'pricing', 'subscription'];
+  const hasBusinessModel = businessTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasBusinessModel: hasBusinessModel,
+    revenueMentions: content.toLowerCase().includes('revenue'),
+    pricingStrategy: content.toLowerCase().includes('pricing'),
+    scalabilityMentions: content.toLowerCase().includes('scalable')
+  };
+}
+
+function extractMarketFocus(content: string): any {
+  const marketTerms = ['market', 'target', 'customer', 'segment', 'geography'];
+  const hasMarketData = marketTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasMarketData: hasMarketData,
+    targetMarkets: (content.match(/target\s+market[s]?/gi) || []).length,
+    customerSegments: (content.match(/customer[s]?\s+segment[s]?/gi) || []).length,
+    geographicFocus: content.toLowerCase().includes('geography')
+  };
+}
+
+function extractInvestmentReadiness(content: string): any {
+  const investmentTerms = ['funding', 'investment', 'capital', 'raise', 'round'];
+  const hasInvestmentData = investmentTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasInvestmentData: hasInvestmentData,
+    fundingMentions: (content.match(/funding/gi) || []).length,
+    investmentUse: content.toLowerCase().includes('use of funds'),
+    growthPlans: content.toLowerCase().includes('growth plan')
+  };
+}
+
+function extractCompetitivePositioning(content: string): any {
+  const competitiveTerms = ['competitive', 'differentiation', 'advantage', 'positioning', 'moat'];
+  const hasCompetitiveData = competitiveTerms.some(term => content.toLowerCase().includes(term));
+  
+  return {
+    hasCompetitiveData: hasCompetitiveData,
+    differentiationMentions: (content.match(/differentiation/gi) || []).length,
+    competitiveAdvantage: content.toLowerCase().includes('competitive advantage'),
+    marketPositioning: content.toLowerCase().includes('positioning')
+  };
 }
