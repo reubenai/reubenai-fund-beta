@@ -16,6 +16,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { EnhancedDocumentErrorHandler, DocumentErrors } from './EnhancedDocumentErrorHandler';
 
 interface DocumentAnalysisIntegrationProps {
   dealId: string;
@@ -32,6 +33,7 @@ export const DocumentAnalysisIntegration: React.FC<DocumentAnalysisIntegrationPr
   const [analysisStatus, setAnalysisStatus] = useState<'idle' | 'running' | 'complete' | 'error'>('idle');
   const [analysisResults, setAnalysisResults] = useState<any>(null);
   const [lastAnalysisTime, setLastAnalysisTime] = useState<Date | null>(null);
+  const [analysisError, setAnalysisError] = useState<any | null>(null);
 
   useEffect(() => {
     checkAnalysisStatus();
@@ -92,13 +94,32 @@ export const DocumentAnalysisIntegration: React.FC<DocumentAnalysisIntegrationPr
       }, 5000);
 
     } catch (error) {
-      console.error('Error triggering analysis:', error);
+      console.error('Failed to trigger analysis:', error);
       setAnalysisStatus('error');
-      toast({
-        title: "Analysis Failed",
-        description: "Failed to start document analysis. Please try again.",
-        variant: "destructive",
-      });
+      
+      // Create specific error for analysis failure
+      if (error instanceof Error) {
+        if (error.message.includes('no documents')) {
+          setAnalysisError(DocumentErrors.integrationError(
+            'No documents found for analysis. Please ensure documents are properly uploaded and try again.'
+          ));
+        } else if (error.message.includes('permission')) {
+          setAnalysisError(DocumentErrors.permissionDenied(
+            'You do not have permission to trigger AI analysis for this deal.',
+            'ANALYSIS_PERMISSION_DENIED'
+          ));
+        } else {
+          setAnalysisError(DocumentErrors.analysisFailed(
+            error.message,
+            'ANALYSIS_TRIGGER_FAILED'
+          ));
+        }
+      } else {
+        setAnalysisError(DocumentErrors.analysisFailed(
+          'Unknown error occurred while starting analysis',
+          'UNKNOWN_ANALYSIS_ERROR'
+        ));
+      }
     }
   };
 
@@ -250,14 +271,25 @@ export const DocumentAnalysisIntegration: React.FC<DocumentAnalysisIntegrationPr
         </Button>
 
         {documents.length === 0 && (
-          <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded">
-            <p className="text-sm text-blue-800">
-              📄 Upload documents to unlock comprehensive AI analysis across all engines
-            </p>
-            <p className="text-xs text-blue-600 mt-1">
-              Financial statements, pitch decks, and business plans will be automatically processed
-            </p>
-          </div>
+          analysisError ? (
+            <EnhancedDocumentErrorHandler
+              error={analysisError}
+              onRetry={() => {
+                setAnalysisError(null);
+                setAnalysisStatus('idle');
+              }}
+              onDismiss={() => setAnalysisError(null)}
+            />
+          ) : (
+            <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded">
+              <p className="text-sm text-blue-800">
+                📄 Upload documents to unlock comprehensive AI analysis across all engines
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                Financial statements, pitch decks, and business plans will be automatically processed
+              </p>
+            </div>
+          )
         )}
       </CardContent>
     </Card>

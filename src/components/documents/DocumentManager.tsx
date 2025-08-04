@@ -18,6 +18,7 @@ interface DocumentManagerProps {
 export function DocumentManager({ dealId, companyName, className }: DocumentManagerProps) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedDocument, setSelectedDocument] = useState<DealDocument | null>(null);
+  const [documents, setDocuments] = useState<DealDocument[]>([]);
 
   const handleUploadComplete = () => {
     setRefreshTrigger(prev => prev + 1);
@@ -41,6 +42,7 @@ export function DocumentManager({ dealId, companyName, className }: DocumentMana
             companyName={companyName}
             onDocumentSelect={setSelectedDocument}
             refreshTrigger={refreshTrigger}
+            onDocumentsLoad={setDocuments}
           />
         </TabsContent>
         
@@ -55,7 +57,7 @@ export function DocumentManager({ dealId, companyName, className }: DocumentMana
         <TabsContent value="analysis" className="space-y-4">
           <DocumentAnalysisIntegration
             dealId={dealId}
-            documents={[]} // This will be populated from the DocumentList component
+            documents={documents}
             onAnalysisTrigger={handleUploadComplete}
           />
         </TabsContent>

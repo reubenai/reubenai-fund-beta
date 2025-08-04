@@ -33,9 +33,10 @@ interface DocumentListProps {
   companyName: string;
   onDocumentSelect?: (document: DealDocument) => void;
   refreshTrigger?: number;
+  onDocumentsLoad?: (documents: DealDocument[]) => void;
 }
 
-export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTrigger }: DocumentListProps) {
+export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTrigger, onDocumentsLoad }: DocumentListProps) {
   const [documents, setDocuments] = useState<DealDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,6 +57,7 @@ export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTri
       }
       
       setDocuments(docs);
+      onDocumentsLoad?.(docs);
     } catch (err) {
       setError('Failed to load documents');
       console.error('Error loading documents:', err);

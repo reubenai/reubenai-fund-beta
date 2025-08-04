@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { documentService, UploadDocumentInput, DocumentUploadProgress } from '@/services/DocumentService';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
 import { Database } from '@/integrations/supabase/types';
+import { useToast } from '@/hooks/use-toast';
+import { EnhancedDocumentErrorHandler, DocumentErrors } from './EnhancedDocumentErrorHandler';
 
 interface DocumentUploadProps {
   dealId: string;
@@ -48,7 +50,7 @@ const DOCUMENT_CATEGORIES: { value: Database['public']['Enums']['document_catego
 export function DocumentUpload({ dealId, companyName, onUploadComplete, onUploadStart }: DocumentUploadProps) {
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<any | null>(null);
   const { logDocumentUploaded } = useActivityTracking();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -148,9 +150,31 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
           ));
         }
       } catch (err) {
+        console.error('Upload error:', err);
+        
+        // Create specific error based on error type
+        let documentError;
+        if (err instanceof Error) {
+          if (err.message.includes('Permission denied') || err.message.includes('RLS policy')) {
+            documentError = DocumentErrors.permissionDenied(
+              `Unable to upload to deal: ${err.message}`,
+              'RLS_POLICY_VIOLATION'
+            );
+          } else if (err.message.includes('Network') || err.message.includes('fetch')) {
+            documentError = DocumentErrors.networkError(err.message);
+          } else if (err.message.includes('Storage')) {
+            documentError = DocumentErrors.storageError(err.message, 'STORAGE_ERROR');
+          } else {
+            documentError = DocumentErrors.uploadFailed(err.message, 'UPLOAD_FAILED');
+          }
+        } else {
+          documentError = DocumentErrors.uploadFailed('Unknown upload error', 'UNKNOWN_ERROR');
+        }
+        
+        setError(documentError);
         setUploadingFiles(prev => prev.map(u => 
           u.id === selectedFile.id 
-            ? { ...u, progress: { progress: 0, status: 'error', message: 'Upload failed' } }
+            ? { ...u, progress: { progress: 0, status: 'error', message: documentError.message } }
             : u
         ));
       }
@@ -282,10 +306,18 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
 
       {/* Error Display */}
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <EnhancedDocumentErrorHandler
+          error={error}
+          onRetry={() => {
+            setError(null);
+            // Retry last failed upload if any
+            const failedFiles = uploadingFiles.filter(f => f.progress.status === 'error');
+            if (failedFiles.length > 0) {
+              uploadSelectedFiles();
+            }
+          }}
+          onDismiss={() => setError(null)}
+        />
       )}
 
       {/* Uploading Files */}
