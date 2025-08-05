@@ -844,6 +844,13 @@ export type Database = {
             referencedRelation: "funds"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_deals_fund_id"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
         ]
       }
       decision_contexts: {
@@ -1262,7 +1269,15 @@ export type Database = {
           start_time?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_ic_calendar_invites_session_id"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "ic_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ic_committee_members: {
         Row: {
@@ -1298,7 +1313,15 @@ export type Database = {
           user_id?: string
           voting_weight?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_ic_committee_members_fund_id"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ic_decision_contexts: {
         Row: {
@@ -1358,7 +1381,36 @@ export type Database = {
           supporting_evidence?: Json | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_ic_decision_contexts_deal_id"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_ic_decision_contexts_fund_id"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_ic_decision_contexts_memo_id"
+            columns: ["memo_id"]
+            isOneToOne: false
+            referencedRelation: "ic_memos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_ic_decision_contexts_session_id"
+            columns: ["ic_session_id"]
+            isOneToOne: false
+            referencedRelation: "ic_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ic_meeting_deals: {
         Row: {
@@ -1392,6 +1444,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_ic_meeting_deals_deal_id"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_ic_meeting_deals_meeting_id"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "ic_meetings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ic_meeting_deals_deal_id_fkey"
             columns: ["deal_id"]
@@ -1442,7 +1508,15 @@ export type Database = {
           session_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_ic_meeting_minutes_session_id"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "ic_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ic_meetings: {
         Row: {
@@ -1476,6 +1550,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_ic_meetings_fund_id"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ic_meetings_fund_id_fkey"
             columns: ["fund_id"]
@@ -1558,7 +1639,22 @@ export type Database = {
           updated_at?: string
           version?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_ic_memo_versions_deal_id"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_ic_memo_versions_fund_id"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ic_memo_votes: {
         Row: {
@@ -1684,7 +1780,22 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_ic_memos_deal_id"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_ic_memos_fund_id"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ic_session_deals: {
         Row: {
@@ -1718,6 +1829,20 @@ export type Database = {
           time_allocated?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_ic_session_deals_deal_id"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_ic_session_deals_session_id"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "ic_sessions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ic_session_deals_session_id_fkey"
             columns: ["session_id"]
@@ -1767,7 +1892,15 @@ export type Database = {
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_ic_sessions_fund_id"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ic_voting_decisions: {
         Row: {
@@ -1819,6 +1952,13 @@ export type Database = {
           voting_deadline?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_ic_voting_decisions_memo_id"
+            columns: ["memo_id"]
+            isOneToOne: false
+            referencedRelation: "ic_memos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ic_voting_decisions_memo_id_fkey"
             columns: ["memo_id"]
