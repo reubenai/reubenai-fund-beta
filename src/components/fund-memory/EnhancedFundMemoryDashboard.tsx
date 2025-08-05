@@ -23,7 +23,15 @@ import {
   Zap,
   TrendingDown,
   Calendar,
-  FileText
+  FileText,
+  Network,
+  Database,
+  Layers,
+  Search,
+  Sparkles,
+  Shield,
+  Timer,
+  Building2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -455,557 +463,571 @@ export function EnhancedFundMemoryDashboard({ fundId, fundName }: EnhancedFundMe
 
   const getPatternTypeIcon = (type: string) => {
     switch (type) {
-      case 'success_factor': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'risk_signal': return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      case 'bias_pattern': return <Eye className="h-4 w-4 text-yellow-500" />;
-      case 'timing_pattern': return <Clock className="h-4 w-4 text-blue-500" />;
-      default: return <Brain className="h-4 w-4" />;
+      case 'success_factor': return <CheckCircle className="h-4 w-4 text-primary" />;
+      case 'risk_signal': return <AlertTriangle className="h-4 w-4 text-destructive" />;
+      case 'bias_pattern': return <Eye className="h-4 w-4 text-accent-orange" />;
+      case 'timing_pattern': return <Clock className="h-4 w-4 text-primary" />;
+      default: return <Brain className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
   const getPromptTypeColor = (type: string) => {
     switch (type) {
-      case 'similar_deal': return 'bg-blue-500/10 text-blue-700';
-      case 'risk_pattern': return 'bg-red-500/10 text-red-700';
-      case 'success_pattern': return 'bg-green-500/10 text-green-700';
-      case 'bias_warning': return 'bg-yellow-500/10 text-yellow-700';
-      default: return 'bg-gray-500/10 text-gray-700';
+      case 'similar_deal': return 'bg-primary/10 text-primary border-primary/20';
+      case 'risk_pattern': return 'bg-destructive/10 text-destructive border-destructive/20';
+      case 'success_pattern': return 'bg-primary/10 text-primary border-primary/20';
+      case 'bias_warning': return 'bg-accent-orange/10 text-accent-orange border-accent-orange/20';
+      default: return 'bg-muted text-muted-foreground border-border';
     }
   };
 
   if (loading) {
     return (
-      <div className="spacing-section max-w-7xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-hierarchy-1 flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary/20 rounded-lg animate-pulse"></div>
-              Enhanced Fund Memory
-            </h1>
-            <p className="text-muted-foreground mt-2">AI-powered institutional intelligence for {fundName}</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="card-xero animate-pulse">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="space-y-2 flex-1">
-                    <div className="h-3 bg-muted rounded w-2/3"></div>
-                    <div className="h-8 bg-muted rounded w-1/2"></div>
-                  </div>
-                  <div className="w-8 h-8 bg-muted rounded"></div>
-                </div>
-                <div className="h-2 bg-muted rounded w-full"></div>
-              </CardContent>
-            </Card>
-          ))}
+      <div className="spacing-section max-w-7xl mx-auto p-6">
+        <div className="flex items-center space-x-2">
+          <RefreshCw className="h-5 w-5 animate-spin text-primary" />
+          <span className="text-hierarchy-3">Loading enhanced fund memory...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="spacing-section max-w-7xl mx-auto px-6 py-8">
+    <div className="spacing-section max-w-7xl mx-auto p-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-hierarchy-1 flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl">
-              <Brain className="h-6 w-6 text-primary" />
-            </div>
-            Enhanced Fund Memory
-          </h1>
-          <p className="text-muted-foreground mt-2">AI-powered institutional intelligence for {fundName}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Time range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button onClick={fetchEnhancedMemoryData} variant="outline" size="sm" className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
+      <div className="spacing-component mb-8">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-hierarchy-1 mb-2 text-gradient">Enhanced Fund Memory</h1>
+            <p className="text-hierarchy-3 text-muted-foreground">
+              {fundName} • Intelligent decision insights and pattern recognition
+            </p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="90d">Last 90 days</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={fetchEnhancedMemoryData} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Key Intelligence Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="card-xero bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200/60">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm font-medium text-blue-700/70">Decision Quality</p>
-                <p className="text-3xl font-bold text-blue-800">{decisionMetrics?.overall_score || 0}%</p>
-              </div>
-              <div className="p-3 bg-blue-500/10 rounded-xl">
-                <Target className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-            <Progress 
-              value={decisionMetrics?.overall_score || 0} 
-              className="h-2 bg-blue-200"
-            />
-            <p className="text-xs text-blue-600/70 mt-2">Overall decision effectiveness</p>
-          </CardContent>
-        </Card>
-
-        <Card className="card-xero bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200/60">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm font-medium text-emerald-700/70">Team Alignment</p>
-                <p className="text-3xl font-bold text-emerald-800">{decisionMetrics?.decision_consistency || 0}%</p>
-              </div>
-              <div className="p-3 bg-emerald-500/10 rounded-xl">
-                <Users className="h-6 w-6 text-emerald-600" />
-              </div>
-            </div>
-            <Progress 
-              value={decisionMetrics?.decision_consistency || 0} 
-              className="h-2 bg-emerald-200"
-            />
-            <p className="text-xs text-emerald-600/70 mt-2">Cross-partner consistency</p>
-          </CardContent>
-        </Card>
-
-        <Card className="card-xero bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200/60">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm font-medium text-purple-700/70">AI Alignment</p>
-                <p className="text-3xl font-bold text-purple-800">{decisionMetrics?.ai_alignment || 0}%</p>
-              </div>
-              <div className="p-3 bg-purple-500/10 rounded-xl">
-                <Brain className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-            <Progress 
-              value={decisionMetrics?.ai_alignment || 0} 
-              className="h-2 bg-purple-200"
-            />
-            <p className="text-xs text-purple-600/70 mt-2">Human-AI consensus</p>
-          </CardContent>
-        </Card>
-
-        <Card className="card-xero bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200/60">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm font-medium text-amber-700/70">Active Patterns</p>
-                <p className="text-3xl font-bold text-amber-800">{patternInsights.length}</p>
-              </div>
-              <div className="p-3 bg-amber-500/10 rounded-xl">
-                <Lightbulb className="h-6 w-6 text-amber-600" />
-              </div>
-            </div>
-            <div className="flex items-center gap-2 mt-4">
-              <Activity className="h-3 w-3 text-amber-600" />
-              <p className="text-xs text-amber-600/70">Validated insights</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Detailed Intelligence Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="decision-traceability">Decision Traceability</TabsTrigger>
-          <TabsTrigger value="pattern-intelligence">Pattern Intelligence</TabsTrigger>
-          <TabsTrigger value="contextual-memory">Contextual Memory</TabsTrigger>
-          <TabsTrigger value="strategic-evolution">Strategic Evolution</TabsTrigger>
+      {/* Main Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="spacing-component">
+        <TabsList className="grid w-full grid-cols-3 card-xero">
+          <TabsTrigger value="overview" className="text-hierarchy-3">Enhanced Overview</TabsTrigger>
+          <TabsTrigger value="patterns" className="text-hierarchy-3">Pattern Intelligence</TabsTrigger>
+          <TabsTrigger value="memory" className="text-hierarchy-3">Contextual Memory</TabsTrigger>
         </TabsList>
 
+        {/* Overview Tab */}
         <TabsContent value="overview" className="spacing-component">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Recent Memory Prompts */}
-            <Card className="card-xero">
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
-                    <Zap className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-hierarchy-3">Recent Memory Prompts</CardTitle>
-                    <CardDescription>AI-triggered contextual intelligence</CardDescription>
-                  </div>
+          {/* Key Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card className="card-xero border-l-4 border-l-primary hover:shadow-elegant transition-all duration-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-hierarchy-3 flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  Decision Quality
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-primary mb-2">
+                  {decisionMetrics?.overall_score || 0}%
                 </div>
+                <Progress 
+                  value={decisionMetrics?.overall_score || 0} 
+                  className="h-2 mb-2" 
+                />
+                <p className="text-xs text-muted-foreground">
+                  Above industry average
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="card-xero border-l-4 border-l-accent-orange hover:shadow-elegant transition-all duration-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-hierarchy-3 flex items-center gap-2">
+                  <Target className="h-4 w-4 text-accent-orange" />
+                  AI Alignment
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-accent-orange mb-2">
+                  {decisionMetrics?.ai_alignment || 0}%
+                </div>
+                <Progress 
+                  value={decisionMetrics?.ai_alignment || 0} 
+                  className="h-2 mb-2" 
+                />
+                <p className="text-xs text-muted-foreground">
+                  Strong consensus
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="card-xero border-l-4 border-l-primary hover:shadow-elegant transition-all duration-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-hierarchy-3 flex items-center gap-2">
+                  <Brain className="h-4 w-4 text-primary" />
+                  Pattern Detection
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-primary mb-2">
+                  {patternInsights.length}
+                </div>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  Active patterns identified
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="card-xero border-l-4 border-l-accent-orange hover:shadow-elegant transition-all duration-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-hierarchy-3 flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-accent-orange" />
+                  Bias Prevention
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-accent-orange mb-2">
+                  {decisionMetrics?.bias_detection_score || 0}%
+                </div>
+                <Progress 
+                  value={decisionMetrics?.bias_detection_score || 0} 
+                  className="h-2 mb-2" 
+                />
+                <p className="text-xs text-muted-foreground">
+                  Robust safeguards
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Metrics Breakdown */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <Card className="card-xero">
+              <CardHeader>
+                <CardTitle className="text-hierarchy-2 flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  Decision Quality Breakdown
+                </CardTitle>
               </CardHeader>
               <CardContent className="spacing-element">
-                {memoryPrompts.length > 0 ? (
-                  memoryPrompts.slice(0, 5).map((prompt, index) => (
-                    <div key={index} className="border-subtle rounded-lg p-4 hover:bg-muted/30 transition-colors">
-                      <div className="flex items-center justify-between mb-3">
-                        <Badge className={getPromptTypeColor(prompt.type)} variant="secondary">
-                          {prompt.type.replace('_', ' ')}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Consistency</span>
+                    <div className="flex items-center gap-2">
+                      <Progress value={decisionMetrics?.decision_consistency || 0} className="w-20 h-2" />
+                      <span className="text-sm font-medium">{decisionMetrics?.decision_consistency || 0}%</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Outcome Correlation</span>
+                    <div className="flex items-center gap-2">
+                      <Progress value={decisionMetrics?.outcome_correlation || 0} className="w-20 h-2" />
+                      <span className="text-sm font-medium">{decisionMetrics?.outcome_correlation || 0}%</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">AI Agreement</span>
+                    <div className="flex items-center gap-2">
+                      <Progress value={decisionMetrics?.ai_alignment || 0} className="w-20 h-2" />
+                      <span className="text-sm font-medium">{decisionMetrics?.ai_alignment || 0}%</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Bias Detection</span>
+                    <div className="flex items-center gap-2">
+                      <Progress value={decisionMetrics?.bias_detection_score || 0} className="w-20 h-2" />
+                      <span className="text-sm font-medium">{decisionMetrics?.bias_detection_score || 0}%</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="card-xero">
+              <CardHeader>
+                <CardTitle className="text-hierarchy-2 flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-primary" />
+                  Memory Effectiveness
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="spacing-element">
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-primary">{memoryPrompts.length}</div>
+                    <p className="text-xs text-muted-foreground">Active Triggers</p>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-accent-orange">
+                      {Math.round(memoryPrompts.reduce((acc, p) => acc + p.relevance_score, 0) / Math.max(memoryPrompts.length, 1))}%
+                    </div>
+                    <p className="text-xs text-muted-foreground">Avg Relevance</p>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-primary">{patternInsights.length}</div>
+                    <p className="text-xs text-muted-foreground">Patterns</p>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-accent-orange">
+                      {Math.round(patternInsights.reduce((acc, p) => acc + p.confidence_score, 0) / Math.max(patternInsights.length, 1))}%
+                    </div>
+                    <p className="text-xs text-muted-foreground">Confidence</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Memory Prompts */}
+          <Card className="card-xero">
+            <CardHeader>
+              <CardTitle className="text-hierarchy-2 flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-primary" />
+                Recent Memory Prompts
+              </CardTitle>
+              <CardDescription>
+                AI-generated insights based on historical patterns
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="spacing-element">
+                {memoryPrompts.slice(0, 5).map((prompt, index) => (
+                  <div key={index} className="flex items-start space-x-3 p-4 gradient-subtle rounded-lg border-subtle">
+                    <div className={`p-2 rounded-full ${getPromptTypeColor(prompt.type)}`}>
+                      {prompt.type === 'similar_deal' && <Building2 className="h-4 w-4" />}
+                      {prompt.type === 'risk_pattern' && <AlertTriangle className="h-4 w-4" />}
+                      {prompt.type === 'success_pattern' && <CheckCircle className="h-4 w-4" />}
+                      {prompt.type === 'bias_warning' && <Eye className="h-4 w-4" />}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-hierarchy-3">{prompt.title}</h4>
+                        <Badge variant="outline" className="text-xs">
+                          {Math.round(prompt.relevance_score)}% relevant
                         </Badge>
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-2 bg-primary rounded-full animate-pulse"></div>
-                          <span className="text-sm text-muted-foreground">
-                            {prompt.relevance_score}% relevant
-                          </span>
-                        </div>
                       </div>
-                      <h4 className="font-semibold text-foreground mb-2">{prompt.title}</h4>
-                      <p className="text-sm text-muted-foreground mb-3">{prompt.description}</p>
+                      <p className="text-sm text-muted-foreground mb-2">{prompt.description}</p>
                       {prompt.actionable_insight && (
-                        <div className="bg-primary/5 border border-primary/20 rounded-md p-3">
-                          <p className="text-sm text-primary flex items-center gap-2">
-                            <Lightbulb className="h-4 w-4" />
-                            {prompt.actionable_insight}
-                          </p>
+                        <div className="bg-background/50 p-2 rounded text-xs border-subtle">
+                          <strong>Insight:</strong> {prompt.actionable_insight}
                         </div>
                       )}
-                      <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(prompt.created_at).toLocaleDateString()}
-                      </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <Brain className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                    <p className="text-muted-foreground">No recent memory prompts available</p>
-                    <p className="text-sm text-muted-foreground/70">AI will learn from your decisions</p>
                   </div>
-                )}
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Strategic Evolution */}
+          {strategicEvolution && (
+            <Card className="card-xero">
+              <CardHeader>
+                <CardTitle className="text-hierarchy-2 flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  Strategic Evolution Analysis
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <div className="text-center p-4 gradient-subtle rounded-lg">
+                    <div className="text-2xl font-bold mb-2 text-primary">
+                      {Math.round((1 - strategicEvolution.thesis_drift) * 100)}%
+                    </div>
+                    <p className="text-sm text-muted-foreground">Thesis Consistency</p>
+                  </div>
+                  <div className="text-center p-4 gradient-subtle rounded-lg">
+                    <div className="text-2xl font-bold mb-2 text-accent-orange">
+                      {Math.round(strategicEvolution.market_responsiveness * 100)}%
+                    </div>
+                    <p className="text-sm text-muted-foreground">Market Responsiveness</p>
+                  </div>
+                  <div className="text-center p-4 gradient-subtle rounded-lg">
+                    <div className="text-2xl font-bold mb-2 capitalize text-primary">
+                      {strategicEvolution.decision_quality_trend}
+                    </div>
+                    <p className="text-sm text-muted-foreground">Quality Trend</p>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-hierarchy-3 mb-3">Strategic Recommendations</h4>
+                  <div className="spacing-element">
+                    {strategicEvolution.strategic_recommendations.map((rec, index) => (
+                      <div key={index} className="flex items-center space-x-2 text-sm p-2 rounded border-subtle">
+                        <ArrowRight className="h-3 w-3 text-primary flex-shrink-0" />
+                        <span>{rec}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Pattern Intelligence Tab */}
+        <TabsContent value="patterns" className="spacing-component">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <Card className="card-xero">
+              <CardHeader>
+                <CardTitle className="text-hierarchy-3 flex items-center gap-2">
+                  <Network className="h-4 w-4 text-primary" />
+                  Pattern Types
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm">Success Factors</span>
+                    <Badge variant="outline">{patternInsights.filter(p => p.pattern_type === 'success_factor').length}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Risk Signals</span>
+                    <Badge variant="outline">{patternInsights.filter(p => p.pattern_type === 'risk_signal').length}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Bias Patterns</span>
+                    <Badge variant="outline">{patternInsights.filter(p => p.pattern_type === 'bias_pattern').length}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm">Timing Patterns</span>
+                    <Badge variant="outline">{patternInsights.filter(p => p.pattern_type === 'timing_pattern').length}</Badge>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Top Pattern Insights */}
             <Card className="card-xero">
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-amber-500/20 to-amber-500/10 rounded-lg">
-                    <BarChart3 className="h-5 w-5 text-amber-600" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-hierarchy-3">Pattern Insights</CardTitle>
-                    <CardDescription>Validated decision patterns</CardDescription>
-                  </div>
-                </div>
+              <CardHeader>
+                <CardTitle className="text-hierarchy-3 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-accent-orange" />
+                  Pattern Strength
+                </CardTitle>
               </CardHeader>
-              <CardContent className="spacing-element">
-                {patternInsights.length > 0 ? (
-                  patternInsights.slice(0, 5).map((pattern, index) => (
-                    <div key={index} className="border-subtle rounded-lg p-4 hover:bg-muted/30 transition-colors">
+              <CardContent>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-accent-orange mb-2">
+                    {Math.round(patternInsights.reduce((acc, p) => acc + p.confidence_score, 0) / Math.max(patternInsights.length, 1))}%
+                  </div>
+                  <p className="text-sm text-muted-foreground">Average Confidence</p>
+                  <Progress 
+                    value={Math.round(patternInsights.reduce((acc, p) => acc + p.confidence_score, 0) / Math.max(patternInsights.length, 1))}
+                    className="mt-3"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="card-xero">
+              <CardHeader>
+                <CardTitle className="text-hierarchy-3 flex items-center gap-2">
+                  <Timer className="h-4 w-4 text-primary" />
+                  Analysis Depth
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-primary mb-2">
+                    {patternInsights.reduce((acc, p) => acc + p.decisions_analyzed, 0)}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Decisions Analyzed</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="card-xero">
+            <CardHeader>
+              <CardTitle className="text-hierarchy-2 flex items-center gap-2">
+                <Brain className="h-5 w-5 text-primary" />
+                Detected Patterns
+              </CardTitle>
+              <CardDescription>
+                Machine learning insights from fund decision history
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="spacing-element">
+                {patternInsights.map((pattern, index) => (
+                  <Card key={index} className="border-subtle hover:shadow-md transition-all duration-200">
+                    <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center space-x-2">
                           {getPatternTypeIcon(pattern.pattern_type)}
-                          <span className="font-semibold text-foreground">{pattern.pattern_name}</span>
+                          <h4 className="text-hierarchy-3">{pattern.pattern_name}</h4>
                         </div>
-                        <Badge 
-                          variant={pattern.validation_status === 'validated' ? 'default' : 'secondary'}
-                          className="bg-gradient-to-r from-primary/10 to-primary/5"
-                        >
-                          {pattern.confidence_score}% confident
-                        </Badge>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline" className="text-xs">
+                            {pattern.confidence_score}% confidence
+                          </Badge>
+                          <Badge variant={pattern.validation_status === 'validated' ? 'default' : 'secondary'} className="text-xs">
+                            {pattern.validation_status}
+                          </Badge>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-3">{pattern.pattern_description}</p>
-                      <div className="bg-emerald-50 border border-emerald-200 rounded-md p-3 mb-3">
-                        <p className="text-sm text-emerald-700">{pattern.actionable_insights}</p>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {pattern.pattern_description}
+                      </p>
+                      <div className="gradient-subtle p-3 rounded border-subtle text-sm">
+                        <strong className="text-primary">Actionable Insights:</strong> {pattern.actionable_insights}
                       </div>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <FileText className="h-3 w-3" />
-                          {pattern.decisions_analyzed} decisions analyzed
-                        </span>
-                        <Badge variant="outline" className="text-xs">
-                          {pattern.validation_status}
-                        </Badge>
+                      <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Based on {pattern.decisions_analyzed} decisions</span>
+                        <span className="capitalize">{pattern.pattern_type.replace('_', ' ')}</span>
                       </div>
-                    </div>
-                  ))
-                ) : (
+                    </CardContent>
+                  </Card>
+                ))}
+                {patternInsights.length === 0 && (
                   <div className="text-center py-8">
-                    <Target className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                    <p className="text-muted-foreground">No patterns detected yet</p>
-                    <p className="text-sm text-muted-foreground/70">Patterns emerge with more decisions</p>
+                    <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-hierarchy-3 mb-2">Building Pattern Intelligence</h3>
+                    <p className="text-muted-foreground">Make more decisions to unlock pattern insights</p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="decision-traceability" className="spacing-component">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Contextual Memory Tab */}
+        <TabsContent value="memory" className="spacing-component">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <Card className="card-xero">
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 rounded-lg">
-                    <Users className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <CardTitle className="text-hierarchy-3">Decision Consistency</CardTitle>
-                </div>
+              <CardHeader>
+                <CardTitle className="text-hierarchy-3 flex items-center gap-2">
+                  <Database className="h-4 w-4 text-primary" />
+                  Memory Distribution
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-4xl font-bold mb-4 text-emerald-700">
-                  {decisionMetrics?.decision_consistency}%
-                </div>
-                <Progress 
-                  value={decisionMetrics?.decision_consistency} 
-                  className="mb-4 h-3 bg-emerald-100" 
-                />
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Cross-partner decision alignment across similar deals and investment criteria
-                </p>
-                <div className="mt-4 p-3 bg-emerald-50 rounded-lg">
-                  <p className="text-xs text-emerald-700 font-medium">
-                    {decisionMetrics?.decision_consistency && decisionMetrics.decision_consistency > 80 
-                      ? "Strong team alignment" 
-                      : "Room for improvement"}
-                  </p>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Deal Context</span>
+                    <Badge variant="outline">{memoryPrompts.filter(p => p.type === 'similar_deal').length}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Risk Memories</span>
+                    <Badge variant="outline">{memoryPrompts.filter(p => p.type === 'risk_pattern').length}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Success Stories</span>
+                    <Badge variant="outline">{memoryPrompts.filter(p => p.type === 'success_pattern').length}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Bias Warnings</span>
+                    <Badge variant="outline">{memoryPrompts.filter(p => p.type === 'bias_warning').length}</Badge>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="card-xero">
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-blue-500/20 to-blue-500/10 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <CardTitle className="text-hierarchy-3">Outcome Correlation</CardTitle>
-                </div>
+              <CardHeader>
+                <CardTitle className="text-hierarchy-3 flex items-center gap-2">
+                  <Search className="h-4 w-4 text-accent-orange" />
+                  Memory Recall
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-4xl font-bold mb-4 text-blue-700">
-                  {decisionMetrics?.outcome_correlation}%
-                </div>
-                <Progress 
-                  value={decisionMetrics?.outcome_correlation} 
-                  className="mb-4 h-3 bg-blue-100" 
-                />
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Accuracy of investment predictions versus actual portfolio outcomes
-                </p>
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                  <p className="text-xs text-blue-700 font-medium">
-                    Predictive accuracy trending upward
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="card-xero">
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-yellow-500/20 to-yellow-500/10 rounded-lg">
-                    <Eye className="h-5 w-5 text-yellow-600" />
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-accent-orange mb-2">
+                    {Math.round(memoryPrompts.reduce((acc, p) => acc + p.relevance_score, 0) / Math.max(memoryPrompts.length, 1))}%
                   </div>
-                  <CardTitle className="text-hierarchy-3">Bias Detection</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-4xl font-bold mb-4 text-yellow-700">
-                  {decisionMetrics?.bias_detection_score}%
-                </div>
-                <Progress 
-                  value={decisionMetrics?.bias_detection_score} 
-                  className="mb-4 h-3 bg-yellow-100" 
-                />
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Systematic bias identification and mitigation effectiveness
-                </p>
-                <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
-                  <p className="text-xs text-yellow-700 font-medium">
-                    Active monitoring for cognitive biases
-                  </p>
+                  <p className="text-sm text-muted-foreground mb-3">Average Relevance Score</p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span>High Relevance (80%+)</span>
+                      <span>{memoryPrompts.filter(p => p.relevance_score >= 80).length}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span>Medium Relevance (60-79%)</span>
+                      <span>{memoryPrompts.filter(p => p.relevance_score >= 60 && p.relevance_score < 80).length}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span>Low Relevance (&lt;60%)</span>
+                      <span>{memoryPrompts.filter(p => p.relevance_score < 60).length}</span>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
 
-        <TabsContent value="pattern-intelligence" className="space-y-6">
-          <div className="grid grid-cols-1 gap-6">
-            {patternInsights.map((pattern, index) => (
-              <Card key={index}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {getPatternTypeIcon(pattern.pattern_type)}
-                      <CardTitle>{pattern.pattern_name}</CardTitle>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={pattern.validation_status === 'validated' ? 'default' : 'secondary'}>
-                        {pattern.validation_status}
-                      </Badge>
-                      <Badge variant="outline">
-                        {pattern.confidence_score}% confidence
-                      </Badge>
-                    </div>
-                  </div>
-                  <CardDescription>{pattern.pattern_description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm mb-4">{pattern.actionable_insights}</p>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <span>Based on {pattern.decisions_analyzed} decisions</span>
-                    <Button variant="outline" size="sm">
-                      View Details <ArrowRight className="h-3 w-3 ml-1" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="contextual-memory" className="space-y-6">
-          <div className="grid grid-cols-1 gap-6">
-            {memoryPrompts.map((prompt, index) => (
-              <Card key={index}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>{prompt.title}</CardTitle>
-                    <Badge className={getPromptTypeColor(prompt.type)}>
-                      {prompt.relevance_score}% relevant
-                    </Badge>
-                  </div>
-                  <CardDescription>{prompt.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {prompt.actionable_insight && (
-                    <Alert>
-                      <Lightbulb className="h-4 w-4" />
-                      <AlertDescription>{prompt.actionable_insight}</AlertDescription>
-                    </Alert>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="strategic-evolution" className="spacing-component">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card className="card-xero">
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-purple-500/20 to-purple-500/10 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-hierarchy-3">Thesis Evolution</CardTitle>
-                    <CardDescription>How your investment strategy has evolved</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="spacing-element">
-                  <div className="bg-gradient-to-r from-muted/30 to-muted/10 rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-sm font-medium">Thesis Drift</span>
-                      <div className="flex items-center gap-2">
-                        {(strategicEvolution?.thesis_drift || 0) < 0.3 ? (
-                          <CheckCircle className="h-4 w-4 text-emerald-600" />
-                        ) : (
-                          <AlertTriangle className="h-4 w-4 text-amber-600" />
-                        )}
-                        <span className="text-sm font-bold">
-                          {((strategicEvolution?.thesis_drift || 0) * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-                    <Progress 
-                      value={(strategicEvolution?.thesis_drift || 0) * 100} 
-                      className="h-2 mb-2"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {(strategicEvolution?.thesis_drift || 0) < 0.3 
-                        ? "Strategy remains consistent with core thesis"
-                        : "Notable evolution in investment focus"
-                      }
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-r from-muted/30 to-muted/10 rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-sm font-medium">Market Responsiveness</span>
-                      <div className="flex items-center gap-2">
-                        <Activity className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-bold">
-                          {((strategicEvolution?.market_responsiveness || 0) * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-                    <Progress 
-                      value={(strategicEvolution?.market_responsiveness || 0) * 100} 
-                      className="h-2 mb-2"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Speed and quality of response to market signals
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg">
-                    <span className="text-sm font-medium text-foreground">Decision Quality Trend</span>
-                    <Badge 
-                      variant="outline" 
-                      className={`
-                        ${strategicEvolution?.decision_quality_trend === 'improving' 
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                          : strategicEvolution?.decision_quality_trend === 'declining'
-                          ? 'bg-red-50 text-red-700 border-red-200'
-                          : 'bg-blue-50 text-blue-700 border-blue-200'
-                        }
-                      `}
-                    >
-                      {strategicEvolution?.decision_quality_trend === 'improving' && <TrendingUp className="h-3 w-3 mr-1" />}
-                      {strategicEvolution?.decision_quality_trend === 'declining' && <TrendingDown className="h-3 w-3 mr-1" />}
-                      {strategicEvolution?.decision_quality_trend || 'stable'}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="card-xero">
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 rounded-lg">
-                    <Lightbulb className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-hierarchy-3">Strategic Recommendations</CardTitle>
-                    <CardDescription>AI-generated strategy improvements</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="spacing-element">
-                  {strategicEvolution?.strategic_recommendations && strategicEvolution.strategic_recommendations.length > 0 ? (
-                    strategicEvolution.strategic_recommendations.map((rec, index) => (
-                      <div key={index} className="border-subtle rounded-lg p-4 hover:bg-muted/30 transition-colors">
-                        <div className="flex items-start gap-3">
-                          <div className="p-1 bg-emerald-100 rounded-md mt-0.5">
-                            <ArrowRight className="h-3 w-3 text-emerald-600" />
+          <Card className="card-xero">
+            <CardHeader>
+              <CardTitle className="text-hierarchy-2 flex items-center gap-2">
+                <Layers className="h-5 w-5 text-primary" />
+                Contextual Memory Layers
+              </CardTitle>
+              <CardDescription>
+                Multi-dimensional memory context for enhanced decision making
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="spacing-element">
+                {memoryPrompts.map((prompt, index) => (
+                  <Card key={index} className="border-subtle hover:shadow-md transition-all duration-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-start space-x-3">
+                        <div className={`p-2 rounded-full ${getPromptTypeColor(prompt.type)} flex-shrink-0`}>
+                          {prompt.type === 'similar_deal' && <Building2 className="h-4 w-4" />}
+                          {prompt.type === 'risk_pattern' && <AlertTriangle className="h-4 w-4" />}
+                          {prompt.type === 'success_pattern' && <CheckCircle className="h-4 w-4" />}
+                          {prompt.type === 'bias_warning' && <Eye className="h-4 w-4" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-hierarchy-3 truncate">{prompt.title}</h4>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <Badge variant="outline" className="text-xs">
+                                {Math.round(prompt.relevance_score)}%
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs capitalize">
+                                {prompt.type.replace('_', ' ')}
+                              </Badge>
+                            </div>
                           </div>
-                          <p className="text-sm leading-relaxed text-foreground">{rec}</p>
+                          <p className="text-sm text-muted-foreground mb-3">{prompt.description}</p>
+                          {prompt.actionable_insight && (
+                            <div className="gradient-subtle p-3 rounded border-subtle text-sm">
+                              <strong className="text-primary">Memory Insight:</strong> {prompt.actionable_insight}
+                            </div>
+                          )}
+                          <div className="mt-3 text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3 inline mr-1" />
+                            {new Date(prompt.created_at).toLocaleDateString()}
+                          </div>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <Lightbulb className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                      <p className="text-muted-foreground">No recommendations available</p>
-                      <p className="text-sm text-muted-foreground/70">AI will generate insights as data grows</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {memoryPrompts.length === 0 && (
+                  <div className="text-center py-8">
+                    <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-hierarchy-3 mb-2">Building Contextual Memory</h3>
+                    <p className="text-muted-foreground">Memory context will appear as decision history grows</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
