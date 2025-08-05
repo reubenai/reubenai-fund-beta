@@ -17,6 +17,7 @@ interface MemoryRequest {
   data?: any;
   context?: any;
   query?: string;
+  headers?: Headers;
 }
 
 interface MemoryEntry {
@@ -42,6 +43,8 @@ serve(async (req) => {
 
   try {
     const request: MemoryRequest = await req.json();
+    // Store the original request object for use in functions
+    request.headers = req.headers;
     console.log('Fund Memory Engine request:', request);
 
     let result;
@@ -109,6 +112,23 @@ async function storeMemoryEntry(request: MemoryRequest) {
     confidenceScore
   });
   
+  // Get the current user ID from the Authorization header
+  const authHeader = request.headers?.get?.('authorization');
+  let currentUserId = '00000000-0000-0000-0000-000000000000'; // Default system user
+  
+  if (authHeader) {
+    try {
+      // Extract user ID from JWT token if available
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user?.id) {
+        currentUserId = user.id;
+      }
+    } catch (error) {
+      console.warn('Failed to extract user from token, using system user:', error);
+    }
+  }
+
   // Store memory entry with flexible data structure
   const entry: MemoryEntry = {
     fund_id: fundId,
@@ -121,7 +141,7 @@ async function storeMemoryEntry(request: MemoryRequest) {
     confidence_score: confidenceScore,
     contextual_tags: data?.tags || [],
     correlation_score: data?.correlationScore || 0.5,
-    created_by: data?.createdBy || null
+    created_by: data?.createdBy || currentUserId
   };
 
   const { data: memoryEntry, error } = await supabase

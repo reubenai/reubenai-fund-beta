@@ -7,7 +7,8 @@ export function generateEnhancedFallbackMemo(
   ragData: any, 
   thesisData: any, 
   specialistEngines: any,
-  orchestratorData: any
+  orchestratorData: any,
+  enhancedInsights?: any
 ): any {
   console.log('🚀 Generating ENHANCED fallback memo with rich specialist data...');
   

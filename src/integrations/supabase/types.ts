@@ -1087,7 +1087,7 @@ export type Database = {
           contextual_tags?: string[] | null
           correlation_score?: number | null
           created_at?: string | null
-          created_by: string
+          created_by?: string
           deal_id?: string | null
           description?: string | null
           expires_at?: string | null

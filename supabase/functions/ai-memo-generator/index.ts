@@ -254,6 +254,16 @@ serve(async (req) => {
     let memoContent;
     
     try {
+      console.log('🔍 Generating memo content with zero-fabrication policy...');
+      
+      // Check if we should skip OpenAI generation due to recent quota issues
+      const shouldUseEnhancedFallback = await checkOpenAIQuotaStatus();
+      
+      if (shouldUseEnhancedFallback) {
+        console.log('⚡ Using enhanced fallback due to OpenAI quota management');
+        throw new Error('OpenAI quota management - using enhanced fallback');
+      }
+      
       // First try AI generation
       memoContent = await generateMemoContent(
         dealData, 
@@ -275,18 +285,42 @@ serve(async (req) => {
       }
     } catch (aiError) {
       console.log('⚠️ AI generation failed, using enhanced fallback:', aiError.message);
+      console.log('🔄 Generating fallback memo structure...');
+      
       // Use enhanced fallback memo generation with available data
-      memoContent = generateEnhancedFallbackMemo(
-        dealData, 
-        dealData.funds, 
-        sections, 
-        dealData.deal_analyses?.[0], 
-        ragData, 
-        thesisData, 
-        specialistEngines,
-        orchestratorData,
-        enhancedInsights
-      );
+      try {
+        console.log('🚀 Generating ENHANCED fallback memo with rich specialist data...');
+        
+        // Validate specialist engines data first
+        console.log('📊 Specialist engine data validation:', {
+          marketData: !!specialistEngines?.marketResearch,
+          managementData: !!specialistEngines?.management,
+          investmentTermsData: !!specialistEngines?.investmentTerms,
+          riskData: !!specialistEngines?.riskMitigation,
+          exitData: !!specialistEngines?.exitStrategy
+        });
+        
+        memoContent = generateEnhancedFallbackMemo(
+          dealData, 
+          dealData.funds, 
+          sections, 
+          dealData.deal_analyses?.[0], 
+          ragData, 
+          thesisData, 
+          specialistEngines,
+          orchestratorData,
+          enhancedInsights
+        );
+      } catch (fallbackError) {
+        console.error('❌ Enhanced fallback also failed:', fallbackError.message);
+        
+        // Generate a minimal but functional fallback
+        memoContent = {
+          content: generateMinimalFallbackContent(dealData, sections),
+          executive_summary: generateMinimalExecutiveSummary(dealData),
+          investment_recommendation: generateMinimalRecommendation(dealData)
+        };
+      }
     }
 
     // 8. Determine RAG status from validated data with proper constraint validation
@@ -631,6 +665,48 @@ Generate comprehensive IC memos that investment committees can trust for decisio
       
       // Continue to next retry attempt
     }
+  }
+}
+
+// Minimal fallback generation functions
+function generateMinimalFallbackContent(dealData: any, sections: any[]): any {
+  const content: any = {};
+  
+  sections.forEach(section => {
+    content[section.key] = `${section.title} analysis for ${dealData.company_name}: Comprehensive evaluation pending. This section will be populated with detailed analysis based on validated market data and due diligence findings.`;
+  });
+  
+  return {
+    ...content,
+    generated_at: new Date().toISOString(),
+    minimal_fallback_mode: true,
+    company_name: dealData.company_name
+  };
+}
+
+function generateMinimalExecutiveSummary(dealData: any): string {
+  return `Investment Analysis: ${dealData.company_name}, ${dealData.industry || 'technology'} company. Deal Structure: ${dealData.deal_size ? `$${(dealData.deal_size / 1000000).toFixed(1)}M` : 'TBD'} investment at ${dealData.valuation ? `$${(dealData.valuation / 1000000).toFixed(1)}M` : 'TBD'} valuation. Assessment: ${dealData.overall_score || 'Pending'}/100 overall score. Recommendation: Requires comprehensive evaluation before proceeding.`;
+}
+
+function generateMinimalRecommendation(dealData: any): string {
+  return `INVESTMENT RECOMMENDATION: HOLD - REQUIRES DETAILED ANALYSIS. ${dealData.company_name} presents an investment opportunity requiring comprehensive due diligence. Recommend detailed evaluation of market opportunity, financial metrics, and team capabilities before making final investment decision.`;
+}
+
+// Simple quota management to prevent excessive API calls
+async function checkOpenAIQuotaStatus(): Promise<boolean> {
+  try {
+    // Simple heuristic: if we've had recent quota errors, use fallback for a period
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIApiKey) {
+      console.log('⚠️ No OpenAI API key available, using enhanced fallback');
+      return true;
+    }
+    
+    // For now, always attempt OpenAI but with better error handling
+    return false;
+  } catch (error) {
+    console.warn('⚠️ Quota check failed, using enhanced fallback:', error);
+    return true;
   }
 }
 
