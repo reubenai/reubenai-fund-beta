@@ -376,7 +376,10 @@ ${analysisResult.next_steps.map(step => `• ${step}`).join('\n')}
       }
     }
 
-    return new Response(JSON.stringify(analysisResult), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      analysis: analysisResult 
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
