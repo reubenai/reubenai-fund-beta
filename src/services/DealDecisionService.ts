@@ -185,7 +185,7 @@ class DealDecisionService {
       case 'ic_approve':
         return 'approved';
       case 'ic_reject':
-        return 'declined';
+        return 'rejected';
       default:
         return null;
     }
