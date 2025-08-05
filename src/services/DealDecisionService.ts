@@ -95,8 +95,11 @@ class DealDecisionService {
           .eq('id', request.deal_id);
       }
 
-      // Store learning insights in Fund Memory
+      // Store learning insights in Enhanced Fund Memory
       await this.storeLearningInsights(request.fund_id, data as DealDecision);
+
+      // Trigger enhanced memory capture for immediate learning
+      await this.captureEnhancedMemoryContext(request.fund_id, data as DealDecision);
 
       // Trigger analysis pattern update
       await this.updateDecisionPatterns(request.fund_id);
@@ -214,6 +217,37 @@ class DealDecisionService {
       });
     } catch (error) {
       console.error('Error storing learning insights:', error);
+    }
+  }
+
+  private async captureEnhancedMemoryContext(fundId: string, decision: DealDecision): Promise<void> {
+    try {
+      const { enhancedFundMemoryService } = await import('./EnhancedFundMemoryService');
+      
+      await enhancedFundMemoryService.captureDecisionContext(fundId, {
+        deal_id: decision.deal_id,
+        decision_type: decision.decision_type,
+        decision_outcome: decision.decision_type,
+        confidence_level: decision.confidence_level || 75,
+        ai_recommendations: {
+          ai_score: decision.ai_score_at_decision,
+          ai_recommendation: decision.ai_recommendation_at_decision,
+          contradicts_ai: decision.contradicts_ai
+        },
+        supporting_evidence: {
+          rejection_reason: decision.rejection_reason,
+          rejection_category: decision.rejection_category,
+          decision_rationale: decision.decision_rationale
+        },
+        context_data: {
+          ...decision.learning_context,
+          decision_metadata: decision.decision_metadata,
+          sourcing_feedback: decision.sourcing_feedback,
+          impact_on_strategy: decision.impact_on_strategy
+        }
+      });
+    } catch (error) {
+      console.error('Error capturing enhanced memory context:', error);
     }
   }
 
