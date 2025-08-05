@@ -2588,6 +2588,10 @@ export type Database = {
         }
         Returns: string
       }
+      create_default_pipeline_stages: {
+        Args: { fund_id_param: string }
+        Returns: undefined
+      }
       generate_invitation_token: {
         Args: Record<PropertyKey, never>
         Returns: string
