@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { DocumentManager } from '@/components/documents/DocumentManager';
 import { EnhancedDocumentAnalysis } from '@/components/documents/EnhancedDocumentAnalysis';
+import { DealNotesManager } from '@/components/notes/DealNotesManager';
 import { useToast } from '@/hooks/use-toast';
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 import { supabase } from '@/integrations/supabase/client';
@@ -249,11 +250,12 @@ export function EnhancedDealDetailsModal({
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="company">Company Details</TabsTrigger>
             <TabsTrigger value="analysis">ReubenAI Analysis</TabsTrigger>
             <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
 
@@ -411,6 +413,13 @@ export function EnhancedDealDetailsModal({
 
           <TabsContent value="documents" className="space-y-6">
             <DocumentManager
+              dealId={deal.id}
+              companyName={deal.company_name}
+            />
+          </TabsContent>
+
+          <TabsContent value="notes" className="space-y-6">
+            <DealNotesManager
               dealId={deal.id}
               companyName={deal.company_name}
             />
