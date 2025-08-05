@@ -16,8 +16,19 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from '@/components/ui/pagination';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Filter, RefreshCw, ExternalLink, ArrowUpDown } from 'lucide-react';
+import { Filter, RefreshCw, ExternalLink, ArrowUpDown, Trash2 } from 'lucide-react';
 
 interface Deal {
   id: string;
@@ -40,9 +51,11 @@ interface Deal {
 
 interface AdminDealsTableProps {
   refreshTrigger?: number;
+  onBulkDelete?: (dealIds: string[]) => Promise<void>;
+  isSuperAdmin?: boolean;
 }
 
-export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
+export function AdminDealsTable({ refreshTrigger, onBulkDelete, isSuperAdmin = false }: AdminDealsTableProps) {
   const navigate = useNavigate();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +69,9 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [pageSize, setPageSize] = useState(25);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedDeals, setSelectedDeals] = useState<string[]>([]);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchDeals();
@@ -187,6 +203,42 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
     });
   };
 
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedDeals(paginatedDeals.map(deal => deal.id));
+    } else {
+      setSelectedDeals([]);
+    }
+  };
+
+  const handleSelectDeal = (dealId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedDeals(prev => [...prev, dealId]);
+    } else {
+      setSelectedDeals(prev => prev.filter(id => id !== dealId));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!onBulkDelete || selectedDeals.length === 0) return;
+    
+    setIsDeleting(true);
+    try {
+      await onBulkDelete(selectedDeals);
+      setSelectedDeals([]);
+      setShowDeleteDialog(false);
+      fetchDeals(); // Refresh the data
+    } catch (error) {
+      console.error('Error during bulk delete:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const selectedDealNames = deals
+    .filter(deal => selectedDeals.includes(deal.id))
+    .map(deal => deal.company_name);
+
   return (
     <Card className="border-0 shadow-sm">
       <CardHeader>
@@ -282,8 +334,35 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
           </div>
         </div>
 
-        <div className="text-sm text-muted-foreground">
-          Showing {paginatedDeals.length} of {filteredDeals.length} deals
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {paginatedDeals.length} of {filteredDeals.length} deals
+          </div>
+          
+          {/* Bulk Action Bar */}
+          {selectedDeals.length > 0 && isSuperAdmin && (
+            <div className="flex items-center gap-3 px-4 py-2 bg-muted rounded-lg">
+              <span className="text-sm font-medium">
+                {selectedDeals.length} deal{selectedDeals.length > 1 ? 's' : ''} selected
+              </span>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDeleteDialog(true)}
+                className="flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Bulk Delete
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedDeals([])}
+              >
+                Clear Selection
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Deals Table */}
@@ -291,6 +370,15 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/20">
+                {isSuperAdmin && (
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedDeals.length === paginatedDeals.length && paginatedDeals.length > 0}
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all deals"
+                    />
+                  </TableHead>
+                )}
                 <TableHead>
                   <Button 
                     variant="ghost" 
@@ -335,20 +423,29 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8">
+                  <TableCell colSpan={isSuperAdmin ? 10 : 9} className="text-center py-8">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
                     Loading deals...
                   </TableCell>
                 </TableRow>
               ) : paginatedDeals.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={isSuperAdmin ? 10 : 9} className="text-center py-8 text-muted-foreground">
                     No deals found matching current filters
                   </TableCell>
                 </TableRow>
               ) : (
                 paginatedDeals.map((deal) => (
                   <TableRow key={deal.id}>
+                    {isSuperAdmin && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedDeals.includes(deal.id)}
+                          onCheckedChange={(checked) => handleSelectDeal(deal.id, !!checked)}
+                          aria-label={`Select ${deal.company_name}`}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="font-medium">{deal.company_name}</TableCell>
                     <TableCell>{deal.fund.name}</TableCell>
                     <TableCell>{deal.fund.organization.name}</TableCell>
@@ -439,6 +536,46 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
           </div>
         )}
       </CardContent>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Bulk Delete</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedDeals.length} deal{selectedDeals.length > 1 ? 's' : ''}? 
+              This action cannot be undone and will also delete all associated documents, notes, and analyses.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="max-h-40 overflow-y-auto border rounded p-3 bg-muted/20">
+            <p className="font-medium mb-2">Deals to be deleted:</p>
+            <ul className="space-y-1">
+              {selectedDealNames.map((name, index) => (
+                <li key={index} className="text-sm">• {name}</li>
+              ))}
+            </ul>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                `Delete ${selectedDeals.length} Deal${selectedDeals.length > 1 ? 's' : ''}`
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

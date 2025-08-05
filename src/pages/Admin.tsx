@@ -465,6 +465,40 @@ export default function Admin() {
     }
   };
 
+  const bulkDeleteDeals = async (dealIds: string[]) => {
+    try {
+      // Get deal names for logging
+      const { data: dealsToDelete, error: fetchError } = await supabase
+        .from('deals')
+        .select('id, company_name')
+        .in('id', dealIds);
+
+      if (fetchError) throw fetchError;
+
+      const dealNames = dealsToDelete?.map(d => d.company_name) || [];
+
+      // Delete deals from database (cascading deletes will handle related data)
+      const { error } = await supabase
+        .from('deals')
+        .delete()
+        .in('id', dealIds);
+
+      if (error) throw error;
+      
+      // Log admin activity
+      await logAdminActivity('deals_bulk_deleted', `Bulk deleted ${dealIds.length} deals: ${dealNames.join(', ')}`, {
+        dealIds,
+        dealNames,
+        deletedCount: dealIds.length
+      });
+
+      toast.success(`Successfully deleted ${dealIds.length} deal${dealIds.length > 1 ? 's' : ''}`);
+    } catch (error) {
+      console.error('Error deleting deals:', error);
+      toast.error('Failed to delete deals');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -651,7 +685,10 @@ export default function Admin() {
             </TabsContent>
 
             <TabsContent value="deals" className="space-y-6">
-              <AdminDealsTable />
+              <AdminDealsTable 
+                onBulkDelete={bulkDeleteDeals}
+                isSuperAdmin={hasAccess}
+              />
             </TabsContent>
 
             <TabsContent value="production" className="space-y-6">
