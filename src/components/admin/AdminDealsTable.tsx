@@ -8,8 +8,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from '@/components/ui/pagination';
 import { toast } from 'sonner';
-import { Filter, RefreshCw, ExternalLink } from 'lucide-react';
+import { Filter, RefreshCw, ExternalLink, ArrowUpDown } from 'lucide-react';
 
 interface Deal {
   id: string;
@@ -44,6 +52,10 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
     fundType: '',
     search: ''
   });
+  const [sortField, setSortField] = useState<'company_name' | 'created_at' | 'overall_score'>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [pageSize, setPageSize] = useState(25);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchDeals();
@@ -86,22 +98,52 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
     }
   };
 
-  const filteredDeals = deals.filter(deal => {
-    const fundNameMatch = !filters.fundName || 
-      deal.fund.name.toLowerCase().includes(filters.fundName.toLowerCase());
-    
-    const organizationMatch = !filters.organization || 
-      deal.fund.organization.name.toLowerCase().includes(filters.organization.toLowerCase());
-    
-    const fundTypeMatch = !filters.fundType || 
-      deal.fund.fund_type === filters.fundType;
-    
-    const searchMatch = !filters.search || 
-      deal.company_name.toLowerCase().includes(filters.search.toLowerCase()) ||
-      deal.industry?.toLowerCase().includes(filters.search.toLowerCase());
+  const filteredDeals = deals
+    .filter(deal => {
+      const fundNameMatch = !filters.fundName || 
+        deal.fund.name.toLowerCase().includes(filters.fundName.toLowerCase());
+      
+      const organizationMatch = !filters.organization || 
+        deal.fund.organization.name.toLowerCase().includes(filters.organization.toLowerCase());
+      
+      const fundTypeMatch = !filters.fundType || 
+        deal.fund.fund_type === filters.fundType;
+      
+      const searchMatch = !filters.search || 
+        deal.company_name.toLowerCase().includes(filters.search.toLowerCase()) ||
+        deal.industry?.toLowerCase().includes(filters.search.toLowerCase());
 
-    return fundNameMatch && organizationMatch && fundTypeMatch && searchMatch;
-  });
+      return fundNameMatch && organizationMatch && fundTypeMatch && searchMatch;
+    })
+    .sort((a, b) => {
+      const aValue = a[sortField] || 0;
+      const bValue = b[sortField] || 0;
+      
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc' 
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+      
+      return sortDirection === 'asc' 
+        ? (aValue as number) - (bValue as number)
+        : (bValue as number) - (aValue as number);
+    });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredDeals.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedDeals = filteredDeals.slice(startIndex, startIndex + pageSize);
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
+  };
 
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {
@@ -166,14 +208,17 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 bg-muted/50 rounded-lg">
           <div className="space-y-2">
             <Label htmlFor="search" className="text-sm font-medium">Search Companies</Label>
             <Input
               id="search"
               placeholder="Company name or industry..."
               value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              onChange={(e) => {
+                setFilters(prev => ({ ...prev, search: e.target.value }));
+                setCurrentPage(1);
+              }}
             />
           </div>
           <div className="space-y-2">
@@ -182,7 +227,10 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
               id="fund-filter"
               placeholder="Filter by fund..."
               value={filters.fundName}
-              onChange={(e) => setFilters(prev => ({ ...prev, fundName: e.target.value }))}
+              onChange={(e) => {
+                setFilters(prev => ({ ...prev, fundName: e.target.value }));
+                setCurrentPage(1);
+              }}
             />
           </div>
           <div className="space-y-2">
@@ -191,12 +239,18 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
               id="org-filter"
               placeholder="Filter by organization..."
               value={filters.organization}
-              onChange={(e) => setFilters(prev => ({ ...prev, organization: e.target.value }))}
+              onChange={(e) => {
+                setFilters(prev => ({ ...prev, organization: e.target.value }));
+                setCurrentPage(1);
+              }}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="fund-type-filter" className="text-sm font-medium">Fund Type</Label>
-            <Select value={filters.fundType} onValueChange={(value) => setFilters(prev => ({ ...prev, fundType: value === "all" ? "" : value }))}>
+            <Select value={filters.fundType} onValueChange={(value) => {
+              setFilters(prev => ({ ...prev, fundType: value === "all" ? "" : value }));
+              setCurrentPage(1);
+            }}>
               <SelectTrigger>
                 <SelectValue placeholder="All fund types" />
               </SelectTrigger>
@@ -207,21 +261,74 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Page Size</Label>
+            <Select 
+              value={pageSize.toString()} 
+              onValueChange={(value) => {
+                setPageSize(parseInt(value));
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="25">25 per page</SelectItem>
+                <SelectItem value="50">50 per page</SelectItem>
+                <SelectItem value="100">100 per page</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="text-sm text-muted-foreground">
+          Showing {paginatedDeals.length} of {filteredDeals.length} deals
         </div>
 
         {/* Deals Table */}
         <div className="rounded-lg border">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Company</TableHead>
+              <TableRow className="bg-muted/20">
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleSort('company_name')}
+                    className="h-8 p-0 hover:bg-transparent font-medium"
+                  >
+                    Company
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
                 <TableHead>Fund</TableHead>
                 <TableHead>Organization</TableHead>
                 <TableHead>Fund Type</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Score</TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleSort('overall_score')}
+                    className="h-8 p-0 hover:bg-transparent font-medium"
+                  >
+                    Score
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
                 <TableHead>Industry</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleSort('created_at')}
+                    className="h-8 p-0 hover:bg-transparent font-medium"
+                  >
+                    Created
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -233,14 +340,14 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
                     Loading deals...
                   </TableCell>
                 </TableRow>
-              ) : filteredDeals.length === 0 ? (
+              ) : paginatedDeals.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     No deals found matching current filters
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredDeals.map((deal) => (
+                paginatedDeals.map((deal) => (
                   <TableRow key={deal.id}>
                     <TableCell className="font-medium">{deal.company_name}</TableCell>
                     <TableCell>{deal.fund.name}</TableCell>
@@ -272,6 +379,65 @@ export function AdminDealsTable({ refreshTrigger }: AdminDealsTableProps) {
             </TableBody>
           </Table>
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center mt-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) setCurrentPage(prev => prev - 1);
+                    }}
+                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                  />
+                </PaginationItem>
+                
+                {[...Array(Math.min(totalPages, 5))].map((_, i) => {
+                  let pageNumber;
+                  if (totalPages <= 5) {
+                    pageNumber = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNumber = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNumber = totalPages - 4 + i;
+                  } else {
+                    pageNumber = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <PaginationItem key={pageNumber}>
+                      <PaginationLink
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCurrentPage(pageNumber);
+                        }}
+                        isActive={currentPage === pageNumber}
+                      >
+                        {pageNumber}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                })}
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+                    }}
+                    className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

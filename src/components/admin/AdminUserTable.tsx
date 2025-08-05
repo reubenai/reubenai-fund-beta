@@ -6,7 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, UserPlus, Mail, Shield, Building } from 'lucide-react';
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from '@/components/ui/pagination';
+import { Search, UserPlus, Mail, Shield, Building, ArrowUpDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Profile {
@@ -48,18 +56,50 @@ export function AdminUserTable({
   const [roleFilter, setRoleFilter] = useState('all');
   const [orgFilter, setOrgFilter] = useState('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [sortField, setSortField] = useState<'email' | 'role' | 'created_at'>('email');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [pageSize, setPageSize] = useState(25);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const filteredProfiles = profiles.filter(profile => {
-    const matchesSearch = 
-      profile.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      `${profile.first_name} ${profile.last_name}`.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesRole = roleFilter === 'all' || profile.role === roleFilter;
-    
-    const matchesOrg = orgFilter === 'all' || profile.organization_id === orgFilter;
+  const filteredProfiles = profiles
+    .filter(profile => {
+      const matchesSearch = 
+        profile.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        `${profile.first_name} ${profile.last_name}`.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesRole = roleFilter === 'all' || profile.role === roleFilter;
+      
+      const matchesOrg = orgFilter === 'all' || profile.organization_id === orgFilter;
 
-    return matchesSearch && matchesRole && matchesOrg;
-  });
+      return matchesSearch && matchesRole && matchesOrg;
+    })
+    .sort((a, b) => {
+      const aValue = a[sortField] || '';
+      const bValue = b[sortField] || '';
+      
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc' 
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+      
+      return 0;
+    });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredProfiles.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedProfiles = filteredProfiles.slice(startIndex, startIndex + pageSize);
+
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1);
+  };
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
@@ -124,11 +164,17 @@ export function AdminUserTable({
             <Input
               placeholder="Search users..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="pl-9 border-0 bg-muted/30"
             />
           </div>
-          <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <Select value={roleFilter} onValueChange={(value) => {
+            setRoleFilter(value);
+            setCurrentPage(1);
+          }}>
             <SelectTrigger className="w-full sm:w-[150px] border-0 bg-muted/30">
               <SelectValue placeholder="Filter by role" />
             </SelectTrigger>
@@ -141,7 +187,10 @@ export function AdminUserTable({
               <SelectItem value="viewer">Viewer</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={orgFilter} onValueChange={setOrgFilter}>
+          <Select value={orgFilter} onValueChange={(value) => {
+            setOrgFilter(value);
+            setCurrentPage(1);
+          }}>
             <SelectTrigger className="w-full sm:w-[200px] border-0 bg-muted/30">
               <SelectValue placeholder="Filter by org" />
             </SelectTrigger>
@@ -152,6 +201,25 @@ export function AdminUserTable({
               ))}
             </SelectContent>
           </Select>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Show:</span>
+            <Select 
+              value={pageSize.toString()} 
+              onValueChange={(value) => {
+                setPageSize(parseInt(value));
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-20 border-0 bg-muted/30">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Bulk Actions */}
@@ -174,6 +242,10 @@ export function AdminUserTable({
             </Button>
           </div>
         )}
+
+        <div className="text-sm text-muted-foreground">
+          Showing {paginatedProfiles.length} of {filteredProfiles.length} users
+        </div>
       </CardHeader>
 
       <CardContent>
@@ -184,10 +256,10 @@ export function AdminUserTable({
                 <TableHead className="w-12">
                   <input
                     type="checkbox"
-                    checked={selectedUsers.length === filteredProfiles.length && filteredProfiles.length > 0}
+                    checked={selectedUsers.length === paginatedProfiles.length && paginatedProfiles.length > 0}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedUsers(filteredProfiles.map(p => p.user_id));
+                        setSelectedUsers(paginatedProfiles.map(p => p.user_id));
                       } else {
                         setSelectedUsers([]);
                       }
@@ -195,15 +267,45 @@ export function AdminUserTable({
                     className="rounded"
                   />
                 </TableHead>
-                <TableHead>User</TableHead>
-                <TableHead>Role</TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleSort('email')}
+                    className="h-8 p-0 hover:bg-transparent font-medium"
+                  >
+                    User
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleSort('role')}
+                    className="h-8 p-0 hover:bg-transparent font-medium"
+                  >
+                    Role
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
                 <TableHead>Organization</TableHead>
-                <TableHead>Joined</TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleSort('created_at')}
+                    className="h-8 p-0 hover:bg-transparent font-medium"
+                  >
+                    Joined
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProfiles.map((profile) => (
+              {paginatedProfiles.map((profile) => (
                 <TableRow key={profile.id} className="hover:bg-muted/20">
                   <TableCell>
                     <input
@@ -297,6 +399,65 @@ export function AdminUserTable({
           </Table>
         </div>
         
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center mt-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage > 1) setCurrentPage(prev => prev - 1);
+                    }}
+                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                  />
+                </PaginationItem>
+                
+                {[...Array(Math.min(totalPages, 5))].map((_, i) => {
+                  let pageNumber;
+                  if (totalPages <= 5) {
+                    pageNumber = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNumber = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNumber = totalPages - 4 + i;
+                  } else {
+                    pageNumber = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <PaginationItem key={pageNumber}>
+                      <PaginationLink
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCurrentPage(pageNumber);
+                        }}
+                        isActive={currentPage === pageNumber}
+                      >
+                        {pageNumber}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                })}
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
+                    }}
+                    className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
+
         {filteredProfiles.length === 0 && (
           <div className="text-center py-8">
             <p className="text-muted-foreground">No users found matching your filters.</p>

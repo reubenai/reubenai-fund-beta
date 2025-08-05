@@ -1,9 +1,18 @@
-import { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from '@/components/ui/pagination';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useFund } from '@/contexts/FundContext';
@@ -20,7 +29,10 @@ import {
   FileText,
   Target,
   Calendar,
-  AlertTriangle
+  AlertTriangle,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 
 interface ActivityEvent {
@@ -49,6 +61,17 @@ interface ActivityFilters {
   search: string;
 }
 
+interface SortConfig {
+  field: 'occurred_at' | 'priority' | 'activity_type' | 'title';
+  direction: 'asc' | 'desc';
+}
+
+interface PaginationConfig {
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
 export function EnhancedAdminActivityFeed() {
   const [activities, setActivities] = useState<ActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +81,15 @@ export function EnhancedAdminActivityFeed() {
     activityType: 'all',
     priority: 'all',
     search: ''
+  });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    field: 'occurred_at',
+    direction: 'desc'
+  });
+  const [pagination, setPagination] = useState<PaginationConfig>({
+    page: 1,
+    pageSize: 25,
+    total: 0
   });
   const { isSuperAdmin, profile } = useUserRole();
   const { funds } = useFund();
@@ -82,19 +114,66 @@ export function EnhancedAdminActivityFeed() {
 
   useEffect(() => {
     fetchEnhancedActivities();
-  }, [filters, isSuperAdmin]);
+  }, [filters, sortConfig, pagination.page, pagination.pageSize, isSuperAdmin]);
 
   const fetchEnhancedActivities = async () => {
     try {
       setLoading(true);
       
+      // First, get the total count for pagination
+      let countQuery = supabase
+        .from('activity_events')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_visible', true);
+
+      // Apply the same filters for count
+      if (filters.timeRange !== 'all') {
+        const hours = {
+          '1h': 1,
+          '24h': 24,
+          '7d': 168,
+          '30d': 720
+        }[filters.timeRange] || 24;
+        
+        const threshold = new Date();
+        threshold.setHours(threshold.getHours() - hours);
+        countQuery = countQuery.gte('occurred_at', threshold.toISOString());
+      }
+
+      if (filters.fundId !== 'all') {
+        countQuery = countQuery.eq('fund_id', filters.fundId);
+      } else if (!isSuperAdmin && profile?.organization_id) {
+        const orgFunds = funds?.map(f => f.id) || [];
+        if (orgFunds.length > 0) {
+          countQuery = countQuery.in('fund_id', orgFunds);
+        }
+      }
+
+      if (filters.activityType !== 'all') {
+        countQuery = countQuery.eq('activity_type', filters.activityType as any);
+      }
+
+      if (filters.priority !== 'all') {
+        countQuery = countQuery.eq('priority', filters.priority as any);
+      }
+
+      if (filters.search) {
+        countQuery = countQuery.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+      }
+
+      const { count } = await countQuery;
+
+      // Now get the actual data with pagination and sorting
       let query = supabase
         .from('activity_events')
-        .select('*')
+        .select(`
+          *,
+          fund:funds(name, organization_id)
+        `)
         .eq('is_visible', true)
-        .order('occurred_at', { ascending: false });
+        .order(sortConfig.field, { ascending: sortConfig.direction === 'asc' });
 
-      // Apply time range filter
+      // Apply the same filters
       if (filters.timeRange !== 'all') {
         const hours = {
           '1h': 1,
@@ -108,39 +187,37 @@ export function EnhancedAdminActivityFeed() {
         query = query.gte('occurred_at', threshold.toISOString());
       }
 
-      // Apply fund filter
       if (filters.fundId !== 'all') {
         query = query.eq('fund_id', filters.fundId);
       } else if (!isSuperAdmin && profile?.organization_id) {
-        // Non-super admins see only their organization's activities
         const orgFunds = funds?.map(f => f.id) || [];
         if (orgFunds.length > 0) {
           query = query.in('fund_id', orgFunds);
         }
       }
 
-          // Apply activity type filter
-          if (filters.activityType !== 'all') {
-            query = query.eq('activity_type', filters.activityType as any);
-          }
+      if (filters.activityType !== 'all') {
+        query = query.eq('activity_type', filters.activityType as any);
+      }
 
-          // Apply priority filter
-          if (filters.priority !== 'all') {
-            query = query.eq('priority', filters.priority as any);
-          }
+      if (filters.priority !== 'all') {
+        query = query.eq('priority', filters.priority as any);
+      }
 
-      // Apply search filter
       if (filters.search) {
         query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
       }
 
-      // Limit results for performance
-      query = query.limit(100);
+      // Apply pagination
+      const offset = (pagination.page - 1) * pagination.pageSize;
+      query = query.range(offset, offset + pagination.pageSize - 1);
 
       const { data, error } = await query;
 
       if (error) throw error;
-      setActivities((data || []) as ActivityEvent[]);
+      
+      setActivities((data || []) as any[]);
+      setPagination(prev => ({ ...prev, total: count || 0 }));
     } catch (error) {
       console.error('Error fetching enhanced activities:', error);
     } finally {
@@ -224,7 +301,24 @@ export function EnhancedAdminActivityFeed() {
       priority: 'all',
       search: ''
     });
+    setPagination(prev => ({ ...prev, page: 1 }));
   };
+
+  const handleSort = (field: SortConfig['field']) => {
+    setSortConfig(prev => ({
+      field,
+      direction: prev.field === field && prev.direction === 'desc' ? 'asc' : 'desc'
+    }));
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const getSortIcon = (field: SortConfig['field']) => {
+    if (sortConfig.field !== field) return ArrowUpDown;
+    return sortConfig.direction === 'asc' ? ArrowUp : ArrowDown;
+  };
+
+  const totalPages = Math.ceil(pagination.total / pagination.pageSize);
+  const paginatedActivities = activities;
 
   // Get unique activity types for filter
   const activityTypes = Array.from(new Set(activities.map(a => a.activity_type)));
@@ -343,84 +437,232 @@ export function EnhancedAdminActivityFeed() {
         )}
       </CardHeader>
 
-      <CardContent>
-        {loading ? (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-muted rounded animate-pulse" />
-                  <div className="h-3 bg-muted rounded w-1/2 animate-pulse" />
-                </div>
-              </div>
-            ))}
+      <CardContent className="space-y-4">
+        {/* Page Size Selector */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Show:</span>
+            <Select 
+              value={pagination.pageSize.toString()} 
+              onValueChange={(value) => {
+                setPagination(prev => ({ ...prev, pageSize: parseInt(value), page: 1 }));
+              }}
+            >
+              <SelectTrigger className="w-20 h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-muted-foreground">
+              entries ({pagination.total} total)
+            </span>
           </div>
-        ) : activities.length === 0 ? (
-          <div className="text-center py-8">
-            <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-            <p className="text-muted-foreground">No activities found</p>
-            <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {activities.map((activity) => {
-              const IconComponent = getActivityIcon(activity.activity_type, activity.is_system_event);
-              return (
-                <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/20 transition-colors">
-                  <div className={`w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center flex-shrink-0`}>
-                    <IconComponent className={`h-4 w-4 ${getActivityColor(activity.activity_type, activity.priority)}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium truncate">{activity.title}</p>
-                        <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
-                        
-                        <div className="flex items-center gap-2 mt-2 flex-wrap">
-                          <Badge variant="outline" className={getPriorityColor(activity.priority)}>
-                            {activity.priority}
-                          </Badge>
-                          
-                          {activity.fund && (
-                            <Badge variant="outline" className="bg-secondary/10 text-secondary border-secondary/20">
-                              {activity.fund.name}
-                            </Badge>
-                          )}
-                          
-                          {activity.is_system_event && (
-                            <Badge variant="outline" className="bg-muted text-muted-foreground border-border">
-                              System
-                            </Badge>
-                          )}
-                          
-                          {activity.context_data?.cross_organization && (
-                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                              Cross-Org
-                            </Badge>
-                          )}
+        </div>
+
+        {/* Activities Table */}
+        <div className="rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/20">
+                <TableHead className="w-12"></TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleSort('title')}
+                    className="h-8 p-0 hover:bg-transparent font-medium"
+                  >
+                    Activity
+                    {getSortIcon('title') && React.createElement(getSortIcon('title'), { className: 'ml-2 h-4 w-4' })}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleSort('activity_type')}
+                    className="h-8 p-0 hover:bg-transparent font-medium"
+                  >
+                    Type
+                    {getSortIcon('activity_type') && React.createElement(getSortIcon('activity_type'), { className: 'ml-2 h-4 w-4' })}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleSort('priority')}
+                    className="h-8 p-0 hover:bg-transparent font-medium"
+                  >
+                    Priority
+                    {getSortIcon('priority') && React.createElement(getSortIcon('priority'), { className: 'ml-2 h-4 w-4' })}
+                  </Button>
+                </TableHead>
+                <TableHead>Fund</TableHead>
+                <TableHead>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleSort('occurred_at')}
+                    className="h-8 p-0 hover:bg-transparent font-medium"
+                  >
+                    When
+                    {getSortIcon('occurred_at') && React.createElement(getSortIcon('occurred_at'), { className: 'ml-2 h-4 w-4' })}
+                  </Button>
+                </TableHead>
+                <TableHead>Tags</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                [...Array(pagination.pageSize)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><div className="w-8 h-8 bg-muted rounded-full animate-pulse" /></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
+                  </TableRow>
+                ))
+              ) : paginatedActivities.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground">No activities found</p>
+                    <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters</p>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedActivities.map((activity) => {
+                  const IconComponent = getActivityIcon(activity.activity_type, activity.is_system_event);
+                  return (
+                    <TableRow key={activity.id} className="hover:bg-muted/20">
+                      <TableCell>
+                        <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center flex-shrink-0">
+                          <IconComponent className={`h-4 w-4 ${getActivityColor(activity.activity_type, activity.priority)}`} />
                         </div>
-                      </div>
-                      
-                      <div className="text-right flex-shrink-0 ml-4">
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium text-sm">{activity.title}</p>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{activity.description}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {activity.activity_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={getPriorityColor(activity.priority)}>
+                          {activity.priority}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {activity.fund && (
+                          <Badge variant="outline" className="bg-secondary/10 text-secondary border-secondary/20 text-xs">
+                            {activity.fund.name}
+                          </Badge>
+                        )}
+                        {activity.is_system_event && (
+                          <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs ml-1">
+                            System
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <span className="text-xs text-muted-foreground">
                           {formatTimeAgo(activity.occurred_at)}
                         </span>
+                      </TableCell>
+                      <TableCell>
                         {activity.tags && activity.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1 justify-end">
+                          <div className="flex flex-wrap gap-1">
                             {activity.tags.slice(0, 2).map((tag, index) => (
-                              <span key={index} className="text-xs bg-muted px-1 rounded">
+                              <span key={index} className="text-xs bg-muted px-1 py-0.5 rounded">
                                 {tag}
                               </span>
                             ))}
+                            {activity.tags.length > 2 && (
+                              <span className="text-xs text-muted-foreground">+{activity.tags.length - 2}</span>
+                            )}
                           </div>
                         )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (pagination.page > 1) {
+                        setPagination(prev => ({ ...prev, page: prev.page - 1 }));
+                      }
+                    }}
+                    className={pagination.page === 1 ? 'pointer-events-none opacity-50' : ''}
+                  />
+                </PaginationItem>
+                
+                {[...Array(Math.min(totalPages, 5))].map((_, i) => {
+                  let pageNumber;
+                  if (totalPages <= 5) {
+                    pageNumber = i + 1;
+                  } else if (pagination.page <= 3) {
+                    pageNumber = i + 1;
+                  } else if (pagination.page >= totalPages - 2) {
+                    pageNumber = totalPages - 4 + i;
+                  } else {
+                    pageNumber = pagination.page - 2 + i;
+                  }
+                  
+                  return (
+                    <PaginationItem key={pageNumber}>
+                      <PaginationLink
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setPagination(prev => ({ ...prev, page: pageNumber }));
+                        }}
+                        isActive={pagination.page === pageNumber}
+                      >
+                        {pageNumber}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                })}
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (pagination.page < totalPages) {
+                        setPagination(prev => ({ ...prev, page: prev.page + 1 }));
+                      }
+                    }}
+                    className={pagination.page === totalPages ? 'pointer-events-none opacity-50' : ''}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           </div>
         )}
       </CardContent>
