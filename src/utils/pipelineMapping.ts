@@ -41,18 +41,40 @@ const STATUS_TO_DISPLAY_NAME: Record<DealStatus, string> = {
  * Convert pipeline stage name to database enum value
  */
 export function stageNameToStatus(stageName: string): DealStatus {
+  console.log('=== STAGE MAPPING DEBUG ===');
+  console.log('Input stage name:', `"${stageName}"`);
+  console.log('Input length:', stageName.length);
+  console.log('Input trimmed:', `"${stageName.trim()}"`);
+  
+  // Clean the input
+  const cleanStage = stageName.trim();
+  const lowerStage = cleanStage.toLowerCase();
+  
+  console.log('Available mappings:', Object.keys(STAGE_NAME_TO_STATUS));
+  
   // Try exact match first (case insensitive)
-  const exactMatch = STAGE_NAME_TO_STATUS[stageName.toLowerCase()];
-  if (exactMatch) return exactMatch;
+  const exactMatch = STAGE_NAME_TO_STATUS[lowerStage];
+  if (exactMatch) {
+    console.log('✅ Exact match found:', lowerStage, '->', exactMatch);
+    return exactMatch;
+  }
   
   // Try normalized match (spaces to underscores)
-  const normalizedName = stageName.toLowerCase().replace(/\s+/g, '_');
+  const normalizedName = lowerStage.replace(/\s+/g, '_');
   const normalizedMatch = STAGE_NAME_TO_STATUS[normalizedName];
-  if (normalizedMatch) return normalizedMatch;
+  if (normalizedMatch) {
+    console.log('✅ Normalized match found:', normalizedName, '->', normalizedMatch);
+    return normalizedMatch;
+  }
   
-  // Log unmatched stage names for debugging
-  console.warn(`No mapping found for stage: "${stageName}". Using 'sourced' as fallback.`);
-  return 'sourced';
+  // Log detailed failure information
+  console.error('❌ No mapping found for stage:', `"${cleanStage}"`);
+  console.error('Tried exact:', `"${lowerStage}"`);
+  console.error('Tried normalized:', `"${normalizedName}"`);
+  console.error('Available keys:', Object.keys(STAGE_NAME_TO_STATUS));
+  
+  // Don't use fallback - throw error instead
+  throw new Error(`No valid mapping found for stage: "${cleanStage}"`);
 }
 
 /**

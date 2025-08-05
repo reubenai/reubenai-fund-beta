@@ -5,7 +5,7 @@ import { Database } from '@/integrations/supabase/types';
 import { useActivityTracking } from './useActivityTracking';
 import { usePipelineStages } from './usePipelineStages';
 import { useQueryCache } from './useQueryCache';
-import { stageNameToStatus, statusToDisplayName, createStageKey, stageKeyToStatus } from '@/utils/pipelineMapping';
+import { stageNameToStatus, statusToDisplayName, createStageKey, stageKeyToStatus, isValidDealStatus } from '@/utils/pipelineMapping';
 
 export type Deal = Database['public']['Tables']['deals']['Row'] & {
   notes_count?: number;
@@ -98,62 +98,111 @@ export const usePipelineDeals = (fundId?: string) => {
 
   const moveDeal = useCallback(async (dealId: string, fromStage: string, toStage: string) => {
     try {
-      console.log('Moving deal:', { dealId, fromStage, toStage });
+      console.log('=== MOVE DEAL DEBUG ===');
+      console.log('Raw parameters:', { dealId, fromStage, toStage });
+      console.log('Stage names trimmed:', { 
+        fromStage: fromStage.trim(), 
+        toStage: toStage.trim() 
+      });
+      
+      // Trim whitespace from stage names
+      const cleanFromStage = fromStage.trim();
+      const cleanToStage = toStage.trim();
       
       // Get deal info for activity logging
-      const deal = deals[fromStage]?.find(d => d.id === dealId);
+      const deal = deals[cleanFromStage]?.find(d => d.id === dealId);
+      console.log('Found deal:', deal ? `${deal.company_name} (${deal.status})` : 'NOT FOUND');
       
       // Convert stage names to database status values
-      const toStageStatus = stageNameToStatus(toStage);
-      console.log('Mapped toStage:', toStage, 'to status:', toStageStatus);
+      const toStageStatus = stageNameToStatus(cleanToStage);
+      console.log('Stage mapping result:', { 
+        inputStage: cleanToStage, 
+        mappedStatus: toStageStatus,
+        isValid: isValidDealStatus(toStageStatus)
+      });
+      
+      // Validate the mapped status
+      if (!isValidDealStatus(toStageStatus)) {
+        throw new Error(`Invalid deal status mapped: ${toStageStatus} from stage: ${cleanToStage}`);
+      }
 
       // Optimistic update
       setDeals(prev => {
         const newDeals = { ...prev };
-        const dealToMove = newDeals[fromStage]?.find(d => d.id === dealId);
+        const dealToMove = newDeals[cleanFromStage]?.find(d => d.id === dealId);
         
         if (dealToMove) {
-          newDeals[fromStage] = newDeals[fromStage].filter(d => d.id !== dealId);
-          newDeals[toStage] = [...(newDeals[toStage] || []), { 
+          console.log('Performing optimistic update:', {
+            from: cleanFromStage,
+            to: cleanToStage,
+            dealName: dealToMove.company_name
+          });
+          
+          newDeals[cleanFromStage] = newDeals[cleanFromStage].filter(d => d.id !== dealId);
+          newDeals[cleanToStage] = [...(newDeals[cleanToStage] || []), { 
             ...dealToMove, 
             status: toStageStatus
           }];
+        } else {
+          console.error('Deal not found for optimistic update');
         }
         
         return newDeals;
       });
 
       // Update database using the correct enum value
-      const { error } = await supabase
+      console.log('Updating database with:', {
+        dealId,
+        status: toStageStatus,
+        fundId
+      });
+      
+      const { data, error } = await supabase
         .from('deals')
         .update({ 
           status: toStageStatus,
           updated_at: new Date().toISOString()
         })
-        .eq('id', dealId);
+        .eq('id', dealId)
+        .select('id, company_name, status');
 
       if (error) {
         console.error('Database update error:', error);
-        throw error;
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw new Error(`Database update failed: ${error.message}`);
       }
+      
+      console.log('Database update successful:', data);
 
       // Log activity
       if (deal && fundId) {
-        await logDealStageChanged(dealId, deal.company_name, fromStage, toStage);
+        await logDealStageChanged(dealId, deal.company_name, cleanFromStage, cleanToStage);
       }
 
+      console.log('=== MOVE DEAL SUCCESS ===');
       toast({
         title: "Deal moved",
-        description: `Deal moved to ${toStage}`,
+        description: `${deal?.company_name || 'Deal'} moved to ${cleanToStage}`,
       });
     } catch (error) {
+      console.error('=== MOVE DEAL ERROR ===');
       console.error('Error moving deal:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
       toast({
         title: "Error",
-        description: "Failed to move deal",
+        description: `Failed to move deal: ${errorMessage}`,
         variant: "destructive"
       });
+      
       // Revert optimistic update
+      console.log('Reverting optimistic update...');
       fetchDeals();
     }
   }, [stages, toast, fetchDeals, deals, fundId, logDealStageChanged]);
