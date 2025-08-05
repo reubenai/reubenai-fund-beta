@@ -34,7 +34,6 @@ import { useContentValidation } from '@/hooks/useContentValidation';
 import { DataQualityIndicator } from '@/components/ui/data-quality-indicator';
 import MemoVersionHistoryModal from './MemoVersionHistoryModal';
 import { MemoPublishingControls } from './MemoPublishingControls';
-import { PDFTestingModal } from './PDFTestingModal';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Deal {
@@ -387,10 +386,8 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 ) : (
                   <Download className="w-4 h-4" />
                 )}
-                Export PDF
+                Preview PDF
               </Button>
-              
-              <PDFTestingModal />
             </div>
           </div>
         </DialogHeader>

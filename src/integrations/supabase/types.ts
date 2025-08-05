@@ -1702,7 +1702,15 @@ export type Database = {
           status?: string | null
           time_allocated?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ic_session_deals_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "ic_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ic_sessions: {
         Row: {
@@ -1795,7 +1803,15 @@ export type Database = {
           vote_summary?: Json | null
           voting_deadline?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ic_voting_decisions_memo_id_fkey"
+            columns: ["memo_id"]
+            isOneToOne: false
+            referencedRelation: "ic_memos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       investment_outcomes: {
         Row: {

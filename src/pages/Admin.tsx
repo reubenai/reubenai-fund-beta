@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { AdminUserTable } from '@/components/admin/AdminUserTable';
+import { EnhancedAdminFundTable } from '@/components/admin/EnhancedAdminFundTable';
 import { EnhancedAdminActivityFeed } from '@/components/admin/EnhancedAdminActivityFeed';
 import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModal';
 import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
@@ -604,193 +605,16 @@ export default function Admin() {
             </TabsContent>
 
             <TabsContent value="funds" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create New Fund</CardTitle>
-              <CardDescription>Create a fund for any organization</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fund-name">Fund Name</Label>
-                  <Input
-                    id="fund-name"
-                    value={newFund.name}
-                    onChange={(e) => setNewFund({ ...newFund, name: e.target.value })}
-                    placeholder="Fund name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fund-org">Organization</Label>
-                  <Select
-                    value={newFund.organization_id}
-                    onValueChange={(value) => setNewFund({ ...newFund, organization_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select organization" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {organizations.map((org) => (
-                        <SelectItem key={org.id} value={org.id}>
-                          {org.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fund-type">Fund Type</Label>
-                  <Select
-                    value={newFund.fund_type}
-                    onValueChange={(value: 'venture_capital' | 'private_equity') => 
-                      setNewFund({ ...newFund, fund_type: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="venture_capital">Venture Capital</SelectItem>
-                      <SelectItem value="private_equity">Private Equity</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fund-size">Target Size (Optional)</Label>
-                  <Input
-                    id="fund-size"
-                    type="number"
-                    value={newFund.target_size}
-                    onChange={(e) => setNewFund({ ...newFund, target_size: e.target.value })}
-                    placeholder="10000000"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={createFund} className="w-full">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Fund
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Existing Funds</CardTitle>
-                  <CardDescription>All funds across organizations</CardDescription>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowArchivedFunds(!showArchivedFunds)}
-                  className="flex items-center gap-2"
-                >
-                  <Filter className="h-4 w-4" />
-                  {showArchivedFunds ? 'Hide Archived' : 'Show Archived'}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {funds
-                  .filter(fund => showArchivedFunds || fund.is_active)
-                  .map((fund) => (
-                  <div key={fund.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{fund.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {organizations.find(o => o.id === fund.organization_id)?.name || 'Unknown Organization'}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant={fund.is_active ? 'default' : 'destructive'}>
-                          {fund.is_active ? 'Active' : 'Archived'}
-                        </Badge>
-                        <Badge variant="outline">{fund.fund_type.replace('_', ' ')}</Badge>
-                        {fund.target_size && (
-                          <Badge variant="outline">
-                            {fund.currency} {fund.target_size.toLocaleString()}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setThesisConfigFund(fund)}
-                        className="text-primary hover:text-primary"
-                      >
-                        <Target className="h-4 w-4 mr-2" />
-                        Configure Thesis
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => navigate(`/pipeline?fund=${fund.id}`)}
-                        className="text-primary hover:text-primary"
-                      >
-                        <Kanban className="h-4 w-4 mr-2" />
-                        View Pipeline
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setBulkUploadFund(fund)}
-                        className="text-primary hover:text-primary"
-                      >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Bulk Upload
-                      </Button>
-                      {fund.is_active ? (
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                              <Archive className="h-4 w-4 mr-2" />
-                              Archive
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Archive Fund</DialogTitle>
-                              <DialogDescription>
-                                Are you sure you want to archive "{fund.name}"? This will make it unavailable for new deals and hide it from normal fund selection.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="flex justify-end gap-2 mt-6">
-                              <DialogTrigger asChild>
-                                <Button variant="outline">Cancel</Button>
-                              </DialogTrigger>
-                              <DialogTrigger asChild>
-                                <Button 
-                                  variant="destructive"
-                                  onClick={() => archiveFund(fund.id, fund.name)}
-                                >
-                                  Archive Fund
-                                </Button>
-                              </DialogTrigger>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      ) : (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => unarchiveFund(fund.id, fund.name)}
-                          className="text-primary hover:text-primary"
-                        >
-                          <ArchiveRestore className="h-4 w-4 mr-2" />
-                          Unarchive
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-            </Card>
+              <EnhancedAdminFundTable
+                funds={funds}
+                organizations={organizations}
+                onCreateFund={() => {/* Will be handled by the table component itself */}}
+                onConfigureThesis={(fund) => setThesisConfigFund(fund as Fund)}
+                onBulkUpload={(fund) => setBulkUploadFund(fund as Fund)}
+                onArchiveFund={(fundId, fundName) => archiveFund(fundId, fundName)}
+                onUnarchiveFund={(fundId, fundName) => unarchiveFund(fundId, fundName)}
+                onRefresh={fetchData}
+              />
             </TabsContent>
 
             <TabsContent value="deals" className="space-y-6">
