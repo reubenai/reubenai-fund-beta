@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { AdminUserTable } from '@/components/admin/AdminUserTable';
-import { AdminActivityFeed } from '@/components/admin/AdminActivityFeed';
+import { EnhancedAdminActivityFeed } from '@/components/admin/EnhancedAdminActivityFeed';
 import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModal';
 import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
 import { ComprehensiveProductionReadiness } from '@/components/admin/ComprehensiveProductionReadiness';
@@ -805,7 +805,7 @@ export default function Admin() {
         
         {/* Activity Feed Sidebar */}
         <div className="lg:col-span-1">
-          <AdminActivityFeed />
+          <EnhancedAdminActivityFeed />
         </div>
       </div>
 
