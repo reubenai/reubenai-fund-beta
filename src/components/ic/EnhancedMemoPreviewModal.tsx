@@ -245,14 +245,14 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl h-[95vh] p-0 overflow-hidden">
-        <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-primary/5 to-primary/10 shrink-0">
+      <DialogContent className="max-w-[95vw] h-[95vh] flex flex-col overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-primary/5 to-primary/10 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <DialogTitle className="text-xl font-semibold">
                 Investment Committee Memo
               </DialogTitle>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="outline" className="bg-primary/10 text-primary">
                   {deal.company_name}
                 </Badge>
@@ -295,7 +295,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                </div>
              </div>
              
-             <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
               {memoState.isGenerating && (
                 <Button
                   variant="outline"
@@ -395,9 +395,9 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
           </div>
         </DialogHeader>
 
-        <div className="flex h-full overflow-hidden">
+        <div className="flex flex-1 overflow-hidden min-h-0">
           {/* Sidebar Navigation */}
-          <div className="w-80 border-r bg-muted/30 p-4 overflow-y-auto shrink-0">
+          <div className="w-80 border-r bg-muted/30 p-4 overflow-y-auto flex-shrink-0">
             <h3 className="font-semibold text-sm text-muted-foreground mb-4 uppercase tracking-wide">
               Memo Sections
             </h3>
@@ -438,7 +438,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col overflow-hidden min-h-0 min-w-0">
             {/* Collapsible Data Quality Indicator */}
             {contentValidation && (
               <Collapsible open={showDataQuality} onOpenChange={setShowDataQuality}>
@@ -497,7 +497,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 </div>
               </div>
             ) : (
-              <div className="p-6 overflow-y-auto flex-1">
+              <div className="p-6 overflow-y-auto flex-1 min-h-0">
                 {MEMO_SECTIONS.map((section) => {
                   if (activeSection !== section.key) return null;
                   

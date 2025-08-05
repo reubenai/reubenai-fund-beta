@@ -115,7 +115,7 @@ All colors MUST be HSL. Emerald green primary with orange accent.
   }
   
   .text-gradient {
-    @apply bg-gradient-to-r from-primary to-primary-muted bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent;
   }
   
   .shadow-elegant {
