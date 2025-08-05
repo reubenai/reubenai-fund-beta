@@ -261,7 +261,7 @@ export function AppSidebar() {
 
         {/* Administration & Support */}
         <SidebarGroup className="px-4 py-2">
-          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 text-left">
+          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 justify-start text-left">
             System
           </SidebarGroupLabel>
           <SidebarGroupContent>

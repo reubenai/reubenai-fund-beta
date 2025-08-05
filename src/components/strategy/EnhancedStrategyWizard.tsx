@@ -63,7 +63,7 @@ const GEOGRAPHIC_REGIONS = {
   },
   'Asia Pacific': {
     countries: ['Singapore', 'Australia', 'Japan', 'South Korea', 'China', 'India', 'Hong Kong', 'Taiwan', 'Thailand', 'Malaysia', 'Indonesia', 'Vietnam', 'Philippines', 'New Zealand', 'Bangladesh', 'Sri Lanka', 'Cambodia', 'Laos', 'Myanmar'],
-    ecosystems: ['Singapore', 'Sydney', 'Melbourne', 'Tokyo', 'Seoul', 'Beijing', 'Shanghai', 'Shenzhen', 'Bangalore', 'Mumbai', 'Delhi', 'Hong Kong', 'Taipei', 'Bangkok', 'Kuala Lumpur', 'Jakarta', 'Ho Chi Minh City', 'Manila', 'Auckland'],
+    ecosystems: ['Singapore', 'Sydney', 'Melbourne', 'Perth', 'Tokyo', 'Seoul', 'Beijing', 'Shanghai', 'Shenzhen', 'Bangalore', 'Mumbai', 'Delhi', 'Hong Kong', 'Taipei', 'Bangkok', 'Kuala Lumpur', 'Jakarta', 'Ho Chi Minh City', 'Manila', 'Auckland'],
     jurisdictions: {
       'Australia': ['New South Wales', 'Victoria', 'Queensland', 'Western Australia', 'South Australia'],
       'China': ['Beijing', 'Shanghai', 'Shenzhen', 'Guangzhou', 'Hangzhou', 'Chengdu', 'Nanjing'],

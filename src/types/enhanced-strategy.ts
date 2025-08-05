@@ -216,7 +216,7 @@ export const STAGE_OPTIONS = VC_STAGE_OPTIONS;
 export const GEOGRAPHY_OPTIONS = [
   'North America', 'United States', 'Canada', 'Europe', 'United Kingdom',
   'Germany', 'France', 'Asia Pacific', 'China', 'India', 'Japan',
-  'Southeast Asia', 'Australia', 'Latin America', 'Middle East', 'Africa'
+  'Southeast Asia', 'Australia', 'Western Australia', 'Latin America', 'Middle East', 'Africa'
 ];
 
 // Default deal thresholds
