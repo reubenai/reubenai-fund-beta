@@ -45,7 +45,7 @@ export const EnhancedKanbanView: React.FC<EnhancedKanbanViewProps> = ({
           <EnhancedKanbanColumn
             key={stage.id}
             stage={stage}
-            deals={deals[stage.name.toLowerCase().replace(/\s+/g, '_')] || []}
+            deals={deals[stage.name] || []}
             onDealClick={onDealClick}
             onStageEdit={onStageEdit}
             onAddDeal={onAddDeal}

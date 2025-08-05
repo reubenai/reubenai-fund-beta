@@ -33,7 +33,7 @@ export const KanbanView: React.FC<KanbanViewProps> = ({
           <KanbanColumn
             key={stage.id}
             stage={stage}
-            deals={deals[stage.id] || []}
+            deals={deals[stage.name] || []}
             onDealClick={onDealClick}
             onStageEdit={onStageEdit}
             onAddDeal={onAddDeal}
