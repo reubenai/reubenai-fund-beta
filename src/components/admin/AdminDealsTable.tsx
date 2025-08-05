@@ -105,7 +105,10 @@ export function AdminDealsTable({ refreshTrigger, onBulkDelete, isSuperAdmin = f
 
       if (error) throw error;
 
-      setDeals(data || []);
+      setDeals((data as any[])?.map((deal: any) => ({
+        ...deal,
+        fund: deal.fund || { id: '', name: 'Unknown Fund', fund_type: '', organization: { id: '', name: 'Unknown Org' } }
+      })) || []);
     } catch (error) {
       console.error('Error fetching deals:', error);
       toast.error('Failed to fetch deals');

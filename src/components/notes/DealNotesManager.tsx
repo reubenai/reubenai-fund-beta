@@ -91,15 +91,17 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
       setLoading(true);
       const { data, error } = await supabase
         .from('deal_notes')
-        .select(`
-          *,
-          profiles:created_by(first_name, last_name, email)
-        `)
+        .select('*')
         .eq('deal_id', dealId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setNotes(data || []);
+      setNotes((data as any[])?.map((note: any) => ({
+        ...note,
+        sentiment: note.sentiment as 'positive' | 'negative' | 'neutral' || 'neutral',
+        tags: note.tags || [],
+        category: note.category || 'other'
+      })) || []);
     } catch (error) {
       console.error('Error loading notes:', error);
       toast({
@@ -130,15 +132,19 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
       const { data, error } = await supabase
         .from('deal_notes')
         .insert([noteData])
-        .select(`
-          *,
-          profiles:created_by(first_name, last_name, email)
-        `)
+        .select('*')
         .single();
 
       if (error) throw error;
 
-      setNotes(prev => [data, ...prev]);
+      const addedNote = {
+        ...data,
+        sentiment: data.sentiment as 'positive' | 'negative' | 'neutral' || 'neutral',
+        tags: data.tags || [],
+        category: data.category || 'other'
+      };
+
+      setNotes(prev => [addedNote, ...prev]);
       setNewNote('');
       setNewTags('');
       setNewCategory('');
@@ -362,12 +368,7 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
                       
                       <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
                         <User className="h-3 w-3" />
-                        <span>
-                          {(note as any).profiles 
-                            ? `${(note as any).profiles.first_name} ${(note as any).profiles.last_name}`
-                            : 'Unknown User'
-                          }
-                        </span>
+                        <span>Added by user</span>
                       </div>
                     </div>
                   </div>
