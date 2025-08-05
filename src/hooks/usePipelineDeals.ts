@@ -5,6 +5,7 @@ import { Database } from '@/integrations/supabase/types';
 import { useActivityTracking } from './useActivityTracking';
 import { usePipelineStages } from './usePipelineStages';
 import { useQueryCache } from './useQueryCache';
+import { stageNameToStatus, statusToDisplayName, createStageKey, stageKeyToStatus } from '@/utils/pipelineMapping';
 
 export type Deal = Database['public']['Tables']['deals']['Row'] & {
   notes_count?: number;
@@ -52,18 +53,17 @@ export const usePipelineDeals = (fundId?: string) => {
       // Group deals by stage and add computed fields
       const groupedDeals: Record<string, Deal[]> = {};
       stages.forEach(stage => {
-        const stageKey = stage.name.toLowerCase().replace(/\s+/g, '_');
+        const stageKey = createStageKey(stage.name);
         groupedDeals[stageKey] = [];
       });
 
       dealsWithNotes?.forEach(dealData => {
         const dealStatus = dealData.status || 'sourced';
-        // Find the matching stage by status
-        const matchingStage = stages.find(stage => 
-          stage.name.toLowerCase().replace(/\s+/g, '_') === dealStatus
-        );
+        // Find the matching stage by converting status to display name
+        const displayName = statusToDisplayName(dealStatus);
+        const matchingStage = stages.find(stage => stage.name === displayName);
         const stageKey = matchingStage 
-          ? matchingStage.name.toLowerCase().replace(/\s+/g, '_')
+          ? createStageKey(matchingStage.name)
           : dealStatus;
         
         if (!groupedDeals[stageKey]) {
@@ -96,8 +96,12 @@ export const usePipelineDeals = (fundId?: string) => {
     try {
       // Get deal info for activity logging
       const deal = deals[fromStage]?.find(d => d.id === dealId);
-      const fromStageName = stages.find(s => s.name.toLowerCase().replace(/\s+/g, '_') === fromStage)?.name || fromStage;
-      const toStageName = stages.find(s => s.name.toLowerCase().replace(/\s+/g, '_') === toStage)?.name || toStage;
+      const fromStageName = stages.find(s => createStageKey(s.name) === fromStage)?.name || fromStage;
+      const toStageName = stages.find(s => createStageKey(s.name) === toStage)?.name || toStage;
+      
+      // Convert stage names to database status values
+      const fromStageStatus = stageKeyToStatus(fromStage);
+      const toStageStatus = stageKeyToStatus(toStage);
 
       // Optimistic update
       setDeals(prev => {
@@ -108,18 +112,18 @@ export const usePipelineDeals = (fundId?: string) => {
           newDeals[fromStage] = newDeals[fromStage].filter(d => d.id !== dealId);
           newDeals[toStage] = [...(newDeals[toStage] || []), { 
             ...dealToMove, 
-            status: toStage as Database['public']['Enums']['deal_status']
+            status: toStageStatus
           }];
         }
         
         return newDeals;
       });
 
-      // Update database
+      // Update database using the correct enum value
       const { error } = await supabase
         .from('deals')
         .update({ 
-          status: toStage as Database['public']['Enums']['deal_status'],
+          status: toStageStatus,
           updated_at: new Date().toISOString()
         })
         .eq('id', dealId);

@@ -6,6 +6,7 @@ import { useDealsCache } from '@/hooks/useCache';
 import { Database } from '@/integrations/supabase/types';
 import { useActivityTracking } from './useActivityTracking';
 import { usePipelineStages } from './usePipelineStages';
+import { stageNameToStatus, statusToDisplayName, createStageKey, stageKeyToStatus } from '@/utils/pipelineMapping';
 
 export type Deal = Database['public']['Tables']['deals']['Row'] & {
   notes_count?: number;
@@ -144,12 +145,15 @@ export const useOptimizedPipelineDeals = (fundId?: string) => {
     await fetchDeals(true);
   }, [cache, fundId, fetchDeals]);
 
-  const moveDeal = useCallback(async (dealId: string, newStatus: string, newPosition?: number) => {
+  const moveDeal = useCallback(async (dealId: string, fromStage: string, toStage: string, newPosition?: number) => {
     const result = await handleAsyncError(async () => {
+      // Convert stage key to proper database status
+      const toStageStatus = stageKeyToStatus(toStage);
+      
       const { error } = await supabase
         .from('deals')
         .update({ 
-          status: newStatus as any,
+          status: toStageStatus,
           updated_at: new Date().toISOString()
         })
         .eq('id', dealId);
@@ -172,13 +176,13 @@ export const useOptimizedPipelineDeals = (fundId?: string) => {
 
         // Add to new status
         if (movedDeal) {
-          movedDeal.status = newStatus as any;
-          if (!updated[newStatus]) updated[newStatus] = [];
+          movedDeal.status = toStageStatus;
+          if (!updated[toStage]) updated[toStage] = [];
           
           if (newPosition !== undefined) {
-            updated[newStatus].splice(newPosition, 0, movedDeal);
+            updated[toStage].splice(newPosition, 0, movedDeal);
           } else {
-            updated[newStatus].unshift(movedDeal);
+            updated[toStage].unshift(movedDeal);
           }
         }
 
@@ -187,7 +191,9 @@ export const useOptimizedPipelineDeals = (fundId?: string) => {
 
       // Log activity
       if (fundId) {
-        logDealStageChanged(dealId, '', newStatus, fundId);
+        const fromStageName = stages.find(s => createStageKey(s.name) === fromStage)?.name || fromStage;
+        const toStageName = stages.find(s => createStageKey(s.name) === toStage)?.name || toStage;
+        logDealStageChanged(dealId, '', `${fromStageName} → ${toStageName}`, fundId);
       }
       
       // Invalidate cache
@@ -197,12 +203,13 @@ export const useOptimizedPipelineDeals = (fundId?: string) => {
     }, { title: 'Failed to move deal' });
 
     if (result) {
+      const toStageName = stages.find(s => createStageKey(s.name) === toStage)?.name || toStage;
       toast({
         title: 'Deal moved',
-        description: 'Deal status updated successfully',
+        description: `Deal moved to ${toStageName}`,
       });
     }
-  }, [handleAsyncError, logDealStageChanged, toast, cache, fundId]);
+  }, [handleAsyncError, logDealStageChanged, toast, cache, fundId, stages]);
 
   const addDeal = useCallback(async (dealData: Partial<Deal>) => {
     if (!fundId) return null;
