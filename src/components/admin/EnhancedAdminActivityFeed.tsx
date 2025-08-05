@@ -81,6 +81,7 @@ interface PaginationConfig {
 export function EnhancedAdminActivityFeed() {
   const [activities, setActivities] = useState<ActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<ActivityFilters>({
     timeRange: '24h',
     fundId: 'all',
@@ -225,8 +226,11 @@ export function EnhancedAdminActivityFeed() {
       
       setActivities((data || []) as any[]);
       setPagination(prev => ({ ...prev, total: count || 0 }));
+      setError(null);
     } catch (error) {
       console.error('Error fetching enhanced activities:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load activities');
+      setActivities([]);
     } finally {
       setLoading(false);
     }
@@ -539,6 +543,22 @@ export function EnhancedAdminActivityFeed() {
                     <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
                   </TableRow>
                 ))
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8">
+                    <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-2" />
+                    <p className="text-destructive font-medium">Error loading activities</p>
+                    <p className="text-sm text-muted-foreground mt-1">{error}</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={fetchEnhancedActivities}
+                      className="mt-2"
+                    >
+                      Try Again
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ) : paginatedActivities.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8">
