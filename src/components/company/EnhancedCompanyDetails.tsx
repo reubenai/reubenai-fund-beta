@@ -129,7 +129,7 @@ export function EnhancedCompanyDetails({ deal }: CompanyDetailsProps) {
       // Call the enhanced deal analysis function to get comprehensive data
       const { data, error } = await supabase.functions.invoke('enhanced-deal-analysis', {
         body: { 
-          deal_id: deal.id,
+          dealId: deal.id,
           analysis_type: 'comprehensive'
         }
       });
