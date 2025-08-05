@@ -51,6 +51,12 @@ interface ActivityEvent {
     name: string;
     organization_id: string;
   };
+  user?: {
+    email: string;
+    first_name: string | null;
+    last_name: string | null;
+    role: string;
+  };
 }
 
 interface ActivityFilters {
@@ -168,7 +174,8 @@ export function EnhancedAdminActivityFeed() {
         .from('activity_events')
         .select(`
           *,
-          fund:funds(name, organization_id)
+          fund:funds(name, organization_id),
+          user:profiles(email, first_name, last_name, role)
         `)
         .eq('is_visible', true)
         .order(sortConfig.field, { ascending: sortConfig.direction === 'asc' });
@@ -502,6 +509,7 @@ export function EnhancedAdminActivityFeed() {
                     {getSortIcon('priority') && React.createElement(getSortIcon('priority'), { className: 'ml-2 h-4 w-4' })}
                   </Button>
                 </TableHead>
+                <TableHead>User</TableHead>
                 <TableHead>Fund</TableHead>
                 <TableHead>
                   <Button 
@@ -528,11 +536,12 @@ export function EnhancedAdminActivityFeed() {
                     <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
                     <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
                     <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
+                    <TableCell><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
                   </TableRow>
                 ))
               ) : paginatedActivities.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-8">
                     <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
                     <p className="text-muted-foreground">No activities found</p>
                     <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters</p>
@@ -565,14 +574,27 @@ export function EnhancedAdminActivityFeed() {
                         </Badge>
                       </TableCell>
                       <TableCell>
+                        {activity.user ? (
+                          <div className="text-sm">
+                            <div className="font-medium text-foreground">{activity.user.email}</div>
+                            {activity.user.role && (
+                              <div className="text-xs text-muted-foreground capitalize">
+                                {activity.user.role.replace('_', ' ')}
+                              </div>
+                            )}
+                          </div>
+                        ) : activity.is_system_event ? (
+                          <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs">
+                            System
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Unknown User</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         {activity.fund && (
                           <Badge variant="outline" className="bg-secondary/10 text-secondary border-secondary/20 text-xs">
                             {activity.fund.name}
-                          </Badge>
-                        )}
-                        {activity.is_system_event && (
-                          <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs ml-1">
-                            System
                           </Badge>
                         )}
                       </TableCell>
