@@ -41,7 +41,7 @@ export const CleanKanbanView: React.FC<CleanKanbanViewProps> = ({
             <CleanKanbanColumn
               key={stage.id}
               stage={stage}
-              deals={deals[stage.name.toLowerCase().replace(/\s+/g, '_')] || []}
+              deals={deals[stage.name] || []}
               onDealClick={onDealClick}
               onStageEdit={onStageEdit}
               onStageDelete={onStageDelete}

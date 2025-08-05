@@ -50,24 +50,28 @@ export const usePipelineDeals = (fundId?: string) => {
 
       if (dealsError) throw dealsError;
 
-      // Group deals by stage and add computed fields
+      // Group deals by stage using stage names as keys
       const groupedDeals: Record<string, Deal[]> = {};
       stages.forEach(stage => {
-        const stageKey = createStageKey(stage.name);
-        groupedDeals[stageKey] = [];
+        groupedDeals[stage.name] = [];
       });
 
       dealsWithNotes?.forEach(dealData => {
         const dealStatus = dealData.status || 'sourced';
-        // Find the matching stage by converting status to display name
-        const displayName = statusToDisplayName(dealStatus);
-        const matchingStage = stages.find(stage => stage.name === displayName);
-        const stageKey = matchingStage 
-          ? createStageKey(matchingStage.name)
-          : dealStatus;
+        console.log('Processing deal:', dealData.company_name, 'status:', dealStatus);
         
-        if (!groupedDeals[stageKey]) {
-          groupedDeals[stageKey] = [];
+        // Find the matching stage by mapping deal status to stage name
+        const matchingStage = stages.find(stage => {
+          const mappedStatus = stageNameToStatus(stage.name);
+          console.log('Checking stage:', stage.name, 'mapped to:', mappedStatus, 'vs deal status:', dealStatus);
+          return mappedStatus === dealStatus;
+        });
+        
+        const stageName = matchingStage ? matchingStage.name : stages[0]?.name || 'Sourced';
+        console.log('Deal assigned to stage:', stageName);
+        
+        if (!groupedDeals[stageName]) {
+          groupedDeals[stageName] = [];
         }
         
         // Add notes count
@@ -76,7 +80,7 @@ export const usePipelineDeals = (fundId?: string) => {
           notes_count: Array.isArray(dealData.deal_notes) ? dealData.deal_notes.length : 0
         };
         
-        groupedDeals[stageKey].push(deal);
+        groupedDeals[stageName].push(deal);
       });
 
       setDeals(groupedDeals);
@@ -94,14 +98,14 @@ export const usePipelineDeals = (fundId?: string) => {
 
   const moveDeal = useCallback(async (dealId: string, fromStage: string, toStage: string) => {
     try {
+      console.log('Moving deal:', { dealId, fromStage, toStage });
+      
       // Get deal info for activity logging
       const deal = deals[fromStage]?.find(d => d.id === dealId);
-      const fromStageName = stages.find(s => createStageKey(s.name) === fromStage)?.name || fromStage;
-      const toStageName = stages.find(s => createStageKey(s.name) === toStage)?.name || toStage;
       
       // Convert stage names to database status values
-      const fromStageStatus = stageKeyToStatus(fromStage);
-      const toStageStatus = stageKeyToStatus(toStage);
+      const toStageStatus = stageNameToStatus(toStage);
+      console.log('Mapped toStage:', toStage, 'to status:', toStageStatus);
 
       // Optimistic update
       setDeals(prev => {
@@ -128,16 +132,19 @@ export const usePipelineDeals = (fundId?: string) => {
         })
         .eq('id', dealId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database update error:', error);
+        throw error;
+      }
 
       // Log activity
       if (deal && fundId) {
-        await logDealStageChanged(dealId, deal.company_name, fromStageName, toStageName);
+        await logDealStageChanged(dealId, deal.company_name, fromStage, toStage);
       }
 
       toast({
         title: "Deal moved",
-        description: `Deal moved to ${toStageName}`,
+        description: `Deal moved to ${toStage}`,
       });
     } catch (error) {
       console.error('Error moving deal:', error);
@@ -177,10 +184,13 @@ export const usePipelineDeals = (fundId?: string) => {
 
       if (error) throw error;
 
-      // Add to local state
+      // Add to local state - find the sourced stage
+      const sourcedStage = stages.find(stage => stageNameToStatus(stage.name) === 'sourced');
+      const stageName = sourcedStage ? sourcedStage.name : 'Sourced';
+      
       setDeals(prev => ({
         ...prev,
-        sourced: [...(prev.sourced || []), data]
+        [stageName]: [...(prev[stageName] || []), data]
       }));
 
       // Log activity

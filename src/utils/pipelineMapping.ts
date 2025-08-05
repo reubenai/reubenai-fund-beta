@@ -2,19 +2,28 @@ import { Database } from '@/integrations/supabase/types';
 
 export type DealStatus = Database['public']['Enums']['deal_status'];
 
-// Map pipeline stage names to database enum values
+// Map pipeline stage names to database enum values - comprehensive mapping
 const STAGE_NAME_TO_STATUS: Record<string, DealStatus> = {
+  // Core statuses
   'sourced': 'sourced',
-  'initial_review': 'screening',
-  'screening': 'screening', 
+  'screening': 'screening',
   'due_diligence': 'due_diligence',
   'investment_committee': 'investment_committee',
-  'offer_negotiation': 'approved',
   'approved': 'approved',
-  'closed': 'invested',
-  'invested': 'invested',
-  'passed': 'rejected',
   'rejected': 'rejected',
+  'invested': 'invested',
+  
+  // Alternative naming variations
+  'initial_review': 'screening',
+  'offer_negotiation': 'approved',
+  'closed': 'invested',
+  'passed': 'rejected',
+  
+  // Handle spaces and casing variations
+  'initial review': 'screening',
+  'due diligence': 'due_diligence',
+  'investment committee': 'investment_committee',
+  'offer negotiation': 'approved',
 };
 
 // Map database enum values back to display names
@@ -32,8 +41,18 @@ const STATUS_TO_DISPLAY_NAME: Record<DealStatus, string> = {
  * Convert pipeline stage name to database enum value
  */
 export function stageNameToStatus(stageName: string): DealStatus {
+  // Try exact match first (case insensitive)
+  const exactMatch = STAGE_NAME_TO_STATUS[stageName.toLowerCase()];
+  if (exactMatch) return exactMatch;
+  
+  // Try normalized match (spaces to underscores)
   const normalizedName = stageName.toLowerCase().replace(/\s+/g, '_');
-  return STAGE_NAME_TO_STATUS[normalizedName] || 'sourced';
+  const normalizedMatch = STAGE_NAME_TO_STATUS[normalizedName];
+  if (normalizedMatch) return normalizedMatch;
+  
+  // Log unmatched stage names for debugging
+  console.warn(`No mapping found for stage: "${stageName}". Using 'sourced' as fallback.`);
+  return 'sourced';
 }
 
 /**
