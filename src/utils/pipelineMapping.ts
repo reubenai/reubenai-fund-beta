@@ -29,12 +29,12 @@ const STAGE_NAME_TO_STATUS: Record<string, DealStatus> = {
 // Map database enum values back to display names
 const STATUS_TO_DISPLAY_NAME: Record<DealStatus, string> = {
   'sourced': 'Sourced',
-  'screening': 'Initial Review',
+  'screening': 'Screening',
   'due_diligence': 'Due Diligence',
   'investment_committee': 'Investment Committee',
-  'approved': 'Offer Negotiation',
-  'rejected': 'Passed',
-  'invested': 'Closed',
+  'approved': 'Approved',
+  'rejected': 'Rejected',
+  'invested': 'Invested',
 };
 
 /**
