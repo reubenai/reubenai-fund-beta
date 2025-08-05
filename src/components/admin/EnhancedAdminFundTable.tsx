@@ -14,6 +14,18 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from '@/components/ui/pagination';
+import { Checkbox } from '@/components/ui/checkbox';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from '@/components/ui/alert-dialog';
 import { 
   Database, 
   Building, 
@@ -25,7 +37,9 @@ import {
   Upload, 
   Archive,
   ArchiveRestore,
-  ExternalLink
+  ExternalLink,
+  Trash2,
+  X
 } from 'lucide-react';
 
 interface Fund {
@@ -55,7 +69,9 @@ interface EnhancedAdminFundTableProps {
   onBulkUpload: (fund: Fund) => void;
   onArchiveFund: (fundId: string, fundName: string) => void;
   onUnarchiveFund: (fundId: string, fundName: string) => void;
+  onBulkDelete: (fundIds: string[]) => void;
   onRefresh: () => void;
+  isSuperAdmin: boolean;
 }
 
 export function EnhancedAdminFundTable({
@@ -66,7 +82,9 @@ export function EnhancedAdminFundTable({
   onBulkUpload,
   onArchiveFund,
   onUnarchiveFund,
-  onRefresh
+  onBulkDelete,
+  onRefresh,
+  isSuperAdmin
 }: EnhancedAdminFundTableProps) {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,6 +95,8 @@ export function EnhancedAdminFundTable({
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [pageSize, setPageSize] = useState(25);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedFunds, setSelectedFunds] = useState<string[]>([]);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
   // Filter and sort funds
   const filteredFunds = funds
@@ -135,6 +155,38 @@ export function EnhancedAdminFundTable({
 
   const getOrganizationName = (orgId: string) => {
     return organizations.find(org => org.id === orgId)?.name || 'Unknown Organization';
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedFunds(paginatedFunds.map(fund => fund.id));
+    } else {
+      setSelectedFunds([]);
+    }
+  };
+
+  const handleSelectFund = (fundId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedFunds([...selectedFunds, fundId]);
+    } else {
+      setSelectedFunds(selectedFunds.filter(id => id !== fundId));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedFunds([]);
+  };
+
+  const handleBulkDelete = () => {
+    onBulkDelete(selectedFunds);
+    setSelectedFunds([]);
+    setShowBulkDeleteDialog(false);
+  };
+
+  const getSelectedFundNames = () => {
+    return selectedFunds.map(id => 
+      funds.find(fund => fund.id === id)?.name
+    ).filter(Boolean);
   };
 
   return (
@@ -243,10 +295,74 @@ export function EnhancedAdminFundTable({
       </CardHeader>
 
       <CardContent>
+        {/* Bulk Actions Bar */}
+        {selectedFunds.length > 0 && isSuperAdmin && (
+          <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-destructive/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium">
+                  {selectedFunds.length} fund{selectedFunds.length > 1 ? 's' : ''} selected
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={clearSelection}
+                  className="h-8"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              </div>
+              <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    className="h-8"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Bulk Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {selectedFunds.length} Fund{selectedFunds.length > 1 ? 's' : ''}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. The following funds and all their associated data will be permanently deleted:
+                      <div className="mt-2 p-2 bg-muted rounded text-sm">
+                        {getSelectedFundNames().map((name, index) => (
+                          <div key={index}>• {name}</div>
+                        ))}
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleBulkDelete}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      Delete {selectedFunds.length} Fund{selectedFunds.length > 1 ? 's' : ''}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        )}
         <div className="rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/20">
+                {isSuperAdmin && (
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedFunds.length === paginatedFunds.length && paginatedFunds.length > 0}
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all funds"
+                    />
+                  </TableHead>
+                )}
                 <TableHead>
                   <Button 
                     variant="ghost" 
@@ -300,7 +416,7 @@ export function EnhancedAdminFundTable({
             <TableBody>
               {paginatedFunds.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
+                  <TableCell colSpan={isSuperAdmin ? 9 : 8} className="text-center py-8">
                     <Database className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
                     <p className="text-muted-foreground">No funds found</p>
                     <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters</p>
@@ -309,6 +425,15 @@ export function EnhancedAdminFundTable({
               ) : (
                 paginatedFunds.map((fund) => (
                   <TableRow key={fund.id} className="hover:bg-muted/20">
+                    {isSuperAdmin && (
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedFunds.includes(fund.id)}
+                          onCheckedChange={(checked) => handleSelectFund(fund.id, checked as boolean)}
+                          aria-label={`Select ${fund.name}`}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">

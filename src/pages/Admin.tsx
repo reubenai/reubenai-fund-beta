@@ -434,6 +434,37 @@ export default function Admin() {
     }
   };
 
+  const bulkDeleteFunds = async (fundIds: string[]) => {
+    try {
+      // Get fund names for logging
+      const fundsToDelete = funds.filter(f => fundIds.includes(f.id));
+      const fundNames = fundsToDelete.map(f => f.name);
+
+      // Delete funds from database
+      const { error } = await supabase
+        .from('funds')
+        .delete()
+        .in('id', fundIds);
+
+      if (error) throw error;
+
+      // Update local state
+      setFunds(funds.filter(f => !fundIds.includes(f.id)));
+      
+      // Log admin activity
+      await logAdminActivity('funds_bulk_deleted', `Bulk deleted ${fundIds.length} funds: ${fundNames.join(', ')}`, {
+        fundIds,
+        fundNames,
+        deletedCount: fundIds.length
+      });
+
+      toast.success(`Successfully deleted ${fundIds.length} fund${fundIds.length > 1 ? 's' : ''}`);
+    } catch (error) {
+      console.error('Error deleting funds:', error);
+      toast.error('Failed to delete funds');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -613,7 +644,9 @@ export default function Admin() {
                 onBulkUpload={(fund) => setBulkUploadFund(fund as Fund)}
                 onArchiveFund={(fundId, fundName) => archiveFund(fundId, fundName)}
                 onUnarchiveFund={(fundId, fundName) => unarchiveFund(fundId, fundName)}
+                onBulkDelete={bulkDeleteFunds}
                 onRefresh={fetchData}
+                isSuperAdmin={hasAccess}
               />
             </TabsContent>
 
