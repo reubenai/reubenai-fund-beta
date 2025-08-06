@@ -29,7 +29,11 @@ serve(async (req) => {
   try {
     const { dealData, strategyData, documentData }: FinancialAnalysisRequest = await req.json();
     
-    console.log('💰 Financial Engine: Analyzing financial feasibility for:', dealData.company_name);
+    console.log('💰 Financial Engine: Analyzing financial feasibility for:', dealData?.company_name || 'Unknown Company');
+    
+    // Enhanced document-driven financial analysis
+    const documentInsights = documentData ? await extractFinancialInsightsFromDocuments(documentData) : null;
+    console.log('📄 Financial document insights extracted:', !!documentInsights);
     
     // Conduct comprehensive financial analysis
     const financialResult = await analyzeFinancialFeasibility(dealData, strategyData, documentData);
@@ -211,8 +215,99 @@ async function analyzeFinancialDocuments(dealId: string, documentData: any = nul
   return analysis;
 }
 
+async function extractFinancialInsightsFromDocuments(documentData: any) {
+  if (!documentData || !documentData.extractedTexts || documentData.extractedTexts.length === 0) {
+    return null;
+  }
+  
+  console.log('📄 Processing documents for financial insights:', documentData.extractedTexts.length);
+  
+  const allText = documentData.extractedTexts.map(doc => {
+    let cleanText = doc.extracted_text;
+    
+    // Parse JSON structure if needed
+    try {
+      const parsed = JSON.parse(doc.extracted_text);
+      if (parsed && typeof parsed === 'object' && parsed.content) {
+        cleanText = parsed.content;
+      } else if (parsed && typeof parsed === 'object' && parsed.markdown) {
+        cleanText = parsed.markdown;
+      }
+    } catch (e) {
+      // Not JSON, use as-is
+    }
+    
+    return `${doc.name} (${doc.category}):\n${cleanText}`;
+  }).join('\n\n');
+  
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `Extract financial metrics and business model data from documents. Parse for:
+            1. REVENUE METRICS: Revenue projections, growth rates, historical data
+            2. BUSINESS MODEL: Revenue streams, monetization strategy, unit economics
+            3. FUNDING: Use of funds, financial requirements, runway projections
+            4. FINANCIAL HEALTH: Burn rate, profitability, financial milestones
+            Return structured insights for financial scoring.`
+          },
+          {
+            role: 'user',
+            content: allText.substring(0, 20000)
+          }
+        ],
+        max_tokens: 1500,
+        temperature: 0.1
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const content = data.choices[0].message.content;
+      
+      return {
+        financial_intelligence: content,
+        hasValidatedData: true,
+        confidence: 95
+      };
+    }
+  } catch (error) {
+    console.error('❌ Financial Engine - Document extraction error:', error);
+  }
+  
+  return {
+    financial_intelligence: 'Document analysis failed',
+    hasValidatedData: false,
+    confidence: 20
+  };
+}
+
 async function extractFinancialDataFromText(extractedTexts: any[]) {
-  const allText = extractedTexts.map(doc => `${doc.name}:\n${doc.extracted_text}`).join('\n\n');
+  const allText = extractedTexts.map(doc => {
+    let cleanText = doc.extracted_text;
+    
+    // Parse JSON structure if needed
+    try {
+      const parsed = JSON.parse(doc.extracted_text);
+      if (parsed && typeof parsed === 'object' && parsed.content) {
+        cleanText = parsed.content;
+      } else if (parsed && typeof parsed === 'object' && parsed.markdown) {
+        cleanText = parsed.markdown;
+      }
+    } catch (e) {
+      // Not JSON, use as-is
+    }
+    
+    return `${doc.name}:\n${cleanText}`;
+  }).join('\n\n');
   
   try {
     // Use OpenAI to extract financial data from documents

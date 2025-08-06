@@ -172,12 +172,31 @@ async function fetchDocumentData(dealId: string) {
   ) || null;
   
   const extractedTexts = documents?.filter(doc => doc.extracted_text && doc.extracted_text.trim().length > 0)
-    .map(doc => ({ 
-      name: doc.name,
-      category: doc.document_category,
-      extracted_text: doc.extracted_text,
-      parsing_status: doc.parsing_status 
-    })) || [];
+    .map(doc => {
+      let cleanText = doc.extracted_text;
+      
+      // Fix: Parse JSON structure if extracted_text contains JSON wrapper
+      try {
+        const parsed = JSON.parse(doc.extracted_text);
+        if (parsed && typeof parsed === 'object' && parsed.content) {
+          cleanText = parsed.content;
+        } else if (parsed && typeof parsed === 'object' && parsed.markdown) {
+          cleanText = parsed.markdown;
+        } else if (parsed && typeof parsed === 'object' && parsed.text) {
+          cleanText = parsed.text;
+        }
+      } catch (e) {
+        // Not JSON, use as-is
+        cleanText = doc.extracted_text;
+      }
+      
+      return { 
+        name: doc.name,
+        category: doc.document_category,
+        extracted_text: cleanText,
+        parsing_status: doc.parsing_status 
+      };
+    }) || [];
     
   const documentSummary = {
     total_documents: documents?.length || 0,

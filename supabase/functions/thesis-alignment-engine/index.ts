@@ -280,50 +280,23 @@ function inferStageFromData(dealData: any): string {
   return "unknown";
 }
 
-function calculateOverallAlignmentScore(alignmentScores: any): number {
-  const weights = {
-    sectorAlignment: 0.4,
-    geographyAlignment: 0.25,
-    sizeAlignment: 0.25,
-    stageAlignment: 0.1
-  };
+function calculateOverallAlignmentScore(scores: any): number {
+  const { sectorAlignment, geographyAlignment, sizeAlignment, stageAlignment, documentInsights, hasValidDocuments } = scores;
   
-  let baseScore = Math.round(
-    alignmentScores.sectorAlignment.score * weights.sectorAlignment +
-    alignmentScores.geographyAlignment.score * weights.geographyAlignment +
-    alignmentScores.sizeAlignment.score * weights.sizeAlignment +
-    alignmentScores.stageAlignment.score * weights.stageAlignment
-  );
+  // Base weighted average (30% sector, 25% geography, 20% size, 25% stage)
+  let weightedScore = (sectorAlignment.score * 0.30) + (geographyAlignment.score * 0.25) + (sizeAlignment.score * 0.20) + (stageAlignment.score * 0.25);
   
-  // MASSIVE DOCUMENT BONUS - Document intelligence boosts thesis alignment significantly
-  if (alignmentScores.documentInsights?.hasValidatedData) {
-    console.log('🔥 Thesis Alignment Engine: Document insights detected - applying heavy alignment boost');
-    
-    // Strategy alignment from documents (heavily weighted)
-    if (alignmentScores.documentInsights.strategy_alignment?.hasStrategyData) {
-      baseScore += 15; // Major boost for validated strategy alignment
-      console.log('🎯 Thesis Alignment Engine: Strategy alignment found in documents (+15 points)');
-    }
-    
-    // Business model alignment from documents
-    if (alignmentScores.documentInsights.business_model?.hasBusinessModel) {
-      baseScore += 10; // Business model clarity boost
-      console.log('💼 Thesis Alignment Engine: Business model documented (+10 points)');
-    }
-    
-    // Market focus alignment from documents
-    if (alignmentScores.documentInsights.market_focus?.hasMarketData) {
-      baseScore += 12; // Market alignment boost
-      console.log('🎯 Thesis Alignment Engine: Market focus documented (+12 points)');
-    }
-    
-    // Base document analysis bonus
-    baseScore += 8; // Always reward document-driven analysis
-    console.log('📄 Thesis Alignment Engine: Document analysis completed (+8 points)');
+  // Significant bonus for high-quality document insights
+  if (hasValidDocuments && documentInsights?.hasValidatedData && documentInsights.confidence > 80) {
+    weightedScore += 15; // Strong document validation bonus
+    console.log('🚀 Applied document validation bonus: +15 points');
+  } else if (hasValidDocuments && documentInsights?.confidence > 60) {
+    weightedScore += 8; // Moderate document bonus
+    console.log('📈 Applied moderate document bonus: +8 points');
   }
   
-  console.log(`🎯 Thesis Alignment Engine: Final score calculated: ${Math.min(baseScore, 100)}`);
-  return Math.min(baseScore, 100);
+  // Ensure score stays within bounds
+  return Math.min(Math.max(Math.round(weightedScore), 0), 100);
 }
 
 function calculateConfidence(dealData: any, strategyData: any, webValidationData: any = null): number {
@@ -589,7 +562,25 @@ async function extractThesisInsightsFromDocuments(documentData: any) {
     return null;
   }
   
-  const allText = documentData.extractedTexts.map(doc => `${doc.name}:\n${doc.extracted_text}`).join('\n\n');
+  console.log('📄 Processing documents for thesis insights:', documentData.extractedTexts.length);
+  
+  const allText = documentData.extractedTexts.map(doc => {
+    let cleanText = doc.extracted_text;
+    
+    // Parse JSON structure if needed
+    try {
+      const parsed = JSON.parse(doc.extracted_text);
+      if (parsed && typeof parsed === 'object' && parsed.content) {
+        cleanText = parsed.content;
+      } else if (parsed && typeof parsed === 'object' && parsed.markdown) {
+        cleanText = parsed.markdown;
+      }
+    } catch (e) {
+      // Not JSON, use as-is
+    }
+    
+    return `${doc.name} (${doc.category}):\n${cleanText}`;
+  }).join('\n\n');
   
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

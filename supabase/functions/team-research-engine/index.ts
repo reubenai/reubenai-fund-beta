@@ -62,6 +62,7 @@ async function analyzeFounderAndTeam(dealData: any, strategyData: any, documentD
   
   // Enhanced document-driven team analysis
   const documentInsights = documentData ? await extractTeamInsightsFromDocuments(documentData) : null;
+  console.log('📄 Document insights extracted:', !!documentInsights);
   
   // Research founder background with web research
   const founderResearch = await conductFounderResearch(validatedData);
@@ -143,7 +144,23 @@ async function extractTeamInsightsFromDocuments(documentData: any) {
     return null;
   }
   
-  const allText = documentData.extractedTexts.map(doc => `${doc.name}:\n${doc.extracted_text}`).join('\n\n');
+  const allText = documentData.extractedTexts.map(doc => {
+    let cleanText = doc.extracted_text;
+    
+    // Parse JSON structure if needed
+    try {
+      const parsed = JSON.parse(doc.extracted_text);
+      if (parsed && typeof parsed === 'object' && parsed.content) {
+        cleanText = parsed.content;
+      } else if (parsed && typeof parsed === 'object' && parsed.markdown) {
+        cleanText = parsed.markdown;
+      }
+    } catch (e) {
+      // Not JSON, use as-is
+    }
+    
+    return `${doc.name} (${doc.category}):\n${cleanText}`;
+  }).join('\n\n');
   
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
