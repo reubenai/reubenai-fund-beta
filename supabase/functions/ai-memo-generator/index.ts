@@ -51,30 +51,47 @@ serve(async (req) => {
       }
     }
 
-    // 1. Fetch comprehensive deal data with analysis and notes
+    // 1. Fetch deal data separately to avoid nested query issues
     const { data: dealData, error: dealError } = await supabase
       .from('deals')
       .select(`
         *,
         deal_analyses (*),
-        deal_notes (content, created_at),
-        funds (
-          name,
-          fund_type,
-          investment_strategies (*)
-        )
+        deal_notes (content, created_at)
       `)
       .eq('id', dealId)
       .single();
 
     if (dealError || !dealData) {
-      throw new Error('Deal not found or error fetching deal data');
+      console.error('❌ Deal fetch error:', dealError);
+      throw new Error(`Deal not found or error fetching deal data: ${dealError?.message || 'Unknown error'}`);
     }
 
     console.log('📊 Retrieved deal data for:', dealData.company_name);
 
-    // 2. Fetch fund strategy and enhanced criteria for thesis alignment
-    const strategy = dealData.funds?.investment_strategies?.[0];
+    // 2. Fetch fund data separately
+    const { data: fundData, error: fundError } = await supabase
+      .from('funds')
+      .select('name, fund_type')
+      .eq('id', dealData.fund_id)
+      .single();
+
+    if (fundError) {
+      console.warn('⚠️ Fund fetch error:', fundError);
+    }
+
+    // 3. Fetch investment strategy separately  
+    const { data: strategyData, error: strategyError } = await supabase
+      .from('investment_strategies')
+      .select('*')
+      .eq('fund_id', dealData.fund_id)
+      .maybeSingle();
+
+    if (strategyError) {
+      console.warn('⚠️ Strategy fetch error:', strategyError);
+    }
+
+    const strategy = strategyData;
     const enhancedCriteria = strategy?.enhanced_criteria || {};
     
     // 3. Get memo template sections
@@ -118,7 +135,7 @@ serve(async (req) => {
           dealId,
           fundId,
           dealData,
-          fundData: dealData.funds
+          fundData: fundData
         }
       });
       

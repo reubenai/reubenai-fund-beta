@@ -539,13 +539,25 @@ async function performSingleGoogleSearch(query: string) {
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        console.warn(`⚠️ Google Search API quota exceeded for: "${cleanQuery}"`);
+        return { 
+          items: [],
+          quotaExceeded: true,
+          searchInformation: { totalResults: '0' }
+        };
+      }
       throw new Error(`Google Search API error: ${response.status}`);
     }
 
     return await response.json();
   } catch (error) {
     console.error('Single Google search error:', error);
-    return null;
+    return { 
+      items: [],
+      error: true,
+      searchInformation: { totalResults: '0' }
+    };
   }
 }
 

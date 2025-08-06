@@ -338,9 +338,17 @@ async function performSingleGoogleSearch(query: string) {
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Google Search API error: ${response.status} - ${errorText}`);
       
-      // Return empty result instead of throwing to allow graceful degradation
+      if (response.status === 429) {
+        console.warn(`⚠️ Google Search API quota exceeded for: "${cleanQuery}"`);
+        return { 
+          items: [],
+          quotaExceeded: true,
+          searchInformation: { totalResults: '0' }
+        };
+      }
+      
+      console.error(`Google Search API error: ${response.status} - ${errorText}`);
       return { items: [] };
     }
     

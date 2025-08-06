@@ -55,6 +55,7 @@ serve(async (req) => {
         break;
       case 'query':
       case 'query_contextual_memory':
+      case 'query_investment_patterns':
         result = await queryMemory(request);
         break;
       case 'pattern_discovery':
