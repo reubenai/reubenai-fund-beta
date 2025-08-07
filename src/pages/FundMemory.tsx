@@ -1,6 +1,8 @@
 import React from 'react';
 import { useFund } from '@/contexts/FundContext';
 import { EnhancedFundMemoryDashboard } from '@/components/fund-memory/EnhancedFundMemoryDashboard';
+import { ActivityInsightsDashboard } from '@/components/activity/ActivityInsightsDashboard';
+import { ActivityDigest } from '@/components/activity/ActivityDigest';
 
 export default function FundMemory() {
   const { selectedFund } = useFund();
@@ -17,9 +19,19 @@ export default function FundMemory() {
   }
 
   return (
-    <EnhancedFundMemoryDashboard 
-      fundId={selectedFund.id} 
-      fundName={selectedFund.name} 
-    />
+    <div className="space-y-6 p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <EnhancedFundMemoryDashboard 
+            fundId={selectedFund.id} 
+            fundName={selectedFund.name} 
+          />
+        </div>
+        <div className="space-y-6">
+          <ActivityInsightsDashboard timeRange="7d" />
+          <ActivityDigest timeRange="24h" showSignificantOnly={true} maxItems={8} />
+        </div>
+      </div>
+    </div>
   );
 }
