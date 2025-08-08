@@ -25,8 +25,6 @@ interface KanbanBoardProps {
 }
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
-  console.log('🎯 [KanbanBoard] Rendering with fundId:', fundId);
-  
   const {
     deals,
     stages,
@@ -37,13 +35,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
     addDeal,
     refreshDeals
   } = usePipelineDeals(fundId);
-
-  console.log('🎯 [KanbanBoard] Hook results:', {
-    dealsCount: Object.values(deals).reduce((sum, arr) => sum + arr.length, 0),
-    stagesCount: stages.length,
-    loading,
-    searchQuery
-  });
 
   const { selectedFund } = useFund();
 

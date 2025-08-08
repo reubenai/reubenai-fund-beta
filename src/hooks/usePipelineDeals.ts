@@ -282,16 +282,8 @@ export const usePipelineDeals = (fundId?: string) => {
 
   // Only fetch deals when we have stages loaded
   useEffect(() => {
-    console.log('🎯 [usePipelineDeals] useEffect triggered:', { fundId, stagesLength: stages.length, loading });
     if (fundId && stages.length > 0) {
-      console.log('🎯 [usePipelineDeals] Conditions met, calling fetchDeals');
       fetchDeals();
-    } else {
-      console.log('🎯 [usePipelineDeals] Conditions not met:', { 
-        hasFundId: !!fundId, 
-        hasStages: stages.length > 0,
-        stagesCount: stages.length 
-      });
     }
   }, [fundId, stages.length]); // Remove fetchDeals from deps to avoid infinite loop
 

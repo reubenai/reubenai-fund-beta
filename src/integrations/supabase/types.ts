@@ -2760,6 +2760,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_can_access_fund: {
+        Args: { target_fund_id: string }
+        Returns: boolean
+      }
+      user_can_manage_fund: {
+        Args: { target_fund_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       activity_priority: "low" | "medium" | "high" | "critical"
