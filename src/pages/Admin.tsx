@@ -29,7 +29,7 @@ import { ComprehensiveProductionReadiness } from '@/components/admin/Comprehensi
 import { AdminInviteUserModal } from '@/components/admin/AdminInviteUserModal';
 import { AdminDealsTable } from '@/components/admin/AdminDealsTable';
 import AdminFundCreationModal from '@/components/admin/AdminFundCreationModal';
-import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+
 
 interface Organization {
   id: string;
@@ -630,7 +630,6 @@ export default function Admin() {
 
   return (
     <div className="space-y-8 p-8">
-      <Breadcrumbs />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
