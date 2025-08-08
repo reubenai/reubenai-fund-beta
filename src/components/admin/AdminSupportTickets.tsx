@@ -131,7 +131,7 @@ export function AdminSupportTickets() {
               .from('profiles')
               .select('email, first_name, last_name')
               .eq('user_id', ticket.user_id)
-              .single();
+              .maybeSingle();
             user = userData;
           }
 
@@ -141,7 +141,7 @@ export function AdminSupportTickets() {
               .from('funds')
               .select('name')
               .eq('id', ticket.fund_id)
-              .single();
+              .maybeSingle();
             fund = fundData;
           }
 

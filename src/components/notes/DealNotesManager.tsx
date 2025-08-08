@@ -148,6 +148,32 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
 
       if (error) throw error;
 
+      // Add activity event for the note
+      try {
+        // Get fund_id from the deal
+        const { data: dealData } = await supabase
+          .from('deals')
+          .select('fund_id')
+          .eq('id', dealId)
+          .single();
+
+        if (dealData) {
+          await supabase.from('activity_events').insert({
+            fund_id: dealData.fund_id,
+            deal_id: dealId,
+            user_id: user.id,
+            activity_type: 'deal_note_added',
+            title: 'Note Added',
+            description: `Added a new note: ${newNote.substring(0, 50)}${newNote.length > 50 ? '...' : ''}`,
+            resource_type: 'deal_note',
+            resource_id: data.id
+          });
+        }
+      } catch (activityError) {
+        console.error('Failed to log activity:', activityError);
+        // Don't fail the note creation if activity logging fails
+      }
+
       const addedNote = {
         ...data,
         sentiment: data.sentiment as 'positive' | 'negative' | 'neutral' || 'neutral',
