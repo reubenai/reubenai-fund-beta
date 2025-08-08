@@ -19,6 +19,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -51,6 +52,7 @@ const ROLE_OPTIONS: { value: 'viewer' | 'analyst' | 'fund_manager' | 'admin'; la
 export default function TeamManagement() {
   const { user } = useAuth();
   const { profile, role } = useUserRole();
+  const { canInviteUsers, canManageUserRoles } = usePermissions();
   const { toast } = useToast();
   
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -64,7 +66,15 @@ export default function TeamManagement() {
   const [inviteRole, setInviteRole] = useState<'viewer' | 'analyst' | 'fund_manager' | 'admin'>('viewer');
   const [selectedOrgId, setSelectedOrgId] = useState('');
 
-  const canManageTeam = role === 'admin' || role === 'fund_manager' || role === 'super_admin';
+  const canManageTeam = canInviteUsers || canManageUserRoles;
+
+  // Debug permissions
+  console.log('Team Management Permissions:', {
+    role,
+    canInviteUsers,
+    canManageUserRoles,
+    canManageTeam
+  });
 
   useEffect(() => {
     if (user && canManageTeam) {

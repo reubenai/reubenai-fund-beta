@@ -117,7 +117,16 @@ export function EnhancedDealDetailsModal({
   const [analysisData, setAnalysisData] = useState<any>(null);
   const { toast } = useToast();
   const { getRAGCategory } = useStrategyThresholds();
-  const { canViewActivities, canViewAnalysis } = usePermissions();
+  const { canViewActivities, canViewAnalysis, role, loading } = usePermissions();
+
+  // Debug logging
+  console.log('Deal Modal Permissions Debug:', {
+    canViewActivities,
+    canViewAnalysis,
+    role,
+    loading,
+    userEmail: 'checking permissions'
+  });
 
   useEffect(() => {
     if (deal && open) {
@@ -268,6 +277,11 @@ export function EnhancedDealDetailsModal({
             <TabsTrigger value="notes">Notes</TabsTrigger>
             {canViewActivities && <TabsTrigger value="activity">Activity</TabsTrigger>}
           </TabsList>
+          
+          {/* Debug info - remove after fixing */}
+          <div className="text-xs text-muted-foreground p-2 bg-gray-50 rounded">
+            Debug: Role={role}, canViewAnalysis={String(canViewAnalysis)}, canViewActivities={String(canViewActivities)}, loading={String(loading)}
+          </div>
 
           <TabsContent value="overview" className="space-y-6">
             {/* Key Metrics */}
