@@ -187,6 +187,7 @@ export const usePipelineStages = (fundId?: string) => {
   }, [stages, toast]);
 
   useEffect(() => {
+    console.log('📊 [usePipelineStages] useEffect triggered, fundId:', fundId);
     fetchStages();
   }, [fetchStages]);
 
