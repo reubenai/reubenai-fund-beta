@@ -212,7 +212,55 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
       setIsClientDownloading(false);
     }
   };
+  
+  const handleExportPDF = async () => {
+    const loadingToast = showLoadingToast(
+      'Generating Pro PDF',
+      `Rendering high-quality PDF for ${deal.company_name}...`
+    );
+    try {
+      setIsExporting(true);
+      const response: any = await withTimeout(
+        supabase.functions.invoke('enhanced-pdf-generator', {
+          body: {
+            dealId: deal.id,
+            fundId,
+            memoContent: memoState.content,
+            dealData: {
+              company_name: deal.company_name,
+              industry: deal.industry,
+              deal_size: deal.deal_size,
+              valuation: deal.valuation,
+            },
+          },
+        }) as any,
+        5000
+      );
+      const { data, error } = response;
 
+      if (error || !data?.success || !data?.pdfUrl) {
+        throw new Error((error as any)?.message || 'Server PDF generation failed');
+      }
+
+      const link = document.createElement('a');
+      link.href = data.pdfUrl;
+      link.download = data.fileName || `IC_Memo_${deal.company_name.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      // Fallback: client-side export
+      await exportMemoToPDF({
+        companyName: deal.company_name,
+        sections: getSections(),
+        fileName: `IC_Memo_${deal.company_name.replace(/\s+/g, '_')}.pdf`,
+      });
+    } finally {
+      loadingToast.dismiss();
+      setIsExporting(false);
+    }
+  };
+  
   const withTimeout = async <T,>(p: Promise<T>, ms = 4000): Promise<T> => {
     return await Promise.race([
       p,
