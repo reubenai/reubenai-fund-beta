@@ -112,9 +112,19 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
           return false;
         }
 
-        // RAG status filter
-        if (filters.ragStatus && deal.rag_status !== filters.ragStatus) {
-          return false;
+        // Investment readiness filter (RAG status mapped to our terminology)
+        if (filters.ragStatus) {
+          const dealRAGStatus = deal.rag_status?.toLowerCase();
+          // Map our new filter values to existing rag_status field values  
+          const filterMapping: Record<string, string[]> = {
+            'exciting': ['green', 'exciting'],
+            'promising': ['amber', 'promising'], 
+            'needs_development': ['red', 'needs_development']
+          };
+          const allowedStatuses = filterMapping[filters.ragStatus] || [];
+          if (!dealRAGStatus || !allowedStatuses.includes(dealRAGStatus)) {
+            return false;
+          }
         }
 
         // Industry filter

@@ -76,12 +76,12 @@ export const PipelineFilters: React.FC<PipelineFiltersProps> = ({
           {/* Status Filter */}
           <div className="space-y-2">
             <Label className="text-xs font-medium">Status</Label>
-            <Select value={filters.status || ''} onValueChange={(value) => updateFilter('status', value)}>
+            <Select value={filters.status || 'all'} onValueChange={(value) => updateFilter('status', value === 'all' ? undefined : value)}>
               <SelectTrigger className="h-8 text-xs">
                 <SelectValue placeholder="Any status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Any status</SelectItem>
+                <SelectItem value="all">Any status</SelectItem>
                 <SelectItem value="sourced">Sourced</SelectItem>
                 <SelectItem value="screening">Screening</SelectItem>
                 <SelectItem value="investment_committee">Investment Committee</SelectItem>
@@ -94,16 +94,16 @@ export const PipelineFilters: React.FC<PipelineFiltersProps> = ({
 
           {/* RAG Status Filter */}
           <div className="space-y-2">
-            <Label className="text-xs font-medium">RAG Status</Label>
-            <Select value={filters.ragStatus || ''} onValueChange={(value) => updateFilter('ragStatus', value)}>
+            <Label className="text-xs font-medium">Investment Readiness</Label>
+            <Select value={filters.ragStatus || 'all'} onValueChange={(value) => updateFilter('ragStatus', value === 'all' ? undefined : value)}>
               <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Any RAG" />
+                <SelectValue placeholder="Any readiness" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Any RAG</SelectItem>
-                <SelectItem value="red">Red</SelectItem>
-                <SelectItem value="amber">Amber</SelectItem>
-                <SelectItem value="green">Green</SelectItem>
+                <SelectItem value="all">Any readiness</SelectItem>
+                <SelectItem value="exciting">Exciting</SelectItem>
+                <SelectItem value="promising">Promising</SelectItem>
+                <SelectItem value="needs_development">Needs Development</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -186,7 +186,8 @@ export const PipelineFilters: React.FC<PipelineFiltersProps> = ({
               )}
               {filters.ragStatus && (
                 <Badge variant="outline" className="text-xs">
-                  RAG: {filters.ragStatus}
+                  Readiness: {filters.ragStatus === 'needs_development' ? 'Needs Development' : 
+                    filters.ragStatus.charAt(0).toUpperCase() + filters.ragStatus.slice(1)}
                   <button
                     onClick={() => updateFilter('ragStatus', undefined)}
                     className="ml-1 hover:bg-muted rounded-full"
