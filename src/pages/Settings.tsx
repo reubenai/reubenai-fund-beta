@@ -23,12 +23,15 @@ import {
   EyeOff,
   Smartphone,
   Laptop,
-  LogOut
+  LogOut,
+  Users
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import TeamManagement from '@/components/settings/TeamManagement';
 
 interface UserProfile {
   id: string;
@@ -97,6 +100,10 @@ export default function Settings() {
 
   const { toast } = useToast();
   const { user, signOut } = useAuth();
+  const { role } = useUserRole();
+
+  // Check if user can manage team
+  const canManageTeam = role === 'admin' || role === 'fund_manager' || role === 'super_admin';
 
   useEffect(() => {
     if (user) {
@@ -369,6 +376,12 @@ export default function Settings() {
             <Settings2 className="h-4 w-4 mr-2" />
             Preferences
           </TabsTrigger>
+          {canManageTeam && (
+            <TabsTrigger value="team" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <Users className="h-4 w-4 mr-2" />
+              Team
+            </TabsTrigger>
+          )}
           <TabsTrigger value="security" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
             <Shield className="h-4 w-4 mr-2" />
             Security
@@ -769,6 +782,12 @@ export default function Settings() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {canManageTeam && (
+          <TabsContent value="team" className="space-y-6">
+            <TeamManagement />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
