@@ -32,6 +32,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface DealNote {
   id: string;
@@ -81,6 +82,7 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
   
   const { user } = useAuth();
   const { toast } = useToast();
+  const permissions = usePermissions();
 
   useEffect(() => {
     loadNotes();
@@ -116,6 +118,15 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
 
   const addNote = async () => {
     if (!newNote.trim() || !user) return;
+    
+    if (!permissions.canCreateNotes) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to create notes",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       setIsAdding(true);
@@ -196,13 +207,14 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
   return (
     <div className="space-y-6">
       {/* Add New Note */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
-            Add New Note
-          </CardTitle>
-        </CardHeader>
+      {permissions.canCreateNotes && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Add New Note
+            </CardTitle>
+          </CardHeader>
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="note-content">Note Content</Label>
@@ -276,6 +288,7 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
           </Button>
         </CardContent>
       </Card>
+      )}
 
       {/* Filters */}
       <Card>
@@ -366,10 +379,10 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
                         </div>
                       )}
                       
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
-                        <User className="h-3 w-3" />
-                        <span>Added by user</span>
-                      </div>
+                       <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
+                         <User className="h-3 w-3" />
+                         <span>Added by {note.created_by === user?.id ? 'you' : 'team member'}</span>
+                       </div>
                     </div>
                   </div>
                 </CardContent>

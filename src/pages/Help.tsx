@@ -250,25 +250,24 @@ export default function Help() {
             {/* Quick Guides */}
             <div className="space-y-3 mb-6">
               <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Quick Start</h3>
-              {quickGuides.map((guide, index) => (
-                <button
-                  key={index}
-                  className="w-full text-left p-3 rounded-lg border border-border/50 hover:border-border hover:bg-background/50 transition-all group"
-                >
+               {quickGuides.map((guide, index) => (
+                 <div
+                   key={index}
+                   className="w-full text-left p-3 rounded-lg border border-border/50 bg-background/30"
+                 >
                   <div className="flex items-center gap-3">
                     <div className="p-1.5 rounded-md bg-primary/10">
                       <guide.icon className="h-4 w-4 text-primary" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium text-sm truncate">{guide.title}</p>
-                        <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
-                      </div>
-                      <p className="text-xs text-muted-foreground truncate">{guide.description}</p>
-                      <p className="text-xs text-primary mt-1">{guide.time} read</p>
-                    </div>
-                  </div>
-                </button>
+                     <div className="flex-1 min-w-0">
+                       <div className="flex items-center justify-between">
+                         <p className="font-medium text-sm truncate">{guide.title}</p>
+                       </div>
+                       <p className="text-xs text-muted-foreground truncate">{guide.description}</p>
+                       <p className="text-xs text-muted-foreground mt-1">Guide content coming soon</p>
+                     </div>
+                   </div>
+                 </div>
               ))}
             </div>
 
@@ -397,16 +396,14 @@ export default function Help() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-3 p-4 rounded-lg border border-border/50">
-                      <BookOpen className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium">Documentation</p>
-                        <p className="text-sm text-muted-foreground">Comprehensive guides and API docs</p>
-                        <button className="text-xs text-primary hover:underline mt-1 flex items-center gap-1">
-                          View Documentation <ExternalLink className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </div>
+                     <div className="flex items-center gap-3 p-4 rounded-lg border border-border/50">
+                       <BookOpen className="h-5 w-5 text-primary" />
+                       <div>
+                         <p className="font-medium">Documentation</p>
+                         <p className="text-sm text-muted-foreground">Contact support for documentation access</p>
+                         <p className="text-xs text-muted-foreground mt-1">Coming soon</p>
+                       </div>
+                     </div>
                   </div>
 
                   {/* Support Form */}

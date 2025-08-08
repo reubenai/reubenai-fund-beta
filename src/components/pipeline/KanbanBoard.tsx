@@ -11,6 +11,7 @@ import { DealSourcingModal } from './DealSourcingModal';
 import { PipelineFilters } from './PipelineFilters';
 import { useToast } from '@/hooks/use-toast';
 import { useFund } from '@/contexts/FundContext';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface KanbanBoardState {
   currentView: 'kanban' | 'list';
@@ -47,6 +48,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
   } = usePipelineDeals(fundId);
 
   const { selectedFund } = useFund();
+  const permissions = usePermissions();
 
   const [state, setState] = useState<KanbanBoardState>({
     currentView: 'kanban',
@@ -65,6 +67,16 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
   }, []);
 
   const handleDragEnd = useCallback(async (result: DropResult) => {
+    // Check permissions before allowing drag and drop
+    if (!permissions.canMoveDealsBetweenStages) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to move deals between stages",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const { destination, source, draggableId } = result;
     
     if (!destination || 
@@ -74,11 +86,19 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
     }
 
     await moveDeal(draggableId, source.droppableId, destination.droppableId);
-  }, [moveDeal]);
+  }, [moveDeal, permissions.canMoveDealsBetweenStages, toast]);
 
   const handleAddDeal = useCallback((stageId?: string) => {
+    if (!permissions.canCreateDeals) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to create deals",
+        variant: "destructive"
+      });
+      return;
+    }
     updateState({ showAddDeal: true });
-  }, [updateState]);
+  }, [updateState, permissions.canCreateDeals, toast]);
 
   const handleDealClick = useCallback((deal: Deal) => {
     updateState({ selectedDeal: deal });
@@ -183,9 +203,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
           <EnhancedPipelineHeader
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            onAddDeal={() => updateState({ showAddDeal: true })}
-            onBatchUpload={() => updateState({ showBatchUpload: true })}
-            onSourceDeals={() => updateState({ showSourceDeals: true })}
+            onAddDeal={permissions.canCreateDeals ? () => updateState({ showAddDeal: true }) : undefined}
+            onBatchUpload={permissions.canBatchUpload ? () => updateState({ showBatchUpload: true }) : undefined}
+            onSourceDeals={permissions.canUseAISourcing ? () => updateState({ showSourceDeals: true }) : undefined}
             totalDeals={getTotalDeals()}
             showFilters={state.showFilters}
             onToggleFilters={() => updateState({ showFilters: !state.showFilters })}
@@ -206,11 +226,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
             <CleanKanbanView
               deals={filteredDeals}
               stages={stages}
-              onDragEnd={handleDragEnd}
+              onDragEnd={permissions.canMoveDealsBetweenStages ? handleDragEnd : undefined}
               onDealClick={handleDealClick}
-              onStageEdit={handleStageEdit}
-              onStageDelete={(stageId) => {/* Delete stage functionality */}}
-              onAddDeal={handleAddDeal}
+              onStageEdit={undefined} // Stage editing disabled platform-wide
+              onStageDelete={undefined} // Stage deletion disabled platform-wide
+              onAddDeal={permissions.canCreateDeals ? handleAddDeal : undefined}
             />
           </div>
         )}

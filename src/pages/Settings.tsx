@@ -580,19 +580,7 @@ export default function Settings() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label className="text-sm font-medium">Default Pipeline View</Label>
-                <Select value={preferences.defaultPipelineView} onValueChange={(value) => setPreferences(prev => ({ ...prev, defaultPipelineView: value }))}>
-                  <SelectTrigger className="w-[200px] mt-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="kanban">Kanban</SelectItem>
-                    <SelectItem value="list">List</SelectItem>
-                    <SelectItem value="table">Table</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Default Pipeline View removed - feature not functional */}
               <Button onClick={handlePreferencesSave} className="w-fit">
                 Save Preferences
               </Button>

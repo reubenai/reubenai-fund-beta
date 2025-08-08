@@ -14,6 +14,7 @@ import { useActivityTracking } from '@/hooks/useActivityTracking';
 import { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedDocumentErrorHandler, DocumentErrors } from './EnhancedDocumentErrorHandler';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface DocumentUploadProps {
   dealId: string;
@@ -52,6 +53,18 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const [error, setError] = useState<any | null>(null);
   const { logDocumentUploaded } = useActivityTracking();
+  const permissions = usePermissions();
+
+  // Check permissions first
+  if (!permissions.canUploadDocuments) {
+    return (
+      <div className="text-center p-8 bg-muted/20 rounded-lg">
+        <p className="text-muted-foreground">
+          You don't have permission to upload documents. Contact your administrator for access.
+        </p>
+      </div>
+    );
+  }
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setError(null);
