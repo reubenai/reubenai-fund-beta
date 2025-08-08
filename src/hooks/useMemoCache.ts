@@ -31,6 +31,9 @@ interface MemoState {
   existsInDb: boolean;
   needsRefresh: boolean;
   lastGenerated?: string;
+  id?: string;
+  status?: string;
+  isPublished?: boolean;
 }
 
 export function useMemoCache(dealId: string, fundId: string) {
@@ -120,10 +123,9 @@ export function useMemoCache(dealId: string, fundId: string) {
         }
       }
 
-      // Try to load from database first
       const { data: existingMemos } = await supabase
         .from('ic_memos')
-        .select('memo_content, updated_at')
+        .select('id, status, is_published, memo_content, updated_at')
         .eq('deal_id', dealId)
         .eq('fund_id', fundId)
         .order('updated_at', { ascending: false })
@@ -152,6 +154,9 @@ export function useMemoCache(dealId: string, fundId: string) {
           existsInDb: true,
           needsRefresh,
           lastGenerated: existingMemo.updated_at,
+          id: existingMemo.id,
+          status: existingMemo.status,
+          isPublished: existingMemo.is_published,
           isLoading: false
         }));
         return;
@@ -196,8 +201,8 @@ export function useMemoCache(dealId: string, fundId: string) {
         throw new Error(data?.error || 'Failed to generate memo');
       }
 
-      // Extract content properly - AI generator returns flat structure now
-      const content = data?.memo?.memo_content || {};
+      // Extract content properly - support nested sections or flat
+      const content = (data?.memo?.memo_content?.sections as any) || (data?.memo?.memo_content as any) || {};
       
       const now = new Date().toISOString();
       const { dealLastUpdated, analysisVersion } = await checkAnalysisFreshness(dealId);
@@ -217,7 +222,10 @@ export function useMemoCache(dealId: string, fundId: string) {
         needsRefresh: false,
         lastGenerated: now,
         isGenerating: false,
-        canCancel: false
+        canCancel: false,
+        id: data?.memo?.id,
+        status: data?.memo?.status || 'draft',
+        isPublished: !!data?.memo?.is_published,
       }));
 
     } catch (error) {

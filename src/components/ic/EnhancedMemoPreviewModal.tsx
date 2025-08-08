@@ -92,6 +92,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   const { memoState, loadMemo, generateMemo, cancelGeneration, updateContent } = useMemoCache(deal.id, fundId);
   const { versionState, loadVersions, saveVersion, restoreVersion } = useMemoVersions(deal.id, fundId);
   const { 
+    showToast,
     showMemoGenerationToast, 
     showAnalysisOutdatedToast, 
     showMemoErrorToast, 
@@ -189,13 +190,22 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     }
   };
 
-  // Helpers for PDF
-  const getSections = () => MEMO_SECTIONS.map((s) => ({
-    title: s.title,
-    content: (memoState.content as any)[s.key] || ''
-  }));
+  const getSections = () => {
+    const content: Record<string, string> = (memoState.content as any)?.sections || (memoState.content as any) || {};
+    return MEMO_SECTIONS.map((s) => ({
+      title: s.title,
+      content: (content as any)[s.key] || ''
+    }));
+  };
 
   const handlePreviewClient = async () => {
+    if (!hasContent) {
+      showToast({
+        title: 'No memo content yet',
+        description: 'Generate the memo first to preview or export.',
+      });
+      return;
+    }
     try {
       setIsPreviewing(true);
       openMemoPrintPreview({ companyName: deal.company_name, sections: getSections(), autoPrint: true });
@@ -205,6 +215,13 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   };
 
   const handleDownloadClient = async () => {
+    if (!hasContent) {
+      showToast({
+        title: 'No memo content yet',
+        description: 'Generate the memo first to preview or export.',
+      });
+      return;
+    }
     try {
       setIsClientDownloading(true);
       await exportMemoToPDF({ companyName: deal.company_name, sections: getSections() });
@@ -214,27 +231,38 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   };
   
   const handleExportPDF = async () => {
+    if (!memoState.id && !hasContent) {
+      showToast({
+        title: 'No memo to export',
+        description: 'Please generate or save the memo before exporting.',
+      });
+      return;
+    }
     const loadingToast = showLoadingToast(
       'Generating Pro PDF',
       `Rendering high-quality PDF for ${deal.company_name}...`
     );
     try {
       setIsExporting(true);
-      const response: any = await withTimeout(
-        supabase.functions.invoke('enhanced-pdf-generator', {
-          body: {
+      const payload: any = memoState.id
+        ? { memoId: memoState.id }
+        : {
             dealId: deal.id,
             fundId,
-            memoContent: memoState.content,
+            memoContent: currentContent,
             dealData: {
               company_name: deal.company_name,
               industry: deal.industry,
               deal_size: deal.deal_size,
               valuation: deal.valuation,
             },
-          },
+          };
+
+      const response: any = await withTimeout(
+        supabase.functions.invoke('ic-memo-pdf-exporter', {
+          body: payload,
         }) as any,
-        5000
+        15000
       );
       const { data, error } = response;
 
@@ -250,11 +278,15 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
       document.body.removeChild(link);
     } catch (err) {
       // Fallback: client-side export
-      await exportMemoToPDF({
-        companyName: deal.company_name,
-        sections: getSections(),
-        fileName: `IC_Memo_${deal.company_name.replace(/\s+/g, '_')}.pdf`,
-      });
+      if (!hasContent) {
+        showToast({ title: 'Export failed', description: 'No content available. Generate memo first.' });
+      } else {
+        await exportMemoToPDF({
+          companyName: deal.company_name,
+          sections: getSections(),
+          fileName: `IC_Memo_${deal.company_name.replace(/\s+/g, '_')}.pdf`,
+        });
+      }
     } finally {
       loadingToast.dismiss();
       setIsExporting(false);
@@ -275,10 +307,10 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     (async () => {
       try {
         const { data }: any = await withTimeout(
-          supabase.functions.invoke('enhanced-pdf-generator', { body: { healthCheck: true } }) as any,
+          supabase.functions.invoke('ic-memo-pdf-exporter', { body: { test: true } }) as any,
           2000
         );
-        if (!cancelled) setServerPdfHealthy(data?.ok || data?.success ? 'ok' : 'down');
+        if (!cancelled) setServerPdfHealthy(data?.ok ? 'ok' : 'down');
       } catch {
         if (!cancelled) setServerPdfHealthy('down');
       }
@@ -344,10 +376,10 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                  
                  {/* Memo Publishing Controls */}
                  {memoState.existsInDb && (
-                   <MemoPublishingControls
-                     memoId={(memoState as any).id || ''}
-                     currentStatus={(memoState as any).status || 'draft'}
-                     isPublished={(memoState as any).isPublished || false}
+                 <MemoPublishingControls
+                     memoId={memoState.id || ''}
+                     currentStatus={memoState.status || 'draft'}
+                     isPublished={memoState.isPublished || false}
                      dealName={deal.company_name}
                      onStatusUpdate={() => {
                        // Refresh memo state after status update
