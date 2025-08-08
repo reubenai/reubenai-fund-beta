@@ -2760,8 +2760,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_can_access_activity: {
+        Args: { activity_fund_id: string; activity_deal_id: string }
+        Returns: boolean
+      }
       user_can_access_fund: {
         Args: { target_fund_id: string }
+        Returns: boolean
+      }
+      user_can_manage_activity: {
+        Args: { activity_fund_id: string; activity_deal_id: string }
         Returns: boolean
       }
       user_can_manage_fund: {
