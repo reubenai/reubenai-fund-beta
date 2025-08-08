@@ -8,7 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-// Breadcrumb components removed - using Layout breadcrumbs
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { 
   Search, 
   MessageSquare, 
@@ -247,29 +247,6 @@ export default function Help() {
               />
             </div>
 
-            {/* Quick Guides */}
-            <div className="space-y-3 mb-6">
-              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Quick Start</h3>
-               {quickGuides.map((guide, index) => (
-                 <div
-                   key={index}
-                   className="w-full text-left p-3 rounded-lg border border-border/50 bg-background/30"
-                 >
-                  <div className="flex items-center gap-3">
-                    <div className="p-1.5 rounded-md bg-primary/10">
-                      <guide.icon className="h-4 w-4 text-primary" />
-                    </div>
-                     <div className="flex-1 min-w-0">
-                       <div className="flex items-center justify-between">
-                         <p className="font-medium text-sm truncate">{guide.title}</p>
-                       </div>
-                       <p className="text-xs text-muted-foreground truncate">{guide.description}</p>
-                       <p className="text-xs text-muted-foreground mt-1">Guide content coming soon</p>
-                     </div>
-                   </div>
-                 </div>
-              ))}
-            </div>
 
             {/* Categories */}
             <div className="space-y-2">
@@ -301,6 +278,24 @@ export default function Help() {
         {/* Main Content */}
         <div className="flex-1 p-8">
           <div className="max-w-4xl mx-auto space-y-8">
+            {/* Breadcrumbs */}
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link to="/" className="flex items-center gap-1">
+                      <Home className="h-4 w-4" />
+                      Home
+                    </Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Help & Support</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+
             {/* Header */}
             <div>
               <h1 className="text-2xl font-semibold">
