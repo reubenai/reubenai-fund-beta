@@ -45,6 +45,12 @@ export interface ActivityEvent {
   is_system_event: boolean;
   is_visible: boolean;
   retention_date?: string;
+  user?: {
+    first_name: string | null;
+    last_name: string | null;
+    email: string;
+    avatar_url?: string | null;
+  };
 }
 
 export interface CreateActivityInput {
@@ -115,7 +121,15 @@ class ActivityService {
     try {
       let query = supabase
         .from('activity_events')
-        .select('*')
+        .select(`
+          *,
+          user:profiles!user_id (
+            first_name,
+            last_name,
+            email,
+            avatar_url
+          )
+        `)
         .eq('is_visible', true)
         .order('occurred_at', { ascending: false });
 

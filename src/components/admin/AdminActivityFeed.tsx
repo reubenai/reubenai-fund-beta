@@ -13,6 +13,12 @@ interface ActivityEvent {
   user_id: string;
   occurred_at: string;
   context_data: any;
+  user?: {
+    first_name: string | null;
+    last_name: string | null;
+    email: string;
+    avatar_url?: string | null;
+  };
 }
 
 export function AdminActivityFeed() {
@@ -27,7 +33,15 @@ export function AdminActivityFeed() {
     try {
       const { data, error } = await supabase
         .from('activity_events')
-        .select('*')
+        .select(`
+          *,
+          user:profiles!user_id (
+            first_name,
+            last_name,
+            email,
+            avatar_url
+          )
+        `)
         .order('occurred_at', { ascending: false })
         .limit(20);
 
@@ -71,6 +85,26 @@ export function AdminActivityFeed() {
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
+  const getUserDisplayName = (user?: ActivityEvent['user']) => {
+    if (!user) return 'Unknown User';
+    if (user.first_name && user.last_name) {
+      return `${user.first_name} ${user.last_name}`;
+    }
+    if (user.first_name) return user.first_name;
+    if (user.last_name) return user.last_name;
+    return user.email?.split('@')[0] || 'Unknown User';
+  };
+
+  const getUserInitials = (user?: ActivityEvent['user']) => {
+    if (!user) return 'U';
+    if (user.first_name && user.last_name) {
+      return `${user.first_name[0]}${user.last_name[0]}`.toUpperCase();
+    }
+    if (user.first_name) return user.first_name[0].toUpperCase();
+    if (user.last_name) return user.last_name[0].toUpperCase();
+    return user.email?.[0]?.toUpperCase() || 'U';
+  };
+
   return (
     <Card className="border-0 shadow-sm">
       <CardHeader>
@@ -103,22 +137,41 @@ export function AdminActivityFeed() {
               const IconComponent = getActivityIcon(activity.activity_type);
               return (
                 <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/20 transition-colors">
-                  <div className={`w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center flex-shrink-0`}>
-                    <IconComponent className={`h-4 w-4 ${getActivityColor(activity.activity_type)}`} />
+                  <div className="flex items-center space-x-2 flex-shrink-0">
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                        {getUserInitials(activity.user)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className={`w-6 h-6 rounded-full bg-muted/50 flex items-center justify-center`}>
+                      <IconComponent className={`h-3 w-3 ${getActivityColor(activity.activity_type)}`} />
+                    </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium truncate">{activity.title}</p>
+                      <p className="text-sm font-medium truncate">
+                        {activity.title}
+                        {activity.user && (
+                          <span className="text-muted-foreground font-normal"> by {getUserDisplayName(activity.user)}</span>
+                        )}
+                      </p>
                       <span className="text-xs text-muted-foreground flex-shrink-0">
                         {formatTimeAgo(activity.occurred_at)}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
-                    {activity.activity_type && (
-                      <Badge variant="outline" className="mt-2 text-xs">
-                        {activity.activity_type.replace('_', ' ')}
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2 mt-2">
+                      {activity.activity_type && (
+                        <Badge variant="outline" className="text-xs">
+                          {activity.activity_type.replace('_', ' ')}
+                        </Badge>
+                      )}
+                      {activity.user?.email && (
+                        <span className="text-xs text-muted-foreground">
+                          {activity.user.email}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

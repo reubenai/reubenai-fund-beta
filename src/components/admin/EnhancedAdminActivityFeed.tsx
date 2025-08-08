@@ -34,6 +34,7 @@ import {
   ArrowUp,
   ArrowDown
 } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface ActivityEvent {
   id: string;
@@ -328,6 +329,26 @@ export function EnhancedAdminActivityFeed() {
     return sortConfig.direction === 'asc' ? ArrowUp : ArrowDown;
   };
 
+  const getUserDisplayName = (user?: ActivityEvent['user']) => {
+    if (!user) return 'Unknown User';
+    if (user.first_name && user.last_name) {
+      return `${user.first_name} ${user.last_name}`;
+    }
+    if (user.first_name) return user.first_name;
+    if (user.last_name) return user.last_name;
+    return user.email?.split('@')[0] || 'Unknown User';
+  };
+
+  const getUserInitials = (user?: ActivityEvent['user']) => {
+    if (!user) return 'U';
+    if (user.first_name && user.last_name) {
+      return `${user.first_name[0]}${user.last_name[0]}`.toUpperCase();
+    }
+    if (user.first_name) return user.first_name[0].toUpperCase();
+    if (user.last_name) return user.last_name[0].toUpperCase();
+    return user.email?.[0]?.toUpperCase() || 'U';
+  };
+
   const totalPages = Math.ceil(pagination.total / pagination.pageSize);
   const paginatedActivities = activities;
 
@@ -573,13 +594,25 @@ export function EnhancedAdminActivityFeed() {
                   return (
                     <TableRow key={activity.id} className="hover:bg-muted/20">
                       <TableCell>
-                        <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center flex-shrink-0">
-                          <IconComponent className={`h-4 w-4 ${getActivityColor(activity.activity_type, activity.priority)}`} />
+                        <div className="flex items-center space-x-2">
+                          <Avatar className="w-8 h-8">
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                              {getUserInitials(activity.user)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="w-6 h-6 rounded-full bg-muted/50 flex items-center justify-center flex-shrink-0">
+                            <IconComponent className={`h-3 w-3 ${getActivityColor(activity.activity_type, activity.priority)}`} />
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium text-sm">{activity.title}</p>
+                          <p className="font-medium text-sm">
+                            {activity.title}
+                            {activity.user && (
+                              <span className="text-muted-foreground font-normal"> by {getUserDisplayName(activity.user)}</span>
+                            )}
+                          </p>
                           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{activity.description}</p>
                         </div>
                       </TableCell>
@@ -596,12 +629,8 @@ export function EnhancedAdminActivityFeed() {
                       <TableCell>
                         {activity.user ? (
                           <div className="text-sm">
-                            <div className="font-medium text-foreground">{activity.user.email}</div>
-                            {activity.user.role && (
-                              <div className="text-xs text-muted-foreground capitalize">
-                                {activity.user.role.replace('_', ' ')}
-                              </div>
-                            )}
+                            <div className="font-medium text-foreground">{getUserDisplayName(activity.user)}</div>
+                            <div className="text-xs text-muted-foreground">{activity.user.email}</div>
                           </div>
                         ) : activity.is_system_event ? (
                           <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs">

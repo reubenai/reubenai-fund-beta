@@ -11,6 +11,12 @@ interface Activity {
   occurred_at: string;
   priority: string;
   context_data?: any;
+  user?: {
+    first_name: string | null;
+    last_name: string | null;
+    email: string;
+    avatar_url?: string | null;
+  };
 }
 
 export const useOptimizedActivities = (limit: number = 10) => {
@@ -30,7 +36,13 @@ export const useOptimizedActivities = (limit: number = 10) => {
         activity_type,
         occurred_at,
         priority,
-        context_data
+        context_data,
+        user:profiles!user_id (
+          first_name,
+          last_name,
+          email,
+          avatar_url
+        )
       `)
       .eq('fund_id', selectedFund.id)
       .eq('is_visible', true)
