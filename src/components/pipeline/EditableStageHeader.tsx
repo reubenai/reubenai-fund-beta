@@ -63,85 +63,24 @@ export function EditableStageHeader({
   return (
     <div className={`flex items-center justify-between p-4 border-b bg-white ${isDragging ? 'opacity-50' : ''}`}>
       <div className="flex items-center gap-3 flex-1">
-        <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+        {/* Removed drag handle - stages are no longer reorderable in beta */}
         
-        {isEditing ? (
-          <div className="flex items-center gap-2 flex-1">
-            <Input
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="h-8 text-sm"
-              autoFocus
-            />
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleSave}
-              className="h-8 w-8 p-0"
-            >
-              <Check className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleCancel}
-              className="h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+        {/* Removed editing functionality - stage names are now read-only in beta */}
+        <div className="flex items-center gap-3 flex-1">
+          <div>
+            <h3 className="font-medium text-sm">{stage.name}</h3>
+            {stage.description && (
+              <p className="text-xs text-muted-foreground">{stage.description}</p>
+            )}
           </div>
-        ) : (
-          <div className="flex items-center gap-3 flex-1">
-            <div>
-              <h3 className="font-medium text-sm">{stage.name}</h3>
-              {stage.description && (
-                <p className="text-xs text-muted-foreground">{stage.description}</p>
-              )}
-            </div>
-            <Badge variant="secondary" className="ml-auto">
-              {dealCount}
-            </Badge>
-          </div>
-        )}
+          <Badge variant="secondary" className="ml-auto">
+            {dealCount}
+          </Badge>
+        </div>
       </div>
 
       <div className="flex items-center gap-1">
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => onAddDeal(stage.id)}
-          className="h-8 w-8 p-0"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8 p-0"
-            >
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setIsEditing(true)}>
-              <Edit3 className="h-4 w-4 mr-2" />
-              Edit Name
-            </DropdownMenuItem>
-            {onDelete && dealCount === 0 && (
-              <DropdownMenuItem 
-                onClick={() => onDelete(stage.id)}
-                className="text-destructive"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Stage
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Removed Add Deal, Edit Stage, and Delete Stage functionality for beta */}
       </div>
     </div>
   );

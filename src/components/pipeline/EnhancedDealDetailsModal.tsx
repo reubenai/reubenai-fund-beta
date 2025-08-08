@@ -127,7 +127,7 @@ export function EnhancedDealDetailsModal({
     if (!deal) return;
 
     try {
-      // Load activity events
+      // Load activity events with better error handling
       const { data: activities, error: activityError } = await supabase
         .from('activity_events')
         .select('*')
@@ -135,7 +135,10 @@ export function EnhancedDealDetailsModal({
         .order('occurred_at', { ascending: false })
         .limit(20);
 
-      if (!activityError && activities) {
+      if (activityError) {
+        console.error('Error loading activity events:', activityError);
+      } else if (activities) {
+        console.log(`Loaded ${activities.length} activity events for deal ${deal.id}`);
         setActivityEvents(activities);
       }
 
