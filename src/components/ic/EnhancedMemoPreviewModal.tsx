@@ -81,10 +81,13 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false); // Server (Pro PDF)
+  const [isClientDownloading, setIsClientDownloading] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('executive_summary');
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showDataQuality, setShowDataQuality] = useState(false);
+  const [serverPdfHealthy, setServerPdfHealthy] = useState<'unknown' | 'ok' | 'down'>('unknown');
   
   const { memoState, loadMemo, generateMemo, cancelGeneration, updateContent } = useMemoCache(deal.id, fundId);
   const { versionState, loadVersions, saveVersion, restoreVersion } = useMemoVersions(deal.id, fundId);
@@ -186,46 +189,54 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     }
   };
 
-  const handleExportPDF = async () => {
+  // Helpers for PDF
+  const getSections = () => MEMO_SECTIONS.map((s) => ({
+    title: s.title,
+    content: (memoState.content as any)[s.key] || ''
+  }));
+
+  const handlePreviewClient = async () => {
     try {
-      setIsExporting(true);
-      
-      // Ensure memo is saved before exporting
-      await handleSaveMemo();
-      
-      // Try server-side export first
-      const { data, error } = await supabase.functions.invoke('enhanced-pdf-generator', {
-        body: { 
-          dealId: deal.id,
-          fundId: fundId,
-          memoContent: memoState.content,
-          dealData: deal
-        }
-      });
-
-      if (error) throw error;
-
-      if (data.success && data.pdfUrl) {
-        const link = document.createElement('a');
-        link.href = data.pdfUrl;
-        link.download = data.fileName || `IC_Memo_${deal.company_name}_${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        throw new Error('Failed to export PDF');
-      }
-    } catch (err) {
-      // Fallback: open a print-friendly preview in a new tab
-      const sections = MEMO_SECTIONS.map((s) => ({
-        title: s.title,
-        content: (memoState.content as any)[s.key] || ''
-      }));
-      openMemoPrintPreview({ companyName: deal.company_name, sections });
+      setIsPreviewing(true);
+      openMemoPrintPreview({ companyName: deal.company_name, sections: getSections(), autoPrint: true });
     } finally {
-      setIsExporting(false);
+      setIsPreviewing(false);
     }
   };
+
+  const handleDownloadClient = async () => {
+    try {
+      setIsClientDownloading(true);
+      await exportMemoToPDF({ companyName: deal.company_name, sections: getSections() });
+    } finally {
+      setIsClientDownloading(false);
+    }
+  };
+
+  const withTimeout = async <T,>(p: Promise<T>, ms = 4000): Promise<T> => {
+    return await Promise.race([
+      p,
+      new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)) as Promise<T>,
+    ]);
+  };
+
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data }: any = await withTimeout(
+          supabase.functions.invoke('enhanced-pdf-generator', { body: { healthCheck: true } }) as any,
+          2000
+        );
+        if (!cancelled) setServerPdfHealthy(data?.ok || data?.success ? 'ok' : 'down');
+      } catch {
+        if (!cancelled) setServerPdfHealthy('down');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isOpen]);
 
   const handleRefreshAnalysis = async () => {
     if (memoState.needsRefresh) {
@@ -381,17 +392,48 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
               )}
               
               <Button
+                variant="outline"
                 size="sm"
-                onClick={handleExportPDF}
-                disabled={isExporting || memoState.isGenerating}
+                onClick={handlePreviewClient}
+                disabled={isPreviewing || memoState.isGenerating}
                 className="gap-2"
               >
-                {isExporting ? (
+                {isPreviewing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+                Preview (Print View)
+              </Button>
+              
+              <Button
+                size="sm"
+                onClick={handleDownloadClient}
+                disabled={isClientDownloading || memoState.isGenerating}
+                className="gap-2"
+              >
+                {isClientDownloading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Download className="w-4 h-4" />
                 )}
-                Preview PDF
+                Quick Download (Client)
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportPDF}
+                disabled={isExporting || memoState.isGenerating || serverPdfHealthy === 'down'}
+                className="gap-2"
+                title={serverPdfHealthy === 'down' ? 'Server PDF unavailable, use Quick Download' : 'Generate server-rendered PDF'}
+              >
+                {isExporting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileText className="w-4 h-4" />
+                )}
+                Pro PDF (Server){serverPdfHealthy === 'down' ? ' – Unavailable' : ''}
               </Button>
             </div>
           </div>
