@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { captureEvent } from '@/lib/analytics/posthog';
+import { useFund } from '@/contexts/FundContext';
 
 interface UserActivity {
   event: string;

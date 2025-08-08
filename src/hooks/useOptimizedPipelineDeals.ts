@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { useDealsCache } from '@/hooks/useCache';
 import { Database } from '@/integrations/supabase/types';
-import { useActivityTracking } from './useActivityTracking';
+import { activityService } from '@/services/ActivityService';
 import { usePipelineStages } from './usePipelineStages';
 import { stageNameToStatus, statusToDisplayName, createStageKey, stageKeyToStatus } from '@/utils/pipelineMapping';
 
@@ -34,7 +34,7 @@ export const useOptimizedPipelineDeals = (fundId?: string) => {
   
   const { toast } = useToast();
   const { handleAsyncError } = useErrorHandler();
-  const { logDealStageChanged, logDealCreated } = useActivityTracking();
+  
   const { stages } = usePipelineStages(fundId);
   const cache = useDealsCache(fundId || '');
 
@@ -193,7 +193,8 @@ export const useOptimizedPipelineDeals = (fundId?: string) => {
       if (fundId) {
         const fromStageName = stages.find(s => createStageKey(s.name) === fromStage)?.name || fromStage;
         const toStageName = stages.find(s => createStageKey(s.name) === toStage)?.name || toStage;
-        logDealStageChanged(dealId, '', `${fromStageName} → ${toStageName}`, fundId);
+        const companyName = Object.values(deals).flat().find(d => d.id === dealId)?.company_name || '';
+        await activityService.logDealStageChanged(fundId, dealId, companyName, fromStageName, toStageName);
       }
       
       // Invalidate cache
@@ -209,7 +210,7 @@ export const useOptimizedPipelineDeals = (fundId?: string) => {
         description: `Deal moved to ${toStageName}`,
       });
     }
-  }, [handleAsyncError, logDealStageChanged, toast, cache, fundId, stages]);
+  }, [handleAsyncError, toast, cache, fundId, stages, deals]);
 
   const addDeal = useCallback(async (dealData: Partial<Deal>) => {
     if (!fundId) return null;
@@ -251,7 +252,17 @@ export const useOptimizedPipelineDeals = (fundId?: string) => {
 
       // Log activity
       if (data) {
-        logDealCreated(data.id, data.company_name || '', { fund_id: fundId });
+        await activityService.logDealCreated(
+          fundId,
+          data.id,
+          data.company_name || '',
+          {
+            industry: data.industry,
+            location: data.location,
+            deal_size: data.deal_size,
+            valuation: data.valuation
+          }
+        );
       }
       
       // Invalidate cache
@@ -268,7 +279,7 @@ export const useOptimizedPipelineDeals = (fundId?: string) => {
     }
 
     return result;
-  }, [fundId, handleAsyncError, logDealCreated, toast, cache]);
+  }, [fundId, handleAsyncError, toast, cache]);
 
   const deleteDeal = useCallback(async (dealId: string) => {
     const result = await handleAsyncError(async () => {

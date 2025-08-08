@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
-import { useActivityTracking } from './useActivityTracking';
+import { activityService } from '@/services/ActivityService';
 import { usePipelineStages } from './usePipelineStages';
 import { useQueryCache } from './useQueryCache';
 import { stageNameToStatus, statusToDisplayName, createStageKey, stageKeyToStatus, isValidDealStatus } from '@/utils/pipelineMapping';
@@ -28,7 +28,7 @@ export const usePipelineDeals = (fundId?: string) => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const { toast } = useToast();
-  const { logDealStageChanged, logDealCreated } = useActivityTracking();
+  
   const { stages } = usePipelineStages(fundId);
 
   const fetchDeals = useCallback(async () => {
@@ -181,7 +181,13 @@ export const usePipelineDeals = (fundId?: string) => {
 
       // Log activity
       if (deal && fundId) {
-        await logDealStageChanged(dealId, deal.company_name, cleanFromStage, cleanToStage);
+        await activityService.logDealStageChanged(
+          fundId,
+          dealId,
+          deal.company_name,
+          cleanFromStage,
+          cleanToStage
+        );
       }
 
       console.log('=== MOVE DEAL SUCCESS ===');
@@ -205,7 +211,7 @@ export const usePipelineDeals = (fundId?: string) => {
       console.log('Reverting optimistic update...');
       fetchDeals();
     }
-  }, [stages, toast, fetchDeals, deals, fundId, logDealStageChanged]);
+  }, [stages, toast, fetchDeals, deals, fundId]);
 
   const addDeal = useCallback(async (dealData: Partial<Deal> & { company_name: string; created_by: string }) => {
     if (!fundId) return;
@@ -243,12 +249,17 @@ export const usePipelineDeals = (fundId?: string) => {
       }));
 
       // Log activity
-      await logDealCreated(data.id, data.company_name, {
-        industry: data.industry,
-        location: data.location,
-        deal_size: data.deal_size,
-        valuation: data.valuation
-      });
+      await activityService.logDealCreated(
+        fundId,
+        data.id,
+        data.company_name,
+        {
+          industry: data.industry,
+          location: data.location,
+          deal_size: data.deal_size,
+          valuation: data.valuation
+        }
+      );
 
       toast({
         title: "Deal added",
@@ -264,7 +275,7 @@ export const usePipelineDeals = (fundId?: string) => {
         variant: "destructive"
       });
     }
-  }, [fundId, toast, logDealCreated]);
+  }, [fundId, toast]);
 
   const filteredDeals = useCallback(() => {
     if (!searchQuery) return deals;

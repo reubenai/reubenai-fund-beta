@@ -27,7 +27,11 @@ export const RAGThresholdManager: React.FC = () => {
 
     setSaving(true);
     try {
-      await unifiedStrategyService.updateFundStrategy(selectedFund.id, {
+      // Fetch the current strategy to get the strategy ID
+      const strategy = await unifiedStrategyService.getFundStrategy(selectedFund.id);
+      if (!strategy?.id) throw new Error('No strategy found for this fund');
+
+      await unifiedStrategyService.updateFundStrategy(strategy.id, {
         exciting_threshold: localThresholds.exciting,
         promising_threshold: localThresholds.promising,
         needs_development_threshold: localThresholds.needs_development
