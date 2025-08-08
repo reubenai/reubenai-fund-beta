@@ -4,10 +4,13 @@ let initialized = false;
 let client: PostHog | null = null;
 
 // Read key/host from localStorage so you can configure at runtime without env vars
+const DEFAULT_POSTHOG_KEY = 'phc_IK3qYZ8E4Z8YHqxOH1SGn9XmF254o6BJjrorg2Xd0VW';
+const DEFAULT_POSTHOG_HOST = 'https://eu.i.posthog.com';
+
 const getKey = () =>
-  (localStorage.getItem('posthog_key') || '').trim();
+  (localStorage.getItem('posthog_key') || DEFAULT_POSTHOG_KEY).trim();
 const getHost = () =>
-  (localStorage.getItem('posthog_host') || 'https://us.i.posthog.com').trim();
+  (localStorage.getItem('posthog_host') || DEFAULT_POSTHOG_HOST).trim();
 
 export function initPostHog() {
   try {
