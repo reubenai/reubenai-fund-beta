@@ -25,6 +25,7 @@ import { documentService } from '@/services/DocumentService';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
 import { Database } from '@/integrations/supabase/types';
 import { formatDistanceToNow } from 'date-fns';
+import { usePermissions } from '@/hooks/usePermissions';
 
 type DealDocument = Database['public']['Tables']['deal_documents']['Row'];
 
@@ -43,6 +44,7 @@ export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTri
   const [deleteDocument, setDeleteDocument] = useState<DealDocument | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { logActivity } = useActivityTracking();
+  const { canDownloadDocuments, canDeleteDocuments } = usePermissions();
 
   const loadDocuments = async () => {
     try {
@@ -318,13 +320,15 @@ export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTri
                       <Eye className="h-4 w-4" />
                     </Button>
                     
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDownload(document)}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
+                    {canDownloadDocuments && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDownload(document)}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    )}
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -337,17 +341,21 @@ export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTri
                           <Eye className="h-4 w-4 mr-2" />
                           View
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDownload(document)}>
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => setDeleteDocument(document)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
+                        {canDownloadDocuments && (
+                          <DropdownMenuItem onClick={() => handleDownload(document)}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </DropdownMenuItem>
+                        )}
+                        {canDeleteDocuments && (
+                          <DropdownMenuItem 
+                            onClick={() => setDeleteDocument(document)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>

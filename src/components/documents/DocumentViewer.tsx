@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { documentService } from '@/services/DocumentService';
 import { Database } from '@/integrations/supabase/types';
 import { formatDistanceToNow } from 'date-fns';
+import { usePermissions } from '@/hooks/usePermissions';
 
 type DealDocument = Database['public']['Tables']['deal_documents']['Row'];
 
@@ -19,6 +20,7 @@ export function DocumentViewer({ document, onClose }: DocumentViewerProps) {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { canDownloadDocuments } = usePermissions();
 
   useEffect(() => {
     const getDownloadUrl = async () => {
@@ -118,7 +120,7 @@ export function DocumentViewer({ document, onClose }: DocumentViewerProps) {
               {document.name}
             </DialogTitle>
             <div className="flex items-center gap-2">
-              {downloadUrl && (
+              {downloadUrl && canDownloadDocuments && (
                 <>
                   <Button variant="outline" size="sm" onClick={handleDownload}>
                     <Download className="h-4 w-4 mr-2" />
@@ -126,7 +128,7 @@ export function DocumentViewer({ document, onClose }: DocumentViewerProps) {
                   </Button>
                   <Button variant="outline" size="sm" onClick={handleOpenInNewTab}>
                     <ExternalLink className="h-4 w-4 mr-2" />
-                    Open
+                    Open in New Tab
                   </Button>
                 </>
               )}
@@ -198,8 +200,8 @@ export function DocumentViewer({ document, onClose }: DocumentViewerProps) {
             <div className="flex flex-col items-center justify-center h-96 border rounded-lg text-muted-foreground">
               <FileText className="h-16 w-16 mb-4" />
               <p className="text-lg font-medium">Preview not available</p>
-              <p className="text-sm">Download the file to view its contents</p>
-              {downloadUrl && (
+              <p className="text-sm">Document is available for viewing but download is restricted</p>
+              {downloadUrl && canDownloadDocuments && (
                 <Button 
                   variant="outline" 
                   className="mt-4"
