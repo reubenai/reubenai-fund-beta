@@ -28,6 +28,7 @@ import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
 import { ComprehensiveProductionReadiness } from '@/components/admin/ComprehensiveProductionReadiness';
 import { AdminInviteUserModal } from '@/components/admin/AdminInviteUserModal';
 import { AdminDealsTable } from '@/components/admin/AdminDealsTable';
+import AdminFundCreationModal from '@/components/admin/AdminFundCreationModal';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 
 interface Organization {
@@ -101,6 +102,7 @@ export default function Admin() {
   const [thesisConfigFund, setThesisConfigFund] = useState<Fund | null>(null);
   const [bulkUploadFund, setBulkUploadFund] = useState<Fund | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showCreateFundModal, setShowCreateFundModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -381,6 +383,15 @@ export default function Admin() {
 
   const handleInviteUser = () => {
     setShowInviteModal(true);
+  };
+
+  const handleCreateFund = () => {
+    setShowCreateFundModal(true);
+  };
+
+  const handleFundCreated = (newFund: Fund) => {
+    setFunds([newFund, ...funds]);
+    setStats(prev => ({ ...prev, totalFunds: prev.totalFunds + 1 }));
   };
 
   const archiveFund = async (fundId: string, fundName: string, reason: string = '') => {
@@ -673,7 +684,7 @@ export default function Admin() {
               <EnhancedAdminFundTable
                 funds={funds}
                 organizations={organizations}
-                onCreateFund={() => {/* Will be handled by the table component itself */}}
+                onCreateFund={handleCreateFund}
                 onConfigureThesis={(fund) => setThesisConfigFund(fund as Fund)}
                 onBulkUpload={(fund) => setBulkUploadFund(fund as Fund)}
                 onArchiveFund={(fundId, fundName) => archiveFund(fundId, fundName)}
@@ -723,6 +734,14 @@ export default function Admin() {
         onClose={() => setShowInviteModal(false)}
         organizations={organizations}
         onInviteSuccess={fetchData}
+      />
+
+      {/* Fund Creation Modal */}
+      <AdminFundCreationModal
+        isOpen={showCreateFundModal}
+        onClose={() => setShowCreateFundModal(false)}
+        organizations={organizations}
+        onFundCreated={handleFundCreated}
       />
     </div>
   );
