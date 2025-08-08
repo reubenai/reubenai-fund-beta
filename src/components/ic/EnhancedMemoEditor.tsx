@@ -163,7 +163,7 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
 
     setIsExportingPDF(true);
     try {
-      const { data, error } = await supabase.functions.invoke('ic-memo-pdf-exporter', {
+      const { data, error } = await supabase.functions.invoke('enhanced-pdf-generator', {
         body: { memoId: editedMemo.id }
       });
 

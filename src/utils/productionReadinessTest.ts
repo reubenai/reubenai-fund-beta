@@ -222,6 +222,7 @@ export class ProductionReadinessTest {
   private async testEdgeFunctions(): Promise<void> {
     const criticalFunctions = [
       'ai-memo-generator',
+      'enhanced-pdf-generator',
       'ic-memo-pdf-exporter', 
       'reuben-orchestrator'
     ];
