@@ -2708,26 +2708,6 @@ export type Database = {
         Args: { fund_id_param: string }
         Returns: Json
       }
-      can_create_funds: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      can_create_ic_meetings: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      can_edit_fund_data: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      can_manage_funds: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      can_manage_users: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
       complete_analysis_queue_item: {
         Args: {
           queue_id_param: string
@@ -2751,23 +2731,11 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      get_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_user_role_simple: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      has_document_management_access: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
       is_admin_by_email: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
-      is_reuben_admin: {
+      is_reuben_email: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }

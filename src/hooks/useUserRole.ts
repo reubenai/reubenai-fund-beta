@@ -27,23 +27,36 @@ export const useUserRole = () => {
         // Check if user is Reuben admin by email
         const isReubenAdmin = user.email?.includes('@goreuben.com') || user.email?.includes('@reuben.com');
         
-        // Fetch user profile
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('role, organization_id')
-          .eq('user_id', user.id)
-          .single();
+        if (isReubenAdmin) {
+          // For Reuben admins, set super_admin directly without querying
+          setProfile({
+            role: 'super_admin',
+            organization_id: '550e8400-e29b-41d4-a716-446655440000',
+            is_super_admin: true
+          });
+        } else {
+          // Fetch user profile for non-Reuben users
+          const { data: profileData, error } = await supabase
+            .from('profiles')
+            .select('role, organization_id')
+            .eq('user_id', user.id)
+            .single();
 
-        if (error) throw error;
-
-        // Determine if user is super admin
-        const is_super_admin = profileData?.role === 'super_admin' || isReubenAdmin;
-
-        setProfile({
-          role: profileData?.role || 'viewer',
-          organization_id: profileData?.organization_id || null,
-          is_super_admin
-        });
+          if (error) {
+            console.error('Error fetching user profile:', error);
+            setProfile({
+              role: 'viewer',
+              organization_id: null,
+              is_super_admin: false
+            });
+          } else {
+            setProfile({
+              role: profileData?.role || 'viewer',
+              organization_id: profileData?.organization_id || null,
+              is_super_admin: false
+            });
+          }
+        }
       } catch (error) {
         console.error('Error fetching user profile:', error);
         setProfile(null);
