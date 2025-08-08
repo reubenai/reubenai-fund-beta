@@ -11,10 +11,15 @@ export const usePipelineStages = (fundId?: string) => {
   const { toast } = useToast();
 
   const fetchStages = useCallback(async () => {
-    if (!fundId) return;
+    if (!fundId) {
+      console.log('📊 [usePipelineStages] No fundId provided');
+      return;
+    }
 
     try {
       setLoading(true);
+      console.log('📊 [usePipelineStages] Fetching stages for fundId:', fundId);
+      
       const { data, error } = await supabase
         .from('pipeline_stages')
         .select('*')
@@ -22,6 +27,10 @@ export const usePipelineStages = (fundId?: string) => {
         .order('position', { ascending: true });
 
       if (error) throw error;
+      
+      console.log('📊 [usePipelineStages] Fetched stages:', data?.length || 0, 'stages');
+      console.log('📊 [usePipelineStages] Stage names:', data?.map(s => s.name) || []);
+      
       setStages(data || []);
     } catch (error) {
       console.error('Error fetching pipeline stages:', error);
