@@ -8,12 +8,22 @@ import { AddDealModal } from './AddDealModal';
 import { BatchUploadModal } from './BatchUploadModal';
 import { DealDetailsModal } from './DealDetailsModal';
 import { DealSourcingModal } from './DealSourcingModal';
+import { PipelineFilters } from './PipelineFilters';
 import { useToast } from '@/hooks/use-toast';
 import { useFund } from '@/contexts/FundContext';
 
 interface KanbanBoardState {
   currentView: 'kanban' | 'list';
   showFilters: boolean;
+  filters: {
+    status?: string;
+    ragStatus?: string;
+    industry?: string;
+    dealSizeMin?: number;
+    dealSizeMax?: number;
+    scoreMin?: number;
+    scoreMax?: number;
+  };
   selectedDeal: Deal | null;
   showAddDeal: boolean;
   showBatchUpload: boolean;
@@ -41,6 +51,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
   const [state, setState] = useState<KanbanBoardState>({
     currentView: 'kanban',
     showFilters: false,
+    filters: {},
     selectedDeal: null,
     showAddDeal: false,
     showBatchUpload: false,
@@ -87,8 +98,52 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
 
   // Filter deals based on current filters
   const filteredDeals = useMemo(() => {
-    return deals; // Will add filtering logic later
-  }, [deals]);
+    if (!state.filters || Object.keys(state.filters).length === 0) {
+      return deals;
+    }
+
+    const { filters } = state;
+    const filtered: Record<string, Deal[]> = {};
+
+    Object.entries(deals).forEach(([stageKey, stageDeals]) => {
+      filtered[stageKey] = stageDeals.filter((deal) => {
+        // Status filter
+        if (filters.status && deal.status !== filters.status) {
+          return false;
+        }
+
+        // RAG status filter
+        if (filters.ragStatus && deal.rag_status !== filters.ragStatus) {
+          return false;
+        }
+
+        // Industry filter
+        if (filters.industry && deal.industry && !deal.industry.toLowerCase().includes(filters.industry.toLowerCase())) {
+          return false;
+        }
+
+        // Deal size range filter
+        if (filters.dealSizeMin && (!deal.deal_size || deal.deal_size < filters.dealSizeMin)) {
+          return false;
+        }
+        if (filters.dealSizeMax && (!deal.deal_size || deal.deal_size > filters.dealSizeMax)) {
+          return false;
+        }
+
+        // Score range filter
+        if (filters.scoreMin && (!deal.overall_score || deal.overall_score < filters.scoreMin)) {
+          return false;
+        }
+        if (filters.scoreMax && (!deal.overall_score || deal.overall_score > filters.scoreMax)) {
+          return false;
+        }
+
+        return true;
+      });
+    });
+
+    return filtered;
+  }, [deals, state.filters]);
 
   if (loading || stages.length === 0) {
     return (
@@ -114,7 +169,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
   return (
     <div className="h-full bg-white">
       <div className="border-b bg-white">
-        <div className="px-8 py-6">
+        <div className="px-8 py-6 space-y-4">
           <EnhancedPipelineHeader
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -124,6 +179,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
             totalDeals={getTotalDeals()}
             showFilters={state.showFilters}
             onToggleFilters={() => updateState({ showFilters: !state.showFilters })}
+          />
+          
+          <PipelineFilters
+            filters={state.filters}
+            onFiltersChange={(filters) => updateState({ filters })}
+            onClearFilters={() => updateState({ filters: {} })}
+            isVisible={state.showFilters}
           />
         </div>
       </div>

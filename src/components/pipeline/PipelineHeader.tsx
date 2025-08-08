@@ -143,7 +143,12 @@ export const PipelineHeader: React.FC<PipelineHeaderProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={onToggleFilters}
+            className={showFilters ? 'bg-muted' : ''}
+          >
             <Filter className="w-4 h-4 mr-2" />
             Filters
           </Button>
