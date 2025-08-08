@@ -26,6 +26,7 @@ import Analytics from "./pages/Analytics";
 import FundMemory from "./pages/FundMemory";
 import WhatIsReubenAI from "./pages/WhatIsReubenAI";
 import NotFound from "./pages/NotFound";
+import { PostHogRouterTracker } from "@/components/analytics/PostHogRouterTracker";
 
 const queryClient = new QueryClient();
 
@@ -38,8 +39,9 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-            <SidebarProvider>
-          <Routes>
+              <PostHogRouterTracker />
+              <SidebarProvider>
+            <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={
               <AuthGuard>

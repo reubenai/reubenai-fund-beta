@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { captureEvent } from '@/lib/analytics/posthog';
 
 interface UserActivity {
   event: string;
@@ -21,6 +22,15 @@ export function useActivityTracking() {
       userId: user?.id,
       metadata
     };
+
+    // Mirror to PostHog (avoid double page_view capture; handled by router tracker)
+    if (event !== 'page_view') {
+      captureEvent(event, {
+        path: activity.path,
+        userId: activity.userId,
+        ...metadata
+      });
+    }
 
     try {
       // Store in database via activity service
