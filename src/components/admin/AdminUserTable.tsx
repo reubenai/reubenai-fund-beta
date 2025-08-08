@@ -14,7 +14,7 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from '@/components/ui/pagination';
-import { Search, UserPlus, Mail, Shield, Building, ArrowUpDown } from 'lucide-react';
+import { Search, UserPlus, Mail, Shield, Building, ArrowUpDown, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Profile {
@@ -40,6 +40,8 @@ interface AdminUserTableProps {
   organizations: Organization[];
   onUpdateUserRole: (userId: string, newRole: string) => Promise<void>;
   onAssignUserToOrg: (userId: string, orgId: string) => Promise<void>;
+  onDeleteUser: (userId: string) => Promise<void>;
+  onBulkDeleteUsers: (userIds: string[]) => Promise<void>;
   onInviteUser: () => void;
   canModifyRoles: boolean;
 }
@@ -49,6 +51,8 @@ export function AdminUserTable({
   organizations, 
   onUpdateUserRole, 
   onAssignUserToOrg,
+  onDeleteUser,
+  onBulkDeleteUsers,
   onInviteUser,
   canModifyRoles
 }: AdminUserTableProps) {
@@ -237,6 +241,19 @@ export function AdminUserTable({
             <Button size="sm" variant="outline" onClick={() => handleBulkRoleUpdate('viewer')}>
               Make Viewer
             </Button>
+            <Button 
+              size="sm" 
+              variant="destructive" 
+              onClick={() => {
+                if (confirm(`Are you sure you want to delete ${selectedUsers.length} selected users? This action cannot be undone.`)) {
+                  onBulkDeleteUsers(selectedUsers);
+                  setSelectedUsers([]);
+                }
+              }}
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Delete Selected
+            </Button>
             <Button size="sm" variant="ghost" onClick={() => setSelectedUsers([])}>
               Clear Selection
             </Button>
@@ -390,9 +407,23 @@ export function AdminUserTable({
                             <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
                           ))}
                         </SelectContent>
-                      </Select>
-                    </div>
-                  </TableCell>
+                       </Select>
+                       {canModifyRoles && (
+                         <Button
+                           size="sm"
+                           variant="ghost"
+                           onClick={() => {
+                             if (confirm(`Are you sure you want to delete ${profile.first_name} ${profile.last_name}? This action cannot be undone.`)) {
+                               onDeleteUser(profile.user_id);
+                             }
+                           }}
+                           className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                         >
+                           <Trash2 className="h-3 w-3" />
+                         </Button>
+                       )}
+                     </div>
+                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>

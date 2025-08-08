@@ -2368,9 +2368,11 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          deleted_at: string | null
           email: string
           first_name: string | null
           id: string
+          is_deleted: boolean | null
           last_name: string | null
           organization_id: string | null
           role: Database["public"]["Enums"]["user_role"]
@@ -2380,9 +2382,11 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          deleted_at?: string | null
           email: string
           first_name?: string | null
           id?: string
+          is_deleted?: boolean | null
           last_name?: string | null
           organization_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
@@ -2392,9 +2396,11 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string
           first_name?: string | null
           id?: string
+          is_deleted?: boolean | null
           last_name?: string | null
           organization_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]

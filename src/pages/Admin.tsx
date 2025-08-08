@@ -364,6 +364,94 @@ export default function Admin() {
     }
   };
 
+  const deleteUser = async (userId: string) => {
+    // Prevent self-deletion
+    if (user?.id === userId) {
+      toast.error('You cannot delete your own account');
+      return;
+    }
+
+    // Prevent deletion of other super admins unless user is Reuben admin
+    const targetUser = profiles.find(p => p.user_id === userId);
+    const isReubenAdmin = user?.email?.includes('@goreuben.com') || user?.email?.includes('@reuben.com');
+    
+    if (targetUser?.role === 'super_admin' && !isReubenAdmin) {
+      toast.error('You cannot delete other super admin accounts');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          is_deleted: true, 
+          deleted_at: new Date().toISOString() 
+        })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      // Remove from local state
+      setProfiles(profiles.filter(p => p.user_id !== userId));
+      
+      // Log admin activity
+      await logAdminActivity('user_deletion', 'User deleted', {
+        deletedUserId: userId,
+        deletedUserEmail: targetUser?.email,
+        deletedUserName: `${targetUser?.first_name} ${targetUser?.last_name}`
+      });
+      
+      toast.success('User deleted successfully');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user');
+    }
+  };
+
+  const bulkDeleteUsers = async (userIds: string[]) => {
+    // Prevent self-deletion
+    if (userIds.includes(user?.id || '')) {
+      toast.error('You cannot delete your own account');
+      return;
+    }
+
+    // Check for super admin deletions
+    const targetUsers = profiles.filter(p => userIds.includes(p.user_id));
+    const superAdmins = targetUsers.filter(p => p.role === 'super_admin');
+    const isReubenAdmin = user?.email?.includes('@goreuben.com') || user?.email?.includes('@reuben.com');
+    
+    if (superAdmins.length > 0 && !isReubenAdmin) {
+      toast.error('You cannot delete super admin accounts');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          is_deleted: true, 
+          deleted_at: new Date().toISOString() 
+        })
+        .in('user_id', userIds);
+
+      if (error) throw error;
+
+      // Remove from local state
+      setProfiles(profiles.filter(p => !userIds.includes(p.user_id)));
+      
+      // Log admin activity
+      await logAdminActivity('bulk_user_deletion', `Bulk deleted ${userIds.length} users`, {
+        deletedUserIds: userIds,
+        deletedUsers: targetUsers.map(u => ({ id: u.user_id, email: u.email, name: `${u.first_name} ${u.last_name}` }))
+      });
+      
+      toast.success(`${userIds.length} users deleted successfully`);
+    } catch (error) {
+      console.error('Error bulk deleting users:', error);
+      toast.error('Failed to delete users');
+    }
+  };
+
   const logAdminActivity = async (type: string, description: string, context: any = {}) => {
     try {
       await supabase.from('activity_events').insert([{
@@ -675,6 +763,8 @@ export default function Admin() {
                 organizations={organizations}
                 onUpdateUserRole={updateUserRole}
                 onAssignUserToOrg={assignUserToOrg}
+                onDeleteUser={deleteUser}
+                onBulkDeleteUsers={bulkDeleteUsers}
                 onInviteUser={handleInviteUser}
                 canModifyRoles={user?.email?.includes('@goreuben.com') || user?.email?.includes('@reuben.com') || profile?.role === 'super_admin'}
               />
