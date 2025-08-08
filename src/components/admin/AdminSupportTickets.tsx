@@ -29,23 +29,27 @@ import {
 interface SupportTicket {
   id: string;
   user_id: string;
-  email: string;
   feedback_type: 'bug' | 'feature' | 'general' | 'love';
-  subject: string;
   message: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
   status: 'open' | 'in_progress' | 'resolved' | 'closed';
-  assigned_to: string | null;
   rating: number | null;
   fund_id: string | null;
-  fund_name: string | null;
-  internal_notes: string | null;
-  resolution_notes: string | null;
-  first_response_at: string | null;
+  admin_response: string | null;
   resolved_at: string | null;
-  closed_at: string | null;
   created_at: string;
   updated_at: string;
+  page_url?: string;
+  user_agent?: string;
+  metadata?: any;
+  user?: {
+    email: string;
+    first_name: string | null;
+    last_name: string | null;
+  };
+  fund?: {
+    name: string;
+  };
 }
 
 interface TicketStats {
@@ -109,12 +113,16 @@ export function AdminSupportTickets() {
   const fetchTickets = async () => {
     try {
       const { data, error } = await supabase
-        .from('support_tickets')
-        .select('*')
+        .from('user_feedback')
+        .select(`
+          *,
+          fund:funds(name),
+          user:profiles!user_id(email, first_name, last_name)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTickets((data || []) as SupportTicket[]);
+      setTickets((data || []) as any);
     } catch (error) {
       console.error('Error fetching tickets:', error);
       toast.error('Failed to load support tickets');
@@ -126,7 +134,7 @@ export function AdminSupportTickets() {
   const fetchStats = async () => {
     try {
       const { data: allTickets } = await supabase
-        .from('support_tickets')
+        .from('user_feedback')
         .select('*');
 
       if (!allTickets) return;
@@ -137,12 +145,12 @@ export function AdminSupportTickets() {
       const resolved = allTickets.filter(t => t.status === 'resolved').length;
       const closed = allTickets.filter(t => t.status === 'closed').length;
 
-      // Calculate average response time (for tickets with first_response_at)
-      const respondedTickets = allTickets.filter(t => t.first_response_at);
+      // Calculate average response time (for tickets with admin_response)
+      const respondedTickets = allTickets.filter(t => t.admin_response);
       const avg_response_time = respondedTickets.length > 0 
         ? respondedTickets.reduce((sum, ticket) => {
             const created = new Date(ticket.created_at);
-            const responded = new Date(ticket.first_response_at!);
+            const responded = new Date(ticket.updated_at);
             return sum + (responded.getTime() - created.getTime());
           }, 0) / respondedTickets.length / (1000 * 60 * 60) // Convert to hours
         : 0;
@@ -182,18 +190,12 @@ export function AdminSupportTickets() {
     try {
       const updates: any = { status: newStatus };
 
-      if (newStatus === 'in_progress' && !selectedTicket?.first_response_at) {
-        updates.first_response_at = new Date().toISOString();
-      }
       if (newStatus === 'resolved') {
         updates.resolved_at = new Date().toISOString();
       }
-      if (newStatus === 'closed') {
-        updates.closed_at = new Date().toISOString();
-      }
 
       const { error } = await supabase
-        .from('support_tickets')
+        .from('user_feedback')
         .update(updates)
         .eq('id', ticketId);
 
@@ -211,25 +213,25 @@ export function AdminSupportTickets() {
   const addInternalNotes = async (ticketId: string, notes: string) => {
     try {
       const { error } = await supabase
-        .from('support_tickets')
-        .update({ internal_notes: notes })
+        .from('user_feedback')
+        .update({ admin_response: notes })
         .eq('id', ticketId);
 
       if (error) throw error;
 
       await fetchTickets();
-      toast.success('Internal notes updated');
+      toast.success('Admin response updated');
       setInternalNotes('');
     } catch (error) {
-      console.error('Error updating notes:', error);
-      toast.error('Failed to update notes');
+      console.error('Error updating response:', error);
+      toast.error('Failed to update admin response');
     }
   };
 
   const filteredTickets = tickets.filter(ticket => {
-    const matchesSearch = ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         ticket.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         ticket.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (ticket.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          ticket.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          ticket.fund?.name?.toLowerCase().includes(searchTerm.toLowerCase())) ?? false;
     const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || ticket.priority === priorityFilter;
     const matchesType = typeFilter === 'all' || ticket.feedback_type === typeFilter;
@@ -400,7 +402,7 @@ export function AdminSupportTickets() {
             <TableHeader>
               <TableRow>
                 <TableHead>Type</TableHead>
-                <TableHead>Subject</TableHead>
+                <TableHead>Message</TableHead>
                 <TableHead>User</TableHead>
                 <TableHead>Priority</TableHead>
                 <TableHead>Status</TableHead>
@@ -422,15 +424,15 @@ export function AdminSupportTickets() {
                     </TableCell>
                     <TableCell>
                       <div className="max-w-xs truncate font-medium">
-                        {ticket.subject}
+                        {ticket.message}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        {ticket.email}
-                        {ticket.fund_name && (
+                        {ticket.user?.email || 'Unknown User'}
+                        {ticket.fund?.name && (
                           <div className="text-xs text-muted-foreground">
-                            {ticket.fund_name}
+                            {ticket.fund.name}
                           </div>
                         )}
                       </div>
@@ -466,7 +468,7 @@ export function AdminSupportTickets() {
                             size="sm"
                             onClick={() => {
                               setSelectedTicket(ticket);
-                              setInternalNotes(ticket.internal_notes || '');
+                              setInternalNotes(ticket.admin_response || '');
                             }}
                           >
                             View
@@ -476,10 +478,10 @@ export function AdminSupportTickets() {
                           <DialogHeader>
                             <DialogTitle className="flex items-center gap-2">
                               <TypeIcon className="h-5 w-5" />
-                              {ticket.subject}
+                              {ticket.feedback_type} Report
                             </DialogTitle>
                             <DialogDescription>
-                              {ticket.feedback_type} from {ticket.email} • Created {new Date(ticket.created_at).toLocaleString()}
+                              {ticket.feedback_type} from {ticket.user?.email || 'Unknown User'} • Created {new Date(ticket.created_at).toLocaleString()}
                             </DialogDescription>
                           </DialogHeader>
                           
@@ -547,11 +549,11 @@ export function AdminSupportTickets() {
                             </div>
 
                             <div>
-                              <Label>Internal Notes</Label>
+                              <Label>Admin Response</Label>
                               <Textarea
                                 value={internalNotes}
                                 onChange={(e) => setInternalNotes(e.target.value)}
-                                placeholder="Add internal notes for team members..."
+                                placeholder="Add response to user feedback..."
                                 className="mt-2"
                               />
                               <Button 
@@ -559,27 +561,19 @@ export function AdminSupportTickets() {
                                 className="mt-2"
                                 disabled={!internalNotes.trim()}
                               >
-                                Save Notes
+                                Save Response
                               </Button>
                             </div>
 
-                            {ticket.internal_notes && (
+                            {ticket.admin_response && (
                               <div>
-                                <Label className="text-base font-semibold">Existing Internal Notes</Label>
-                                <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                                  {ticket.internal_notes}
+                                <Label className="text-base font-semibold">Existing Admin Response</Label>
+                                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                  {ticket.admin_response}
                                 </div>
                               </div>
                             )}
 
-                            {ticket.resolution_notes && (
-                              <div>
-                                <Label className="text-base font-semibold">Resolution Notes</Label>
-                                <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
-                                  {ticket.resolution_notes}
-                                </div>
-                              </div>
-                            )}
                           </div>
                         </DialogContent>
                       </Dialog>
