@@ -62,12 +62,10 @@ export default function Strategy() {
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              <Link to="/funds">
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Create Your First Fund
-                </Button>
-              </Link>
+              <Button className="gap-2" onClick={() => window.location.href = '/funds'}>
+                <Plus className="h-4 w-4" />
+                Go to Funds
+              </Button>
             </CardContent>
           </Card>
         </div>

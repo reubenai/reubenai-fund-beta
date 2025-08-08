@@ -112,7 +112,7 @@ const FundsList = () => {
         ))}
       </div>
 
-      {funds.length === 0 && (
+      {funds.length === 0 && canCreateFunds && (
         <Card>
           <CardHeader>
             <CardTitle>No Funds Yet</CardTitle>
@@ -126,6 +126,15 @@ const FundsList = () => {
               </Button>
             </Link>
           </CardContent>
+        </Card>
+      )}
+      
+      {funds.length === 0 && !canCreateFunds && (
+        <Card>
+          <CardHeader>
+            <CardTitle>No Funds Available</CardTitle>
+            <CardDescription>Contact your administrator to get access to funds or create new ones.</CardDescription>
+          </CardHeader>
         </Card>
       )}
     </div>

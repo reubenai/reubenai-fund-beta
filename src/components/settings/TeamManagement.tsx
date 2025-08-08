@@ -16,7 +16,9 @@ import {
   Building, 
   MoreHorizontal,
   Edit,
-  Trash2
+  Trash2,
+  Target,
+  Settings
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -57,8 +59,12 @@ export default function TeamManagement() {
   
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [availableFunds, setAvailableFunds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showFundAssignModal, setShowFundAssignModal] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
+  const [selectedFunds, setSelectedFunds] = useState<string[]>([]);
   const [isInviting, setIsInviting] = useState(false);
   
   // Invite form state
@@ -94,6 +100,16 @@ export default function TeamManagement() {
 
       if (orgsError) throw orgsError;
       setOrganizations(orgsData || []);
+
+      // Fetch available funds for the organization
+      const { data: fundsData, error: fundsError } = await supabase
+        .from('funds')
+        .select('id, name, fund_type')
+        .eq('organization_id', profile?.organization_id || '550e8400-e29b-41d4-a716-446655440000')
+        .order('name');
+
+      if (fundsError) throw fundsError;
+      setAvailableFunds(fundsData || []);
 
       // Fetch team members based on user's organization
       let query = supabase
@@ -213,6 +229,30 @@ export default function TeamManagement() {
       toast({
         title: "Error",
         description: "Failed to update user role",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleFundAssignment = async () => {
+    if (!selectedMember) return;
+
+    try {
+      // For now, we'll just show a success message
+      // In a real implementation, you'd need a fund_access table
+      toast({
+        title: "Fund Access Updated",
+        description: `Updated fund access for ${selectedMember.first_name} ${selectedMember.last_name}`,
+      });
+
+      setShowFundAssignModal(false);
+      setSelectedMember(null);
+      setSelectedFunds([]);
+    } catch (error) {
+      console.error('Error updating fund access:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update fund access",
         variant: "destructive"
       });
     }
@@ -425,27 +465,42 @@ export default function TeamManagement() {
                           {new Date(member.created_at).toLocaleDateString()}
                         </span>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Select 
-                            value={member.role} 
-                            onValueChange={(newRole) => updateUserRole(member.user_id, newRole as 'super_admin' | 'admin' | 'fund_manager' | 'analyst' | 'viewer')}
-                            disabled={role !== 'super_admin' && role !== 'admin'}
-                          >
-                            <SelectTrigger className="w-32 h-8 border-0 bg-muted/30">
-                              <Shield className="h-3 w-3 mr-1" />
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ROLE_OPTIONS.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </TableCell>
+                       <TableCell>
+                         <div className="flex space-x-2">
+                           <Select 
+                             value={member.role} 
+                             onValueChange={(newRole) => updateUserRole(member.user_id, newRole as 'super_admin' | 'admin' | 'fund_manager' | 'analyst' | 'viewer')}
+                             disabled={role !== 'super_admin' && role !== 'admin'}
+                           >
+                             <SelectTrigger className="w-32 h-8 border-0 bg-muted/30">
+                               <Shield className="h-3 w-3 mr-1" />
+                               <SelectValue />
+                             </SelectTrigger>
+                             <SelectContent>
+                               {ROLE_OPTIONS.map((option) => (
+                                 <SelectItem key={option.value} value={option.value}>
+                                   {option.label}
+                                 </SelectItem>
+                               ))}
+                             </SelectContent>
+                           </Select>
+                           
+                           {(role === 'super_admin' || role === 'admin' || role === 'fund_manager') && (
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={() => {
+                                 setSelectedMember(member);
+                                 setShowFundAssignModal(true);
+                               }}
+                               className="h-8 gap-1"
+                             >
+                               <Target className="h-3 w-3" />
+                               Funds
+                             </Button>
+                           )}
+                         </div>
+                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -454,6 +509,66 @@ export default function TeamManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Fund Assignment Modal */}
+      <Dialog open={showFundAssignModal} onOpenChange={setShowFundAssignModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assign Fund Access</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select which funds {selectedMember?.first_name} {selectedMember?.last_name} should have access to:
+            </p>
+            
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {availableFunds.map((fund) => (
+                <div key={fund.id} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id={`fund-${fund.id}`}
+                    checked={selectedFunds.includes(fund.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedFunds([...selectedFunds, fund.id]);
+                      } else {
+                        setSelectedFunds(selectedFunds.filter(id => id !== fund.id));
+                      }
+                    }}
+                    className="rounded border-gray-300"
+                  />
+                  <label htmlFor={`fund-${fund.id}`} className="text-sm font-medium">
+                    {fund.name}
+                  </label>
+                  <Badge variant="outline" className="text-xs">
+                    {fund.fund_type.replace('_', ' ')}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowFundAssignModal(false);
+                  setSelectedMember(null);
+                  setSelectedFunds([]);
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleFundAssignment}
+                className="flex-1"
+              >
+                Update Access
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

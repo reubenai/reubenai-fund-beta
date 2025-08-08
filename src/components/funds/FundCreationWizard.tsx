@@ -36,6 +36,14 @@ const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD'];
 export function FundCreationWizard({ isOpen, onClose }: FundCreationWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [fundData, setFundData] = useState<FundData>({
+    name: '',
+    description: '',
+    fund_type: 'venture_capital',
+    target_size: 10000000,
+    currency: 'USD'
+  });
+  
   const { user } = useAuth();
   const { funds, setSelectedFund } = useFund();
   const { canCreateFunds } = usePermissions();
@@ -44,14 +52,6 @@ export function FundCreationWizard({ isOpen, onClose }: FundCreationWizardProps)
   if (!canCreateFunds) {
     return null;
   }
-  
-  const [fundData, setFundData] = useState<FundData>({
-    name: '',
-    description: '',
-    fund_type: 'venture_capital',
-    target_size: 10000000,
-    currency: 'USD'
-  });
 
   const steps = [
     {
