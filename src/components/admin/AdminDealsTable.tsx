@@ -80,8 +80,9 @@ export function AdminDealsTable({ refreshTrigger, onBulkDelete, isSuperAdmin = f
   const fetchDeals = async () => {
     try {
       setLoading(true);
-      
-      const { data, error } = await supabase
+
+      // 1) Fetch base deals without embedded relationships to avoid RLS join issues
+      const { data: dealsData, error: dealsError } = await supabase
         .from('deals')
         .select(`
           id,
@@ -91,32 +92,72 @@ export function AdminDealsTable({ refreshTrigger, onBulkDelete, isSuperAdmin = f
           score_level,
           industry,
           created_at,
-          fund:funds (
-            id,
-            name,
-            fund_type,
-            organization:organizations (
-              id,
-              name
-            )
-          )
+          fund_id
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (dealsError) throw dealsError;
 
-      setDeals((data as any[])?.map((deal: any) => ({
-        ...deal,
-        fund: deal.fund || { id: '', name: 'Unknown Fund', fund_type: '', organization: { id: '', name: 'Unknown Org' } }
-      })) || []);
-    } catch (error) {
-      console.error('Error fetching deals:', error);
+      const baseDeals = (dealsData as any[]) || [];
+      if (baseDeals.length === 0) {
+        setDeals([]);
+        return;
+      }
+
+      // 2) Fetch funds for the returned deals
+      const fundIds = Array.from(new Set(baseDeals.map((d: any) => d.fund_id).filter(Boolean)));
+      const { data: fundsData, error: fundsError } = await supabase
+        .from('funds')
+        .select('id, name, fund_type, organization_id')
+        .in('id', fundIds);
+      if (fundsError) throw fundsError;
+
+      // 3) Fetch organizations for those funds
+      const orgIds = Array.from(new Set((fundsData || []).map((f: any) => f.organization_id).filter(Boolean)));
+      let orgsData: any[] = [];
+      if (orgIds.length > 0) {
+        const { data: organizations, error: orgsError } = await supabase
+          .from('organizations')
+          .select('id, name')
+          .in('id', orgIds);
+        if (orgsError) throw orgsError;
+        orgsData = organizations || [];
+      }
+
+      const fundMap = new Map((fundsData || []).map((f: any) => [f.id, f]));
+      const orgMap = new Map(orgsData.map((o: any) => [o.id, o]));
+
+      const normalizedDeals: Deal[] = baseDeals.map((d: any) => {
+        const f = fundMap.get(d.fund_id);
+        const o = f ? orgMap.get(f.organization_id) : null;
+        return {
+          id: d.id,
+          company_name: d.company_name,
+          status: d.status,
+          overall_score: d.overall_score ?? null,
+          score_level: d.score_level ?? null,
+          industry: d.industry ?? null,
+          created_at: d.created_at,
+          fund: {
+            id: f?.id || '',
+            name: f?.name || 'Unknown Fund',
+            fund_type: f?.fund_type || '',
+            organization: {
+              id: o?.id || '',
+              name: o?.name || 'Unknown Org',
+            },
+          },
+        } as Deal;
+      });
+
+      setDeals(normalizedDeals);
+    } catch (error: any) {
+      console.error('Error fetching deals:', error?.message || error);
       toast.error('Failed to fetch deals');
     } finally {
       setLoading(false);
     }
   };
-
   const filteredDeals = deals
     .filter(deal => {
       const fundNameMatch = !filters.fundName || 
