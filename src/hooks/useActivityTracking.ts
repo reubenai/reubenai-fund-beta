@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+
 import { captureEvent } from '@/lib/analytics/posthog';
 import { useFund } from '@/contexts/FundContext';
 
@@ -14,6 +14,7 @@ interface UserActivity {
 
 export function useActivityTracking() {
   const { user } = useAuth();
+  const { selectedFund } = useFund();
 
   const trackEvent = useCallback(async (event: string, metadata?: Record<string, any>) => {
     const activity: UserActivity = {
@@ -37,19 +38,14 @@ export function useActivityTracking() {
       // Store in database via activity service
       const { activityService } = await import('@/services/ActivityService');
       
-      // Get current fund
-      const { data: currentFund } = await supabase
-        .from('funds')
-        .select('id')
-        .limit(1)
-        .single();
-
-      if (currentFund) {
+      if (selectedFund?.id) {
+        const activityType = mapEventToActivityType(event);
         await activityService.createActivity({
-          fund_id: currentFund.id,
-          activity_type: event === 'page_view' ? 'system_event' : 'deal_updated',
+          fund_id: selectedFund.id,
+          activity_type: activityType,
           title: `User ${event}`,
           description: `User performed ${event} on ${activity.path}`,
+          deal_id: typeof metadata?.dealId === 'string' ? metadata.dealId : undefined,
           context_data: {
             event,
             path: activity.path,
@@ -73,7 +69,7 @@ export function useActivityTracking() {
     }
     
     localStorage.setItem('user-activities', JSON.stringify(activities));
-  }, [user?.id]);
+  }, [user?.id, selectedFund?.id]);
 
   // Track page views
   useEffect(() => {
@@ -148,4 +144,21 @@ export function useActivityTracking() {
       trackEvent('deal_created', { dealId, companyName, stageOrMetadata });
     }
   };
+}
+
+function mapEventToActivityType(event: string): 'deal_created' | 'deal_updated' | 'deal_stage_changed' | 'document_uploaded' | 'system_event' {
+  switch (event) {
+    case 'deal_stage_changed':
+      return 'deal_stage_changed';
+    case 'deal_created':
+      return 'deal_created';
+    case 'document_uploaded':
+      return 'document_uploaded';
+    case 'page_view':
+    case 'click':
+    case 'form_submit':
+    case 'session_end':
+    default:
+      return 'system_event';
+  }
 }
