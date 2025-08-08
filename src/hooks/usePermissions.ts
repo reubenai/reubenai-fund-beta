@@ -229,7 +229,7 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
         canEditFunds: false,
         canDeleteFunds: false,
         canViewStrategy: true,
-        canConfigureStrategy: false, // FIXED: Analysts cannot configure strategy
+        canConfigureStrategy: true, // FIXED: Analysts can configure strategy
         canEditThesis: false,
         canViewICMemos: true,
         canCreateICMemos: true,
@@ -284,7 +284,7 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
         canSubmitForReview: false,
         canReviewMemos: false,
         canPublishMemos: false,
-        canVoteOnDeals: false,
+        canVoteOnDeals: true, // FIXED: Viewers can vote if deal is already in voting
         canManageICMembers: false,
         canBatchUpload: false, // FIXED: Viewers cannot batch upload
         canBatchOperations: false,

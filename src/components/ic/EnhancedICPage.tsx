@@ -21,6 +21,7 @@ import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 
 import { DataValidator, NetworkHandler } from '@/utils/edgeCaseHandler';
 import { performanceMonitor } from '@/utils/performanceMonitor';
+import { usePermissions } from '@/hooks/usePermissions';
 // Breadcrumbs removed - using Layout breadcrumbs
 
 interface Deal {
@@ -51,6 +52,7 @@ export default function EnhancedICPage() {
   const { selectedFund } = useFund();
   const { toast } = useToast();
   const { getRAGCategory } = useStrategyThresholds();
+  const { canCreateICMemos, canManageICMembers, canVoteOnDeals } = usePermissions();
   const [activeTab, setActiveTab] = useState('pipeline');
   const [showMemoModal, setShowMemoModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
@@ -517,13 +519,14 @@ export default function EnhancedICPage() {
                 Schedule and manage Investment Committee meetings
               </p>
             </div>
-            <Dialog open={showSessionModal} onOpenChange={setShowSessionModal}>
-              <DialogTrigger asChild>
-                <Button className="h-9 px-4 text-sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Schedule Session
-                </Button>
-              </DialogTrigger>
+            {canManageICMembers && (
+              <Dialog open={showSessionModal} onOpenChange={setShowSessionModal}>
+                <DialogTrigger asChild>
+                  <Button className="h-9 px-4 text-sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Schedule Session
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>Schedule IC Session</DialogTitle>
@@ -568,6 +571,7 @@ export default function EnhancedICPage() {
                 </div>
               </DialogContent>
             </Dialog>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -644,9 +648,11 @@ export default function EnhancedICPage() {
                     <p className="text-sm text-muted-foreground">
                       No IC sessions scheduled
                     </p>
-                    <Button variant="outline" className="mt-4 h-9 px-4 text-sm" onClick={() => setShowSessionModal(true)}>
-                      Schedule Your First Session
-                    </Button>
+                    {canManageICMembers && (
+                      <Button variant="outline" className="mt-4 h-9 px-4 text-sm" onClick={() => setShowSessionModal(true)}>
+                        Schedule Your First Session
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -662,13 +668,14 @@ export default function EnhancedICPage() {
                 Track voting progress and investment decisions
               </p>
             </div>
-            <Dialog open={showCreateVotingModal} onOpenChange={setShowCreateVotingModal}>
-              <DialogTrigger asChild>
-                <Button className="h-9 px-4 text-sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Vote
-                </Button>
-              </DialogTrigger>
+            {canManageICMembers && (
+              <Dialog open={showCreateVotingModal} onOpenChange={setShowCreateVotingModal}>
+                <DialogTrigger asChild>
+                  <Button className="h-9 px-4 text-sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Vote
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>Create Voting Decision</DialogTitle>
@@ -713,6 +720,7 @@ export default function EnhancedICPage() {
                 </div>
               </DialogContent>
             </Dialog>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -756,18 +764,20 @@ export default function EnhancedICPage() {
                         </div>
                       )}
                       <div className="flex justify-end gap-2 pt-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-8 px-3 text-xs"
-                          onClick={() => {
-                            setSelectedVotingDecision(decision);
-                            setShowVotingModal(true);
-                          }}
-                        >
-                          <Vote className="h-4 w-4 mr-1" />
-                          Vote
-                        </Button>
+                        {canVoteOnDeals && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 px-3 text-xs"
+                            onClick={() => {
+                              setSelectedVotingDecision(decision);
+                              setShowVotingModal(true);
+                            }}
+                          >
+                            <Vote className="h-4 w-4 mr-1" />
+                            Vote
+                          </Button>
+                        )}
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -796,9 +806,11 @@ export default function EnhancedICPage() {
                     <p className="text-sm text-muted-foreground">
                       No voting decisions created
                     </p>
-                    <Button variant="outline" className="mt-4 h-9 px-4 text-sm" onClick={() => setShowCreateVotingModal(true)}>
-                      Create Voting Decision
-                    </Button>
+                    {canManageICMembers && (
+                      <Button variant="outline" className="mt-4 h-9 px-4 text-sm" onClick={() => setShowCreateVotingModal(true)}>
+                        Create Voting Decision
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -814,13 +826,14 @@ export default function EnhancedICPage() {
                 Manage Investment Committee membership and voting rights
               </p>
             </div>
-            <Dialog open={showMemberModal} onOpenChange={setShowMemberModal}>
-              <DialogTrigger asChild>
-                <Button className="h-9 px-4 text-sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Member
-                </Button>
-              </DialogTrigger>
+            {canManageICMembers && (
+              <Dialog open={showMemberModal} onOpenChange={setShowMemberModal}>
+                <DialogTrigger asChild>
+                  <Button className="h-9 px-4 text-sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Member
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>Add Committee Member</DialogTitle>
@@ -869,6 +882,7 @@ export default function EnhancedICPage() {
                 </div>
               </DialogContent>
             </Dialog>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -914,9 +928,11 @@ export default function EnhancedICPage() {
                     <p className="text-sm text-muted-foreground">
                       No committee members added
                     </p>
-                    <Button variant="outline" className="mt-4 h-9 px-4 text-sm" onClick={() => setShowMemberModal(true)}>
-                      Add First Member
-                    </Button>
+                    {canManageICMembers && (
+                      <Button variant="outline" className="mt-4 h-9 px-4 text-sm" onClick={() => setShowMemberModal(true)}>
+                        Add First Member
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

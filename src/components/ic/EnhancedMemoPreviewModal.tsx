@@ -36,6 +36,7 @@ import MemoVersionHistoryModal from './MemoVersionHistoryModal';
 import { MemoPublishingControls } from './MemoPublishingControls';
 import { supabase } from '@/integrations/supabase/client';
 import { exportMemoToPDF, openMemoPrintPreview } from '@/utils/pdfClient';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface Deal {
   id: string;
@@ -100,6 +101,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     dismiss 
   } = useEnhancedToast();
   const { validateMemoContent } = useContentValidation();
+  const { canEditICMemos } = usePermissions();
 
   // Validate memo content for quality and fabrication prevention
   const currentContent = (memoState.content as any)?.sections || memoState.content || {};
@@ -403,51 +405,57 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 </Button>
               )}
               
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(!isEditing)}
-                disabled={memoState.isGenerating}
-              >
-                {isEditing ? <Eye className="w-4 h-4 mr-2" /> : <Edit3 className="w-4 h-4 mr-2" />}
-                {isEditing ? 'Preview' : 'Edit'}
-              </Button>
+              {canEditICMemos && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditing(!isEditing)}
+                  disabled={memoState.isGenerating}
+                >
+                  {isEditing ? <Eye className="w-4 h-4 mr-2" /> : <Edit3 className="w-4 h-4 mr-2" />}
+                  {isEditing ? 'Preview' : 'Edit'}
+                </Button>
+              )}
               
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (memoState.existsInDb && Object.keys(memoState.content).length > 0) {
-                    if (confirm('Regenerating will overwrite your current memo content. Are you sure you want to continue?')) {
+              {canEditICMemos && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (memoState.existsInDb && Object.keys(memoState.content).length > 0) {
+                      if (confirm('Regenerating will overwrite your current memo content. Are you sure you want to continue?')) {
+                        handleGenerateMemo();
+                      }
+                    } else {
                       handleGenerateMemo();
                     }
-                  } else {
-                    handleGenerateMemo();
-                  }
-                }}
-                disabled={memoState.isGenerating || isSaving}
-              >
-                {memoState.isGenerating ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                )}
-                {memoState.existsInDb ? 'Regenerate' : 'Generate'} with AI
-              </Button>
+                  }}
+                  disabled={memoState.isGenerating || isSaving}
+                >
+                  {memoState.isGenerating ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                  )}
+                  {memoState.existsInDb ? 'Regenerate' : 'Generate'} with AI
+                </Button>
+              )}
               
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSaveMemo}
-                disabled={isSaving || memoState.isGenerating}
-              >
-                {isSaving ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4 mr-2" />
-                )}
-              Save
-              </Button>
+              {canEditICMemos && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSaveMemo}
+                  disabled={isSaving || memoState.isGenerating}
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                Save
+                </Button>
+              )}
 
               <Button
                 variant="outline"
@@ -638,7 +646,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                         </div>
                       </div>
                       
-                      {isEditing ? (
+                      {canEditICMemos && isEditing ? (
                         <Textarea
                           value={content}
                           onChange={(e) => updateContent(section.key, e.target.value)}

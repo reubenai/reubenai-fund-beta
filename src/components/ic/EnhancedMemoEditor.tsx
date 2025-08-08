@@ -29,6 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { exportMemoToPDF } from '@/utils/pdfClient';
 import DataQualityDashboard from './DataQualityDashboard';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface InvestmentMemo {
   id: string;
@@ -89,6 +90,7 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const { toast } = useToast();
+  const { canEditICMemos } = usePermissions();
 
   useEffect(() => {
     if (memo) {
@@ -263,26 +265,30 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                 Export PDF
               </Button>
               
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleGenerateWithAI}
-                disabled={isGenerating}
-                className="transition-all duration-200 hover:scale-105 hover:shadow-md bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100"
-              >
-                <Brain className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-pulse' : ''}`} />
-                {isGenerating ? 'Enhancing...' : 'AI Enhance'}
-              </Button>
-              
-              <Button
-                size="sm"
-                onClick={handleSave}
-                disabled={isSaving}
-                className="transition-all duration-200 hover:scale-105 hover:shadow-md bg-gradient-to-r from-primary to-primary/80"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {isSaving ? 'Saving...' : 'Save'}
-              </Button>
+              {canEditICMemos && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateWithAI}
+                    disabled={isGenerating}
+                    className="transition-all duration-200 hover:scale-105 hover:shadow-md bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100"
+                  >
+                    <Brain className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-pulse' : ''}`} />
+                    {isGenerating ? 'Enhancing...' : 'Regenerate with AI'}
+                  </Button>
+                  
+                  <Button
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="transition-all duration-200 hover:scale-105 hover:shadow-md bg-gradient-to-r from-primary to-primary/80"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </DialogHeader>
@@ -386,7 +392,7 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                             <p className="text-muted-foreground italic">No content yet. Click "Edit" to add content.</p>
                           )}
                         </div>
-                      ) : (
+                      ) : canEditICMemos ? (
                         <Textarea
                           value={editedMemo.content?.[section.key] || ''}
                           onChange={(e) => setEditedMemo(prev => prev ? {
@@ -399,6 +405,14 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                           placeholder={`Enter ${section.title.toLowerCase()} content...\n\nTip: Use clear headings and bullet points for better readability.`}
                           className="min-h-[400px] resize-none border-0 bg-white/50 focus:bg-white transition-colors duration-200"
                         />
+                      ) : (
+                        <div className="prose prose-sm max-w-none bg-muted/20 rounded-lg p-4 min-h-[400px] border">
+                          {editedMemo.content?.[section.key] ? (
+                            <div className="whitespace-pre-wrap">{editedMemo.content[section.key]}</div>
+                          ) : (
+                            <p className="text-muted-foreground italic">No content available.</p>
+                          )}
+                        </div>
                       )}
                     </CardContent>
                   </Card>
@@ -424,6 +438,7 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                   value={editedMemo.company}
                   onChange={(e) => setEditedMemo(prev => prev ? { ...prev, company: e.target.value } : null)}
                   className="transition-all duration-200 focus:scale-[1.02] focus:shadow-md"
+                  readOnly={!canEditICMemos}
                 />
               </div>
               
@@ -436,6 +451,7 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                   value={editedMemo.founder}
                   onChange={(e) => setEditedMemo(prev => prev ? { ...prev, founder: e.target.value } : null)}
                   className="transition-all duration-200 focus:scale-[1.02] focus:shadow-md"
+                  readOnly={!canEditICMemos}
                 />
               </div>
               
