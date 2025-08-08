@@ -356,7 +356,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="space-y-8 p-8 max-w-4xl mx-auto">
+    <div className="space-y-6 pr-8 max-w-4xl">
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
         <p className="text-muted-foreground mt-1">Manage your account and platform preferences</p>
