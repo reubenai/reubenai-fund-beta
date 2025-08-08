@@ -25,7 +25,7 @@ export function MemoPublishingControls({
   dealName,
   onStatusUpdate
 }: MemoPublishingControlsProps) {
-  const { canSubmitForReview } = usePermissions();
+  const { canSubmitForReview, loading } = usePermissions();
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSubmittingForReview, setIsSubmittingForReview] = useState(false);
   const [publishingNotes, setPublishingNotes] = useState('');
@@ -155,7 +155,7 @@ export function MemoPublishingControls({
     <div className="flex items-center gap-3">
       {getStatusBadge()}
       
-      {canSubmitForReview && currentStatus === 'draft' && (
+      {!loading && canSubmitForReview && currentStatus === 'draft' && (
         <>
           <Dialog>
             <DialogTrigger asChild>
@@ -164,10 +164,13 @@ export function MemoPublishingControls({
                 Submit for Review
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md" aria-describedby="submit-memo-description">
               <DialogHeader>
                 <DialogTitle>Submit for IC Review</DialogTitle>
               </DialogHeader>
+              <p id="submit-memo-description" className="sr-only">
+                Submit this memo for Investment Committee review with priority level and optional notes.
+              </p>
               <div className="space-y-4">
                 <div>
                   <Label>Priority Level</Label>
@@ -211,17 +214,20 @@ export function MemoPublishingControls({
       )}
 
       {currentStatus === 'review' && (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-2">
-              <Send className="h-4 w-4" />
-              Publish Memo
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Publish IC Memo</DialogTitle>
-            </DialogHeader>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-2">
+                <Send className="h-4 w-4" />
+                Publish Memo
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md" aria-describedby="publish-memo-description">
+              <DialogHeader>
+                <DialogTitle>Publish IC Memo</DialogTitle>
+              </DialogHeader>
+              <p id="publish-memo-description" className="sr-only">
+                Publish this memo to make it available to all Investment Committee members for upcoming sessions.
+              </p>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 Publishing this memo will make it available to all IC members and include it in upcoming sessions.
