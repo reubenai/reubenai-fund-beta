@@ -344,7 +344,7 @@ export default function Auth() {
             </form>
           )}
           
-          <div className="mt-6 pt-4 border-t border-border/50 text-center">
+          <div className="mt-6 pt-4 border-t border-border/50 text-center space-y-3">
             <p className="text-sm text-muted-foreground">
               Need help? Contact us at{' '}
               <a 
@@ -352,6 +352,14 @@ export default function Auth() {
                 className="text-primary hover:underline font-medium"
               >
                 support@goreuben.com
+              </a>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              <a 
+                href="/privacy_policy" 
+                className="text-primary hover:underline"
+              >
+                Privacy & Beta Disclaimer
               </a>
             </p>
           </div>
