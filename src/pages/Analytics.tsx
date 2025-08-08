@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { useFund } from '@/contexts/FundContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+// Breadcrumbs removed - using Layout breadcrumbs
 
 interface AnalyticsData {
   dealFlowMetrics: {
@@ -392,7 +392,7 @@ export default function Analytics() {
 
   return (
     <div className="ml-8 space-y-8 p-8 bg-gradient-to-br from-background to-muted/20 min-h-screen">
-      <Breadcrumbs />
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

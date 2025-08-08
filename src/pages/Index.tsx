@@ -9,7 +9,7 @@ import { useFund } from '@/contexts/FundContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { FundCreationWizard } from '@/components/funds/FundCreationWizard';
-import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+// Breadcrumbs removed - using Layout breadcrumbs
 
 const Index = () => {
   const { user } = useAuth();
@@ -95,7 +95,7 @@ const Index = () => {
   return (
     <div className="bg-slate-50/30 ml-12">
       <div className="px-6 py-6 min-h-screen">
-        <Breadcrumbs />
+        
         {/* Top Bar with What is ReubenAI Button */}
         <div className="flex justify-end mb-8">
           <Link to="/what-is-reubenai">
