@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_archival_config: {
+        Row: {
+          activity_type: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          priority: string
+          retention_days: number
+          updated_at: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          priority: string
+          retention_days?: number
+          updated_at?: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          priority?: string
+          retention_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       activity_events: {
         Row: {
           activity_type: Database["public"]["Enums"]["activity_type"]
@@ -399,6 +432,90 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      archived_activity_events: {
+        Row: {
+          activity_type: string
+          archived_at: string
+          change_data: Json | null
+          context_data: Json | null
+          created_at: string
+          deal_id: string | null
+          description: string | null
+          fund_id: string
+          id: string
+          is_system_event: boolean
+          is_visible: boolean
+          occurred_at: string
+          original_id: string
+          priority: string
+          resource_id: string | null
+          resource_type: string | null
+          retention_date: string | null
+          searchable_content: string | null
+          session_id: string | null
+          source_ip: unknown | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          archived_at?: string
+          change_data?: Json | null
+          context_data?: Json | null
+          created_at: string
+          deal_id?: string | null
+          description?: string | null
+          fund_id: string
+          id?: string
+          is_system_event?: boolean
+          is_visible?: boolean
+          occurred_at: string
+          original_id: string
+          priority?: string
+          resource_id?: string | null
+          resource_type?: string | null
+          retention_date?: string | null
+          searchable_content?: string | null
+          session_id?: string | null
+          source_ip?: unknown | null
+          tags?: string[] | null
+          title: string
+          updated_at: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          archived_at?: string
+          change_data?: Json | null
+          context_data?: Json | null
+          created_at?: string
+          deal_id?: string | null
+          description?: string | null
+          fund_id?: string
+          id?: string
+          is_system_event?: boolean
+          is_visible?: boolean
+          occurred_at?: string
+          original_id?: string
+          priority?: string
+          resource_id?: string | null
+          resource_type?: string | null
+          retention_date?: string | null
+          searchable_content?: string | null
+          session_id?: string | null
+          source_ip?: unknown | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       deal_analyses: {
         Row: {
@@ -2540,6 +2657,72 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          closed_at: string | null
+          created_at: string
+          email: string
+          feedback_type: string
+          first_response_at: string | null
+          fund_id: string | null
+          fund_name: string | null
+          id: string
+          internal_notes: string | null
+          message: string
+          priority: string
+          rating: number | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          closed_at?: string | null
+          created_at?: string
+          email: string
+          feedback_type: string
+          first_response_at?: string | null
+          fund_id?: string | null
+          fund_name?: string | null
+          id?: string
+          internal_notes?: string | null
+          message: string
+          priority?: string
+          rating?: number | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          closed_at?: string | null
+          created_at?: string
+          email?: string
+          feedback_type?: string
+          first_response_at?: string | null
+          fund_id?: string | null
+          fund_name?: string | null
+          id?: string
+          internal_notes?: string | null
+          message?: string
+          priority?: string
+          rating?: number | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_feedback: {
         Row: {
           admin_response: string | null
@@ -2752,6 +2935,10 @@ export type Database = {
         Args: { fund_id_param: string }
         Returns: Json
       }
+      archive_old_activities: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       complete_analysis_queue_item: {
         Args: {
           queue_id_param: string
@@ -2775,6 +2962,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_archival_statistics: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       is_admin_by_email: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -2795,6 +2986,14 @@ export type Database = {
           delay_minutes?: number
         }
         Returns: string
+      }
+      restore_archived_activities: {
+        Args: {
+          activity_ids?: string[]
+          start_date?: string
+          end_date?: string
+        }
+        Returns: number
       }
       set_user_role: {
         Args: {

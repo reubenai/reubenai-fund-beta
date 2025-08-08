@@ -75,6 +75,30 @@ export function FeedbackWidget() {
 
       if (error) throw error;
 
+      // Also create a support ticket for admin management
+      const supportTicketData = {
+        user_id: user.id,
+        email: user.email || '',
+        feedback_type: type,
+        subject: `${type === 'bug' ? 'Bug Report' : 
+                  type === 'feature' ? 'Feature Request' : 
+                  type === 'love' ? 'Appreciation' : 'General Feedback'} from ${profile?.first_name || 'User'}`,
+        message: message.trim(),
+        priority: type === 'bug' ? 'high' : 'medium',
+        fund_id: currentFund?.id || null,
+        fund_name: currentFund?.name || null,
+        rating: rating
+      };
+
+      await supabase
+        .from('support_tickets')
+        .insert(supportTicketData)
+        .then(({ error: ticketError }) => {
+          if (ticketError) {
+            console.error('Failed to create support ticket:', ticketError);
+          }
+        });
+
       // Send email notification (don't block on this)
       if (user) {
         supabase.functions.invoke('send-feedback-notification', {

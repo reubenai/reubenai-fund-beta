@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield, Archive, ArchiveRestore, Filter, Target, Upload, Rocket, Kanban } from 'lucide-react';
+import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield, Archive, ArchiveRestore, Filter, Target, Upload, Rocket, Kanban, MessageSquare } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,7 @@ import { AdminInviteUserModal } from '@/components/admin/AdminInviteUserModal';
 import { AdminDealsTable } from '@/components/admin/AdminDealsTable';
 import AdminFundCreationModal from '@/components/admin/AdminFundCreationModal';
 import { EnhancedOrganizationsTable } from '@/components/admin/EnhancedOrganizationsTable';
+import { AdminSupportTickets } from '@/components/admin/AdminSupportTickets';
 
 
 interface Organization {
@@ -735,6 +736,10 @@ export default function Admin() {
               <TabsTrigger value="users" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Users</TabsTrigger>
               <TabsTrigger value="funds" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Funds</TabsTrigger>
               <TabsTrigger value="deals" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Deals</TabsTrigger>
+              <TabsTrigger value="support" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Support Tickets
+              </TabsTrigger>
               <TabsTrigger value="production" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <Rocket className="h-4 w-4 mr-2" />
                 Production Readiness
@@ -822,6 +827,10 @@ export default function Admin() {
                 onBulkDelete={bulkDeleteDeals}
                 isSuperAdmin={hasAccess}
               />
+            </TabsContent>
+
+            <TabsContent value="support" className="space-y-6">
+              <AdminSupportTickets />
             </TabsContent>
 
             <TabsContent value="production" className="space-y-6">
