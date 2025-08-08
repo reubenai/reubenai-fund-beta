@@ -71,6 +71,7 @@ export default function TeamManagement() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'viewer' | 'analyst' | 'fund_manager' | 'admin'>('viewer');
   const [selectedOrgId, setSelectedOrgId] = useState('');
+  const [selectedInviteFunds, setSelectedInviteFunds] = useState<string[]>([]);
 
   const canManageTeam = canInviteUsers || canManageUserRoles;
 
@@ -174,6 +175,7 @@ export default function TeamManagement() {
           role: inviteRole,
           organization_id: selectedOrgId,
           invitedBy: user?.email,
+          selectedFunds: selectedInviteFunds,
           message: `You've been invited to join our team as a ${ROLE_OPTIONS.find(r => r.value === inviteRole)?.label}.`
         }
       });
@@ -188,6 +190,7 @@ export default function TeamManagement() {
       // Reset form and close modal
       setInviteEmail('');
       setInviteRole('viewer');
+      setSelectedInviteFunds([]);
       setShowInviteModal(false);
       
       // Refresh team data
@@ -238,8 +241,28 @@ export default function TeamManagement() {
     if (!selectedMember) return;
 
     try {
-      // For now, we'll just show a success message
-      // In a real implementation, you'd need a fund_access table
+      // Delete existing fund access
+      await supabase
+        .from('user_fund_access')
+        .delete()
+        .eq('user_id', selectedMember.user_id);
+
+      // Insert new fund access
+      if (selectedFunds.length > 0) {
+        const fundAccessData = selectedFunds.map(fundId => ({
+          user_id: selectedMember.user_id,
+          fund_id: fundId,
+          granted_by: user?.id,
+          access_level: 'read'
+        }));
+
+        const { error: insertError } = await supabase
+          .from('user_fund_access')
+          .insert(fundAccessData);
+
+        if (insertError) throw insertError;
+      }
+
       toast({
         title: "Fund Access Updated",
         description: `Updated fund access for ${selectedMember.first_name} ${selectedMember.last_name}`,
@@ -368,20 +391,55 @@ export default function TeamManagement() {
                     </div>
                   )}
 
-                  <div className="flex gap-2 pt-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowInviteModal(false)}
-                      className="flex-1"
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleInviteUser} 
-                      disabled={isInviting}
-                      className="flex-1"
-                    >
-                      {isInviting ? (
+                  <div className="space-y-2">
+                    <Label>Fund Access (Optional)</Label>
+                    <div className="text-xs text-muted-foreground mb-2">
+                      Select which funds this user should have access to
+                    </div>
+                    <div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
+                      {availableFunds.map((fund) => (
+                        <div key={fund.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`invite-fund-${fund.id}`}
+                            checked={selectedInviteFunds.includes(fund.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedInviteFunds([...selectedInviteFunds, fund.id]);
+                              } else {
+                                setSelectedInviteFunds(selectedInviteFunds.filter(id => id !== fund.id));
+                              }
+                            }}
+                            className="rounded border-gray-300"
+                          />
+                          <label htmlFor={`invite-fund-${fund.id}`} className="text-xs font-medium">
+                            {fund.name}
+                          </label>
+                          <Badge variant="outline" className="text-xs">
+                            {fund.fund_type?.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                    <div className="flex gap-2 pt-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setShowInviteModal(false);
+                          setSelectedInviteFunds([]);
+                        }}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={handleInviteUser} 
+                        disabled={isInviting}
+                        className="flex-1"
+                      >
+                        {isInviting ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                           Sending...
