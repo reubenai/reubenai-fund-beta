@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { useAppKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { useActivityTracking } from "@/hooks/useActivityTracking";
@@ -26,6 +27,9 @@ export function Layout({ children }: LayoutProps) {
           <SidebarInset className="flex-1 min-w-0">
             <div className="flex h-full flex-col min-w-[1200px]">
               <AppHeader />
+              <div className="pl-6">
+                <Breadcrumbs />
+              </div>
               <main className="flex-1 overflow-auto pl-6">
                 {children}
               </main>
