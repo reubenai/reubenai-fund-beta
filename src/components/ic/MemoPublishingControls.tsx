@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Send, Clock, CheckCircle, Eye, Globe, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 
 interface MemoPublishingControlsProps {
@@ -21,9 +22,10 @@ export function MemoPublishingControls({
   memoId, 
   currentStatus, 
   isPublished, 
-  dealName, 
-  onStatusUpdate 
+  dealName,
+  onStatusUpdate
 }: MemoPublishingControlsProps) {
+  const { canSubmitForReview } = usePermissions();
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSubmittingForReview, setIsSubmittingForReview] = useState(false);
   const [publishingNotes, setPublishingNotes] = useState('');
@@ -153,7 +155,7 @@ export function MemoPublishingControls({
     <div className="flex items-center gap-3">
       {getStatusBadge()}
       
-      {currentStatus === 'draft' && (
+      {canSubmitForReview && currentStatus === 'draft' && (
         <>
           <Dialog>
             <DialogTrigger asChild>
