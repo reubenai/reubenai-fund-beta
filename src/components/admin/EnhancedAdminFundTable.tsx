@@ -39,7 +39,8 @@ import {
   ArchiveRestore,
   ExternalLink,
   Trash2,
-  X
+  X,
+  ArrowRightLeft
 } from 'lucide-react';
 
 interface Fund {
@@ -71,6 +72,7 @@ interface EnhancedAdminFundTableProps {
   onUnarchiveFund: (fundId: string, fundName: string) => void;
   onBulkDelete: (fundIds: string[]) => void;
   onRefresh: () => void;
+  onReassignFund?: (fundId: string, newOrgId: string) => void;
   isSuperAdmin: boolean;
 }
 
@@ -84,6 +86,7 @@ export function EnhancedAdminFundTable({
   onUnarchiveFund,
   onBulkDelete,
   onRefresh,
+  onReassignFund,
   isSuperAdmin
 }: EnhancedAdminFundTableProps) {
   const navigate = useNavigate();
@@ -483,6 +486,24 @@ export function EnhancedAdminFundTable({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
+                        <Select 
+                          value={fund.organization_id} 
+                          onValueChange={(newOrgId) => {
+                            if (onReassignFund && newOrgId !== fund.organization_id) {
+                              onReassignFund(fund.id, newOrgId);
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-8 w-32 border-0 bg-muted/30">
+                            <Building className="h-3 w-3 mr-1" />
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {organizations.map(org => (
+                              <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <Button
                           variant="ghost"
                           size="sm"

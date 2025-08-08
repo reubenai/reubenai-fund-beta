@@ -365,6 +365,28 @@ export default function Admin() {
     }
   };
 
+  const updateUserProfile = async (userId: string, firstName: string, lastName: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          first_name: firstName,
+          last_name: lastName 
+        })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      setProfiles(profiles.map(p => 
+        p.user_id === userId ? { ...p, first_name: firstName, last_name: lastName } : p
+      ));
+      toast.success('User profile updated successfully');
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      toast.error('Failed to update user profile');
+    }
+  };
+
   const deleteUser = async (userId: string) => {
     // Prevent self-deletion
     if (user?.id === userId) {
@@ -406,6 +428,62 @@ export default function Admin() {
     } catch (error) {
       console.error('Error deleting user:', error);
       toast.error('Failed to delete user');
+    }
+  };
+
+  const deleteOrganization = async (orgId: string) => {
+    // Check if organization has associated funds or users
+    const hasUsers = profiles.some(p => p.organization_id === orgId);
+    const hasFunds = funds.some(f => f.organization_id === orgId);
+    
+    if (hasUsers || hasFunds) {
+      toast.error('Cannot delete organization with associated users or funds. Please reassign them first.');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('organizations')
+        .delete()
+        .eq('id', orgId);
+
+      if (error) throw error;
+
+      setOrganizations(organizations.filter(o => o.id !== orgId));
+      toast.success('Organization deleted successfully');
+    } catch (error) {
+      console.error('Error deleting organization:', error);
+      toast.error('Failed to delete organization');
+    }
+  };
+
+  const reassignFundToOrganization = async (fundId: string, newOrgId: string) => {
+    try {
+      const { error } = await supabase
+        .from('funds')
+        .update({ organization_id: newOrgId })
+        .eq('id', fundId);
+
+      if (error) throw error;
+
+      setFunds(funds.map(f => 
+        f.id === fundId ? { ...f, organization_id: newOrgId } : f
+      ));
+      
+      const fundName = funds.find(f => f.id === fundId)?.name;
+      const orgName = organizations.find(o => o.id === newOrgId)?.name;
+      
+      await logAdminActivity('fund_reassignment', `Fund "${fundName}" reassigned to "${orgName}"`, {
+        fundId,
+        fundName,
+        newOrgId,
+        orgName
+      });
+      
+      toast.success('Fund reassigned successfully');
+    } catch (error) {
+      console.error('Error reassigning fund:', error);
+      toast.error('Failed to reassign fund');
     }
   };
 
@@ -704,6 +782,7 @@ export default function Admin() {
           <EnhancedOrganizationsTable
             organizations={organizations}
             onUpdateOrganization={updateOrganization}
+            onDeleteOrganization={deleteOrganization}
             loading={loading}
           />
         </TabsContent>
@@ -717,6 +796,7 @@ export default function Admin() {
                 onDeleteUser={deleteUser}
                 onBulkDeleteUsers={bulkDeleteUsers}
                 onInviteUser={handleInviteUser}
+                onUpdateUserProfile={updateUserProfile}
                 canModifyRoles={user?.email?.includes('@goreuben.com') || user?.email?.includes('@reuben.com') || profile?.role === 'super_admin'}
               />
             </TabsContent>
@@ -732,6 +812,7 @@ export default function Admin() {
                 onUnarchiveFund={(fundId, fundName) => unarchiveFund(fundId, fundName)}
                 onBulkDelete={bulkDeleteFunds}
                 onRefresh={fetchData}
+                onReassignFund={reassignFundToOrganization}
                 isSuperAdmin={hasAccess}
               />
             </TabsContent>

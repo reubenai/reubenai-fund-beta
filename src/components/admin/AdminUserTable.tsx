@@ -14,7 +14,7 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from '@/components/ui/pagination';
-import { Search, UserPlus, Mail, Shield, Building, ArrowUpDown, Trash2 } from 'lucide-react';
+import { Search, UserPlus, Mail, Shield, Building, ArrowUpDown, Trash2, Edit, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Profile {
@@ -43,6 +43,7 @@ interface AdminUserTableProps {
   onDeleteUser: (userId: string) => Promise<void>;
   onBulkDeleteUsers: (userIds: string[]) => Promise<void>;
   onInviteUser: () => void;
+  onUpdateUserProfile: (userId: string, firstName: string, lastName: string) => Promise<void>;
   canModifyRoles: boolean;
 }
 
@@ -54,6 +55,7 @@ export function AdminUserTable({
   onDeleteUser,
   onBulkDeleteUsers,
   onInviteUser,
+  onUpdateUserProfile,
   canModifyRoles
 }: AdminUserTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -64,6 +66,7 @@ export function AdminUserTable({
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [pageSize, setPageSize] = useState(25);
   const [currentPage, setCurrentPage] = useState(1);
+  const [editingUser, setEditingUser] = useState<{ id: string; firstName: string; lastName: string } | null>(null);
 
   const filteredProfiles = profiles
     .filter(profile => {
@@ -341,10 +344,67 @@ export function AdminUserTable({
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">
-                          {profile.first_name} {profile.last_name}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{profile.email}</p>
+                        {editingUser?.id === profile.user_id ? (
+                          <div className="flex flex-col gap-1">
+                            <div className="flex gap-1">
+                              <Input
+                                value={editingUser.firstName}
+                                onChange={(e) => setEditingUser({ ...editingUser, firstName: e.target.value })}
+                                placeholder="First name"
+                                className="h-7 text-sm"
+                              />
+                              <Input
+                                value={editingUser.lastName}
+                                onChange={(e) => setEditingUser({ ...editingUser, lastName: e.target.value })}
+                                placeholder="Last name"
+                                className="h-7 text-sm"
+                              />
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                onClick={async () => {
+                                  await onUpdateUserProfile(profile.user_id, editingUser.firstName, editingUser.lastName);
+                                  setEditingUser(null);
+                                }}
+                                className="h-6 px-2"
+                              >
+                                <Save className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingUser(null)}
+                                className="h-6 px-2"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="group">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">
+                                {profile.first_name} {profile.last_name}
+                              </p>
+                              {canModifyRoles && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setEditingUser({
+                                    id: profile.user_id,
+                                    firstName: profile.first_name || '',
+                                    lastName: profile.last_name || ''
+                                  })}
+                                  className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{profile.email}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </TableCell>

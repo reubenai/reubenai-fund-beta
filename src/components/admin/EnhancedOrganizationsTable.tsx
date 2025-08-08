@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Edit, Save, X, Building2, Calendar, Globe } from 'lucide-react';
+import { Search, Edit, Save, X, Building2, Calendar, Globe, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,12 +17,14 @@ interface Organization {
 interface EnhancedOrganizationsTableProps {
   organizations: Organization[];
   onUpdateOrganization: (org: Organization) => void;
+  onDeleteOrganization: (orgId: string) => void;
   loading: boolean;
 }
 
 export function EnhancedOrganizationsTable({ 
   organizations, 
   onUpdateOrganization, 
+  onDeleteOrganization,
   loading 
 }: EnhancedOrganizationsTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -168,9 +170,23 @@ export function EnhancedOrganizationsTable({
                             </Button>
                           </div>
                         ) : (
-                          <Button size="sm" variant="outline" onClick={() => setEditingOrg(org)} className="h-8 px-3">
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          <div className="flex gap-2 justify-end">
+                            <Button size="sm" variant="outline" onClick={() => setEditingOrg(org)} className="h-8 px-3">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => {
+                                if (confirm(`Are you sure you want to delete "${org.name}"? This action cannot be undone.`)) {
+                                  onDeleteOrganization(org.id);
+                                }
+                              }}
+                              className="h-8 px-3 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
