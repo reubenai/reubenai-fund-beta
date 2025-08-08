@@ -23,6 +23,7 @@ export default function Pipeline() {
   }, [fundIdParam, funds, selectedFund, setSelectedFund]);
 
   if (!selectedFund) {
+    console.log('No selected fund. Available funds:', funds.length, 'Fund param:', fundIdParam);
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -30,7 +31,10 @@ export default function Pipeline() {
           {funds.length === 0 ? (
             <p className="text-sm text-muted-foreground">No active funds found</p>
           ) : (
-            <p className="text-sm text-muted-foreground">Use the fund selector in the sidebar</p>
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Use the fund selector in the sidebar</p>
+              <p className="text-xs text-muted-foreground">Available funds: {funds.map(f => f.name).join(', ')}</p>
+            </div>
           )}
         </div>
       </div>
