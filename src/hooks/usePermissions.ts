@@ -131,7 +131,7 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
         canCreateDeals: true,
         canEditDeals: true,
         canDeleteDeals: true,
-        canMoveDealsBetweenStages: false, // Viewers cannot move deals
+        canMoveDealsBetweenStages: true,
         canViewDocuments: true,
         canUploadDocuments: true,
         canDeleteDocuments: true,
@@ -180,7 +180,7 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
         canCreateDeals: true,
         canEditDeals: true,
         canDeleteDeals: true,
-        canMoveDealsBetweenStages: false, // Viewers cannot move deals
+        canMoveDealsBetweenStages: true,
         canViewDocuments: true,
         canUploadDocuments: true,
         canDeleteDocuments: true,
@@ -229,7 +229,7 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
         canCreateDeals: true,
         canEditDeals: true,
         canDeleteDeals: false,
-        canMoveDealsBetweenStages: false, // Viewers cannot move deals
+        canMoveDealsBetweenStages: true,
         canViewDocuments: true,
         canUploadDocuments: true,
         canDeleteDocuments: false,

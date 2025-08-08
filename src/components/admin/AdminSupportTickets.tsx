@@ -114,15 +114,46 @@ export function AdminSupportTickets() {
     try {
       const { data, error } = await supabase
         .from('user_feedback')
-        .select(`
-          *,
-          fund:funds(name),
-          user:profiles!user_id(email, first_name, last_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTickets((data || []) as any);
+
+      // Manually fetch related user and fund data
+      const ticketsWithRelations = await Promise.all(
+        (data || []).map(async (ticket) => {
+          let user = null;
+          let fund = null;
+
+          // Fetch user profile if user_id exists
+          if (ticket.user_id) {
+            const { data: userData } = await supabase
+              .from('profiles')
+              .select('email, first_name, last_name')
+              .eq('user_id', ticket.user_id)
+              .single();
+            user = userData;
+          }
+
+          // Fetch fund data if fund_id exists
+          if (ticket.fund_id) {
+            const { data: fundData } = await supabase
+              .from('funds')
+              .select('name')
+              .eq('id', ticket.fund_id)
+              .single();
+            fund = fundData;
+          }
+
+          return {
+            ...ticket,
+            user,
+            fund
+          };
+        })
+      );
+
+      setTickets(ticketsWithRelations as any);
     } catch (error) {
       console.error('Error fetching tickets:', error);
       toast.error('Failed to load support tickets');
