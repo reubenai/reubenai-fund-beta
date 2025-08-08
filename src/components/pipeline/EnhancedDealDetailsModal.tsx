@@ -138,7 +138,6 @@ export function EnhancedDealDetailsModal({
       if (activityError) {
         console.error('Error loading activity events:', activityError);
       } else if (activities) {
-        console.log(`Loaded ${activities.length} activity events for deal ${deal.id}`);
         setActivityEvents(activities);
       }
 
