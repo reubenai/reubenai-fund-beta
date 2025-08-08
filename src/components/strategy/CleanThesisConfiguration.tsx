@@ -18,6 +18,7 @@ import { EnhancedStrategy } from '@/services/unifiedStrategyService';
 import { useUnifiedStrategy } from '@/hooks/useUnifiedStrategy';
 import { EnhancedCriteriaEditor } from './EnhancedCriteriaEditor';
 import { getTemplateByFundType } from '@/types/vc-pe-criteria';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface CleanThesisConfigurationProps {
   strategy: EnhancedStrategy;
@@ -35,6 +36,7 @@ export function CleanThesisConfiguration({
   const [editedStrategy, setEditedStrategy] = useState<Partial<EnhancedStrategy>>(strategy);
   const [criteriaEditing, setCriteriaEditing] = useState(false);
   const { updateStrategy, loading } = useUnifiedStrategy();
+  const { canConfigureStrategy } = usePermissions();
 
   // Get enhanced criteria or default template
   const enhancedCriteria = strategy.enhanced_criteria || 
@@ -79,7 +81,7 @@ export function CleanThesisConfiguration({
           <p className="text-sm text-muted-foreground mt-1">Define your investment criteria and focus areas</p>
         </div>
         <div className="flex gap-3">
-          {onLaunchWizard && (
+          {onLaunchWizard && canConfigureStrategy && (
             <Button 
               onClick={onLaunchWizard}
               className="h-9 px-4 text-sm bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -87,15 +89,17 @@ export function CleanThesisConfiguration({
               Configure Thesis
             </Button>
           )}
-          <Button 
-            variant="outline"
-            onClick={handleSave}
-            disabled={loading}
-            className="h-9 px-4 text-sm gap-2"
-          >
-            <Save className="h-4 w-4" />
-            {loading ? 'Saving...' : 'Save Changes'}
-          </Button>
+          {canConfigureStrategy && (
+            <Button 
+              variant="outline"
+              onClick={handleSave}
+              disabled={loading}
+              className="h-9 px-4 text-sm gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {loading ? 'Saving...' : 'Save Changes'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -118,10 +122,11 @@ export function CleanThesisConfiguration({
                 </Label>
                 <Textarea
                   id="strategy-description"
-                  value={editedStrategy.strategy_notes || ''}
-                  onChange={(e) => updateField('strategy_notes', e.target.value)}
-                  placeholder="e.g., We invest in early-stage B2B SaaS companies with strong technical teams, focusing on AI/ML and automation tools for enterprise customers. We look for companies with initial product-market fit, annual recurring revenue of $1M+, and clear path to $10M+ ARR within 3 years..."
-                  className="mt-2 min-h-[120px] resize-none border-0 bg-muted/30"
+                value={editedStrategy.strategy_notes || ''}
+                onChange={(e) => updateField('strategy_notes', e.target.value)}
+                placeholder="e.g., We invest in early-stage B2B SaaS companies with strong technical teams, focusing on AI/ML and automation tools for enterprise customers. We look for companies with initial product-market fit, annual recurring revenue of $1M+, and clear path to $10M+ ARR within 3 years..."
+                className="mt-2 min-h-[120px] resize-none border-0 bg-muted/30"
+                readOnly={!canConfigureStrategy}
                 />
               </div>
             </CardContent>
@@ -150,6 +155,7 @@ export function CleanThesisConfiguration({
                       onChange={(e) => updateField('min_investment_amount', parseInt(e.target.value))}
                       placeholder="500,000"
                       className="pl-8 border-0 bg-muted/30"
+                      readOnly={!canConfigureStrategy}
                     />
                   </div>
                 </div>
@@ -166,6 +172,7 @@ export function CleanThesisConfiguration({
                       onChange={(e) => updateField('max_investment_amount', parseInt(e.target.value))}
                       placeholder="5,000,000"
                       className="pl-8 border-0 bg-muted/30"
+                      readOnly={!canConfigureStrategy}
                     />
                   </div>
                 </div>
@@ -236,6 +243,7 @@ export function CleanThesisConfiguration({
                     value={editedStrategy.exciting_threshold || 85}
                     onChange={(e) => updateField('exciting_threshold', parseInt(e.target.value))}
                     className="mt-2 border-0 bg-muted/30"
+                    readOnly={!canConfigureStrategy}
                   />
                   <p className="text-xs text-muted-foreground mt-1">Deals scoring above this threshold are categorized as "Exciting"</p>
                 </div>
@@ -251,6 +259,7 @@ export function CleanThesisConfiguration({
                     value={editedStrategy.promising_threshold || 70}
                     onChange={(e) => updateField('promising_threshold', parseInt(e.target.value))}
                     className="mt-2 border-0 bg-muted/30"
+                    readOnly={!canConfigureStrategy}
                   />
                   <p className="text-xs text-muted-foreground mt-1">Deals scoring above this threshold are categorized as "Promising"</p>
                 </div>
@@ -266,6 +275,7 @@ export function CleanThesisConfiguration({
                     value={editedStrategy.needs_development_threshold || 50}
                     onChange={(e) => updateField('needs_development_threshold', parseInt(e.target.value))}
                     className="mt-2 border-0 bg-muted/30"
+                    readOnly={!canConfigureStrategy}
                   />
                   <p className="text-xs text-muted-foreground mt-1">Deals scoring above this threshold are categorized as "Needs Development"</p>
                 </div>
@@ -325,10 +335,12 @@ export function CleanThesisConfiguration({
                   {strategy.fund_type?.toUpperCase() || 'VC'} criteria with detailed subcategory weights
                 </p>
               </div>
-              <Button variant="outline" onClick={onLaunchWizard}>
-                <Settings className="h-4 w-4 mr-2" />
-                Reconfigure
-              </Button>
+              {canConfigureStrategy && (
+                <Button variant="outline" onClick={onLaunchWizard}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Reconfigure
+                </Button>
+              )}
             </div>
             
             <div className="grid gap-4">

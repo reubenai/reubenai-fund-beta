@@ -11,11 +11,13 @@ import { Building2, Plus, Target, DollarSign } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const FundsList = () => {
   const { user } = useAuth();
   const [funds, setFunds] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
+  const { canCreateFunds } = usePermissions();
 
   useEffect(() => {
     if (user) {
@@ -62,7 +64,7 @@ const FundsList = () => {
           <h1 className="text-3xl font-bold">Funds</h1>
           <p className="text-muted-foreground">Manage your investment funds</p>
         </div>
-        {(profile?.role === 'admin' || profile?.role === 'fund_manager' || profile?.role === 'super_admin') && (
+        {canCreateFunds && (
           <Link to="/funds/new">
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -135,6 +137,7 @@ const CreateFund = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const { canCreateFunds } = usePermissions();
   const [formData, setFormData] = useState({
     name: '',
     fund_type: 'venture_capital' as 'venture_capital' | 'private_equity',
@@ -196,13 +199,13 @@ const CreateFund = () => {
     }
   };
 
-  // Check if user has permission to create funds (including super_admin)
-  if (!profile?.organization_id || !['admin', 'fund_manager', 'super_admin'].includes(profile?.role)) {
+  // Check if user has permission to create funds
+  if (!canCreateFunds) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Access Denied</CardTitle>
-          <CardDescription>You don't have permission to create funds. Your role: {profile?.role}</CardDescription>
+          <CardDescription>You don't have permission to create funds.</CardDescription>
         </CardHeader>
       </Card>
     );

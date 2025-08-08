@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useFund } from '@/contexts/FundContext';
 import { toast } from 'sonner';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface FundCreationWizardProps {
   isOpen: boolean;
@@ -37,6 +38,12 @@ export function FundCreationWizard({ isOpen, onClose }: FundCreationWizardProps)
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { funds, setSelectedFund } = useFund();
+  const { canCreateFunds } = usePermissions();
+
+  // Don't render if user doesn't have permission
+  if (!canCreateFunds) {
+    return null;
+  }
   
   const [fundData, setFundData] = useState<FundData>({
     name: '',
