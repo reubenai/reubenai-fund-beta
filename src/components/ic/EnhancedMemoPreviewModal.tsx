@@ -35,6 +35,7 @@ import { DataQualityIndicator } from '@/components/ui/data-quality-indicator';
 import MemoVersionHistoryModal from './MemoVersionHistoryModal';
 import { MemoPublishingControls } from './MemoPublishingControls';
 import { supabase } from '@/integrations/supabase/client';
+import { exportMemoToPDF, openMemoPrintPreview } from '@/utils/pdfClient';
 
 interface Deal {
   id: string;
@@ -189,9 +190,10 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     try {
       setIsExporting(true);
       
-      // First ensure memo is saved
+      // Ensure memo is saved before exporting
       await handleSaveMemo();
       
+      // Try server-side export first
       const { data, error } = await supabase.functions.invoke('enhanced-pdf-generator', {
         body: { 
           dealId: deal.id,
@@ -210,13 +212,16 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
-        showMemoGenerationToast(deal.company_name, () => {});
       } else {
         throw new Error('Failed to export PDF');
       }
-    } catch (error) {
-      showMemoErrorToast('Failed to export PDF. Please try again.');
+    } catch (err) {
+      // Fallback: open a print-friendly preview in a new tab
+      const sections = MEMO_SECTIONS.map((s) => ({
+        title: s.title,
+        content: (memoState.content as any)[s.key] || ''
+      }));
+      openMemoPrintPreview({ companyName: deal.company_name, sections });
     } finally {
       setIsExporting(false);
     }

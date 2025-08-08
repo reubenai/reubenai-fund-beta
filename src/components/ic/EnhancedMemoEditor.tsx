@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { exportMemoToPDF } from '@/utils/pdfClient';
 import DataQualityDashboard from './DataQualityDashboard';
 
 interface InvestmentMemo {
@@ -170,7 +171,7 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
       if (error) throw error;
 
       if (data.success) {
-        // Create a temporary link and trigger download
+        // Server-side PDF available
         const link = document.createElement('a');
         link.href = data.pdfUrl;
         link.download = data.fileName;
@@ -183,19 +184,32 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
           description: "Professional investment memo PDF has been generated",
         });
       } else {
+        throw new Error(data.error || 'Server PDF failed');
+      }
+    } catch (error) {
+      // Fallback to client-side generation
+      try {
+        const sections = STANDARD_SECTIONS.map((s) => ({
+          title: s.title,
+          content: editedMemo.content?.[s.key] || ''
+        }));
+        await exportMemoToPDF({
+          companyName: editedMemo.company,
+          sections,
+          fileName: undefined,
+        });
+        toast({
+          title: "PDF Exported (Client)",
+          description: "Exported using client-side generator.",
+        });
+      } catch (fallbackErr) {
+        console.error('Client-side PDF export failed:', fallbackErr);
         toast({
           title: "Export Failed",
-          description: data.error || "Failed to export PDF",
+          description: "Failed to export PDF. Please try again.",
           variant: "destructive"
         });
       }
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
-      toast({
-        title: "Export Failed",
-        description: "Failed to export PDF. Please try again.",
-        variant: "destructive"
-      });
     } finally {
       setIsExportingPDF(false);
     }
