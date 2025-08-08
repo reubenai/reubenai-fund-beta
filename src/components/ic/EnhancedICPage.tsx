@@ -52,7 +52,7 @@ export default function EnhancedICPage() {
   const { selectedFund } = useFund();
   const { toast } = useToast();
   const { getRAGCategory } = useStrategyThresholds();
-  const { canCreateICMemos, canManageICMembers, canVoteOnDeals } = usePermissions();
+  const { canCreateICMemos, canManageICMembers, canVoteOnDeals, canReviewMemos } = usePermissions();
   const [activeTab, setActiveTab] = useState('pipeline');
   const [showMemoModal, setShowMemoModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
@@ -64,6 +64,7 @@ export default function EnhancedICPage() {
   const [sessions, setSessions] = useState<ICSession[]>([]);
   const [votingDecisions, setVotingDecisions] = useState<ICVotingDecision[]>([]);
   const [committeeMembers, setCommitteeMembers] = useState<ICCommitteeMember[]>([]);
+  const [reviewQueue, setReviewQueue] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Form states
@@ -108,17 +109,19 @@ export default function EnhancedICPage() {
         throw new Error('No network connection available');
       }
 
-      const [dealsData, sessionsData, votingData, membersData] = await Promise.all([
+      const [dealsData, sessionsData, votingData, membersData, reviewData] = await Promise.all([
         NetworkHandler.withRetry(() => fetchDealsForIC()),
         NetworkHandler.withRetry(() => icMemoService.getSessions(selectedFund.id)),
         NetworkHandler.withRetry(() => icMemoService.getVotingDecisions(selectedFund.id)),
-        NetworkHandler.withRetry(() => fetchCommitteeMembers())
+        NetworkHandler.withRetry(() => fetchCommitteeMembers()),
+        NetworkHandler.withRetry(() => fetchMemosForReview())
       ]);
       
       setDeals(dealsData || []);
       setSessions(sessionsData);
       setVotingDecisions(votingData);
       setCommitteeMembers(membersData || []);
+      setReviewQueue(reviewData || []);
 
       // Track successful data fetch
       const endTime = performance.now();
@@ -208,6 +211,89 @@ export default function EnhancedICPage() {
     } catch (error) {
       console.error('Error fetching committee members:', error);
       return [];
+    }
+  };
+
+  const fetchMemosForReview = async () => {
+    if (!selectedFund) return [];
+    
+    try {
+      const { data, error } = await supabase
+        .from('ic_memos')
+        .select(`
+          *,
+          deals!inner(id, company_name, industry, deal_size, valuation, currency)
+        `)
+        .eq('fund_id', selectedFund.id)
+        .eq('status', 'review')
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching memos for review:', error);
+      return [];
+    }
+  };
+
+  const handleApproveMemo = async (memoId: string) => {
+    try {
+      const { error } = await supabase
+        .from('ic_memos')
+        .update({ 
+          status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', memoId);
+
+      if (error) throw error;
+
+      // Refresh review queue
+      const updatedQueue = await fetchMemosForReview();
+      setReviewQueue(updatedQueue);
+
+      toast({
+        title: "Memo Approved",
+        description: "The memo has been approved and can now be used for IC scheduling",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to approve memo",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRejectMemo = async (memoId: string, reason?: string) => {
+    try {
+      const { error } = await supabase
+        .from('ic_memos')
+        .update({ 
+          status: 'rejected',
+          rejected_at: new Date().toISOString(),
+          rejected_by: (await supabase.auth.getUser()).data.user?.id,
+          rejection_reason: reason
+        })
+        .eq('id', memoId);
+
+      if (error) throw error;
+
+      // Refresh review queue
+      const updatedQueue = await fetchMemosForReview();
+      setReviewQueue(updatedQueue);
+
+      toast({
+        title: "Memo Rejected",
+        description: "The memo has been rejected and returned to draft status",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reject memo",
+        variant: "destructive"
+      });
     }
   };
 
@@ -417,6 +503,12 @@ export default function EnhancedICPage() {
             <FileText className="h-4 w-4 mr-2" />
             Deal Pipeline ({deals.length})
           </TabsTrigger>
+          {canReviewMemos && (
+            <TabsTrigger value="review" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Review Queue ({reviewQueue.length})
+            </TabsTrigger>
+          )}
           <TabsTrigger value="sessions" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
             <Calendar className="h-4 w-4 mr-2" />
             IC Sessions ({sessions.length})
@@ -510,6 +602,86 @@ export default function EnhancedICPage() {
             )}
           </div>
         </TabsContent>
+
+        {canReviewMemos && (
+          <TabsContent value="review" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-medium text-foreground">Review Queue</h2>
+                <p className="text-sm text-muted-foreground">
+                  Memos submitted for review and approval
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {reviewQueue.length > 0 ? (
+                reviewQueue.map((memo: any) => (
+                  <Card key={memo.id} className="border-0 shadow-sm">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-base font-medium text-foreground">
+                              {memo.deals?.company_name || 'Unknown Company'}
+                            </h3>
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                              Pending Review
+                            </Badge>
+                            {memo.overall_score && (
+                              <Badge variant="outline">
+                                Score: {memo.overall_score}/100
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            {memo.title || `IC Memo - ${memo.deals?.company_name}`}
+                          </p>
+                          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                            <span><span className="font-medium text-foreground">Deal Size:</span> {formatAmount(memo.deals?.deal_size, memo.deals?.currency)}</span>
+                            <span><span className="font-medium text-foreground">Industry:</span> {memo.deals?.industry || 'N/A'}</span>
+                            <span><span className="font-medium text-foreground">Submitted:</span> {new Date(memo.updated_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRejectMemo(memo.id)}
+                          >
+                            <XCircle className="h-4 w-4 mr-2" />
+                            Reject
+                          </Button>
+                          <Button 
+                            size="sm"
+                            onClick={() => handleApproveMemo(memo.id)}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Approve
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card className="border-0 shadow-sm border-dashed border-border">
+                  <CardContent className="flex items-center justify-center py-16">
+                    <div className="text-center">
+                      <CheckCircle className="h-10 w-10 mx-auto text-muted-foreground/50 mb-4" />
+                      <p className="text-sm text-muted-foreground">
+                        No memos pending review
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Memos will appear here when analysts submit them for review
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+        )}
 
         <TabsContent value="sessions" className="space-y-6">
           <div className="flex items-center justify-between">

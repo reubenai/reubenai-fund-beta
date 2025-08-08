@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, User, FileText, RotateCcw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface MemoVersion {
   id: string;
@@ -34,6 +35,8 @@ export default function MemoVersionHistoryModal({
   onRestoreVersion,
   dealName
 }: MemoVersionHistoryModalProps) {
+  const { canRestoreVersions } = usePermissions();
+  
   const handleRestore = async (versionId: string, version: number) => {
     const confirmed = window.confirm(
       `Restore to version ${version}? This will replace the current memo content.`
@@ -96,7 +99,7 @@ export default function MemoVersionHistoryModal({
                         )}
                       </CardTitle>
                       <div className="flex gap-2">
-                        {version.version !== currentVersion && (
+                        {version.version !== currentVersion && canRestoreVersions && (
                           <Button
                             size="sm"
                             variant="outline"

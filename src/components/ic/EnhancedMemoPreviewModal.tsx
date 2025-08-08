@@ -467,18 +467,6 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 History ({versionState.versions.length})
               </Button>
               
-              {contentValidation && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowDataQuality(!showDataQuality)}
-                  className={contentValidation.fabricationRisk === 'high' ? 'border-destructive text-destructive' : ''}
-                >
-                  <Shield className="h-4 w-4 mr-2" />
-                  Quality ({contentValidation.score}/100)
-                </Button>
-              )}
-              
               <Button
                 variant="outline"
                 size="sm"
@@ -491,10 +479,11 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 ) : (
                   <Eye className="w-4 h-4" />
                 )}
-                Preview (Print View)
+                Preview
               </Button>
               
               <Button
+                variant="outline"
                 size="sm"
                 onClick={handleDownloadClient}
                 disabled={isClientDownloading || memoState.isGenerating}
@@ -505,23 +494,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 ) : (
                   <Download className="w-4 h-4" />
                 )}
-                Quick Download (Client)
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportPDF}
-                disabled={isExporting || memoState.isGenerating || serverPdfHealthy === 'down'}
-                className="gap-2"
-                title={serverPdfHealthy === 'down' ? 'Server PDF unavailable, use Quick Download' : 'Generate server-rendered PDF'}
-              >
-                {isExporting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <FileText className="w-4 h-4" />
-                )}
-                Pro PDF (Server){serverPdfHealthy === 'down' ? ' – Unavailable' : ''}
+                Download Memo
               </Button>
             </div>
           </div>
@@ -683,15 +656,15 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
         </div>
       </DialogContent>
 
-      <MemoVersionHistoryModal
-        isOpen={showVersionHistory}
-        onClose={() => setShowVersionHistory(false)}
-        versions={versionState.versions}
-        currentVersion={versionState.currentVersion}
-        isLoading={versionState.isLoading}
-        onRestoreVersion={restoreVersion}
-        dealName={deal.company_name}
-      />
+        <MemoVersionHistoryModal
+          isOpen={showVersionHistory}
+          onClose={() => setShowVersionHistory(false)}
+          versions={versionState.versions}
+          currentVersion={versionState.currentVersion}
+          isLoading={versionState.isLoading}
+          onRestoreVersion={restoreVersion}
+          dealName={deal.company_name}
+        />
     </Dialog>
   );
 };

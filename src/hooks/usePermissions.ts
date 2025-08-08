@@ -64,6 +64,11 @@ export interface PermissionMatrix {
   canEditStages: boolean;
   canDeleteStages: boolean;
   canCreateStages: boolean;
+  
+  // Additional Permissions
+  canViewActivities: boolean;
+  canViewAnalysis: boolean;
+  canRestoreVersions: boolean;
 }
 
 const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMatrix => {
@@ -112,6 +117,9 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
       canEditStages: false, // Disabled platform-wide
       canDeleteStages: false, // Disabled platform-wide
       canCreateStages: false, // Disabled platform-wide
+      canViewActivities: true,
+      canViewAnalysis: true,
+      canRestoreVersions: true,
     };
   }
 
@@ -161,6 +169,9 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
         canEditStages: false,
         canDeleteStages: false,
         canCreateStages: false,
+        canViewActivities: true,
+        canViewAnalysis: true,
+        canRestoreVersions: true,
       };
 
     case 'fund_manager':
@@ -207,6 +218,9 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
         canEditStages: false,
         canDeleteStages: false,
         canCreateStages: false,
+        canViewActivities: true,
+        canViewAnalysis: true,
+        canRestoreVersions: true,
       };
 
     case 'analyst':
@@ -253,6 +267,9 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
         canEditStages: false,
         canDeleteStages: false,
         canCreateStages: false,
+        canViewActivities: true,
+        canViewAnalysis: true,
+        canRestoreVersions: true,
       };
 
     case 'viewer':
@@ -300,6 +317,9 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
         canEditStages: false,
         canDeleteStages: false,
         canCreateStages: false,
+        canViewActivities: true,
+        canViewAnalysis: true,
+        canRestoreVersions: false, // Viewers cannot restore versions
       };
   }
 };

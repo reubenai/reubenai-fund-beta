@@ -41,6 +41,7 @@ import { EnhancedDocumentAnalysis } from '@/components/documents/EnhancedDocumen
 import { DealNotesManager } from '@/components/notes/DealNotesManager';
 import { useToast } from '@/hooks/use-toast';
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
+import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Deal {
@@ -116,6 +117,7 @@ export function EnhancedDealDetailsModal({
   const [analysisData, setAnalysisData] = useState<any>(null);
   const { toast } = useToast();
   const { getRAGCategory } = useStrategyThresholds();
+  const { canViewActivities, canViewAnalysis } = usePermissions();
 
   useEffect(() => {
     if (deal && open) {
@@ -255,10 +257,10 @@ export function EnhancedDealDetailsModal({
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="company">Company Details</TabsTrigger>
-            <TabsTrigger value="analysis">ReubenAI Analysis</TabsTrigger>
+            {canViewAnalysis && <TabsTrigger value="analysis">ReubenAI Analysis</TabsTrigger>}
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
+            {canViewActivities && <TabsTrigger value="activity">Activity</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -404,14 +406,16 @@ export function EnhancedDealDetailsModal({
             <EnhancedCompanyDetails deal={deal} />
           </TabsContent>
 
-          <TabsContent value="analysis" className="space-y-6">
-            <DetailedAnalysisSection
-              engineResults={analysisData?.engine_results || {}}
-              executiveSummary={analysisData?.executive_summary}
-              overallScore={analysisData?.overall_score}
-              overallRecommendation={analysisData?.overall_recommendation}
-            />
-          </TabsContent>
+          {canViewAnalysis && (
+            <TabsContent value="analysis" className="space-y-6">
+              <DetailedAnalysisSection
+                engineResults={analysisData?.engine_results || {}}
+                executiveSummary={analysisData?.executive_summary}
+                overallScore={analysisData?.overall_score}
+                overallRecommendation={analysisData?.overall_recommendation}
+              />
+            </TabsContent>
+          )}
 
           <TabsContent value="documents" className="space-y-6">
             <DocumentManager
@@ -427,41 +431,43 @@ export function EnhancedDealDetailsModal({
             />
           </TabsContent>
 
-          <TabsContent value="activity" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Recent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {activityEvents.length > 0 ? (
-                  <div className="space-y-4">
-                    {activityEvents.map((event) => (
-                      <div key={event.id} className="flex items-start gap-3 pb-4 border-b border-border last:border-0">
-                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                          <Activity className="h-4 w-4 text-primary" />
+          {canViewActivities && (
+            <TabsContent value="activity" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Recent Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {activityEvents.length > 0 ? (
+                    <div className="space-y-4">
+                      {activityEvents.map((event) => (
+                        <div key={event.id} className="flex items-start gap-3 pb-4 border-b border-border last:border-0">
+                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <Activity className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm">{event.title}</p>
+                            <p className="text-sm text-muted-foreground">{event.description}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {format(new Date(event.occurred_at), 'MMM d, yyyy at h:mm a')}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm">{event.title}</p>
-                          <p className="text-sm text-muted-foreground">{event.description}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(event.occurred_at), 'MMM d, yyyy at h:mm a')}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Clock className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                    <p className="text-sm text-muted-foreground">No activity recorded yet</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Clock className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                      <p className="text-sm text-muted-foreground">No activity recorded yet</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </DialogContent>
     </Dialog>
