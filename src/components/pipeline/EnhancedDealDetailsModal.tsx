@@ -254,7 +254,13 @@ export function EnhancedDealDetailsModal({
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className={`grid w-full ${
+            canViewAnalysis && canViewActivities 
+              ? 'grid-cols-6' 
+              : canViewAnalysis || canViewActivities 
+                ? 'grid-cols-5' 
+                : 'grid-cols-4'
+          }`}>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="company">Company Details</TabsTrigger>
             {canViewAnalysis && <TabsTrigger value="analysis">ReubenAI Analysis</TabsTrigger>}
