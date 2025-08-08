@@ -54,7 +54,22 @@ export function EnhancedPipelineHeader({
         </div>
         
         <div className="flex items-center gap-2">
-          {/* Removed Add Deal, Batch Upload, and Source Deals buttons for beta */}
+          <Button variant="outline" onClick={onBatchUpload} className="gap-2">
+            <Upload className="h-4 w-4" />
+            Batch Upload
+          </Button>
+          
+          <Button variant="outline" onClick={onAddDeal} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Deal
+          </Button>
+          
+          {onSourceDeals && (
+            <Button onClick={onSourceDeals} className="gap-2">
+              <Search className="h-4 w-4" />
+              Source Deals
+            </Button>
+          )}
         </div>
       </div>
 
