@@ -29,6 +29,7 @@ import { ComprehensiveProductionReadiness } from '@/components/admin/Comprehensi
 import { AdminInviteUserModal } from '@/components/admin/AdminInviteUserModal';
 import { AdminDealsTable } from '@/components/admin/AdminDealsTable';
 import AdminFundCreationModal from '@/components/admin/AdminFundCreationModal';
+import { EnhancedOrganizationsTable } from '@/components/admin/EnhancedOrganizationsTable';
 
 
 interface Organization {
@@ -700,60 +701,11 @@ export default function Admin() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg font-medium">Organizations</CardTitle>
-              <CardDescription>Manage existing organizations</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {organizations.map((org) => (
-                  <div key={org.id} className="flex items-center justify-between p-4 bg-muted/20 rounded-lg">
-                    {editingOrg?.id === org.id ? (
-                      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input
-                          value={editingOrg.name}
-                          onChange={(e) => setEditingOrg({ ...editingOrg, name: e.target.value })}
-                          placeholder="Organization name"
-                          className="border-0 bg-background"
-                        />
-                        <Input
-                          value={editingOrg.domain || ''}
-                          onChange={(e) => setEditingOrg({ ...editingOrg, domain: e.target.value })}
-                          placeholder="Domain"
-                          className="border-0 bg-background"
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex-1">
-                        <h3 className="font-medium">{org.name}</h3>
-                        {org.domain && <p className="text-sm text-muted-foreground">{org.domain}</p>}
-                        <p className="text-xs text-muted-foreground">
-                          Created: {new Date(org.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      {editingOrg?.id === org.id ? (
-                        <>
-                          <Button size="sm" onClick={() => updateOrganization(editingOrg)} className="h-8 px-3">
-                            <Save className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => setEditingOrg(null)} className="h-8 px-3">
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </>
-                      ) : (
-                        <Button size="sm" variant="outline" onClick={() => setEditingOrg(org)} className="h-8 px-3">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <EnhancedOrganizationsTable
+            organizations={organizations}
+            onUpdateOrganization={updateOrganization}
+            loading={loading}
+          />
         </TabsContent>
 
             <TabsContent value="users" className="space-y-4">
