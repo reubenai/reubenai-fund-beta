@@ -1,7 +1,7 @@
 import React from 'react';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { Deal, PipelineStage } from '@/hooks/usePipelineDeals';
-import { CleanKanbanColumn } from './CleanKanbanColumn';
+import { EnhancedKanbanColumn } from './EnhancedKanbanColumn';
 
 interface CleanKanbanViewProps {
   deals: Record<string, Deal[]>;
@@ -38,14 +38,14 @@ export const CleanKanbanView: React.FC<CleanKanbanViewProps> = ({
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="flex gap-8 h-full overflow-x-auto pb-6">
           {stages.map(stage => (
-            <CleanKanbanColumn
+            <EnhancedKanbanColumn
               key={stage.id}
               stage={stage}
               deals={deals[stage.name] || []}
               onDealClick={onDealClick}
               onStageEdit={onStageEdit}
-              onStageDelete={onStageDelete}
               onAddDeal={onAddDeal}
+              viewDensity="comfortable"
             />
           ))}
         </div>
