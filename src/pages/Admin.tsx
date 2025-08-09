@@ -31,6 +31,8 @@ import { AdminDealsTable } from '@/components/admin/AdminDealsTable';
 import AdminFundCreationModal from '@/components/admin/AdminFundCreationModal';
 import { EnhancedOrganizationsTable } from '@/components/admin/EnhancedOrganizationsTable';
 import { AdminSupportTickets } from '@/components/admin/AdminSupportTickets';
+import { ForceAnalysisProcessor } from '@/components/admin/ForceAnalysisProcessor';
+import { ComprehensiveFixVerifier } from '@/components/admin/ComprehensiveFixVerifier';
 
 
 interface Organization {
@@ -140,10 +142,11 @@ export default function Admin() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Fetch all profiles
+      // Fetch all profiles (filter out soft-deleted users)
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('*')
+        .or('is_deleted.is.null,is_deleted.eq.false') // Filter out soft-deleted users
         .order('created_at', { ascending: false });
 
       // Fetch all funds
@@ -834,7 +837,9 @@ export default function Admin() {
             </TabsContent>
 
             <TabsContent value="production" className="space-y-6">
+              <ComprehensiveFixVerifier />
               <ComprehensiveProductionReadiness />
+              <ForceAnalysisProcessor />
             </TabsContent>
           </Tabs>
         </div>
