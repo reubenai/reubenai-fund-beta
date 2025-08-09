@@ -3055,6 +3055,10 @@ export type Database = {
         Args: { target_deal_id: string }
         Returns: Json
       }
+      populate_enhanced_analysis_with_real_engines: {
+        Args: { target_deal_id: string }
+        Returns: Json
+      }
       process_analysis_queue: {
         Args: { batch_size?: number; max_concurrent?: number }
         Returns: Json
