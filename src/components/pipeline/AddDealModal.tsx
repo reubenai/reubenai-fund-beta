@@ -79,9 +79,33 @@ export const AddDealModal: React.FC<AddDealModalProps> = ({
         currency: formData.currency || undefined
       };
 
+      // Fallback to original method first, then enhance
       const newDeal = await onAddDeal(dealData);
       
       if (newDeal) {
+        // Now process through universal processor for enhancement
+        try {
+          const { data: processedResult, error: processingError } = await supabase.functions.invoke('universal-deal-processor', {
+            body: {
+              dealId: newDeal.id,
+              source: 'single_upload',
+              fundId: newDeal.fund_id,
+              options: {
+                priority: 'high',
+                metadata: { singleUpload: true }
+              }
+            }
+          });
+
+          if (processingError) {
+            console.warn('Universal processing failed:', processingError);
+          } else {
+            console.log('Deal enhanced successfully via universal processor');
+          }
+        } catch (error) {
+          console.warn('Enhancement failed but deal created:', error);
+        }
+
         setCreatedDeal(newDeal);
         
         // If we have uploaded documents, switch to the documents tab

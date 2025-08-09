@@ -295,44 +295,49 @@ export function DealSourcingModal({ open, onClose, fundId, fundName }: DealSourc
           created_by: (await supabase.auth.getUser()).data.user?.id!
         };
 
-        const { data: deal, error: dealError } = await supabase
-          .from('deals')
-          .insert(dealData)
-          .select()
-          .single();
+        // Process through universal processor
+        const { data: processedResult, error: processingError } = await supabase.functions.invoke('universal-deal-processor', {
+          body: {
+            dealData,
+            source: 'ai_sourcing',
+            fundId,
+            options: {
+              priority: 'high',
+              metadata: { aiSourcing: true, sessionId: sourcingSession?.id }
+            }
+          }
+        });
 
-        if (dealError) throw dealError;
-        dealIds.push(deal.id);
+        let dealId: string;
+
+        if (processingError) {
+          console.warn('Universal processing failed, falling back to direct creation:', processingError);
+          // Fallback to direct insert
+          const { data: deal, error: dealError } = await supabase
+            .from('deals')
+            .insert(dealData)
+            .select()
+            .single();
+          
+          if (dealError) throw dealError;
+          dealId = deal.id;
+          dealIds.push(deal.id);
+        } else {
+          dealId = processedResult.result.dealId;
+          dealIds.push(processedResult.result.dealId);
+        }
 
         // Update sourced company with created deal ID
         await supabase
           .from('sourced_companies')
-          .update({ created_deal_id: deal.id })
+          .update({ created_deal_id: dealId })
           .eq('id', company.id);
       }
 
       setProgress(60);
 
-      // Run comprehensive analysis via Reuben Orchestrator for each deal
-      const analysisPromises = dealIds.map(dealId => 
-        supabase.functions.invoke('reuben-orchestrator', {
-          body: {
-            dealId: dealId,
-            fundId: fundId,
-            action: 'comprehensive_analysis',
-            priority: 'high',
-            source: 'deal_sourcing'
-          }
-        })
-      );
-
-      const analysisResults = await Promise.allSettled(analysisPromises);
-
-      // Check for any failed analyses
-      const failedAnalyses = analysisResults.filter(result => result.status === 'rejected');
-      if (failedAnalyses.length > 0) {
-        console.warn(`${failedAnalyses.length} analyses failed, but continuing with successful ones`);
-      }
+      // Analysis is already queued via universal processor
+      console.log('Comprehensive analysis already queued via universal processor for deals:', dealIds);
       setProgress(90);
 
       // Update session as completed

@@ -248,14 +248,43 @@ export class EnhancedCsvParsingService {
       currency: 'USD'
     }));
 
-    const { data, error } = await supabase
-      .from('deals')
-      .insert(dealInserts)
-      .select('id');
-
-    if (error) throw error;
+    // Process each deal through universal processor
+    const dealIds: string[] = [];
     
-    return data.map(d => d.id);
+    for (const dealData of dealInserts) {
+      try {
+        const { data: response, error } = await supabase.functions.invoke('universal-deal-processor', {
+          body: {
+            dealData,
+            source: 'batch_csv',
+            fundId,
+            options: {
+              priority: 'normal',
+              metadata: { batchUpload: true }
+            }
+          }
+        });
+
+        if (error) throw error;
+        if (response?.result?.dealId) {
+          dealIds.push(response.result.dealId);
+        }
+      } catch (error) {
+        console.error(`Failed to process deal ${dealData.company_name}:`, error);
+        // Fallback: direct insert without processing
+        const { data: fallbackDeal, error: insertError } = await supabase
+          .from('deals')
+          .insert(dealData)
+          .select('id')
+          .single();
+        
+        if (!insertError && fallbackDeal) {
+          dealIds.push(fallbackDeal.id);
+        }
+      }
+    }
+    
+    return dealIds;
   }
 
   static async uploadPitchDeck(dealId: string, file: File, companyName: string): Promise<void> {
@@ -318,25 +347,8 @@ export class EnhancedCsvParsingService {
   }
 
   static async triggerBatchAnalysis(dealIds: string[]): Promise<void> {
-    const analysisPromises = dealIds.map(async (dealId) => {
-      try {
-        // Call reuben-orchestrator for comprehensive analysis
-        const { data, error } = await supabase.functions.invoke('reuben-orchestrator', {
-          body: { dealId }
-        });
-
-        if (error) {
-          console.error(`Analysis failed for deal ${dealId}:`, error);
-          return { dealId, success: false, error };
-        }
-
-        return { dealId, success: true, data };
-      } catch (error) {
-        console.error(`Analysis error for deal ${dealId}:`, error);
-        return { dealId, success: false, error };
-      }
-    });
-
-    await Promise.all(analysisPromises);
+    // Universal processor already handles analysis queueing
+    // This method is now primarily for backward compatibility
+    console.log('Batch analysis already triggered via universal processor for deals:', dealIds);
   }
 }
