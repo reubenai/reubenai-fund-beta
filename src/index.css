@@ -167,20 +167,42 @@ All colors MUST be HSL. Emerald green primary with orange accent.
     @apply space-y-4;
   }
   
-  /* Enhanced RAG Badge System */
+  /* Enhanced RAG Badge System - Xero Inspired */
   .rag-badge-exciting {
-    @apply bg-gradient-to-r from-primary/8 to-primary/4 text-primary border-primary/15;
+    @apply bg-gradient-to-r from-slate-50 to-slate-50/60 text-slate-700 border-slate-200/80 shadow-sm;
   }
   
   .rag-badge-promising {
-    @apply bg-gradient-to-r from-blue-500/8 to-blue-400/4 text-blue-700 border-blue-500/15;
+    @apply bg-gradient-to-r from-blue-50/80 to-blue-50/40 text-blue-700 border-blue-200/60 shadow-sm;
   }
   
   .rag-badge-development {
-    @apply bg-gradient-to-r from-amber-500/8 to-amber-400/4 text-amber-700 border-amber-500/15;
+    @apply bg-gradient-to-r from-amber-50/80 to-amber-50/40 text-amber-700 border-amber-200/60 shadow-sm;
   }
   
   .rag-badge-not-aligned {
-    @apply bg-gradient-to-r from-muted/12 to-muted/6 text-muted-foreground border-border;
+    @apply bg-gradient-to-r from-slate-50/80 to-slate-50/40 text-slate-600 border-slate-200/60 shadow-sm;
+  }
+
+  /* Professional Status Indicators */
+  .status-indicator-high {
+    @apply bg-slate-50 text-slate-700 border-slate-200/60;
+  }
+  
+  .status-indicator-medium {
+    @apply bg-blue-50/60 text-blue-700 border-blue-200/40;
+  }
+  
+  .status-indicator-low {
+    @apply bg-amber-50/60 text-amber-700 border-amber-200/40;
+  }
+
+  /* Enhanced Card System */
+  .card-enhanced {
+    @apply bg-background/95 backdrop-blur-sm border-border/40 shadow-sm hover:shadow-md transition-all duration-300 rounded-lg;
+  }
+
+  .card-metric {
+    @apply bg-slate-50/50 border-slate-200/40 shadow-sm rounded-md;
   }
 }

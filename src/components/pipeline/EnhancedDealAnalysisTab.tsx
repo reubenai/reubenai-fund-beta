@@ -54,11 +54,11 @@ export function EnhancedDealAnalysisTab({ deal }: EnhancedDealAnalysisTabProps) 
     );
   }
 
-  // Calculate overall analysis score
+  // Calculate overall analysis score - this becomes the unified source of truth
   const getAnalysisScore = () => {
-    if (!analysis.rubric_breakdown) return 0;
+    if (!analysis.rubric_breakdown) return deal.overall_score || 0;
     const totalWeight = analysis.rubric_breakdown.reduce((sum, item) => sum + item.weight, 0);
-    if (totalWeight === 0) return 0;
+    if (totalWeight === 0) return deal.overall_score || 0;
     const weightedScore = analysis.rubric_breakdown.reduce(
       (sum, item) => sum + (item.score * item.weight / totalWeight), 0
     );

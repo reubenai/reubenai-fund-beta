@@ -247,14 +247,38 @@ export function EnhancedDealDetailsModal({
           <DialogTitle className="flex items-center gap-3">
             <Building2 className="h-6 w-6" />
             {deal.company_name}
-            <Badge variant="outline" className={rag.color}>
-              {rag.label}
-            </Badge>
-            {deal.overall_score && (
-              <Badge variant="secondary">
-                Score: {deal.overall_score}
-              </Badge>
-            )}
+{(() => {
+              // Calculate unified score from enhanced analysis if available
+              let finalScore = deal.overall_score;
+              
+              // Type guard for enhanced analysis
+              if (deal.enhanced_analysis && 
+                  typeof deal.enhanced_analysis === 'object' &&
+                  'rubric_breakdown' in deal.enhanced_analysis &&
+                  Array.isArray(deal.enhanced_analysis.rubric_breakdown)) {
+                const rubricBreakdown = deal.enhanced_analysis.rubric_breakdown as any[];
+                const totalWeight = rubricBreakdown.reduce((sum, item) => sum + (item.weight || 0), 0);
+                if (totalWeight > 0) {
+                  finalScore = Math.round(
+                    rubricBreakdown.reduce(
+                      (sum, item) => sum + ((item.score || 0) * (item.weight || 0) / totalWeight), 0
+                    )
+                  );
+                }
+              }
+              
+              const rag = getRAGCategory(finalScore);
+              return (
+                <>
+                  <Badge variant="outline" className={`${rag.color} shadow-sm`}>
+                    {rag.label}
+                  </Badge>
+                  <Badge variant="secondary" className="shadow-sm">
+                    Score: {finalScore}
+                  </Badge>
+                </>
+              );
+            })()}
           </DialogTitle>
         </DialogHeader>
 
@@ -292,17 +316,17 @@ export function EnhancedDealDetailsModal({
 
           <TabsContent value="overview" className="space-y-6">
             {/* Executive Summary Card */}
-            <Card className="border-emerald-100 bg-gradient-to-r from-emerald-50 to-slate-50">
+            <Card className="card-xero border-slate-200/60">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-emerald-800">
-                  <Zap className="h-5 w-5 text-emerald-600" />
+                <CardTitle className="flex items-center gap-2 text-hierarchy-3">
+                  <Zap className="h-5 w-5 text-muted-foreground" />
                   Executive Summary
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={enrichCompanyData}
                     disabled={isEnriching}
-                    className="ml-auto border-emerald-200 hover:bg-emerald-50"
+                    className="ml-auto border-border/60 hover:bg-muted/30"
                   >
                     <RefreshCw className={`h-4 w-4 mr-2 ${isEnriching ? 'animate-spin' : ''}`} />
                     Enrich Data
@@ -311,34 +335,60 @@ export function EnhancedDealDetailsModal({
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <div className="text-center">
-                    <p className="text-sm text-slate-600 mb-1">Deal Size</p>
-                    <p className="font-semibold text-lg text-emerald-700">
+                  <div className="text-center card-metric p-3">
+                    <p className="text-sm text-muted-foreground mb-1">Deal Size</p>
+                    <p className="font-semibold text-lg text-foreground">
                       {formatAmount(deal.deal_size, deal.currency)}
                     </p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-sm text-slate-600 mb-1">Valuation</p>
-                    <p className="font-semibold text-lg text-emerald-700">
+                  <div className="text-center card-metric p-3">
+                    <p className="text-sm text-muted-foreground mb-1">Valuation</p>
+                    <p className="font-semibold text-lg text-foreground">
                       {formatAmount(deal.valuation, deal.currency)}
                     </p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-sm text-slate-600 mb-1">AI Score</p>
+                  <div className="text-center card-metric p-3">
+                    <p className="text-sm text-muted-foreground mb-1">AI Score</p>
                     <div className="flex items-center justify-center gap-2">
-                      <p className="font-semibold text-lg text-emerald-700">
-                        {deal.overall_score || 'Pending'}
-                      </p>
-                      <Badge variant="outline" className={rag.color}>
-                        {rag.label}
-                      </Badge>
+                      {(() => {
+                        // Calculate unified score from enhanced analysis if available
+                        let finalScore = deal.overall_score;
+                        
+                        // Type guard for enhanced analysis
+                        if (deal.enhanced_analysis && 
+                            typeof deal.enhanced_analysis === 'object' &&
+                            'rubric_breakdown' in deal.enhanced_analysis &&
+                            Array.isArray(deal.enhanced_analysis.rubric_breakdown)) {
+                          const rubricBreakdown = deal.enhanced_analysis.rubric_breakdown as any[];
+                          const totalWeight = rubricBreakdown.reduce((sum, item) => sum + (item.weight || 0), 0);
+                          if (totalWeight > 0) {
+                            finalScore = Math.round(
+                              rubricBreakdown.reduce(
+                                (sum, item) => sum + ((item.score || 0) * (item.weight || 0) / totalWeight), 0
+                              )
+                            );
+                          }
+                        }
+                        
+                        const rag = getRAGCategory(finalScore);
+                        return (
+                          <>
+                            <p className="font-semibold text-lg text-foreground">
+                              {finalScore || 'Pending'}
+                            </p>
+                            <Badge variant="outline" className={`${rag.color} shadow-sm`}>
+                              {rag.label}
+                            </Badge>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
-                  <div className="text-center">
-                    <p className="text-sm text-slate-600 mb-1">Analysis Status</p>
+                  <div className="text-center card-metric p-3">
+                    <p className="text-sm text-muted-foreground mb-1">Analysis Status</p>
                     <Badge 
                       variant={deal.enhanced_analysis ? "default" : "secondary"}
-                      className={deal.enhanced_analysis ? "bg-emerald-600" : ""}
+                      className={`shadow-sm ${deal.enhanced_analysis ? "bg-slate-600" : ""}`}
                     >
                       {deal.enhanced_analysis ? 'Complete' : 'Pending'}
                     </Badge>
@@ -349,8 +399,8 @@ export function EnhancedDealDetailsModal({
                 {deal.enhanced_analysis?.analysis_completeness && (
                   <div className="mt-4">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-slate-600">Analysis Completeness</span>
-                      <span className="text-sm font-medium text-emerald-700">
+                      <span className="text-sm text-muted-foreground">Analysis Completeness</span>
+                      <span className="text-sm font-medium text-foreground">
                         {deal.enhanced_analysis.analysis_completeness}%
                       </span>
                     </div>
@@ -365,36 +415,36 @@ export function EnhancedDealDetailsModal({
 
             {/* Company & Digital Presence */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="border-slate-200">
+              <Card className="card-xero">
                 <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-slate-700">
-                    <Building2 className="h-5 w-5 text-emerald-600" />
+                  <CardTitle className="flex items-center gap-2 text-hierarchy-3">
+                    <Building2 className="h-5 w-5 text-muted-foreground" />
                     Company Profile
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {deal.industry && (
                     <div className="flex items-center gap-3">
-                      <Target className="h-4 w-4 text-emerald-600" />
-                      <span className="text-sm font-medium text-slate-700">{deal.industry}</span>
+                      <Target className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-foreground">{deal.industry}</span>
                     </div>
                   )}
                   {deal.location && (
                     <div className="flex items-center gap-3">
-                      <MapPin className="h-4 w-4 text-emerald-600" />
-                      <span className="text-sm text-slate-600">{deal.location}</span>
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">{deal.location}</span>
                     </div>
                   )}
                   {deal.founder && (
                     <div className="flex items-center gap-3">
-                      <User className="h-4 w-4 text-emerald-600" />
-                      <span className="text-sm text-slate-600">{deal.founder}</span>
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">{deal.founder}</span>
                     </div>
                   )}
                   {(deal.employee_count || companyDetails?.team_size) && (
                     <div className="flex items-center gap-3">
-                      <Users className="h-4 w-4 text-emerald-600" />
-                      <span className="text-sm text-slate-600">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
                         {companyDetails?.team_size || deal.employee_count} employees
                       </span>
                     </div>
@@ -402,22 +452,22 @@ export function EnhancedDealDetailsModal({
                 </CardContent>
               </Card>
 
-              <Card className="border-slate-200">
+              <Card className="card-xero">
                 <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-slate-700">
-                    <Globe className="h-5 w-5 text-emerald-600" />
+                  <CardTitle className="flex items-center gap-2 text-hierarchy-3">
+                    <Globe className="h-5 w-5 text-muted-foreground" />
                     Digital Footprint
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {deal.website && (
                     <div className="flex items-center gap-3">
-                      <ExternalLink className="h-4 w-4 text-emerald-600" />
+                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
                       <a 
                         href={deal.website.startsWith('http') ? deal.website : `https://${deal.website}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-emerald-700 hover:text-emerald-800 hover:underline"
+                        className="text-sm text-foreground hover:text-muted-foreground hover:underline transition-colors"
                       >
                         {deal.website.replace(/^https?:\/\//, '')}
                       </a>
@@ -425,12 +475,12 @@ export function EnhancedDealDetailsModal({
                   )}
                   {deal.linkedin_url && (
                     <div className="flex items-center gap-3">
-                      <Linkedin className="h-4 w-4 text-emerald-600" />
+                      <Linkedin className="h-4 w-4 text-muted-foreground" />
                       <a 
                         href={deal.linkedin_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-emerald-700 hover:text-emerald-800 hover:underline"
+                        className="text-sm text-foreground hover:text-muted-foreground hover:underline transition-colors"
                       >
                         LinkedIn Profile
                       </a>
@@ -438,14 +488,14 @@ export function EnhancedDealDetailsModal({
                   )}
                   {deal.web_presence_confidence && (
                     <div className="flex items-center gap-3">
-                      <CheckCircle className="h-4 w-4 text-emerald-600" />
-                      <span className="text-sm text-slate-600">
+                      <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
                         Web Validation: {deal.web_presence_confidence}%
                       </span>
                     </div>
                   )}
                   {!deal.website && !deal.linkedin_url && (
-                    <p className="text-sm text-slate-400 italic">No digital presence data available</p>
+                    <p className="text-sm text-muted-foreground italic">No digital presence data available</p>
                   )}
                 </CardContent>
               </Card>
@@ -453,9 +503,9 @@ export function EnhancedDealDetailsModal({
 
             {/* Description */}
             {(deal.description || companyDetails?.description) && (
-              <Card>
+              <Card className="card-xero">
                 <CardHeader>
-                  <CardTitle>Company Description</CardTitle>
+                  <CardTitle className="text-hierarchy-3">Company Description</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground leading-relaxed">
@@ -489,10 +539,10 @@ export function EnhancedDealDetailsModal({
 
           {canViewActivities && (
             <TabsContent value="activity" className="space-y-6">
-              <Card>
+              <Card className="card-xero">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-2 text-hierarchy-3">
+                    <Activity className="h-5 w-5 text-muted-foreground" />
                     Recent Activity
                   </CardTitle>
                 </CardHeader>
@@ -500,12 +550,12 @@ export function EnhancedDealDetailsModal({
                   {activityEvents.length > 0 ? (
                     <div className="space-y-4">
                       {activityEvents.map((event) => (
-                        <div key={event.id} className="flex items-start gap-3 pb-4 border-b border-border last:border-0">
-                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                            <Activity className="h-4 w-4 text-primary" />
+                        <div key={event.id} className="flex items-start gap-3 pb-4 border-b border-border/40 last:border-0">
+                          <div className="w-8 h-8 bg-slate-50 rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
+                            <Activity className="h-4 w-4 text-slate-600" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm">{event.title}</p>
+                            <p className="font-medium text-sm text-foreground">{event.title}</p>
                             <p className="text-sm text-muted-foreground">{event.description}</p>
                             <p className="text-xs text-muted-foreground mt-1">
                               {format(new Date(event.occurred_at), 'MMM d, yyyy at h:mm a')}
@@ -516,7 +566,7 @@ export function EnhancedDealDetailsModal({
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <Clock className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                      <Clock className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
                       <p className="text-sm text-muted-foreground">No activity recorded yet</p>
                     </div>
                   )}
