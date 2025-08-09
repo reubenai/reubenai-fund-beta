@@ -188,10 +188,21 @@ export function CategoryDeepDiveSection({
               {hasDeepDive && deepDiveComponent ? (
                 deepDiveComponent
               ) : (
-                <div className="bg-muted/30 rounded-lg p-4 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Deep-dive analysis will be available when engines populate detailed data
+                <div className="bg-muted/30 rounded-lg p-4 text-center space-y-3">
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                    <Zap className="h-4 w-4" />
+                    <span className="text-sm font-medium">Real Analysis Data Required</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Deep-dive analysis will show real engine data once the comprehensive analysis completes.
+                    Engine results will populate market research, team analysis, financial assessment, and more.
                   </p>
+                  <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                    <span>Analysis Status:</span>
+                    <Badge variant="outline" className="text-xs">
+                      Waiting for Engine Data
+                    </Badge>
+                  </div>
                 </div>
               )}
             </div>

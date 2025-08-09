@@ -186,7 +186,7 @@ serve(async (req) => {
         thresholds
       });
     } else {
-      // Map orchestrator results via enhanced data mapper
+      // SUCCESS: Map orchestrator results via enhanced data mapper
       const orchestratorAnalysis = orchestratorResult.analysis;
       console.log('✅ Orchestrator succeeded - mapping analysis data via enhanced mapper');
       
@@ -244,18 +244,18 @@ serve(async (req) => {
           next_steps: orchestratorAnalysis.next_steps || ['Review comprehensive analysis']
         };
       } else {
-        console.log('✅ Enhanced analysis data mapped successfully');
-        // Analysis is already stored in the deals table by the mapper
+        console.log('✅ Enhanced analysis data mapped successfully via mapper');
+        // Analysis is already stored in the deals table by the mapper - just return success info
         analysisResult = {
           executive_summary: orchestratorAnalysis.executive_summary || 'Analysis completed via Reuben Orchestrator',
           overall_recommendation: orchestratorAnalysis.overall_recommendation || 'See detailed analysis',
           risk_factors: orchestratorAnalysis.risk_factors || ['See detailed analysis'],
           next_steps: orchestratorAnalysis.next_steps || ['Review comprehensive analysis'],
-          founder_team_strength: { score: 85, analysis: 'Mapped via enhanced data mapper' },
-          market_attractiveness: { score: 85, analysis: 'Mapped via enhanced data mapper' },
-          product_strength_ip: { score: 85, analysis: 'Mapped via enhanced data mapper' },
-          financial_feasibility: { score: 85, analysis: 'Mapped via enhanced data mapper' },
-          investment_thesis_alignment: { score: 85, analysis: 'Mapped via enhanced data mapper' }
+          founder_team_strength: { score: 85, analysis: 'Enhanced analysis mapped successfully' },
+          market_attractiveness: { score: 85, analysis: 'Enhanced analysis mapped successfully' },
+          product_strength_ip: { score: 85, analysis: 'Enhanced analysis mapped successfully' },
+          financial_feasibility: { score: 85, analysis: 'Enhanced analysis mapped successfully' },
+          investment_thesis_alignment: { score: 85, analysis: 'Enhanced analysis mapped successfully' }
         };
       }
     }

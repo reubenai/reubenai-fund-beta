@@ -289,8 +289,8 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
               </div>
               <Clock className="h-8 w-8 text-muted-foreground" />
             </div>
-          </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
       </div>
 
       {/* Scoring Methodology */}
