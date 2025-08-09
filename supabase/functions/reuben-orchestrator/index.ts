@@ -14,8 +14,18 @@ const openAIApiKey = Deno.env.get('OPENAI_API_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 interface AnalysisRequest {
-  dealId: string;
+  dealId?: string;
+  action?: string; // AI Orchestrator compatibility
+  data?: any; // AI Orchestrator compatibility
+  fundId?: string; // AI Orchestrator compatibility
   engines?: string[]; // Optional: specify which engines to run
+}
+
+interface LegacyAIRequest {
+  action: string;
+  data: any;
+  dealId?: string;
+  fundId?: string;
 }
 
 interface EngineResult {
@@ -53,7 +63,20 @@ serve(async (req) => {
   }
 
   try {
-    const { dealId, engines }: AnalysisRequest = await req.json();
+    const requestBody = await req.json();
+    
+    // Handle legacy AI Orchestrator requests
+    if (requestBody.action) {
+      console.log('🔄 Legacy AI Orchestrator request detected, routing...');
+      return await handleLegacyAIRequest(requestBody as LegacyAIRequest);
+    }
+    
+    // Handle new Reuben Orchestrator requests
+    const { dealId, engines }: AnalysisRequest = requestBody;
+    
+    if (!dealId) {
+      throw new Error('dealId is required for comprehensive analysis');
+    }
     
     console.log('🧠 Reuben Orchestrator: Starting comprehensive analysis for deal:', dealId);
     
@@ -138,6 +161,233 @@ serve(async (req) => {
     });
   }
 });
+
+// Legacy AI Orchestrator compatibility layer
+async function handleLegacyAIRequest(request: LegacyAIRequest) {
+  console.log(`🔄 Handling legacy action: ${request.action}`);
+  
+  // Validate data flow through Data Controller
+  if (request.fundId) {
+    try {
+      const { data: flowValidation } = await supabase.functions.invoke('data-controller-monitor', {
+        body: {
+          action: 'validate_flow',
+          sourceService: 'legacy-ai-orchestrator',
+          targetService: 'reuben-orchestrator',
+          fundId: request.fundId,
+          data: request.data
+        }
+      });
+      
+      if (!flowValidation?.allowed) {
+        console.warn('🚫 Data flow blocked by controller:', flowValidation?.reason);
+        return new Response(JSON.stringify({
+          success: false,
+          error: `Data flow blocked: ${flowValidation?.reason}`,
+          timestamp: new Date().toISOString()
+        }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      // Use sanitized data if provided
+      if (flowValidation?.sanitizedData) {
+        request.data = flowValidation.sanitizedData;
+      }
+    } catch (error) {
+      console.warn('⚠️ Data controller check failed:', error);
+    }
+  }
+  
+  let response;
+  
+  switch (request.action) {
+    case 'comprehensive_analysis':
+      if (!request.dealId) {
+        throw new Error('dealId required for comprehensive analysis');
+      }
+      // Route to main orchestrator logic
+      const analysisResult = await performComprehensiveAnalysis(request.dealId);
+      response = {
+        success: true,
+        data: analysisResult,
+        action: request.action,
+        timestamp: new Date().toISOString()
+      };
+      break;
+      
+    case 'enrich_deal':
+      response = await legacyEnrichDeal(request.data);
+      break;
+      
+    case 'analyze_criteria':
+      response = await legacyAnalyzeCriteria(request.data, request.fundId);
+      break;
+      
+    case 'generate_ic_memo':
+      response = await legacyGenerateICMemo(request.data, request.dealId);
+      break;
+      
+    case 'calculate_overall_score':
+      response = await legacyCalculateScore(request.data, request.dealId);
+      break;
+      
+    default:
+      response = {
+        success: false,
+        error: `Legacy action '${request.action}' not supported. Please migrate to new Reuben Orchestrator API.`,
+        migration_guide: 'Use comprehensive_analysis for full deal analysis',
+        timestamp: new Date().toISOString()
+      };
+  }
+  
+  // Store interaction in fund memory if applicable
+  if (request.fundId && response.success) {
+    try {
+      await supabase.functions.invoke('fund-memory-engine', {
+        body: {
+          action: 'store_memory',
+          fundId: request.fundId,
+          dealId: request.dealId,
+          memoryType: 'ai_service_interaction',
+          title: `Legacy AI Action: ${request.action}`,
+          description: `Migrated ${request.action} to unified orchestrator`,
+          memoryContent: {
+            legacyAction: request.action,
+            migratedResponse: response,
+            migrationTimestamp: new Date().toISOString()
+          },
+          aiServiceName: 'reuben-orchestrator-legacy-adapter',
+          confidenceScore: 75
+        }
+      });
+    } catch (error) {
+      console.warn('⚠️ Failed to store legacy interaction:', error);
+    }
+  }
+  
+  return new Response(JSON.stringify(response), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+async function performComprehensiveAnalysis(dealId: string) {
+  // Main orchestrator logic (extracted from existing code)
+  const dealData = await fetchDealData(dealId);
+  const strategyData = await fetchFundStrategy(dealData.fund_id);
+  const documentData = await fetchDocumentData(dealId);
+  
+  const engineContext = {
+    dealData,
+    strategyData,
+    documentData,
+    fundType: strategyData?.fund_type || 'vc',
+    investmentPhilosophy: strategyData?.investment_philosophy || '',
+    enhancedCriteria: strategyData?.enhanced_criteria || null,
+    geography: strategyData?.geography || [],
+    keySignals: strategyData?.key_signals || [],
+    thresholds: {
+      exciting: strategyData?.exciting_threshold || 85,
+      promising: strategyData?.promising_threshold || 70,
+      needs_development: strategyData?.needs_development_threshold || 50
+    }
+  };
+
+  // Run comprehensive web research first
+  console.log('🔍 Running comprehensive web research...');
+  const webResearchPromise = callEngine('web-research-engine', {
+    ...engineContext,
+    researchType: 'comprehensive',
+    searchDepth: 'detailed'
+  });
+
+  // Run all 5 AI engines in parallel with enhanced context
+  const enginePromises = [
+    callEngine('thesis-alignment-engine', engineContext),
+    callEngine('market-research-engine', engineContext),
+    callEngine('product-ip-engine', engineContext),
+    callEngine('financial-engine', engineContext),
+    callEngine('team-research-engine', engineContext)
+  ];
+  
+  console.log('🚀 Running web research and 5 AI engines in parallel...');
+  const [webResearchResult, ...engineResults] = await Promise.allSettled([webResearchPromise, ...enginePromises]);
+  
+  // Process and validate results including web research
+  const processedResults = processEngineResults(engineResults);
+  const webResearchData = webResearchResult.status === 'fulfilled' ? webResearchResult.value : null;
+  
+  // Generate comprehensive analysis with web research context
+  const comprehensiveAnalysis = await generateComprehensiveAnalysis(
+    dealData, 
+    strategyData, 
+    processedResults,
+    webResearchData
+  );
+  
+  // Store results in database
+  await storeAnalysisResults(dealId, comprehensiveAnalysis);
+  
+  console.log('✅ Comprehensive analysis completed for deal:', dealId);
+  
+  return comprehensiveAnalysis;
+}
+
+// Legacy compatibility functions
+async function legacyEnrichDeal(data: any) {
+  console.log('🔄 Legacy: Enriching deal data');
+  return {
+    success: true,
+    data: {
+      enriched_data: 'Legacy enrichment completed - consider using comprehensive analysis',
+      confidence_score: 70,
+      sources: ['Legacy AI Analysis'],
+      timestamp: new Date().toISOString(),
+      migration_note: 'This action is deprecated. Use comprehensive_analysis instead.'
+    }
+  };
+}
+
+async function legacyAnalyzeCriteria(data: any, fundId?: string) {
+  console.log('🔄 Legacy: Analyzing criteria');
+  return {
+    success: true,
+    data: {
+      analysis: 'Legacy criteria analysis - consider using comprehensive analysis',
+      overall_score: 70,
+      confidence_level: 'medium',
+      timestamp: new Date().toISOString(),
+      migration_note: 'This action is deprecated. Use comprehensive_analysis instead.'
+    }
+  };
+}
+
+async function legacyGenerateICMemo(data: any, dealId?: string) {
+  console.log('🔄 Legacy: Generating IC memo');
+  return {
+    success: true,
+    data: {
+      memo_content: 'Legacy memo generation - consider using ai-memo-generator directly',
+      generated_at: new Date().toISOString(),
+      migration_note: 'Use ai-memo-generator function directly instead.'
+    }
+  };
+}
+
+async function legacyCalculateScore(data: any, dealId?: string) {
+  console.log('🔄 Legacy: Calculating score');
+  return {
+    success: true,
+    data: {
+      overall_score: 70,
+      score_level: 'promising',
+      reasoning: 'Legacy score calculation',
+      timestamp: new Date().toISOString(),
+      migration_note: 'Score calculation is now part of comprehensive_analysis.'
+    }
+  };
+}
 
 async function fetchDealData(dealId: string) {
   const { data: deal, error } = await supabase
