@@ -27,6 +27,7 @@ import FundMemory from "./pages/FundMemory";
 import WhatIsReubenAI from "./pages/WhatIsReubenAI";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import OnboardingDemo from "./pages/OnboardingDemo";
 import { PostHogRouterTracker } from "@/components/analytics/PostHogRouterTracker";
 
 const queryClient = new QueryClient();
@@ -148,6 +149,15 @@ const App = () => (
             <Route path="/what-is-reubenai" element={
               <AuthGuard>
                 <WhatIsReubenAI />
+              </AuthGuard>
+            } />
+            <Route path="/onboarding-demo" element={
+              <AuthGuard>
+                <Layout>
+                  <ErrorBoundary>
+                    <OnboardingDemo />
+                  </ErrorBoundary>
+                </Layout>
               </AuthGuard>
             } />
             <Route path="*" element={<NotFound />} />
