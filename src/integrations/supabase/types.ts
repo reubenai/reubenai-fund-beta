@@ -517,6 +517,66 @@ export type Database = {
         }
         Relationships: []
       }
+      data_lineage_log: {
+        Row: {
+          approved: boolean
+          contains_pii: boolean | null
+          created_at: string | null
+          data_classification: string
+          data_size: number | null
+          deal_id: string | null
+          fund_id: string | null
+          id: string
+          metadata: Json | null
+          source_service: string
+          target_service: string
+          transfer_reason: string
+        }
+        Insert: {
+          approved?: boolean
+          contains_pii?: boolean | null
+          created_at?: string | null
+          data_classification: string
+          data_size?: number | null
+          deal_id?: string | null
+          fund_id?: string | null
+          id?: string
+          metadata?: Json | null
+          source_service: string
+          target_service: string
+          transfer_reason: string
+        }
+        Update: {
+          approved?: boolean
+          contains_pii?: boolean | null
+          created_at?: string | null
+          data_classification?: string
+          data_size?: number | null
+          deal_id?: string | null
+          fund_id?: string | null
+          id?: string
+          metadata?: Json | null
+          source_service?: string
+          target_service?: string
+          transfer_reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_lineage_log_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_lineage_log_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_analyses: {
         Row: {
           analysis_version: number | null
