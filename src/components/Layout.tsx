@@ -27,10 +27,10 @@ export function Layout({ children }: LayoutProps) {
           <SidebarInset className="flex-1 min-w-0">
             <div className="flex h-full flex-col min-w-[1200px]">
               <AppHeader />
-              <div className="pl-12 pt-4">
+              <div className="pt-4">
                 <Breadcrumbs />
               </div>
-              <main className="flex-1 overflow-auto pl-12">
+              <main className="flex-1 overflow-auto">
                 {children}
               </main>
             </div>

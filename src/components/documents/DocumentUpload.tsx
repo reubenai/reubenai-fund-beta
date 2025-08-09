@@ -55,7 +55,7 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
   const { logDocumentUploaded } = useActivityTracking();
   const permissions = usePermissions();
 
-  // Check permissions first
+  // Check permissions first - moved after all hooks
   if (!permissions.canUploadDocuments) {
     return (
       <div className="text-center p-8 bg-muted/20 rounded-lg">

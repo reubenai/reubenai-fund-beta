@@ -187,6 +187,39 @@ export function useAIService() {
     });
   }, [callAIService]);
 
+  const enrichCompany = useCallback(async (dealId: string, companyName: string, website?: string) => {
+    return callAIService('company-enrichment-engine', { 
+      dealId, 
+      companyName, 
+      website,
+      triggerReanalysis: true 
+    }, {
+      timeout: 180000, // 3 minutes for enrichment
+      onProgress: (stage, progress) => console.log(`Company enrichment: ${stage} (${progress}%)`),
+      fallbackMessage: 'Company enrichment is currently unavailable. Basic deal analysis is still available.'
+    });
+  }, [callAIService]);
+
+  const sourceDealOpportunities = useCallback(async (request: any) => {
+    return callAIService('enhanced-deal-sourcing', request, {
+      timeout: 300000, // 5 minutes for sourcing
+      onProgress: (stage, progress) => console.log(`Deal sourcing: ${stage} (${progress}%)`),
+      fallbackMessage: 'Deal sourcing is currently unavailable. You can manually add deals to your pipeline.'
+    });
+  }, [callAIService]);
+
+  const researchCompany = useCallback(async (dealId: string, researchType: string = 'comprehensive') => {
+    return callAIService('web-research-engine', { 
+      dealData: { dealId }, 
+      researchType,
+      searchDepth: 'deep' 
+    }, {
+      timeout: 240000, // 4 minutes for web research
+      onProgress: (stage, progress) => console.log(`Web research: ${stage} (${progress}%)`),
+      fallbackMessage: 'Web research is currently unavailable. Manual research may be needed.'
+    });
+  }, [callAIService]);
+
   return {
     isLoading,
     currentStage,
@@ -195,6 +228,9 @@ export function useAIService() {
     analyzeCompany,
     generateMemo,
     processDocument,
-    runOrchestrator
+    runOrchestrator,
+    enrichCompany,
+    sourceDealOpportunities,
+    researchCompany
   };
 }
