@@ -33,6 +33,13 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, index, onDealClick }) 
     return `$${amount.toLocaleString()}`;
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   return (
     <Draggable draggableId={deal.id} index={index}>
       {(provided, snapshot) => (
@@ -60,16 +67,21 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, index, onDealClick }) 
                 )}
               </div>
               
-              {/* RAG Score */}
+              {/* RAG Score Badge */}
               {deal.overall_score && (
-                <Badge variant="outline" className="text-xs ml-2">
-                  {deal.overall_score}
-                </Badge>
+                (() => {
+                  const rag = getRAGCategory(deal.overall_score);
+                  return (
+                    <Badge variant="outline" className={`text-xs ml-2 ${rag.color}`}>
+                      {deal.overall_score} · {rag.label}
+                    </Badge>
+                  );
+                })()
               )}
             </div>
 
             {/* Essential Info */}
-            <div className="space-y-1">
+            <div className="space-y-1 mb-2">
               {deal.deal_size && (
                 <div className="flex items-center gap-1">
                   <DollarSign className="w-3 h-3 text-muted-foreground" />
@@ -81,6 +93,21 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, index, onDealClick }) 
                 <div className="flex items-center gap-1">
                   <MapPin className="w-3 h-3 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground truncate">{deal.location}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Footer with date and founder */}
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                <span>{formatDate(deal.updated_at)}</span>
+              </div>
+              
+              {deal.founder && (
+                <div className="flex items-center gap-1">
+                  <Building2 className="w-3 h-3" />
+                  <span className="truncate max-w-20">{deal.founder}</span>
                 </div>
               )}
             </div>

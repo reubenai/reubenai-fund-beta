@@ -82,6 +82,21 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
     return `$${amount.toLocaleString()}`;
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getCardPadding = () => {
+    switch (viewDensity) {
+      case 'compact': return 'p-3';
+      case 'detailed': return 'p-4';
+      default: return 'p-3';
+    }
+  };
+
   return (
     <Draggable draggableId={deal.id} index={index}>
       {(provided, snapshot) => (
@@ -95,8 +110,8 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
           `}
           onClick={() => onDealClick?.(deal)}
         >
-          <CardContent className="p-3">
-            {/* Company Name & Score */}
+          <CardContent className={getCardPadding()}>
+            {/* Company Name & Enhanced Score */}
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-foreground truncate text-sm">
@@ -109,16 +124,33 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
                 )}
               </div>
               
-              {/* RAG Score */}
+              {/* Enhanced RAG Score */}
               {deal.overall_score && (
-                <Badge variant="outline" className="text-xs ml-2">
-                  {deal.overall_score}
-                </Badge>
+                (() => {
+                  // Use enhanced analysis if available
+                  let finalScore = deal.overall_score;
+                  if (deal.enhanced_analysis?.rubric_breakdown) {
+                    const rubrics = deal.enhanced_analysis.rubric_breakdown as any[];
+                    const totalWeight = rubrics.reduce((sum, r) => sum + (r.weight || 0), 0);
+                    if (totalWeight > 0) {
+                      finalScore = Math.round(
+                        rubrics.reduce((sum, r) => sum + ((r.score || 0) * (r.weight || 0) / totalWeight), 0)
+                      );
+                    }
+                  }
+                  
+                  const rag = getRAGCategory(finalScore);
+                  return (
+                    <Badge variant="outline" className={`text-xs ml-2 ${rag.color}`}>
+                      {finalScore} · {rag.label}
+                    </Badge>
+                  );
+                })()
               )}
             </div>
 
-            {/* Essential Info Only */}
-            <div className="space-y-1">
+            {/* Core Metrics */}
+            <div className="space-y-1 mb-2">
               {deal.deal_size && (
                 <div className="flex items-center gap-1">
                   <DollarSign className="w-3 h-3 text-muted-foreground" />
@@ -130,6 +162,31 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
                 <div className="flex items-center gap-1">
                   <MapPin className="w-3 h-3 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground truncate">{deal.location}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Enhanced Analysis Indicators for detailed view */}
+            {viewDensity === 'detailed' && deal.enhanced_analysis && (
+              <div className="mb-2">
+                <EnhancedAnalysisIndicators 
+                  deal={deal}
+                  viewDensity={viewDensity}
+                />
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                <span>{formatDate(deal.updated_at)}</span>
+              </div>
+              
+              {deal.founder && (
+                <div className="flex items-center gap-1">
+                  <Building2 className="w-3 h-3" />
+                  <span className="truncate max-w-20">{deal.founder}</span>
                 </div>
               )}
             </div>
