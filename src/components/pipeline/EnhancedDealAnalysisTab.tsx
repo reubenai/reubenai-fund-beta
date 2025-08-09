@@ -13,10 +13,16 @@ import {
   Lightbulb,
   BarChart3
 } from 'lucide-react';
-import { Deal } from '@/hooks/useOptimizedPipelineDeals';
+import { Deal as BaseDeal } from '@/hooks/usePipelineDeals';
+import { EnhancedDealAnalysis } from '@/types/enhanced-deal-analysis';
 import { RubricScoreRadar } from './RubricScoreRadar';
 import { FundTypeAnalysisPanel } from './FundTypeAnalysisPanel';
 import { useFund } from '@/contexts/FundContext';
+
+// Extend the Deal type to include enhanced_analysis
+type Deal = BaseDeal & {
+  enhanced_analysis?: EnhancedDealAnalysis;
+};
 
 interface EnhancedDealAnalysisTabProps {
   deal: Deal;

@@ -40,11 +40,17 @@ import { DocumentManager } from '@/components/documents/DocumentManager';
 import { EnhancedDocumentAnalysis } from '@/components/documents/EnhancedDocumentAnalysis';
 import { DealNotesManager } from '@/components/notes/DealNotesManager';
 import { EnhancedDealAnalysisTab } from './EnhancedDealAnalysisTab';
-import { Deal } from '@/hooks/useOptimizedPipelineDeals';
+import { Deal as BaseDeal } from '@/hooks/usePipelineDeals';
+import { EnhancedDealAnalysis } from '@/types/enhanced-deal-analysis';
 import { useToast } from '@/hooks/use-toast';
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
+
+// Extend the Deal type to include enhanced_analysis
+type Deal = BaseDeal & {
+  enhanced_analysis?: EnhancedDealAnalysis;
+};
 
 interface EnhancedDealDetailsModalProps {
   deal: Deal | null;
@@ -201,9 +207,7 @@ export function EnhancedDealDetailsModal({
         onDealUpdated?.();
         // Reload enhanced data after update
         loadEnhancedData();
-        // Force a page refresh to get the updated deal data
-        window.location.reload();
-      }, 2000);
+      }, 1000);
 
       toast({
         title: "Analysis Complete",
@@ -272,9 +276,9 @@ export function EnhancedDealDetailsModal({
           
           {/* Temporary debug - enhanced analysis check */}
           <div className="text-xs text-muted-foreground p-2 bg-gray-50 rounded">
-            Enhanced Analysis Available: {deal.enhanced_analysis ? 'Yes' : 'No'} | 
-            Rubric Breakdown: {deal.enhanced_analysis?.rubric_breakdown?.length || 0} items |
-            Notes Intelligence: {deal.enhanced_analysis?.notes_intelligence ? 'Yes' : 'No'}
+            Enhanced Analysis Available: {(deal as any).enhanced_analysis ? 'Yes' : 'No'} | 
+            Rubric Breakdown: {(deal as any).enhanced_analysis?.rubric_breakdown?.length || 0} items |
+            Notes Intelligence: {(deal as any).enhanced_analysis?.notes_intelligence ? 'Yes' : 'No'}
           </div>
 
           <TabsContent value="overview" className="space-y-6">

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { DropResult } from '@hello-pangea/dnd';
-import { useOptimizedPipelineDeals, Deal } from '@/hooks/useOptimizedPipelineDeals';
+import { usePipelineDeals, Deal } from '@/hooks/usePipelineDeals';
 import { EnhancedPipelineHeader } from './EnhancedPipelineHeader';
 import { CleanKanbanView } from './CleanKanbanView';
 import { EnhancedKanbanView } from './EnhancedKanbanView';
@@ -45,7 +45,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
     moveDeal,
     addDeal,
     refreshDeals
-  } = useOptimizedPipelineDeals(fundId);
+  } = usePipelineDeals(fundId);
 
   const { selectedFund } = useFund();
   const permissions = usePermissions();
