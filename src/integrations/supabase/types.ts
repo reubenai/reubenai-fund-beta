@@ -930,6 +930,7 @@ export type Database = {
           deal_size: number | null
           description: string | null
           employee_count: number | null
+          enhanced_analysis: Json | null
           founder: string | null
           fund_id: string
           id: string
@@ -966,6 +967,7 @@ export type Database = {
           deal_size?: number | null
           description?: string | null
           employee_count?: number | null
+          enhanced_analysis?: Json | null
           founder?: string | null
           fund_id: string
           id?: string
@@ -1002,6 +1004,7 @@ export type Database = {
           deal_size?: number | null
           description?: string | null
           employee_count?: number | null
+          enhanced_analysis?: Json | null
           founder?: string | null
           fund_id?: string
           id?: string

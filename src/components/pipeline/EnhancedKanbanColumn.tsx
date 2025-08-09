@@ -168,7 +168,7 @@ export const EnhancedKanbanColumn: React.FC<EnhancedKanbanColumnProps> = ({
                 deals.map((deal, index) => (
                   <EnhancedDealCard
                     key={deal.id}
-                    deal={deal}
+                    deal={deal as any}
                     index={index}
                     onDealClick={onDealClick}
                     viewDensity={viewDensity}

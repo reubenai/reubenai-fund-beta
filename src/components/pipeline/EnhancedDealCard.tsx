@@ -21,13 +21,13 @@ import {
 } from 'lucide-react';
 import { Deal as BaseDeal } from '@/hooks/usePipelineDeals';
 import { EnhancedDealAnalysis } from '@/types/enhanced-deal-analysis';
-import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
-import { useFund } from '@/contexts/FundContext';
 
-// Extend the Deal type to include enhanced_analysis
 type Deal = BaseDeal & {
   enhanced_analysis?: EnhancedDealAnalysis;
 };
+
+import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
+import { useFund } from '@/contexts/FundContext';
 import { DealCardHeader } from './DealCardHeader';
 import { DealCardMetrics } from './DealCardMetrics';
 import { DealCardFooter } from './DealCardFooter';

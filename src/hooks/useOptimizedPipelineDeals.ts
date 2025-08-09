@@ -13,7 +13,7 @@ import { EnhancedDealAnalysis } from '@/types/enhanced-deal-analysis';
 export type Deal = Database['public']['Tables']['deals']['Row'] & {
   notes_count?: number;
   deal_analyses?: Array<Database['public']['Tables']['deal_analyses']['Row']>;
-  enhanced_analysis?: EnhancedDealAnalysis;
+  enhanced_analysis?: any; // Use any for JSON compatibility
 };
 
 export interface PipelineStage {

@@ -45,10 +45,10 @@ import { DocumentManager } from '@/components/documents/DocumentManager';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-import { Deal } from '@/hooks/usePipelineDeals';
+import { Deal as BaseDeal } from '@/hooks/usePipelineDeals';
 
 interface DealDetailsModalProps {
-  deal: Deal | null;
+  deal: BaseDeal | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDealUpdated?: () => void;
@@ -65,7 +65,7 @@ export function DealDetailsModal({
   // Use the enhanced modal for better functionality
   return (
     <EnhancedDealDetailsModal
-      deal={deal}
+      deal={deal as any}
       open={open}
       onOpenChange={onOpenChange}
       onDealUpdated={onDealUpdated}

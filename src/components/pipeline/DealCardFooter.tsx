@@ -73,11 +73,7 @@ export const DealCardFooter: React.FC<DealCardFooterProps> = ({
           <span className="text-blue-600 text-xs">
             Next: {deal.next_action}
           </span>
-        ) : (
-          <span className="text-blue-600 text-xs">
-            Next: Due Diligence
-          </span>
-        )}
+        ) : null}
       </div>
       
       {/* Web Presence Validation - Only in detailed view */}

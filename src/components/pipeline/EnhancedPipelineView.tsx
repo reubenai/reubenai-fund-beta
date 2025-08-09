@@ -94,21 +94,7 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Pipeline Metrics Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="transition-all duration-200 hover:scale-105 hover:shadow-md bg-gradient-to-r from-blue-50 to-blue-100">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Pipeline Value</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {formatCurrency(pipelineMetrics.totalValue)}
-                </p>
-              </div>
-              <DollarSign className="w-8 h-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="transition-all duration-200 hover:scale-105 hover:shadow-md bg-gradient-to-r from-green-50 to-green-100">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
