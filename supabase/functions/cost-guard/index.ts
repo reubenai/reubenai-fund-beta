@@ -14,6 +14,13 @@ interface CostGuardRequest {
   deal_id?: string
   fund_id?: string
   model_costs?: Record<string, number>
+  // Enhanced for Phase 3
+  model_id?: string
+  model_version?: string
+  temperature?: number
+  top_p?: number
+  prompt_hash?: string
+  content_hash?: string
 }
 
 interface CostGuardResponse {
@@ -29,6 +36,10 @@ interface CostGuardResponse {
     utilization_percentage: number
     recent_cost_trend: 'increasing' | 'stable' | 'decreasing'
   }
+  // Enhanced for Phase 3
+  cache_hit?: boolean
+  retry_count?: number
+  degradation_banner?: string
 }
 
 serve(async (req) => {
