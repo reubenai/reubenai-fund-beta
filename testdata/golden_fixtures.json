@@ -1,0 +1,230 @@
+{
+  "test_deals": [
+    {
+      "scenario": "high_scoring_vc_deal",
+      "deal_data": {
+        "company_name": "NeuralFlow AI",
+        "industry": "Artificial Intelligence",
+        "description": "Advanced neural network optimization platform for enterprise AI workloads",
+        "founder": "Dr. Sarah Chen, PhD Computer Science MIT",
+        "location": "San Francisco, CA",
+        "website": "https://neuralflow.ai",
+        "deal_size": 5000000,
+        "valuation": 25000000,
+        "employee_count": 45,
+        "business_model": "B2B SaaS",
+        "fund_type": "vc"
+      },
+      "expected_scores": {
+        "overall_score": 85,
+        "thesis_alignment_score": 90,
+        "market_score": 85,
+        "product_score": 88,
+        "financial_score": 80,
+        "leadership_score": 90,
+        "traction_score": 82
+      },
+      "evidence_sources": [
+        {"engine": "market-intelligence-engine", "domain": "pitchbook.com", "type": "market_research"},
+        {"engine": "financial-engine", "domain": "crunchbase.com", "type": "financial_data"},
+        {"engine": "team-research-engine", "domain": "linkedin.com", "type": "team_profiles"}
+      ]
+    },
+    {
+      "scenario": "moderate_scoring_pe_deal", 
+      "deal_data": {
+        "company_name": "MidCorp Manufacturing",
+        "industry": "Industrial Manufacturing",
+        "description": "Regional manufacturing company specializing in precision components",
+        "founder": "Robert Martinez, 20 years manufacturing experience",
+        "location": "Detroit, MI", 
+        "website": "https://midcorp-mfg.com",
+        "deal_size": 15000000,
+        "valuation": 60000000,
+        "employee_count": 180,
+        "business_model": "B2B Manufacturing",
+        "fund_type": "pe"
+      },
+      "expected_scores": {
+        "overall_score": 70,
+        "thesis_alignment_score": 65,
+        "market_score": 72,
+        "product_score": 70,
+        "financial_score": 75,
+        "leadership_score": 68,
+        "traction_score": 73
+      },
+      "evidence_sources": [
+        {"engine": "market-intelligence-engine", "domain": "ibisworld.com", "type": "industry_analysis"},
+        {"engine": "financial-engine", "domain": "sec.gov", "type": "financial_filings"},
+        {"engine": "management-assessment-engine", "domain": "glassdoor.com", "type": "leadership_review"}
+      ]
+    },
+    {
+      "scenario": "schema_fail_missing_analysis",
+      "deal_data": {
+        "company_name": "Incomplete Startup",
+        "industry": "Technology",
+        "description": "Startup with insufficient data",
+        "fund_type": "vc"
+      },
+      "expected_result": "schema_error",
+      "missing_fields": ["executive_summary", "investment_thesis_alignment", "market_attractiveness"]
+    },
+    {
+      "scenario": "evidence_block_insufficient_domains",
+      "deal_data": {
+        "company_name": "Single Source Corp",
+        "industry": "Software",
+        "description": "Company with evidence from only one domain",
+        "fund_type": "vc"
+      },
+      "expected_result": "evidence_block",
+      "evidence_sources": [
+        {"engine": "market-intelligence-engine", "domain": "crunchbase.com", "type": "single_source"}
+      ]
+    },
+    {
+      "scenario": "cost_cap_breach",
+      "deal_data": {
+        "company_name": "Expensive Analysis Co",
+        "industry": "Complex Industry",
+        "description": "Deal requiring extensive analysis exceeding cost caps",
+        "fund_type": "vc"
+      },
+      "expected_result": "degradation_mode",
+      "simulated_cost": 30.00
+    },
+    {
+      "scenario": "high_dimensional_coverage",
+      "deal_data": {
+        "company_name": "WellRounded Ventures", 
+        "industry": "FinTech",
+        "description": "Comprehensive analysis across all dimensions",
+        "founder": "Jane Smith, Former Goldman Sachs VP",
+        "location": "New York, NY",
+        "website": "https://wellrounded.ventures",
+        "deal_size": 8000000,
+        "valuation": 40000000,
+        "employee_count": 75,
+        "business_model": "B2B FinTech",
+        "fund_type": "vc"
+      },
+      "coverage_dimensions": [
+        "market_analysis", "financial_modeling", "team_assessment", 
+        "product_evaluation", "competitive_analysis", "risk_assessment",
+        "ip_analysis", "regulatory_compliance", "scalability_assessment"
+      ],
+      "evidence_sources": [
+        {"engine": "market-intelligence-engine", "domain": "pitchbook.com", "type": "market_data"},
+        {"engine": "financial-engine", "domain": "bloomberg.com", "type": "financial_analysis"},
+        {"engine": "team-research-engine", "domain": "linkedin.com", "type": "team_profiles"},
+        {"engine": "product-ip-engine", "domain": "uspto.gov", "type": "ip_research"},
+        {"engine": "risk-mitigation-engine", "domain": "sec.gov", "type": "regulatory_filings"}
+      ]
+    },
+    {
+      "scenario": "stale_evidence_recency_fail",
+      "deal_data": {
+        "company_name": "OldData Industries",
+        "industry": "Legacy Technology", 
+        "description": "Company with outdated evidence sources",
+        "fund_type": "pe"
+      },
+      "expected_result": "evidence_block",
+      "evidence_age_days": 120,
+      "recency_threshold": 90
+    },
+    {
+      "scenario": "low_scoring_reject_case",
+      "deal_data": {
+        "company_name": "Struggling Startup",
+        "industry": "Undefined",
+        "description": "Early stage company with significant challenges",
+        "founder": "First-time entrepreneur",
+        "location": "Remote",
+        "deal_size": 500000,
+        "valuation": 5000000,
+        "employee_count": 3,
+        "business_model": "Uncertain",
+        "fund_type": "vc"
+      },
+      "expected_scores": {
+        "overall_score": 35,
+        "thesis_alignment_score": 25,
+        "market_score": 40,
+        "product_score": 30,
+        "financial_score": 35,
+        "leadership_score": 45,
+        "traction_score": 20
+      },
+      "expected_rag": "needs_development"
+    },
+    {
+      "scenario": "international_deal_coverage",
+      "deal_data": {
+        "company_name": "Global Tech Solutions",
+        "industry": "Enterprise Software",
+        "description": "International SaaS platform with multi-region operations",
+        "founder": "Maria Rodriguez, Former McKinsey Partner",
+        "location": "London, UK",
+        "website": "https://globaltech.solutions",
+        "deal_size": 12000000,
+        "valuation": 80000000,
+        "employee_count": 220,
+        "business_model": "B2B SaaS",
+        "fund_type": "vc"
+      },
+      "multi_region_evidence": true,
+      "evidence_sources": [
+        {"engine": "market-intelligence-engine", "domain": "pitchbook.com", "type": "global_market"},
+        {"engine": "financial-engine", "domain": "companieshouse.gov.uk", "type": "uk_filings"},
+        {"engine": "team-research-engine", "domain": "linkedin.com", "type": "international_team"}
+      ]
+    },
+    {
+      "scenario": "rapid_growth_high_momentum",
+      "deal_data": {
+        "company_name": "RocketGrowth Analytics",
+        "industry": "Data Analytics", 
+        "description": "Fast-growing analytics platform with strong momentum indicators",
+        "founder": "David Kim, Former Palantir Engineering Lead",
+        "location": "Austin, TX",
+        "website": "https://rocketgrowth.io",
+        "deal_size": 7500000,
+        "valuation": 45000000,
+        "employee_count": 95,
+        "business_model": "B2B Analytics SaaS",
+        "fund_type": "vc"
+      },
+      "growth_metrics": {
+        "revenue_growth_rate": "300%",
+        "customer_growth_rate": "250%", 
+        "employee_growth_rate": "180%"
+      },
+      "expected_scores": {
+        "overall_score": 88,
+        "traction_score": 95,
+        "market_score": 85,
+        "product_score": 82
+      }
+    }
+  ],
+  "test_metadata": {
+    "version": "1.0",
+    "created_at": "2025-01-09T23:30:00Z",
+    "total_scenarios": 10,
+    "coverage_requirements": {
+      "schema_pass_rate": "100%",
+      "min_dimensions_covered": 3,
+      "cost_compliance": "under_caps",
+      "evidence_integrity": "validated"
+    },
+    "validation_criteria": {
+      "blocking_scenarios": ["schema_fail_missing_analysis", "evidence_block_insufficient_domains", "stale_evidence_recency_fail"],
+      "passing_scenarios": ["high_scoring_vc_deal", "moderate_scoring_pe_deal", "high_dimensional_coverage", "international_deal_coverage", "rapid_growth_high_momentum"],
+      "degradation_scenarios": ["cost_cap_breach"],
+      "edge_cases": ["low_scoring_reject_case"]
+    }
+  }
+}

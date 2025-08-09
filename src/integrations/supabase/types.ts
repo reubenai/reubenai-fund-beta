@@ -1278,6 +1278,27 @@ export type Database = {
           },
         ]
       }
+      evidence_appendix: {
+        Row: {
+          appendix_data: Json
+          created_at: string | null
+          deal_id: string
+          id: string
+        }
+        Insert: {
+          appendix_data: Json
+          created_at?: string | null
+          deal_id: string
+          id?: string
+        }
+        Update: {
+          appendix_data?: Json
+          created_at?: string | null
+          deal_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       fund_decision_patterns: {
         Row: {
           actionable_insights: string | null
