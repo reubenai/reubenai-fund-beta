@@ -287,15 +287,22 @@ serve(async (req) => {
 
     // CONSOLIDATED RAG CALCULATION - Single Source of Truth
     if (overallScore && deal.fund_id) {
-      const thresholds = await ragUtils.getStrategyThresholds(supabase, deal.fund_id);
-      ragStatus = ragUtils.calculateRAGStatus(overallScore, thresholds);
-      ragConfidence = ragUtils.calculateConfidenceScore(analysisResult, deal, 75);
-      ragReasoning = ragUtils.generateRAGReasoning(overallScore, thresholds, [
-        'AI analysis complete',
-        'Strategy alignment verified'
-      ]);
-      
-      console.log(`🎯 RAG Calculation: Score ${overallScore} -> ${ragStatus} (confidence: ${ragConfidence}%)`);
+      try {
+        const thresholds = await ragUtils.getStrategyThresholds(supabase, deal.fund_id);
+        ragStatus = ragUtils.calculateRAGStatus(overallScore, thresholds);
+        ragConfidence = ragUtils.calculateConfidenceScore(analysisResult, deal, 75);
+        ragReasoning = ragUtils.generateRAGReasoning(overallScore, thresholds, [
+          'AI analysis complete',
+          'Strategy alignment verified'
+        ]);
+        
+        console.log(`🎯 RAG Calculation: Score ${overallScore} -> ${ragStatus} (confidence: ${ragConfidence}%)`);
+      } catch (ragError) {
+        console.error('RAG calculation error:', ragError);
+        ragStatus = 'needs_development';
+        ragConfidence = 50;
+        ragReasoning = `Analysis score: ${overallScore}/100`;
+      }
     }
 
     // Only store analysis if orchestrator failed and we used fallback analysis

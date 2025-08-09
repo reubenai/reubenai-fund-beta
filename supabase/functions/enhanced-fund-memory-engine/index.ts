@@ -978,8 +978,14 @@ function legacyIdentifySuccessFactors(preferences: any[]): any[] {
 async function storeOrchestratorInsights(fundId: string, dealId?: string, insightData?: any): Promise<any> {
   console.log(`🎯 [Orchestrator Insights] Storing insights for fund: ${fundId}, deal: ${dealId}`);
   
+  // If no insight data provided, return gracefully rather than throwing error
   if (!insightData) {
-    throw new Error('No insight data provided');
+    console.warn('⚠️ No insight data provided - returning empty result');
+    return {
+      success: true,
+      message: 'No insights to store',
+      stored_entries: 0
+    };
   }
 
   try {
