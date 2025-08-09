@@ -1,13 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
-interface MemoVersion {
-  id: string;
-  version: number;
-  content: any;
-  created_at: string;
-  description?: string;
-}
+import { MemoVersion } from '@/types/memo';
 
 interface MemoVersionState {
   versions: MemoVersion[];
@@ -40,6 +33,7 @@ export function useMemoVersions(dealId: string, fundId: string) {
         version: v.version,
         content: v.content,
         created_at: v.created_at,
+        created_by: v.created_by || 'system',
         description: v.description || `Version ${v.version}`
       })) || [];
 
@@ -80,6 +74,7 @@ export function useMemoVersions(dealId: string, fundId: string) {
         version: newVersion.version,
         content: newVersion.content,
         created_at: newVersion.created_at,
+        created_by: newVersion.created_by || 'system',
         description: newVersion.description || `Version ${newVersion.version}`
       };
 

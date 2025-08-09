@@ -15,6 +15,7 @@ import { VotingModal } from '@/components/ic/VotingModal';
 import { SessionDetailModal } from '@/components/ic/SessionDetailModal';
 
 import { icMemoService, ICSession, ICVotingDecision } from '@/services/ICMemoService';
+import { ICCommitteeMember } from '@/types/memo';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
@@ -34,18 +35,6 @@ interface Deal {
   industry?: string;
   description?: string;
   currency?: string;
-}
-
-interface ICCommitteeMember {
-  id: string;
-  user_id: string;
-  role: string;
-  voting_weight: number;
-  profiles?: {
-    first_name: string;
-    last_name: string;
-    email: string;
-  } | null;
 }
 
 export default function EnhancedICPage() {
@@ -1039,9 +1028,17 @@ export default function EnhancedICPage() {
                       id="voting-weight"
                       type="number"
                       step="0.1"
+                      min="0"
+                      max="100"
                       value={memberForm.voting_weight}
-                      onChange={(e) => setMemberForm({ ...memberForm, voting_weight: parseFloat(e.target.value) || 1.0 })}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 1.0;
+                        setMemberForm({ ...memberForm, voting_weight: Math.min(100, Math.max(0, value)) });
+                      }}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Voting weight should typically be between 0-100. Higher weights give more influence in decisions.
+                    </p>
                   </div>
                   <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={() => setShowMemberModal(false)}>

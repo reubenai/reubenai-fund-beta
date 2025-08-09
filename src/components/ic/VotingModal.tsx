@@ -8,18 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Vote, Clock, CheckCircle, XCircle, Pause } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ICVotingDecision } from '@/types/memo';
 
 interface VotingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  decision: {
-    id: string;
-    title: string;
-    description?: string;
-    voting_deadline: string;
-    status: string;
-    memo_id?: string;
-  };
+  decision: ICVotingDecision;
   onVoteSubmitted: () => void;
 }
 

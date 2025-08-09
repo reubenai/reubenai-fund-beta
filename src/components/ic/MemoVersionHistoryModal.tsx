@@ -7,14 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, User, FileText, RotateCcw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { usePermissions } from '@/hooks/usePermissions';
-
-interface MemoVersion {
-  id: string;
-  version: number;
-  content: any;
-  created_at: string;
-  description?: string;
-}
+import { MemoVersion } from '@/types/memo';
 
 interface MemoVersionHistoryModalProps {
   isOpen: boolean;
@@ -123,7 +116,7 @@ export default function MemoVersionHistoryModal({
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3" />
-                          System
+                          {version.created_by || 'System'}
                         </div>
                       </div>
                       
