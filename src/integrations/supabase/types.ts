@@ -2480,6 +2480,27 @@ export type Database = {
           },
         ]
       }
+      llm_cache: {
+        Row: {
+          cache_key: string
+          created_at: string | null
+          id: string
+          response_data: Json
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string | null
+          id?: string
+          response_data: Json
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string | null
+          id?: string
+          response_data?: Json
+        }
+        Relationships: []
+      }
       market_signal_responses: {
         Row: {
           created_at: string
@@ -2597,6 +2618,36 @@ export type Database = {
           id?: string
           last_failure_at?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ops_dashboard_events: {
+        Row: {
+          bucket: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          model_id: string | null
+          provider: string | null
+          timestamp: string | null
+        }
+        Insert: {
+          bucket?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          model_id?: string | null
+          provider?: string | null
+          timestamp?: string | null
+        }
+        Update: {
+          bucket?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          model_id?: string | null
+          provider?: string | null
+          timestamp?: string | null
         }
         Relationships: []
       }
@@ -2843,6 +2894,30 @@ export type Database = {
           metric_name?: string
           metric_value?: number
           recorded_at?: string
+        }
+        Relationships: []
+      }
+      rate_limit_buckets: {
+        Row: {
+          bucket_id: string
+          created_at: string | null
+          id: string
+          last_reset: string | null
+          requests_count: number | null
+        }
+        Insert: {
+          bucket_id: string
+          created_at?: string | null
+          id?: string
+          last_reset?: string | null
+          requests_count?: number | null
+        }
+        Update: {
+          bucket_id?: string
+          created_at?: string | null
+          id?: string
+          last_reset?: string | null
+          requests_count?: number | null
         }
         Relationships: []
       }
@@ -3269,6 +3344,10 @@ export type Database = {
           current_cost_per_minute: number
         }
         Returns: Json
+      }
+      cleanup_llm_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       complete_analysis_queue_item: {
         Args: {
