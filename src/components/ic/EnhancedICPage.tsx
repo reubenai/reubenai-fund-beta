@@ -13,6 +13,7 @@ import { useFund } from '@/contexts/FundContext';
 import { ICMemoModal } from '@/components/ic/ICMemoModal';
 import { VotingModal } from '@/components/ic/VotingModal';
 import { SessionDetailModal } from '@/components/ic/SessionDetailModal';
+import { EnhancedReviewQueue } from '@/components/ic/EnhancedReviewQueue';
 
 import { icMemoService, ICSession, ICVotingDecision } from '@/services/ICMemoService';
 import { ICCommitteeMember } from '@/types/memo';
@@ -594,81 +595,16 @@ export default function EnhancedICPage() {
 
         {canReviewMemos && (
           <TabsContent value="review" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-medium text-foreground">Review Queue</h2>
-                <p className="text-sm text-muted-foreground">
-                  Memos submitted for review and approval
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {reviewQueue.length > 0 ? (
-                reviewQueue.map((memo: any) => (
-                  <Card key={memo.id} className="border-0 shadow-sm">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-base font-medium text-foreground">
-                              {memo.deals?.company_name || 'Unknown Company'}
-                            </h3>
-                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                              Pending Review
-                            </Badge>
-                            {memo.overall_score && (
-                              <Badge variant="outline">
-                                Score: {memo.overall_score}/100
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            {memo.title || `IC Memo - ${memo.deals?.company_name}`}
-                          </p>
-                          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                            <span><span className="font-medium text-foreground">Deal Size:</span> {formatAmount(memo.deals?.deal_size, memo.deals?.currency)}</span>
-                            <span><span className="font-medium text-foreground">Industry:</span> {memo.deals?.industry || 'N/A'}</span>
-                            <span><span className="font-medium text-foreground">Submitted:</span> {new Date(memo.updated_at).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRejectMemo(memo.id)}
-                          >
-                            <XCircle className="h-4 w-4 mr-2" />
-                            Reject
-                          </Button>
-                          <Button 
-                            size="sm"
-                            onClick={() => handleApproveMemo(memo.id)}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Approve
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                <Card className="border-0 shadow-sm border-dashed border-border">
-                  <CardContent className="flex items-center justify-center py-16">
-                    <div className="text-center">
-                      <CheckCircle className="h-10 w-10 mx-auto text-muted-foreground/50 mb-4" />
-                      <p className="text-sm text-muted-foreground">
-                        No memos pending review
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Memos will appear here when analysts submit them for review
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            <EnhancedReviewQueue
+              fundId={selectedFund.id}
+              onViewMemo={(dealId) => {
+                const deal = deals.find(d => d.id === dealId);
+                if (deal) {
+                  setSelectedDealForMemo(deal);
+                  setShowMemoModal(true);
+                }
+              }}
+            />
           </TabsContent>
         )}
 

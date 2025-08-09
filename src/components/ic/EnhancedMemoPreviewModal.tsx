@@ -34,6 +34,7 @@ import { useContentValidation } from '@/hooks/useContentValidation';
 import { DataQualityIndicator } from '@/components/ui/data-quality-indicator';
 import MemoVersionHistoryModal from './MemoVersionHistoryModal';
 import { MemoPublishingControls } from './MemoPublishingControls';
+import { MemoWorkflowControls } from './MemoWorkflowControls';
 import { supabase } from '@/integrations/supabase/client';
 import { exportMemoToPDF, openMemoPrintPreview } from '@/utils/pdfClient';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -101,7 +102,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     dismiss 
   } = useEnhancedToast();
   const { validateMemoContent } = useContentValidation();
-  const { canEditICMemos } = usePermissions();
+  const { canEditICMemos, canSubmitForReview, canReviewMemos } = usePermissions();
 
   // Validate memo content for quality and fabrication prevention
   const currentContent = (memoState.content as any)?.sections || memoState.content || {};
@@ -165,7 +166,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
         fund_id: fundId,
         title: `IC Memo - ${deal.company_name}`,
         memo_content: memoState.content as any,
-        status: 'draft',
+        status: memoState.status || 'draft',
         is_published: false,
         overall_score: deal.overall_score,
         rag_status: deal.rag_status,
@@ -340,6 +341,40 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     }
   };
 
+  const getWorkflowStatusDisplay = () => {
+    const status = memoState.status || 'draft';
+    const isLocked = ['review', 'approved', 'published'].includes(status);
+    
+    const statusConfig = {
+      draft: { label: 'Draft', color: 'bg-gray-50 text-gray-700', icon: '📝' },
+      review: { label: 'Under Review', color: 'bg-amber-50 text-amber-700', icon: '👀' },
+      approved: { label: 'Approved', color: 'bg-green-50 text-green-700', icon: '✅' },
+      published: { label: 'Published', color: 'bg-blue-50 text-blue-700', icon: '📋' },
+      rejected: { label: 'Rejected', color: 'bg-red-50 text-red-700', icon: '❌' }
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
+    
+    return (
+      <div className="flex items-center gap-2">
+        <Badge className={`${config.color} border`}>
+          {config.icon} {config.label}
+        </Badge>
+        {isLocked && (
+          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+            🔒 Editing Locked
+          </Badge>
+        )}
+      </div>
+    );
+  };
+
+  const canEditMemo = () => {
+    if (!canEditICMemos) return false;
+    const status = memoState.status || 'draft';
+    return !['review', 'approved', 'published'].includes(status);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[95vw] h-[95vh] flex flex-col overflow-hidden">
@@ -353,7 +388,8 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 <Badge variant="outline" className="bg-primary/10 text-primary">
                   {deal.company_name}
                 </Badge>
-                {getStatusBadge()}
+                 {getStatusBadge()}
+                {getWorkflowStatusDisplay()}
                 {deal.overall_score && (
                   <Badge variant="outline">
                     Score: {deal.overall_score}/100
@@ -376,19 +412,33 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                   </Badge>
                  )}
                  
-                 {/* Memo Publishing Controls */}
-                 {memoState.existsInDb && (
-                 <MemoPublishingControls
-                     memoId={memoState.id || ''}
-                     currentStatus={memoState.status || 'draft'}
-                     isPublished={memoState.isPublished || false}
-                     dealName={deal.company_name}
-                     onStatusUpdate={() => {
-                       // Refresh memo state after status update
-                       loadMemo();
-                     }}
-                   />
-                 )}
+                  {/* Memo Workflow Controls */}
+                  {memoState.existsInDb && (
+                    <MemoWorkflowControls
+                      memoId={memoState.id || ''}
+                      status={memoState.status || 'draft'}
+                      dealName={deal.company_name}
+                      fundId={fundId}
+                      createdBy={(memoState as any).createdBy}
+                      reviewedBy={(memoState as any).reviewedBy}
+                      onStatusUpdate={() => {
+                        loadMemo();
+                      }}
+                    />
+                  )}
+                  
+                  {/* Memo Publishing Controls */}
+                  {memoState.existsInDb && memoState.status === 'approved' && (
+                  <MemoPublishingControls
+                      memoId={memoState.id || ''}
+                      currentStatus={memoState.status || 'draft'}
+                      isPublished={memoState.isPublished || false}
+                      dealName={deal.company_name}
+                      onStatusUpdate={() => {
+                        loadMemo();
+                      }}
+                    />
+                  )}
                </div>
              </div>
              
@@ -405,7 +455,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 </Button>
               )}
               
-              {canEditICMemos && (
+              {canEditMemo() && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -417,7 +467,13 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 </Button>
               )}
               
-              {canEditICMemos && (
+              {!canEditMemo() && canEditICMemos && (
+                <div className="text-sm text-muted-foreground px-3 py-2 bg-amber-50 rounded border">
+                  Memo is {memoState.status || 'draft'} - editing is locked
+                </div>
+              )}
+              
+              {canEditMemo() && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -441,7 +497,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 </Button>
               )}
               
-              {canEditICMemos && (
+              {canEditMemo() && (
                 <Button
                   variant="outline"
                   size="sm"
