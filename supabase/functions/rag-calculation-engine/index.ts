@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { calculateRAGFromAnalysis } from './enhanced-rag-utils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -35,23 +36,32 @@ serve(async (req) => {
   }
 
   try {
-    console.log('RAG Calculation Engine: Processing request');
+    console.log('RAG Calculation Engine: Processing request - ROUTING THROUGH ENHANCED ANALYSIS');
     
     const request: RAGRequest = await req.json();
-    console.log('RAG request for deal:', request.dealId);
+    console.log('RAG request for deal:', request.dealId, '- routing to enhanced-deal-analysis');
 
-    // Get comprehensive data for analysis
-    const dealData = await getDealData(request.dealId);
-    const analysisData = await getAnalysisData(request.dealId);
-    const ragResult = await calculateRAGStatus(dealData, analysisData, request);
+    // CRITICAL FIX: Route through enhanced-deal-analysis for consistency
+    const { data: analysisData, error: analysisError } = await supabase.functions.invoke('enhanced-deal-analysis', {
+      body: { 
+        dealId: request.dealId, 
+        action: 'single',
+        includeRAG: true 
+      }
+    });
 
-    // Store RAG result
-    await storeRAGResult(request.dealId, ragResult);
+    if (analysisError) {
+      throw new Error(`Enhanced analysis failed: ${analysisError.message}`);
+    }
+
+    // Extract RAG result from enhanced analysis
+    const ragResult = analysisData?.ragStatus || await calculateRAGFromAnalysis(analysisData);
 
     return new Response(JSON.stringify({
       success: true,
       data: ragResult,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      source: 'enhanced-deal-analysis'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

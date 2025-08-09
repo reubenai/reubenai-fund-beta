@@ -262,7 +262,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
           };
 
       const response: any = await withTimeout(
-        supabase.functions.invoke('ic-memo-pdf-exporter', {
+        supabase.functions.invoke('enhanced-pdf-generator', {
           body: payload,
         }) as any,
         15000
@@ -310,7 +310,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     (async () => {
       try {
         const { data }: any = await withTimeout(
-          supabase.functions.invoke('ic-memo-pdf-exporter', { body: { test: true } }) as any,
+          supabase.functions.invoke('enhanced-pdf-generator', { body: { test: true } }) as any,
           2000
         );
         if (!cancelled) setServerPdfHealthy(data?.ok ? 'ok' : 'down');

@@ -227,17 +227,13 @@ serve(async (req) => {
       exitStrategy: !!specialistEngines.exitStrategy
     });
 
-    // 5. Calculate RAG status using RAG engine
-    console.log('🚦 Calculating RAG status...');
-    const { data: ragData, error: ragError } = await supabase.functions.invoke('rag-calculation-engine', {
+    // 5. Calculate RAG status through enhanced-deal-analysis
+    console.log('🚦 Calculating RAG status through enhanced analysis...');
+    const { data: ragData, error: ragError } = await supabase.functions.invoke('enhanced-deal-analysis', {
       body: { 
         dealId,
-        companyData: {
-          name: dealData.company_name,
-          industry: dealData.industry,
-          location: dealData.location,
-          website: dealData.website
-        }
+        action: 'single'
+      }
       }
     });
 

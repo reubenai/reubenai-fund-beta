@@ -101,7 +101,7 @@ verify_jwt = false
 [functions.financial-engine]
 verify_jwt = false
 
-[functions.ic-memo-pdf-exporter]
+[functions.enhanced-data-controller-monitor]
 verify_jwt = false
 
 [functions.intelligent-pipeline-engine]

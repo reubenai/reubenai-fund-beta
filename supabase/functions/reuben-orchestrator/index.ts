@@ -788,58 +788,44 @@ function calculateOverallConfidence(engineResults: any): 'high' | 'medium' | 'lo
 
 async function storeAnalysisResults(dealId: string, analysis: ComprehensiveAnalysis) {
   try {
-    // Store in deal_analyses table
-    const { error: analysisError } = await supabase
-      .from('deal_analyses')
-      .upsert({
-        deal_id: dealId,
-        engine_results: analysis.engine_results,
-        analysis_version: analysis.analysis_version,
-        confidence_scores: {
-          investment_thesis_alignment: analysis.engine_results.investment_thesis_alignment?.confidence,
-          market_attractiveness: analysis.engine_results.market_attractiveness?.confidence,
-          product_strength_ip: analysis.engine_results.product_strength_ip?.confidence,
-          financial_feasibility: analysis.engine_results.financial_feasibility?.confidence,
-          founder_team_strength: analysis.engine_results.founder_team_strength?.confidence,
-          overall: analysis.confidence_level
-        },
-        data_sources: extractDataSources(analysis.engine_results),
-        validation_flags: extractValidationFlags(analysis.engine_results),
-        
-        // Legacy fields for backward compatibility
-        thesis_alignment_score: analysis.engine_results.investment_thesis_alignment?.score,
-        thesis_alignment_notes: analysis.engine_results.investment_thesis_alignment?.analysis,
-        market_score: analysis.engine_results.market_attractiveness?.score,
-        market_notes: analysis.engine_results.market_attractiveness?.analysis,
-        product_score: analysis.engine_results.product_strength_ip?.score,
-        product_notes: analysis.engine_results.product_strength_ip?.analysis,
-        financial_score: analysis.engine_results.financial_feasibility?.score,
-        financial_notes: analysis.engine_results.financial_feasibility?.analysis,
-        leadership_score: analysis.engine_results.founder_team_strength?.score,
-        leadership_notes: analysis.engine_results.founder_team_strength?.analysis,
-        analyzed_at: new Date().toISOString()
-      });
-      
-    if (analysisError) {
-      console.error('Error storing analysis:', analysisError);
-    }
+    // CRITICAL SECURITY: Do NOT store fund-specific data in orchestrator
+    // Store only aggregated, sanitized insights in Fund Memory Engine
+    console.log('🔐 Storing sanitized analysis insights in Fund Memory Engine (Air Gap Enforced)');
     
-    // Update deal with overall score
-    const { error: dealError } = await supabase
-      .from('deals')
-      .update({
-        overall_score: analysis.overall_score,
-        score_level: analysis.overall_score >= 85 ? 'exciting' : 
-                    analysis.overall_score >= 70 ? 'promising' : 'needs_development'
-      })
-      .eq('id', dealId);
-      
-    if (dealError) {
-      console.error('Error updating deal score:', dealError);
+    // Sanitize data for general training - remove all fund-specific information
+    const sanitizedInsights = {
+      industry_general: generalizeIndustry(analysis.engine_results.market_attractiveness?.industry || 'unknown'),
+      stage_general: generalizeStage(analysis.engine_results.financial_feasibility?.stage || 'unknown'),
+      pattern_insights: {
+        market_dynamics: extractGeneralPatterns(analysis.engine_results.market_attractiveness),
+        product_patterns: extractGeneralPatterns(analysis.engine_results.product_strength_ip),
+        leadership_patterns: extractGeneralPatterns(analysis.engine_results.founder_team_strength)
+      },
+      confidence_patterns: analysis.confidence_level,
+      methodology_feedback: {
+        engine_performance: calculateEnginePerformance(analysis.engine_results),
+        data_quality_indicators: extractDataQuality(analysis.engine_results)
+      }
+    };
+
+    // Route to Fund Memory Engine for fund-specific storage (isolated)
+    const { error: memoryError } = await supabase.functions.invoke('enhanced-fund-memory-engine', {
+      body: {
+        action: 'store_orchestrator_insights',
+        sanitizedInsights,
+        confidenceLevel: analysis.confidence_level,
+        analysisVersion: analysis.analysis_version
+      }
+    });
+
+    if (memoryError) {
+      console.warn('⚠️ Could not store sanitized insights in Fund Memory:', memoryError);
     }
+
+    console.log('✅ Analysis insights stored with air gap protection');
     
   } catch (error) {
-    console.error('Error storing analysis results:', error);
+    console.error('Error storing sanitized analysis insights:', error);
   }
 }
 

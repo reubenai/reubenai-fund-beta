@@ -223,7 +223,6 @@ export class ProductionReadinessTest {
     const criticalFunctions = [
       'ai-memo-generator',
       'enhanced-pdf-generator',
-      'ic-memo-pdf-exporter', 
       'reuben-orchestrator'
     ];
 
