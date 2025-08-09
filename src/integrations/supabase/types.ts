@@ -3051,6 +3051,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      populate_enhanced_analysis: {
+        Args: { target_deal_id: string }
+        Returns: Json
+      }
       process_analysis_queue: {
         Args: { batch_size?: number; max_concurrent?: number }
         Returns: Json
