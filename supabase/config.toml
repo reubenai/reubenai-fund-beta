@@ -1,6 +1,140 @@
 project_id = "bueuioozcgmedkuxawju"
 
-[functions.web-research-engine]
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[auth]
+enabled = true
+port = 54324
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["https://127.0.0.1:3000"]
+jwt_expiry = 3600
+enable_signup = true
+enable_email_confirmations = false
+enable_email_autoconfirm = false
+enable_phone_confirmations = false
+enable_phone_autoconfirm = false
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = false
+template = "Your code is {{ .Code }}"
+
+[db]
+enabled = true
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[realtime]
+enabled = true
+port = 54323
+ip_version = "ipv4"
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1:54321"
+openai_api_key = "env(OPENAI_API_KEY)"
+
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+enabled = true
+port = 54321
+file_size_limit = "50MiB"
+image_transformation_enabled = true
+
+[analytics]
+enabled = false
+port = 54327
+vector_port = 54328
+backend = "postgres"
+
+[functions.ai-memo-generator]
+verify_jwt = false
+
+[functions.analysis-queue-processor]
+verify_jwt = false
+
+[functions.data-controller-monitor]
+verify_jwt = false
+
+[functions.document-processor]
+verify_jwt = false
+
+[functions.enhanced-deal-analysis]
+verify_jwt = false
+
+[functions.enhanced-deal-sourcing]
+verify_jwt = false
+
+[functions.enhanced-fund-memory-engine]
+verify_jwt = false
+
+[functions.enhanced-pdf-generator]
+verify_jwt = false
+
+[functions.exit-strategy-engine]
+verify_jwt = false
+
+[functions.financial-engine]
+verify_jwt = false
+
+[functions.fund-memory-engine]
+verify_jwt = false
+
+[functions.ic-memo-pdf-exporter]
+verify_jwt = false
+
+[functions.intelligent-pipeline-engine]
+verify_jwt = false
+
+[functions.investment-committee-analysis-enhancer]
+verify_jwt = false
+
+[functions.investment-terms-engine]
+verify_jwt = false
+
+[functions.management-assessment-engine]
+verify_jwt = false
+
+[functions.market-intelligence-engine]
+verify_jwt = false
+
+[functions.market-research-engine]
+verify_jwt = false
+
+[functions.product-ip-engine]
+verify_jwt = false
+
+[functions.production-readiness-orchestrator]
+verify_jwt = false
+
+[functions.rag-calculation-engine]
+verify_jwt = false
+
+[functions.reuben-orchestrator]
 verify_jwt = false
 
 [functions.reubenai-complete-guide-exporter]
@@ -10,4 +144,37 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.reubenai-technical-guide-exporter]
+verify_jwt = false
+
+[functions.risk-mitigation-engine]
+verify_jwt = false
+
+[functions.send-feedback-notification]
+verify_jwt = false
+
+[functions.send-ic-invitation]
+verify_jwt = false
+
+[functions.send-support-email]
+verify_jwt = false
+
+[functions.send-user-invitation]
+verify_jwt = false
+
+[functions.strategy-driven-analysis]
+verify_jwt = false
+
+[functions.team-research-engine]
+verify_jwt = false
+
+[functions.thesis-alignment-engine]
+verify_jwt = false
+
+[functions.update-deal-from-decision]
+verify_jwt = false
+
+[functions.web-research-engine]
+verify_jwt = false
+
+[functions.comprehensive-analysis-engine]
 verify_jwt = false
