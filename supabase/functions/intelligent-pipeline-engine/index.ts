@@ -84,7 +84,7 @@ async function prioritizeDeals(fundId: string) {
   dealPriorities.sort((a, b) => b.priority - a.priority);
 
   // Store insights in fund memory
-  await supabase.functions.invoke('fund-memory-engine', {
+  await supabase.functions.invoke('enhanced-fund-memory-engine', {
     body: {
       action: 'store',
       fundId: fundId,
@@ -126,7 +126,7 @@ async function getStageRecommendations(dealId: string, fundId: string) {
     .single();
 
   // Query fund memory for similar deals
-  const { data: memoryContext } = await supabase.functions.invoke('fund-memory-engine', {
+  const { data: memoryContext } = await supabase.functions.invoke('enhanced-fund-memory-engine', {
     body: {
       action: 'query',
       fundId: fundId,
@@ -168,7 +168,7 @@ async function performBatchAnalysis(fundId: string, dealIds: string[]) {
   }));
 
   // Store batch analysis results
-  await supabase.functions.invoke('fund-memory-engine', {
+  await supabase.functions.invoke('enhanced-fund-memory-engine', {
     body: {
       action: 'store',
       fundId: fundId,
@@ -198,7 +198,7 @@ async function performBatchAnalysis(fundId: string, dealIds: string[]) {
 
 async function getPipelineIntelligence(fundId: string) {
   // Query fund memory for pipeline insights
-  const { data: memoryData } = await supabase.functions.invoke('fund-memory-engine', {
+  const { data: memoryData } = await supabase.functions.invoke('enhanced-fund-memory-engine', {
     body: {
       action: 'pattern_discovery',
       fundId: fundId

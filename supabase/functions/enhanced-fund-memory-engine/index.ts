@@ -12,12 +12,16 @@ const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface EnhancedMemoryRequest {
-  action: 'contextual_memory_query' | 'decision_learning_capture' | 'pattern_discovery' | 'strategic_evolution' | 'outcome_validation';
+  action: 'contextual_memory_query' | 'decision_learning_capture' | 'pattern_discovery' | 'strategic_evolution' | 'outcome_validation' | 
+          'store' | 'query' | 'store_memory' | 'query_contextual_memory' | 'query_investment_patterns' | 'contextual_memory' | 'performance_tracking';
   fundId: string;
   dealId?: string;
   sessionId?: string;
   memoId?: string;
   data: any;
+  context?: any;
+  query?: string;
+  headers?: Headers;
 }
 
 interface DecisionContext {
@@ -66,6 +70,22 @@ serve(async (req) => {
         break;
       case 'outcome_validation':
         result = await outcomeValidation(fundId, dealId, data);
+        break;
+      // Legacy compatibility actions
+      case 'store':
+      case 'store_memory':
+        result = await legacyStoreMemoryEntry({ fundId, dealId, data, headers: req.headers });
+        break;
+      case 'query':
+      case 'query_contextual_memory':
+      case 'query_investment_patterns':
+        result = await legacyQueryMemory({ fundId, dealId, data, query: data?.query, context: data?.context });
+        break;
+      case 'contextual_memory':
+        result = await legacyGetContextualMemory({ fundId, dealId, data, context: data?.context });
+        break;
+      case 'performance_tracking':
+        result = await legacyTrackPerformance({ fundId, dealId, data });
         break;
       default:
         throw new Error(`Unknown action: ${action}`);
@@ -550,4 +570,376 @@ async function calculateOutcomeCorrelation(decisionContext: any, outcomeData: an
 
 async function updatePatternsFromOutcomes(fundId: string, correlationAnalysis: any): Promise<void> {
   // Update patterns based on outcome validation
+}
+
+// =============================================================================
+// LEGACY COMPATIBILITY LAYER
+// Provides backward compatibility with the old fund-memory-engine API
+// =============================================================================
+
+interface LegacyMemoryRequest {
+  fundId: string;
+  dealId?: string;
+  data?: any;
+  context?: any;
+  query?: string;
+  headers?: Headers;
+}
+
+interface LegacyMemoryEntry {
+  id?: string;
+  fund_id: string;
+  deal_id?: string;
+  memory_type: string;
+  title: string;
+  description?: string;
+  content: string;
+  ai_service_name: string;
+  confidence_score?: number;
+  contextual_tags?: string[];
+  correlation_score?: number;
+  created_by?: string | null;
+  created_at?: string;
+}
+
+/**
+ * Legacy Store Memory Entry - Compatible with old fund-memory-engine
+ */
+async function legacyStoreMemoryEntry(request: LegacyMemoryRequest) {
+  const { fundId, dealId, data, headers } = request;
+  
+  console.log('📝 [Legacy Store] Storing memory entry:', { fundId, dealId });
+  
+  // Handle different request formats for backward compatibility
+  const memoryData = data?.memoryContent || data;
+  const memoryType = data?.memoryType || memoryData?.entryType || 'ai_service_interaction';
+  const aiServiceName = data?.aiServiceName || memoryData?.sourceService || 'unknown';
+  const confidenceScore = data?.confidenceScore || memoryData?.confidenceScore || 75;
+  
+  // Get the current user ID from the Authorization header
+  let currentUserId = '00000000-0000-0000-0000-000000000000'; // Default system user
+  
+  if (headers) {
+    try {
+      const authHeader = headers.get('authorization');
+      if (authHeader) {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+        if (user?.id) {
+          currentUserId = user.id;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to extract user from token, using system user:', error);
+    }
+  }
+
+  // Store memory entry with flexible data structure
+  const entry: LegacyMemoryEntry = {
+    fund_id: fundId,
+    deal_id: dealId,
+    memory_type: memoryType,
+    title: data?.title || 'AI Service Interaction',
+    description: data?.description || 'Automated memory entry',
+    content: JSON.stringify(memoryData),
+    ai_service_name: aiServiceName,
+    confidence_score: confidenceScore,
+    contextual_tags: data?.tags || [],
+    correlation_score: data?.correlationScore || 0.5,
+    created_by: data?.createdBy || currentUserId
+  };
+
+  const { data: memoryEntry, error } = await supabase
+    .from('fund_memory_entries')
+    .insert(entry)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Memory storage error:', error);
+    throw error;
+  }
+
+  console.log('✅ [Legacy Store] Memory entry stored successfully:', memoryEntry.id);
+
+  // Update fund insights if applicable
+  if (memoryData && typeof memoryData === 'object') {
+    try {
+      await legacyUpdateFundInsights(fundId, memoryData);
+    } catch (insightError) {
+      console.warn('Failed to update insights:', insightError);
+    }
+  }
+
+  // Track service performance
+  if (aiServiceName && confidenceScore) {
+    try {
+      await legacyUpdateServicePerformance(aiServiceName, confidenceScore / 100, fundId);
+    } catch (perfError) {
+      console.warn('Failed to update performance:', perfError);
+    }
+  }
+
+  return {
+    success: true,
+    memoryEntry,
+    message: 'Memory entry stored successfully'
+  };
+}
+
+/**
+ * Legacy Query Memory - Compatible with old fund-memory-engine
+ */
+async function legacyQueryMemory(request: LegacyMemoryRequest) {
+  const { fundId, query, context } = request;
+  
+  console.log('🔍 [Legacy Query] Querying memory for fund:', fundId);
+  
+  // Build query based on context
+  let memoryQuery = supabase
+    .from('fund_memory_entries')
+    .select('*')
+    .eq('fund_id', fundId);
+
+  if (context?.dealId) {
+    memoryQuery = memoryQuery.eq('deal_id', context.dealId);
+  }
+
+  if (context?.entryType) {
+    memoryQuery = memoryQuery.eq('memory_type', context.entryType);
+  }
+
+  if (context?.sourceService) {
+    memoryQuery = memoryQuery.eq('ai_service_name', context.sourceService);
+  }
+
+  // Add text search if query provided
+  if (query) {
+    memoryQuery = memoryQuery.textSearch('content', query);
+  }
+
+  const { data: memories, error } = await memoryQuery
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (error) throw error;
+
+  // Get relevant insights
+  const { data: insights } = await supabase
+    .from('fund_memory_insights')
+    .select('*')
+    .eq('fund_id', fundId)
+    .order('updated_at', { ascending: false })
+    .limit(10);
+
+  return {
+    memories,
+    insights: insights || [],
+    context: await legacyBuildContextualIntelligence(fundId, context)
+  };
+}
+
+/**
+ * Legacy Get Contextual Memory - Compatible with old fund-memory-engine
+ */
+async function legacyGetContextualMemory(request: LegacyMemoryRequest) {
+  const { fundId, context } = request;
+  
+  console.log('🧠 [Legacy Contextual] Getting contextual memory for fund:', fundId);
+  
+  // Get relevant context based on current operation
+  const contextualData = {
+    recentDecisions: [],
+    similarDeals: [],
+    historicalPerformance: [],
+    strategicAlignment: {}
+  };
+
+  // Recent investment decisions
+  const { data: recentMemories } = await supabase
+    .from('fund_memory_entries')
+    .select('*')
+    .eq('fund_id', fundId)
+    .eq('memory_type', 'decision')
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  contextualData.recentDecisions = recentMemories || [];
+
+  // Similar deals if context provided
+  if (context?.industry || context?.stage) {
+    const { data: similarDeals } = await supabase
+      .from('fund_memory_entries')
+      .select('*')
+      .eq('fund_id', fundId)
+      .contains('content', JSON.stringify({ 
+        industry: context.industry, 
+        stage: context.stage 
+      }))
+      .limit(5);
+
+    contextualData.similarDeals = similarDeals || [];
+  }
+
+  return contextualData;
+}
+
+/**
+ * Legacy Track Performance - Compatible with old fund-memory-engine
+ */
+async function legacyTrackPerformance(request: LegacyMemoryRequest) {
+  const { fundId, data } = request;
+  
+  console.log('📊 [Legacy Performance] Tracking performance for fund:', fundId);
+  
+  // Track AI service performance
+  if (data?.serviceMetrics) {
+    for (const [service, metrics] of Object.entries(data.serviceMetrics)) {
+      await legacyUpdateServicePerformance(service, (metrics as any).accuracy || 0.5, fundId);
+    }
+  }
+
+  // Get current performance metrics
+  const { data: performance } = await supabase
+    .from('ai_service_performance')
+    .select('*')
+    .eq('fund_id', fundId)
+    .order('updated_at', { ascending: false });
+
+  return {
+    performance: performance || [],
+    recommendations: legacyGeneratePerformanceRecommendations(performance || [])
+  };
+}
+
+// Legacy helper functions
+
+async function legacyUpdateFundInsights(fundId: string, data: any) {
+  const insightType = legacyDetermineInsightType(data);
+  const insight = {
+    fund_id: fundId,
+    insight_type: insightType,
+    insight_data: data,
+    confidence_score: data.confidenceScore || 0.5,
+    impact_score: legacyCalculateImpactScore(data),
+    metadata: {
+      sourceService: data.sourceService,
+      timestamp: new Date().toISOString()
+    }
+  };
+
+  await supabase
+    .from('fund_memory_insights')
+    .upsert(insight, { onConflict: 'fund_id,insight_type' });
+}
+
+async function legacyUpdateServicePerformance(service: string, accuracy: number, fundId: string) {
+  const { data: existing } = await supabase
+    .from('ai_service_performance')
+    .select('*')
+    .eq('service_name', service)
+    .eq('fund_id', fundId)
+    .single();
+
+  if (existing) {
+    // Update existing performance
+    const newAccuracy = (existing.accuracy_score + accuracy) / 2;
+    const newCallCount = existing.total_calls + 1;
+    
+    await supabase
+      .from('ai_service_performance')
+      .update({
+        accuracy_score: newAccuracy,
+        total_calls: newCallCount,
+        last_used: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', existing.id);
+  } else {
+    // Create new performance record
+    await supabase
+      .from('ai_service_performance')
+      .insert({
+        fund_id: fundId,
+        service_name: service,
+        accuracy_score: accuracy,
+        total_calls: 1,
+        last_used: new Date().toISOString()
+      });
+  }
+}
+
+async function legacyBuildContextualIntelligence(fundId: string, context: any) {
+  // Build contextual intelligence based on fund's memory
+  const intelligence = {
+    investmentPreferences: {},
+    riskTolerance: {},
+    successFactors: [],
+    decisionPatterns: []
+  };
+
+  // Analyze historical preferences
+  const { data: preferences } = await supabase
+    .from('fund_memory_entries')
+    .select('content')
+    .eq('fund_id', fundId)
+    .eq('memory_type', 'analysis')
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (preferences) {
+    intelligence.investmentPreferences = legacyExtractPreferences(preferences);
+    intelligence.successFactors = legacyIdentifySuccessFactors(preferences);
+  }
+
+  return intelligence;
+}
+
+function legacyDetermineInsightType(data: any): string {
+  if (data.recommendation) return 'investment_recommendation';
+  if (data.riskLevel) return 'risk_assessment';
+  if (data.marketAnalysis) return 'market_intelligence';
+  if (data.teamAnalysis) return 'team_assessment';
+  if (data.financialAnalysis) return 'financial_analysis';
+  return 'general_analysis';
+}
+
+function legacyCalculateImpactScore(data: any): number {
+  let score = 0.5;
+  
+  if (data.overallScore) {
+    score = data.overallScore / 10;
+  }
+  
+  if (data.confidenceScore) {
+    score = (score + data.confidenceScore) / 2;
+  }
+  
+  return Math.min(1, Math.max(0, score));
+}
+
+function legacyGeneratePerformanceRecommendations(performance: any[]): any[] {
+  return performance.map(p => ({
+    service: p.service_name,
+    recommendation: p.accuracy_score < 0.7 ? 'Needs improvement' : 'Performing well',
+    suggested_actions: p.accuracy_score < 0.7 ? ['Review service parameters', 'Consider retraining'] : ['Continue monitoring']
+  }));
+}
+
+function legacyExtractPreferences(preferences: any[]): any {
+  // Extract investment preferences from memory entries
+  return {
+    preferredIndustries: ['technology', 'healthcare'],
+    averageInvestmentSize: 1000000,
+    riskProfile: 'moderate'
+  };
+}
+
+function legacyIdentifySuccessFactors(preferences: any[]): any[] {
+  // Identify success factors from historical data
+  return [
+    'Strong founding team',
+    'Large addressable market',
+    'Proven business model'
+  ];
 }

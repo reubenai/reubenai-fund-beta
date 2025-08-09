@@ -193,26 +193,28 @@ class DealDecisionService {
 
   private async storeLearningInsights(fundId: string, decision: DealDecision): Promise<void> {
     try {
-      // Store in fund memory for AI learning
-      await supabase.functions.invoke('fund-memory-engine', {
+      // Store in enhanced fund memory for AI learning
+      await supabase.functions.invoke('enhanced-fund-memory-engine', {
         body: {
           action: 'store_memory',
           fundId,
           dealId: decision.deal_id,
-          memoryType: 'decision_pattern',
-          title: `Deal Decision: ${decision.decision_type}`,
-          description: `Human decision on deal with AI learning context`,
-          content: `Decision: ${decision.decision_type}. Rationale: ${decision.decision_rationale || 'No rationale provided'}`,
-          memoryContent: {
-            decision,
-            learning_insights: {
-              contradicts_ai: decision.contradicts_ai,
-              decision_speed: decision.learning_context?.decision_speed,
-              confidence: decision.confidence_level,
-            }
-          },
-          aiServiceName: 'deal-decision-service',
-          confidenceScore: decision.confidence_level || 75
+          data: {
+            memoryType: 'decision_pattern',
+            title: `Deal Decision: ${decision.decision_type}`,
+            description: `Human decision on deal with AI learning context`,
+            content: `Decision: ${decision.decision_type}. Rationale: ${decision.decision_rationale || 'No rationale provided'}`,
+            memoryContent: {
+              decision,
+              learning_insights: {
+                contradicts_ai: decision.contradicts_ai,
+                decision_speed: decision.learning_context?.decision_speed,
+                confidence: decision.confidence_level,
+              }
+            },
+            aiServiceName: 'deal-decision-service',
+            confidenceScore: decision.confidence_level || 75
+          }
         }
       });
     } catch (error) {

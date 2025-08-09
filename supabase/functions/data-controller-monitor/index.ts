@@ -86,7 +86,7 @@ async function validateDataFlow(sourceService: string, targetService: string, fu
   console.log(`🔍 Validating data flow: ${sourceService} → ${targetService}`);
   
   // CRITICAL: Prevent fund-specific data from reaching general training
-  const isFundSpecificSource = sourceService === 'fund-memory-engine' || sourceService.includes('fund');
+  const isFundSpecificSource = sourceService === 'enhanced-fund-memory-engine' || sourceService.includes('fund');
   const isGeneralTrainingTarget = targetService.includes('reuben-orchestrator') || targetService.includes('general');
   
   // BLOCK: Fund-specific data to general training
@@ -103,8 +103,8 @@ async function validateDataFlow(sourceService: string, targetService: string, fu
   // ALLOW: General data flows
   const allowedFlows = [
     { from: 'reuben-orchestrator', to: 'enhanced-deal-analysis' },
-    { from: 'enhanced-deal-analysis', to: 'fund-memory-engine' },
-    { from: 'ai-memo-generator', to: 'fund-memory-engine' },
+    { from: 'enhanced-deal-analysis', to: 'enhanced-fund-memory-engine' },
+    { from: 'ai-memo-generator', to: 'enhanced-fund-memory-engine' },
     { from: 'web-research-engine', to: 'reuben-orchestrator' },
     { from: 'market-research-engine', to: 'reuben-orchestrator' },
     { from: 'financial-engine', to: 'reuben-orchestrator' },
@@ -215,7 +215,7 @@ async function monitorDataLeakage(fundId: string | undefined): Promise<any> {
   
   // Check for unauthorized data flows
   const unauthorizedFlows = [
-    'fund-memory-engine → general-training',
+    'enhanced-fund-memory-engine → general-training',
     'fund-specific → public-model',
     'private-data → aggregated-insights'
   ];

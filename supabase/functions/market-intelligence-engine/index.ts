@@ -21,7 +21,7 @@ serve(async (req) => {
     const { dealId, fundId, context, documentData } = await req.json();
     
     // Query fund memory for context
-    const { data: memoryContext } = await supabase.functions.invoke('fund-memory-engine', {
+    const { data: memoryContext } = await supabase.functions.invoke('enhanced-fund-memory-engine', {
       body: {
         action: 'contextual_memory',
         fundId: fundId,
@@ -33,7 +33,7 @@ serve(async (req) => {
     const result = await analyzeMarketIntelligence(dealId, fundId, context, memoryContext, documentData);
     
     // Store insights in fund memory
-    await supabase.functions.invoke('fund-memory-engine', {
+    await supabase.functions.invoke('enhanced-fund-memory-engine', {
       body: {
         action: 'store',
         fundId: fundId,

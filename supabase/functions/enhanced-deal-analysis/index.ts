@@ -99,7 +99,7 @@ serve(async (req) => {
     let memoryContext = {};
     if (deal.fund_id) {
       try {
-        const memoryResponse = await supabase.functions.invoke('fund-memory-engine', {
+        const memoryResponse = await supabase.functions.invoke('enhanced-fund-memory-engine', {
           body: {
             action: 'query_contextual_memory',
             fundId: deal.fund_id,
@@ -351,7 +351,7 @@ ${analysisResult.next_steps.map(step => `• ${step}`).join('\n')}
     // Store insights in Fund Memory Engine
     if (deal.fund_id) {
       try {
-        await supabase.functions.invoke('fund-memory-engine', {
+        await supabase.functions.invoke('enhanced-fund-memory-engine', {
           body: {
             action: 'store_memory',
             fundId: deal.fund_id,

@@ -101,9 +101,6 @@ verify_jwt = false
 [functions.financial-engine]
 verify_jwt = false
 
-[functions.fund-memory-engine]
-verify_jwt = false
-
 [functions.ic-memo-pdf-exporter]
 verify_jwt = false
 
@@ -135,15 +132,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.reuben-orchestrator]
-verify_jwt = false
-
-[functions.reubenai-complete-guide-exporter]
-verify_jwt = false
-
-[functions.reubenai-quick-start-exporter]
-verify_jwt = false
-
-[functions.reubenai-technical-guide-exporter]
 verify_jwt = false
 
 [functions.risk-mitigation-engine]

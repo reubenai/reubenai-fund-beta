@@ -136,7 +136,7 @@ serve(async (req) => {
     console.log('🧠 Querying fund memory for contextual intelligence...');
     let fundMemoryContext = {};
     try {
-      const { data: memoryData } = await supabase.functions.invoke('fund-memory-engine', {
+      const { data: memoryData } = await supabase.functions.invoke('enhanced-fund-memory-engine', {
         body: {
           action: 'query_investment_patterns',
           fundId,
@@ -167,7 +167,7 @@ serve(async (req) => {
 
     // 5. Store enhanced insights in fund memory for future reference
     try {
-      await supabase.functions.invoke('fund-memory-engine', {
+      await supabase.functions.invoke('enhanced-fund-memory-engine', {
         body: {
           action: 'store_memory',
           fundId,

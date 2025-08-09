@@ -50,7 +50,7 @@ serve(async (req) => {
     };
     
     // Query fund memory for context
-    const { data: memoryContext } = await supabase.functions.invoke('fund-memory-engine', {
+    const { data: memoryContext } = await supabase.functions.invoke('enhanced-fund-memory-engine', {
       body: {
         action: 'contextual_memory',
         fundId: fundId,
@@ -84,7 +84,7 @@ serve(async (req) => {
     const analysis = await processComprehensiveAnalysis(dealId, fundId, engineResults);
     
     // Store comprehensive analysis in fund memory
-    await supabase.functions.invoke('fund-memory-engine', {
+    await supabase.functions.invoke('enhanced-fund-memory-engine', {
       body: {
         action: 'store',
         fundId: fundId,

@@ -245,7 +245,7 @@ async function handleLegacyAIRequest(request: LegacyAIRequest) {
   // Store interaction in fund memory if applicable
   if (request.fundId && response.success) {
     try {
-      await supabase.functions.invoke('fund-memory-engine', {
+      await supabase.functions.invoke('enhanced-fund-memory-engine', {
         body: {
           action: 'store_memory',
           fundId: request.fundId,
