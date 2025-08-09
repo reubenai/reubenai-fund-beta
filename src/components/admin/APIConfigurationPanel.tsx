@@ -37,6 +37,13 @@ export function APIConfigurationPanel() {
       configureUrl: 'https://programmablesearchengine.google.com/controlpanel/all'
     },
     {
+      name: 'PERPLEXITY_API_KEY',
+      configured: false, // This would be checked dynamically
+      required: true,
+      description: 'AI-powered research and deal sourcing engine',
+      configureUrl: 'https://www.perplexity.ai/hub/api'
+    },
+    {
       name: 'CORESIGNAL_API_KEY',
       configured: false, // This would be checked dynamically
       required: false,
@@ -134,11 +141,55 @@ export function APIConfigurationPanel() {
           <div className="mt-6 p-4 bg-muted rounded-lg">
             <h4 className="font-medium mb-2">Current Market Research Status:</h4>
             <ul className="text-sm space-y-1 text-muted-foreground">
+              <li>• Deal sourcing: {missingRequired.some(c => c.name.includes('PERPLEXITY')) ? '❌ Basic keyword search only' : '✅ AI-powered intelligent sourcing'}</li>
               <li>• Market sizing data: {missingRequired.some(c => c.name.includes('GOOGLE')) ? '❌ Placeholder data only' : '✅ Real-time research available'}</li>
               <li>• Competitive analysis: {missingRequired.some(c => c.name.includes('GOOGLE')) ? '❌ Limited to document analysis' : '✅ Web-enhanced intelligence'}</li>
-              <li>• Growth rate analysis: {missingRequired.some(c => c.name.includes('GOOGLE')) ? '❌ Generic industry estimates' : '✅ Current market data'}</li>
+              <li>• Company enrichment: {missingOptional.some(c => c.name.includes('CORESIGNAL')) ? '⚠️ AI estimation only' : '✅ Professional data integration'}</li>
               <li>• AI-powered insights: {missingRequired.some(c => c.name.includes('OPENAI')) ? '❌ Analysis unavailable' : '✅ Full AI analysis enabled'}</li>
             </ul>
+          </div>
+
+          {/* Quick Setup Section */}
+          <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+            <h4 className="font-medium mb-3 text-primary">🚀 Quick Setup Required APIs</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              Set up the most critical APIs to unlock AI-powered deal sourcing and market research:
+            </p>
+            
+            <div className="space-y-3">
+              {missingRequired.filter(config => 
+                config.name === 'PERPLEXITY_API_KEY' || 
+                config.name === 'GOOGLE_SEARCH_API_KEY' || 
+                config.name === 'GOOGLE_SEARCH_ENGINE_ID'
+              ).map((config) => (
+                <div key={config.name} className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <span className="font-mono text-sm font-medium">{config.name}</span>
+                    <p className="text-xs text-muted-foreground">{config.description}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    {config.configureUrl && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(config.configureUrl, '_blank')}
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Get Key
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <Alert className="mt-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Note:</strong> API keys should be configured in your Supabase Edge Function Secrets. 
+                Contact your technical team to add these environment variables to enable full functionality.
+              </AlertDescription>
+            </Alert>
           </div>
         </CardContent>
       </Card>
