@@ -60,8 +60,8 @@ export default function Pipeline() {
         </div>
       )}
       
-      {/* MAD Fund Analysis Booster - Only show for MAD Hyperscalers Fund */}
-      {selectedFund.id === 'bb53614c-0015-46b0-b298-b9af1c2c8425' && (
+      {/* MAD Fund Analysis Booster - Only show for Super Admins on MAD Hyperscalers Fund */}
+      {isSuperAdmin && selectedFund.id === 'bb53614c-0015-46b0-b298-b9af1c2c8425' && (
         <MADFundAnalysisBooster />
       )}
       
