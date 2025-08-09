@@ -30,11 +30,34 @@ export interface DecisionAnalytics {
 
 class EnhancedFundMemoryService {
   /**
-   * Capture decision context for immediate learning
+   * Capture decision context for immediate learning with enhanced pattern analysis
    */
   async captureDecisionContext(fundId: string, context: DecisionContext): Promise<void> {
     try {
-      // Store in fund memory entries
+      // Store comprehensive decision context
+      const { data: decision, error: decisionError } = await supabase
+        .from('deal_decisions')
+        .insert({
+          deal_id: context.deal_id || '',
+          fund_id: fundId,
+          decision_type: context.decision_type,
+          confidence_level: context.confidence_level,
+          decision_maker: (await supabase.auth.getUser()).data.user?.id || 'system',
+          ai_recommendation_at_decision: JSON.stringify(context.ai_recommendations),
+          decision_metadata: {
+            supporting_evidence: context.supporting_evidence,
+            context_data: context.context_data,
+            decision_timestamp: new Date().toISOString()
+          },
+          contradicts_ai: context.ai_recommendations ? 
+            context.decision_outcome !== JSON.stringify(context.ai_recommendations) : false
+        })
+        .select()
+        .single();
+
+      if (decisionError) throw decisionError;
+
+      // Store in enhanced memory for pattern analysis
       const { error: memoryError } = await supabase
         .from('fund_memory_entries')
         .insert({
@@ -42,15 +65,17 @@ class EnhancedFundMemoryService {
           deal_id: context.deal_id,
           ic_meeting_id: context.ic_session_id,
           memory_type: 'decision_context',
-          title: `Decision: ${context.decision_type} - ${context.decision_outcome}`,
-          description: `Decision context captured with ${context.confidence_level}% confidence`,
+          title: `Enhanced Decision: ${context.decision_type} - ${context.decision_outcome}`,
+          description: `Decision context with ${context.confidence_level}% confidence and learning metadata`,
           memory_content: {
+            decision_id: decision.id,
             decision_type: context.decision_type,
             decision_outcome: context.decision_outcome,
             confidence_level: context.confidence_level,
             ai_recommendations: context.ai_recommendations,
             supporting_evidence: context.supporting_evidence,
             context_data: context.context_data,
+            ai_human_alignment: !decision.contradicts_ai,
             captured_at: new Date().toISOString()
           },
           confidence_score: context.confidence_level,
@@ -59,7 +84,8 @@ class EnhancedFundMemoryService {
             'decision_context',
             context.decision_type,
             context.decision_outcome,
-            context.deal_id ? 'deal_decision' : 'ic_decision'
+            context.deal_id ? 'deal_decision' : 'ic_decision',
+            decision.contradicts_ai ? 'ai_divergent' : 'ai_aligned'
           ],
           ai_service_name: 'enhanced-fund-memory-service',
           created_by: (await supabase.auth.getUser()).data.user?.id
@@ -67,8 +93,11 @@ class EnhancedFundMemoryService {
 
       if (memoryError) throw memoryError;
 
-      // Trigger pattern analysis
+      // Trigger pattern analysis and call enhanced fund memory engine
       await this.triggerPatternAnalysis(fundId, context);
+      
+      // Call enhanced fund memory engine for decision learning
+      await this.callEnhancedMemoryEngine(fundId, context, decision.id);
 
     } catch (error) {
       console.error('Error capturing decision context:', error);
@@ -316,6 +345,31 @@ class EnhancedFundMemoryService {
 
     } catch (error) {
       console.error('Error triggering pattern analysis:', error);
+    }
+  }
+
+  private async callEnhancedMemoryEngine(fundId: string, context: DecisionContext, decisionId: string): Promise<void> {
+    try {
+      // Call the enhanced fund memory engine for advanced pattern analysis
+      const { error } = await supabase.functions.invoke('enhanced-fund-memory-engine', {
+        body: {
+          action: 'decisionLearningCapture',
+          fundId,
+          dealId: context.deal_id,
+          sessionId: context.ic_session_id,
+          decisionData: {
+            ...context,
+            decisionId,
+            capturedAt: new Date().toISOString()
+          }
+        }
+      });
+
+      if (error) {
+        console.warn('Enhanced memory engine call failed:', error);
+      }
+    } catch (error) {
+      console.error('Error calling enhanced memory engine:', error);
     }
   }
 
