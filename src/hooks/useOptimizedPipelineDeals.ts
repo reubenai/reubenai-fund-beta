@@ -8,9 +8,12 @@ import { activityService } from '@/services/ActivityService';
 import { usePipelineStages } from './usePipelineStages';
 import { stageNameToStatus, statusToDisplayName, createStageKey, stageKeyToStatus } from '@/utils/pipelineMapping';
 
+import { EnhancedDealAnalysis } from '@/types/enhanced-deal-analysis';
+
 export type Deal = Database['public']['Tables']['deals']['Row'] & {
   notes_count?: number;
   deal_analyses?: Array<Database['public']['Tables']['deal_analyses']['Row']>;
+  enhanced_analysis?: EnhancedDealAnalysis;
 };
 
 export interface PipelineStage {

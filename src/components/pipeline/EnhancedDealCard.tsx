@@ -19,13 +19,17 @@ import {
   ExternalLink,
   Star
 } from 'lucide-react';
-import { Deal } from '@/hooks/usePipelineDeals';
+import { Deal } from '@/hooks/useOptimizedPipelineDeals';
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
+import { useFund } from '@/contexts/FundContext';
 import { DealCardHeader } from './DealCardHeader';
 import { DealCardMetrics } from './DealCardMetrics';
 import { DealCardFooter } from './DealCardFooter';
 import { WebPresenceSection } from './WebPresenceSection';
 import { AnalysisQueueStatus } from './AnalysisQueueStatus';
+import { EnhancedAnalysisIndicators } from './EnhancedAnalysisIndicators';
+import { RubricScoreRadar } from './RubricScoreRadar';
+import { FundTypeAnalysisPanel } from './FundTypeAnalysisPanel';
 
 interface EnhancedDealCardProps {
   deal: Deal;
@@ -64,6 +68,7 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
   viewDensity 
 }) => {
   const { getRAGCategory } = useStrategyThresholds();
+  const { selectedFund } = useFund();
   const formatAmount = (amount?: number, currency = 'USD') => {
     if (!amount) return 'N/A';
     
@@ -130,6 +135,14 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
               viewDensity={viewDensity}
             />
 
+            {/* Enhanced Analysis Indicators */}
+            <div className="mb-3">
+              <EnhancedAnalysisIndicators 
+                deal={deal}
+                viewDensity={viewDensity}
+              />
+            </div>
+
             {/* Metrics */}
             <DealCardMetrics 
               deal={deal}
@@ -138,6 +151,25 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
               viewDensity={viewDensity}
             />
 
+            {/* Enhanced Analysis Sections - Detailed View Only */}
+            {viewDensity === 'detailed' && deal.enhanced_analysis && (
+              <div className="mt-3 space-y-3">
+                {/* Rubric Breakdown */}
+                {deal.enhanced_analysis.rubric_breakdown && (
+                  <RubricScoreRadar 
+                    rubricBreakdown={deal.enhanced_analysis.rubric_breakdown}
+                    fundType={selectedFund?.fund_type === 'pe' ? 'pe' : 'vc'}
+                  />
+                )}
+                
+                {/* Fund Type Analysis */}
+                {deal.enhanced_analysis.fund_type_analysis && (
+                  <FundTypeAnalysisPanel 
+                    analysis={deal.enhanced_analysis.fund_type_analysis}
+                  />
+                )}
+              </div>
+            )}
 
             {/* Analysis Queue Status (only in detailed view) */}
             {viewDensity === 'detailed' && (

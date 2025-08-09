@@ -1,6 +1,6 @@
 import React from 'react';
 import { DollarSign, MapPin, ExternalLink, User } from 'lucide-react';
-import { Deal } from '@/hooks/usePipelineDeals';
+import { Deal } from '@/hooks/useOptimizedPipelineDeals';
 
 interface DealCardMetricsProps {
   deal: Deal;
