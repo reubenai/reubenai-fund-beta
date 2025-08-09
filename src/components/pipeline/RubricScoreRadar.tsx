@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RubricBreakdown } from '@/types/enhanced-deal-analysis';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 
 interface RubricScoreRadarProps {
   rubricBreakdown: RubricBreakdown[];
@@ -15,6 +16,7 @@ export const RubricScoreRadar: React.FC<RubricScoreRadarProps> = ({
   fundType,
   className
 }) => {
+  const { getRAGCategory } = useStrategyThresholds();
   const getCategoryDisplayName = (category: string) => {
     const displayNames: Record<string, string> = {
       'team_leadership': 'Team & Leadership',
@@ -39,10 +41,12 @@ export const RubricScoreRadar: React.FC<RubricScoreRadarProps> = ({
     return 'bg-red-500';
   };
 
-  const getConfidenceIndicator = (confidence: number) => {
-    if (confidence >= 80) return { label: 'High', color: 'bg-green-100 text-green-700' };
-    if (confidence >= 60) return { label: 'Med', color: 'bg-amber-100 text-amber-700' };
-    return { label: 'Low', color: 'bg-red-100 text-red-700' };
+  const getRAGIndicator = (score: number) => {
+    const ragCategory = getRAGCategory(score);
+    return {
+      label: ragCategory.label,
+      color: ragCategory.color
+    };
   };
 
   // Sort by fund type priority
@@ -66,7 +70,7 @@ export const RubricScoreRadar: React.FC<RubricScoreRadarProps> = ({
       </CardHeader>
       <CardContent className="space-y-3">
         {sortedBreakdown.map((item) => {
-          const confidenceIndicator = getConfidenceIndicator(item.confidence);
+          const ragIndicator = getRAGIndicator(item.score);
           
           return (
             <div key={item.category} className="space-y-2">
@@ -75,8 +79,8 @@ export const RubricScoreRadar: React.FC<RubricScoreRadarProps> = ({
                   <span className="text-sm font-medium truncate">
                     {getCategoryDisplayName(item.category)}
                   </span>
-                  <Badge variant="outline" className={`${confidenceIndicator.color} text-xs px-1 py-0`}>
-                    {confidenceIndicator.label}
+                  <Badge variant="outline" className={`${ragIndicator.color} text-xs px-1 py-0`}>
+                    {ragIndicator.label}
                   </Badge>
                 </div>
                 <span className={`text-sm font-semibold ${getScoreColor(item.score)}`}>
