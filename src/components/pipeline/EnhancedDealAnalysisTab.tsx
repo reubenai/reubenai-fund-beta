@@ -1,550 +1,480 @@
 import React from 'react';
+import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Brain, 
-  Target, 
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import {
+  AlertCircle,
+  Brain,
   TrendingUp,
-  AlertTriangle,
   CheckCircle,
-  MessageSquare,
-  Lightbulb,
-  BarChart3,
+  AlertTriangle,
   Clock,
-  Zap
+  Target,
+  BarChart3,
+  Zap,
+  FileText,
+  Users,
+  DollarSign,
+  Gauge
 } from 'lucide-react';
-import { Deal as BaseDeal } from '@/hooks/usePipelineDeals';
-import { EnhancedDealAnalysis } from '@/types/enhanced-deal-analysis';
+import { Deal } from '@/hooks/usePipelineDeals';
 import { RubricScoreRadar } from './RubricScoreRadar';
 import { FundTypeAnalysisPanel } from './FundTypeAnalysisPanel';
-import { useFund } from '@/contexts/FundContext';
-
-// Extend the Deal type to include enhanced_analysis
-type Deal = BaseDeal & {
-  enhanced_analysis?: EnhancedDealAnalysis;
-};
+import { ScoringMethodologyCard } from './ScoringMethodologyCard';
+import { EnhancedDealAnalysis, RubricBreakdown, AnalysisEngine, NotesIntelligence, FundTypeAnalysis } from '@/types/enhanced-deal-analysis';
 
 interface EnhancedDealAnalysisTabProps {
-  deal: Deal;
+  deal: Deal & { enhanced_analysis?: EnhancedDealAnalysis };
 }
 
-export const EnhancedDealAnalysisTab: React.FC<EnhancedDealAnalysisTabProps> = ({ deal }) => {
-  const { selectedFund } = useFund();
-  const { enhanced_analysis } = deal;
+export function EnhancedDealAnalysisTab({ deal }: EnhancedDealAnalysisTabProps) {
+  const analysis = deal.enhanced_analysis;
 
-  if (!enhanced_analysis) {
+  // Analysis In Progress fallback
+  if (!deal.enhanced_analysis) {
     return (
       <div className="space-y-6">
-        <Card className="border-amber-200 bg-amber-50/30">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Brain className="h-12 w-12 text-amber-500 mb-4" />
-            <h3 className="text-lg font-medium mb-2 text-amber-800">Analysis In Progress</h3>
-            <p className="text-amber-700 text-center max-w-md">
-              Enhanced analysis is being generated. Use the "Enrich Data" button to accelerate the process.
-            </p>
+        <Card className="card-xero border-warning/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-8 w-8 text-warning" />
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Analysis In Progress</h3>
+                <p className="text-muted-foreground">
+                  AI analysis is being processed for this deal. Enhanced insights will be available shortly.
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
 
+  // Calculate overall analysis score
   const getAnalysisScore = () => {
-    if (!enhanced_analysis.rubric_breakdown) return null;
-    const weightedScore = enhanced_analysis.rubric_breakdown.reduce(
-      (sum, item) => sum + (item.score * item.weight / 100), 0
+    if (!analysis.rubric_breakdown) return 0;
+    const totalWeight = analysis.rubric_breakdown.reduce((sum, item) => sum + item.weight, 0);
+    if (totalWeight === 0) return 0;
+    const weightedScore = analysis.rubric_breakdown.reduce(
+      (sum, item) => sum + (item.score * item.weight / totalWeight), 0
     );
     return Math.round(weightedScore);
   };
 
   const analysisScore = getAnalysisScore();
 
+  const getSentimentVariant = (sentiment?: string) => {
+    switch (sentiment) {
+      case 'positive': return 'default';
+      case 'negative': return 'destructive';
+      case 'mixed': return 'secondary';
+      default: return 'outline';
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Executive Analysis Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-emerald-100 bg-emerald-50/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <BarChart3 className="h-4 w-4 text-emerald-600" />
-              <span className="text-sm font-medium text-emerald-800">Overall Score</span>
-            </div>
-            <div className="text-2xl font-bold text-emerald-700">
-              {analysisScore ? `${analysisScore}%` : 'Calculating'}
-            </div>
-            <div className="text-xs text-emerald-600 mt-1">
-              Weighted average
+      {/* Executive Summary Dashboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <Card className="card-xero">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Overall Score</p>
+                <p className="text-3xl font-bold text-foreground">{analysisScore}</p>
+              </div>
+              <Gauge className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-blue-100 bg-blue-50/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Target className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-800">Completeness</span>
-            </div>
-            <div className="text-2xl font-bold text-blue-700">
-              {enhanced_analysis.analysis_completeness}%
-            </div>
-            <div className="text-xs text-blue-600 mt-1">
-              Data coverage
+        <Card className="card-xero">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Completeness</p>
+                <p className="text-3xl font-bold text-foreground">{analysis.analysis_completeness}%</p>
+              </div>
+              <BarChart3 className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-purple-100 bg-purple-50/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <MessageSquare className="h-4 w-4 text-purple-600" />
-              <span className="text-sm font-medium text-purple-800">Sentiment</span>
-            </div>
-            <div className="text-lg font-semibold capitalize text-purple-700">
-              {enhanced_analysis.notes_intelligence?.sentiment || 'Neutral'}
-            </div>
-            <div className="text-xs text-purple-600 mt-1">
-              Notes analysis
+        <Card className="card-xero">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Sentiment</p>
+                <Badge variant={getSentimentVariant(analysis.notes_intelligence?.sentiment)}>
+                  {analysis.notes_intelligence?.sentiment || 'Neutral'}
+                </Badge>
+              </div>
+              <Brain className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-slate-100 bg-slate-50/30">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="h-4 w-4 text-slate-600" />
-              <span className="text-sm font-medium text-slate-800">Last Updated</span>
-            </div>
-            <div className="text-sm font-medium text-slate-700">
-              {enhanced_analysis.last_comprehensive_analysis 
-                ? new Date(enhanced_analysis.last_comprehensive_analysis).toLocaleDateString()
-                : 'Unknown'
-              }
-            </div>
-            <div className="text-xs text-slate-600 mt-1">
-              Analysis date
+        <Card className="card-xero">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Last Updated</p>
+                <p className="text-sm text-foreground">
+                  {analysis.last_comprehensive_analysis 
+                    ? format(new Date(analysis.last_comprehensive_analysis), 'MMM dd')
+                    : 'N/A'
+                  }
+                </p>
+              </div>
+              <Clock className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Scoring Methodology */}
+      <ScoringMethodologyCard 
+        rubricBreakdown={analysis.rubric_breakdown || []}
+        overallScore={analysisScore}
+        analysisCompleteness={analysis.analysis_completeness || 0}
+      />
+
       {/* Comprehensive Analysis Tabs */}
       <Tabs defaultValue="rubric" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-slate-50">
-          <TabsTrigger value="rubric" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Rubric Breakdown
+        <TabsList className="grid w-full grid-cols-4 bg-muted/30">
+          <TabsTrigger 
+            value="rubric" 
+            className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
+            Analysis Breakdown
           </TabsTrigger>
-          <TabsTrigger value="engines" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
-            <Brain className="w-4 h-4 mr-2" />
-            Engine Performance
+          <TabsTrigger 
+            value="engines" 
+            className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
+            Data Quality
           </TabsTrigger>
-          <TabsTrigger value="fund-alignment" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
-            <Target className="w-4 h-4 mr-2" />
+          <TabsTrigger 
+            value="alignment" 
+            className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
             Fund Alignment
           </TabsTrigger>
-          <TabsTrigger value="intelligence" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
-            <Lightbulb className="w-4 h-4 mr-2" />
-            Intelligence Report
+          <TabsTrigger 
+            value="intelligence" 
+            className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
+            Key Insights
           </TabsTrigger>
         </TabsList>
 
-        {/* Comprehensive Rubric Analysis */}
         <TabsContent value="rubric" className="space-y-6">
-          {enhanced_analysis.rubric_breakdown ? (
-            <>
-              {/* Radar Chart Overview */}
-              <Card className="border-emerald-100">
+          {/* Radar Chart */}
+          <Card className="card-xero">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-hierarchy-3">
+                <Target className="h-5 w-5 text-muted-foreground" />
+                Investment Criteria Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RubricScoreRadar rubricBreakdown={analysis.rubric_breakdown || []} fundType="vc" />
+            </CardContent>
+          </Card>
+
+          {/* Detailed Rubric Breakdown */}
+          <div className="grid gap-4">
+            {(analysis.rubric_breakdown || []).map((item, index) => (
+              <Card key={index} className="card-xero">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg capitalize text-foreground">
+                      {item.category.replace(/_/g, ' ')}
+                    </CardTitle>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline">
+                        {item.score}/100
+                      </Badge>
+                      <Badge variant="outline">
+                        Weight: {item.weight}%
+                      </Badge>
+                      <Badge 
+                        variant="outline"
+                        className={`${
+                          item.confidence >= 80 ? 'text-success' :
+                          item.confidence >= 60 ? 'text-warning' :
+                          'text-destructive'
+                        }`}
+                      >
+                        {item.confidence}% confidence
+                      </Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Progress Bar */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Score</span>
+                      <span className="font-medium text-foreground">{item.score}/100</span>
+                    </div>
+                    <Progress 
+                      value={item.score} 
+                      className="h-2"
+                    />
+                  </div>
+
+                  {/* Key Insights */}
+                  {item.insights && item.insights.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                        <Brain className="h-4 w-4 text-muted-foreground" />
+                        Key Insights
+                      </h4>
+                      <ul className="space-y-1">
+                        {item.insights.map((insight, i) => (
+                          <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                            {insight}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Strengths and Concerns */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {item.strengths && item.strengths.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold text-success mb-2 flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4" />
+                          Strengths
+                        </h4>
+                        <ul className="space-y-1">
+                          {item.strengths.map((strength, i) => (
+                            <li key={i} className="text-sm text-success flex items-start gap-2">
+                              <span className="w-1.5 h-1.5 bg-success rounded-full mt-2 flex-shrink-0" />
+                              {strength}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {item.concerns && item.concerns.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold text-warning mb-2 flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          Concerns
+                        </h4>
+                        <ul className="space-y-1">
+                          {item.concerns.map((concern, i) => (
+                            <li key={i} className="text-sm text-warning flex items-start gap-2">
+                              <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                              {concern}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="engines" className="space-y-4">
+          <Card className="card-xero">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-hierarchy-3">
+                <Zap className="h-5 w-5 text-muted-foreground" />
+                Data Quality & Sources
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {Object.entries(analysis.analysis_engines || {}).map(([engineName, engine]) => (
+                  <div 
+                    key={engineName} 
+                    className="flex items-center justify-between p-4 border border-border/50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-3 h-3 rounded-full ${
+                        engine.status === 'complete' ? 'bg-success' :
+                        engine.status === 'partial' ? 'bg-warning' :
+                        engine.status === 'pending' ? 'bg-primary' :
+                        'bg-destructive'
+                      }`} />
+                      <div>
+                        <h4 className="font-semibold text-foreground capitalize">
+                          {engineName.replace(/_/g, ' ')}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          Last run: {engine.last_run ? format(new Date(engine.last_run), 'MMM dd, yyyy') : 'Never'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant="outline"
+                          className={`${
+                            engine.status === 'complete' ? 'text-success' :
+                            engine.status === 'partial' ? 'text-warning' :
+                            engine.status === 'pending' ? 'text-primary' :
+                            'text-destructive'
+                          }`}
+                        >
+                          {engine.status}
+                        </Badge>
+                        <span className="text-lg font-bold text-foreground">
+                          {engine.score || 0}
+                        </span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {engine.confidence || 0}% confidence
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {(!analysis.analysis_engines || Object.keys(analysis.analysis_engines).length === 0) && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                    <p>No analysis engines have been run for this deal yet.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="alignment" className="space-y-4">
+          {analysis.fund_type_analysis ? (
+            <FundTypeAnalysisPanel 
+              analysis={analysis.fund_type_analysis}
+            />
+          ) : (
+            <Card className="card-xero">
+              <CardContent className="pt-6">
+                <div className="text-center py-8 text-muted-foreground">
+                  <Target className="h-8 w-8 mx-auto mb-2" />
+                  <p>Fund alignment analysis not available for this deal.</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="intelligence" className="space-y-4">
+          {analysis.notes_intelligence ? (
+            <div className="grid gap-4">
+              {/* Sentiment Analysis */}
+              <Card className="card-xero">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-emerald-800">
-                    <BarChart3 className="h-5 w-5" />
-                    Comprehensive Rubric Analysis
+                  <CardTitle className="flex items-center gap-2 text-hierarchy-3">
+                    <Brain className="h-5 w-5 text-muted-foreground" />
+                    Sentiment Analysis
                   </CardTitle>
-                  <p className="text-sm text-slate-600">
-                    Detailed breakdown of all evaluation criteria with weighted scoring and confidence levels
-                  </p>
                 </CardHeader>
                 <CardContent>
-                  <RubricScoreRadar 
-                    rubricBreakdown={enhanced_analysis.rubric_breakdown}
-                    fundType={selectedFund?.fund_type === 'pe' ? 'pe' : 'vc'}
+                  <div className="flex items-center gap-4 mb-4">
+                    <Badge 
+                      variant={getSentimentVariant(analysis.notes_intelligence.sentiment)}
+                      className="text-sm px-3 py-1"
+                    >
+                      {analysis.notes_intelligence.sentiment}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      Confidence: {analysis.notes_intelligence.confidence_level}%
+                    </span>
+                  </div>
+                  
+                  <Progress 
+                    value={analysis.notes_intelligence.confidence_level} 
+                    className="h-2"
                   />
                 </CardContent>
               </Card>
 
-              {/* Detailed Criteria Deep Dive */}
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">
-                  Detailed Criteria Analysis
-                </h3>
-                
-                {enhanced_analysis.rubric_breakdown.map((item, index) => (
-                  <Card key={index} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg text-slate-700 flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${
-                            item.score >= 80 ? 'bg-emerald-500' :
-                            item.score >= 60 ? 'bg-amber-500' :
-                            'bg-red-500'
-                          }`} />
-                          {item.category}
-                        </CardTitle>
-                        <div className="flex items-center gap-3">
-                          <Badge 
-                            variant="outline" 
-                            className={`${
-                              item.score >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                              item.score >= 60 ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                              'bg-red-50 text-red-700 border-red-200'
-                            }`}
-                          >
-                            {item.score}% Score
-                          </Badge>
-                          <Badge variant="secondary" className="bg-slate-100 text-slate-700">
-                            {item.weight}% Weight
-                          </Badge>
-                          <Badge variant="outline" className="border-blue-200 text-blue-700">
-                            {item.confidence}% Confidence
-                          </Badge>
-                        </div>
-                      </div>
-                      
-                      {/* Progress Bar */}
-                      <div className="space-y-2">
-                        <Progress value={item.score} className="h-3" />
-                        <div className="flex justify-between text-xs text-slate-500">
-                          <span>Impact: {Math.round(item.score * item.weight / 100)}% of total</span>
-                          <span>Data Quality: {item.confidence >= 80 ? 'High' : item.confidence >= 60 ? 'Medium' : 'Low'}</span>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    
-                    <CardContent className="space-y-6">
-                      {/* Strengths Section */}
-                      {item.strengths && item.strengths.length > 0 && (
-                        <div className="bg-emerald-50 rounded-lg p-4">
-                          <h4 className="font-medium text-emerald-800 mb-3 flex items-center gap-2">
-                            <CheckCircle className="w-5 h-5" />
-                            Key Strengths & Advantages
-                          </h4>
-                          <ul className="space-y-2">
-                            {item.strengths.map((strength, idx) => (
-                              <li key={idx} className="text-sm text-emerald-700 flex items-start gap-3">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span>
-                                <span className="leading-relaxed">{strength}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* Concerns Section */}
-                      {item.concerns && item.concerns.length > 0 && (
-                        <div className="bg-amber-50 rounded-lg p-4">
-                          <h4 className="font-medium text-amber-800 mb-3 flex items-center gap-2">
-                            <AlertTriangle className="w-5 h-5" />
-                            Areas of Concern & Risk Factors
-                          </h4>
-                          <ul className="space-y-2">
-                            {item.concerns.map((concern, idx) => (
-                              <li key={idx} className="text-sm text-amber-700 flex items-start gap-3">
-                                <span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span>
-                                <span className="leading-relaxed">{concern}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* Detailed Insights Section */}
-                      {item.insights && item.insights.length > 0 && (
-                        <div className="bg-blue-50 rounded-lg p-4">
-                          <h4 className="font-medium text-blue-800 mb-3 flex items-center gap-2">
-                            <Lightbulb className="w-5 h-5" />
-                            Deep Analysis & Market Intelligence
-                          </h4>
-                          <div className="space-y-3">
-                            {item.insights.map((insight, idx) => (
-                              <div key={idx} className="text-sm text-blue-700 leading-relaxed p-3 bg-white rounded border border-blue-100">
-                                {insight}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </>
-          ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <BarChart3 className="h-12 w-12 text-slate-400 mb-4" />
-                <h3 className="text-lg font-medium text-slate-600 mb-2">Rubric Analysis Unavailable</h3>
-                <p className="text-slate-500 text-center">
-                  Run enhanced analysis to generate comprehensive rubric scoring
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* Analysis Engines Performance */}
-        <TabsContent value="engines" className="space-y-6">
-          {enhanced_analysis.analysis_engines && Object.keys(enhanced_analysis.analysis_engines).length > 0 ? (
-            <>
-              <Card className="border-blue-100">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-blue-800">
-                    <Brain className="h-5 w-5" />
-                    AI Engine Performance Dashboard
-                  </CardTitle>
-                  <p className="text-sm text-slate-600">
-                    Performance metrics and reliability scores for each analysis engine
-                  </p>
-                </CardHeader>
-              </Card>
-              
-              <div className="grid gap-6">
-                {Object.entries(enhanced_analysis.analysis_engines).map(([engineKey, engine]: [string, any]) => (
-                  <Card key={engineKey} className="border-slate-200 hover:border-blue-300 transition-colors">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg text-slate-700 flex items-center gap-2">
-                          <Zap className="w-5 h-5 text-blue-600" />
-                          {engine.name || engineKey.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                        </CardTitle>
-                        <div className="flex items-center gap-3">
-                          <Badge 
-                            variant={engine.status === 'complete' ? 'default' : 'secondary'}
-                            className={engine.status === 'complete' ? 'bg-emerald-600' : 'bg-amber-500'}
-                          >
-                            {engine.status || 'Unknown'}
-                          </Badge>
-                          <Badge variant="outline" className="border-blue-200 text-blue-700">
-                            v{engine.version || '1.0'}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      {/* Performance Metrics */}
-                      <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-slate-600">Analysis Score</span>
-                            <span className="text-sm font-bold text-emerald-700">{engine.score || 0}%</span>
-                          </div>
-                          <Progress value={engine.score || 0} className="h-3" />
-                          <p className="text-xs text-slate-500">
-                            {engine.score >= 80 ? 'Excellent performance' : 
-                             engine.score >= 60 ? 'Good performance' : 
-                             'Needs improvement'}
-                          </p>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-slate-600">Confidence Level</span>
-                            <span className="text-sm font-bold text-blue-700">{engine.confidence || 0}%</span>
-                          </div>
-                          <Progress value={engine.confidence || 0} className="h-3" />
-                          <p className="text-xs text-slate-500">
-                            {engine.confidence >= 80 ? 'High confidence' : 
-                             engine.confidence >= 60 ? 'Medium confidence' : 
-                             'Low confidence'}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {/* Engine Metadata */}
-                      <div className="bg-slate-50 rounded-lg p-4 space-y-2">
-                        {engine.last_run && (
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-slate-600">Last Execution:</span>
-                            <span className="font-medium text-slate-700">
-                              {new Date(engine.last_run).toLocaleString()}
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-slate-600">Engine Status:</span>
-                          <span className={`font-medium ${
-                            engine.status === 'complete' ? 'text-emerald-700' : 'text-amber-700'
-                          }`}>
-                            {engine.status === 'complete' ? 'Operational' : 'Processing'}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </>
-          ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Brain className="h-12 w-12 text-slate-400 mb-4" />
-                <h3 className="text-lg font-medium text-slate-600 mb-2">No Engine Data Available</h3>
-                <p className="text-slate-500 text-center">
-                  Run comprehensive analysis to see AI engine performance metrics
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* Fund Alignment Analysis */}
-        <TabsContent value="fund-alignment" className="space-y-6">
-          {enhanced_analysis.fund_type_analysis ? (
-            <FundTypeAnalysisPanel 
-              analysis={enhanced_analysis.fund_type_analysis}
-            />
-          ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Target className="h-12 w-12 text-slate-400 mb-4" />
-                <h3 className="text-lg font-medium text-slate-600 mb-2">Fund Alignment Pending</h3>
-                <p className="text-slate-500 text-center">
-                  Strategy alignment analysis will appear here once generated
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* Comprehensive Intelligence Report */}
-        <TabsContent value="intelligence" className="space-y-6">
-          {enhanced_analysis.notes_intelligence ? (
-            <div className="space-y-6">
-              {/* Intelligence Overview */}
-              <Card className="border-purple-100 bg-purple-50/30">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-purple-800">
-                    <MessageSquare className="h-5 w-5" />
-                    Intelligence Analysis Overview
-                  </CardTitle>
-                  <p className="text-sm text-purple-700">
-                    AI-powered insights extracted from notes, documents, and research data
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white rounded-lg p-4 border border-purple-100">
-                      <h4 className="font-medium text-purple-800 mb-2">Overall Sentiment</h4>
-                      <div className="flex items-center gap-3">
-                        <Badge 
-                          variant="outline"
-                          className={`${
-                            enhanced_analysis.notes_intelligence.sentiment === 'positive' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                            enhanced_analysis.notes_intelligence.sentiment === 'negative' ? 'bg-red-50 text-red-700 border-red-200' :
-                            enhanced_analysis.notes_intelligence.sentiment === 'mixed' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                            'bg-slate-50 text-slate-700 border-slate-200'
-                          } capitalize text-sm`}
-                        >
-                          {enhanced_analysis.notes_intelligence.sentiment}
-                        </Badge>
-                        <span className="text-sm text-purple-600">
-                          {enhanced_analysis.notes_intelligence.confidence_level}% Confidence
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-white rounded-lg p-4 border border-purple-100">
-                      <h4 className="font-medium text-purple-800 mb-2">Analysis Date</h4>
-                      <p className="text-sm text-purple-700">
-                        {enhanced_analysis.notes_intelligence.last_analyzed 
-                          ? new Date(enhanced_analysis.notes_intelligence.last_analyzed).toLocaleDateString()
-                          : 'Not available'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Key Insights */}
-              {enhanced_analysis.notes_intelligence.key_insights && enhanced_analysis.notes_intelligence.key_insights.length > 0 && (
-                <Card className="border-emerald-100">
+              {analysis.notes_intelligence.key_insights && analysis.notes_intelligence.key_insights.length > 0 && (
+                <Card className="card-xero">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-emerald-800">
-                      <Lightbulb className="h-5 w-5" />
-                      Strategic Insights & Opportunities
+                    <CardTitle className="flex items-center gap-2 text-hierarchy-3">
+                      <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                      Key Insights
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      {enhanced_analysis.notes_intelligence.key_insights.map((insight: string, idx: number) => (
-                        <div key={idx} className="bg-emerald-50 rounded-lg p-4 border border-emerald-100">
-                          <div className="flex items-start gap-3">
-                            <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
-                            <p className="text-sm text-emerald-800 leading-relaxed">{insight}</p>
-                          </div>
-                        </div>
+                    <ul className="space-y-2">
+                      {analysis.notes_intelligence.key_insights.map((insight, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                          <span className="text-sm text-muted-foreground">{insight}</span>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   </CardContent>
                 </Card>
               )}
 
               {/* Risk Flags */}
-              {enhanced_analysis.notes_intelligence.risk_flags && enhanced_analysis.notes_intelligence.risk_flags.length > 0 && (
-                <Card className="border-red-100">
+              {analysis.notes_intelligence.risk_flags && analysis.notes_intelligence.risk_flags.length > 0 && (
+                <Card className="card-xero">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-red-800">
-                      <AlertTriangle className="h-5 w-5" />
-                      Risk Assessment & Red Flags
+                    <CardTitle className="flex items-center gap-2 text-hierarchy-3">
+                      <AlertTriangle className="h-5 w-5 text-muted-foreground" />
+                      Risk Flags
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      {enhanced_analysis.notes_intelligence.risk_flags.map((risk: string, idx: number) => (
-                        <div key={idx} className="bg-red-50 rounded-lg p-4 border border-red-100">
-                          <div className="flex items-start gap-3">
-                            <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                            <p className="text-sm text-red-800 leading-relaxed">{risk}</p>
-                          </div>
-                        </div>
+                    <ul className="space-y-2">
+                      {analysis.notes_intelligence.risk_flags.map((flag, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 bg-destructive rounded-full mt-2 flex-shrink-0" />
+                          <span className="text-sm text-destructive">{flag}</span>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   </CardContent>
                 </Card>
               )}
 
               {/* Trend Indicators */}
-              {enhanced_analysis.notes_intelligence.trend_indicators && enhanced_analysis.notes_intelligence.trend_indicators.length > 0 && (
-                <Card className="border-blue-100">
+              {analysis.notes_intelligence.trend_indicators && analysis.notes_intelligence.trend_indicators.length > 0 && (
+                <Card className="card-xero">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-blue-800">
-                      <TrendingUp className="h-5 w-5" />
-                      Market Trends & Indicators
+                    <CardTitle className="flex items-center gap-2 text-hierarchy-3">
+                      <BarChart3 className="h-5 w-5 text-muted-foreground" />
+                      Trend Indicators
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      {enhanced_analysis.notes_intelligence.trend_indicators.map((trend: string, idx: number) => (
-                        <div key={idx} className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                          <div className="flex items-start gap-3">
-                            <TrendingUp className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                            <p className="text-sm text-blue-800 leading-relaxed">{trend}</p>
-                          </div>
-                        </div>
+                    <ul className="space-y-2">
+                      {analysis.notes_intelligence.trend_indicators.map((trend, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                          <span className="text-sm text-muted-foreground">{trend}</span>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   </CardContent>
                 </Card>
               )}
             </div>
           ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <MessageSquare className="h-12 w-12 text-slate-400 mb-4" />
-                <h3 className="text-lg font-medium text-slate-600 mb-2">Intelligence Report Pending</h3>
-                <p className="text-slate-500 text-center">
-                  Add notes and documents to generate comprehensive intelligence insights
-                </p>
+            <Card className="card-xero">
+              <CardContent className="pt-6">
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-8 w-8 mx-auto mb-2" />
+                  <p>No intelligence data available for this deal yet.</p>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -552,4 +482,4 @@ export const EnhancedDealAnalysisTab: React.FC<EnhancedDealAnalysisTabProps> = (
       </Tabs>
     </div>
   );
-};
+}

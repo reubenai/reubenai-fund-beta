@@ -259,34 +259,31 @@ export function EnhancedDealDetailsModal({
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className={`grid w-full bg-slate-50 ${
+          <TabsList className={`grid w-full bg-muted/30 ${
             canViewAnalysis && canViewActivities 
-              ? 'grid-cols-6' 
+              ? 'grid-cols-5' 
               : canViewAnalysis || canViewActivities 
-                ? 'grid-cols-5' 
-                : 'grid-cols-4'
+                ? 'grid-cols-4' 
+                : 'grid-cols-3'
           }`}>
-            <TabsTrigger value="overview" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="company" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
-              Company Details
+            <TabsTrigger value="overview" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+              Company Overview
             </TabsTrigger>
             {canViewAnalysis && (
-              <TabsTrigger value="analysis" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+              <TabsTrigger value="analysis" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                 <Brain className="w-4 h-4 mr-1" />
-                ReubenAI Analysis
+                AI Analysis
               </TabsTrigger>
             )}
-            <TabsTrigger value="documents" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+            <TabsTrigger value="documents" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               <FileText className="w-4 h-4 mr-1" />
               Documents
             </TabsTrigger>
-            <TabsTrigger value="notes" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+            <TabsTrigger value="notes" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               Notes
             </TabsTrigger>
             {canViewActivities && (
-              <TabsTrigger value="activity" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+              <TabsTrigger value="activity" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                 Activity
               </TabsTrigger>
             )}
@@ -469,9 +466,6 @@ export function EnhancedDealDetailsModal({
             )}
           </TabsContent>
 
-          <TabsContent value="company" className="space-y-6">
-            <EnhancedCompanyDetails deal={deal} />
-          </TabsContent>
 
           {canViewAnalysis && (
             <TabsContent value="analysis" className="space-y-6">
