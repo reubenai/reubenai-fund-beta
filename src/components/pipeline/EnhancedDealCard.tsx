@@ -74,49 +74,12 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
   viewDensity 
 }) => {
   const { getRAGCategory } = useStrategyThresholds();
-  const { selectedFund } = useFund();
-  const formatAmount = (amount?: number, currency = 'USD') => {
+  
+  const formatAmount = (amount?: number) => {
     if (!amount) return 'N/A';
-    
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`;
-    } else if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(0)}K`;
-    }
-    
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const formatWebsite = (url?: string) => {
-    if (!url) return null;
-    try {
-      return new URL(url).hostname.replace('www.', '');
-    } catch {
-      return url;
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const analysisStatus = getAnalysisStatus(deal);
-  const StatusIcon = analysisStatus.icon;
-
-  const getCardHeight = () => {
-    switch (viewDensity) {
-      case 'compact': return 'min-h-[120px]';
-      case 'detailed': return 'min-h-[200px]';
-      default: return 'min-h-[160px]';
-    }
+    if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+    if (amount >= 1000) return `$${(amount / 1000).toFixed(0)}K`;
+    return `$${amount.toLocaleString()}`;
   };
 
   return (
@@ -127,66 +90,52 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={`
-            mb-3 cursor-pointer transition-all duration-200 hover:shadow-md ${getCardHeight()}
-            ${snapshot.isDragging ? 'shadow-lg rotate-3 scale-105' : ''}
-            ${snapshot.isDragging ? 'bg-white border-brand-emerald' : 'bg-white border-slate-200'}
+            mb-3 cursor-pointer transition-all duration-200
+            ${snapshot.isDragging ? 'shadow-lg scale-105' : 'hover:shadow-sm'}
           `}
           onClick={() => onDealClick?.(deal)}
         >
-          <CardContent className={`${viewDensity === 'compact' ? 'p-3' : 'p-4'}`}>
-            {/* Header */}
-            <DealCardHeader 
-              deal={deal}
-              analysisStatus={analysisStatus}
-              viewDensity={viewDensity}
-            />
-
-            {/* Enhanced Analysis Indicators */}
-            <div className="mb-3">
-              <EnhancedAnalysisIndicators 
-                deal={deal}
-                viewDensity={viewDensity}
-              />
-            </div>
-
-            {/* Metrics */}
-            <DealCardMetrics 
-              deal={deal}
-              formatAmount={formatAmount}
-              formatWebsite={formatWebsite}
-              viewDensity={viewDensity}
-            />
-
-            {/* Enhanced Analysis Sections - Only show in detailed view and simplified */}
-            {viewDensity === 'detailed' && deal.enhanced_analysis && (
-              <div className="mt-3 space-y-2">
-                {/* Only show Rubric Breakdown if it exists */}
-                {deal.enhanced_analysis.rubric_breakdown && (
-                  <RubricScoreRadar 
-                    rubricBreakdown={deal.enhanced_analysis.rubric_breakdown}
-                    fundType={selectedFund?.fund_type === 'pe' ? 'pe' : 'vc'}
-                  />
+          <CardContent className="p-3">
+            {/* Company Name & Score */}
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-foreground truncate text-sm">
+                  {deal.company_name}
+                </h4>
+                {deal.industry && (
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">
+                    {deal.industry}
+                  </p>
                 )}
               </div>
-            )}
-
-            {/* Remove Analysis Queue Status to reduce clutter */}
-
-            {/* Footer */}
-            <WebPresenceSection 
-              deal={deal}
-              viewDensity={viewDensity}
-            />
               
-              <DealCardFooter 
-                deal={deal}
-                formatDate={formatDate}
-                formatAmount={formatAmount}
-                viewDensity={viewDensity}
-              />
-            </CardContent>
-          </Card>
-        )}
-      </Draggable>
-    );
-  };
+              {/* RAG Score */}
+              {deal.overall_score && (
+                <Badge variant="outline" className="text-xs ml-2">
+                  {deal.overall_score}
+                </Badge>
+              )}
+            </div>
+
+            {/* Essential Info Only */}
+            <div className="space-y-1">
+              {deal.deal_size && (
+                <div className="flex items-center gap-1">
+                  <DollarSign className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-xs font-medium">{formatAmount(deal.deal_size)}</span>
+                </div>
+              )}
+              
+              {deal.location && (
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground truncate">{deal.location}</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </Draggable>
+  );
+};
