@@ -57,6 +57,24 @@ interface AnalysisResult {
     team_composition: string;
     execution_capability: string;
   };
+  rubric_breakdown?: {
+    overall_rubric_score: number;
+    category_scores: {
+      [categoryName: string]: {
+        score: number;
+        criteria_scores: { [criteriaName: string]: number };
+        insights: string;
+        recommendations: string[];
+      };
+    };
+    fund_type_analysis: string;
+    rubric_confidence: number;
+  };
+  notes_intelligence?: {
+    sentiment_analysis: any;
+    key_insights: any;
+    investment_implications: any;
+  };
   overall_recommendation: string;
   risk_factors: string[];
   next_steps: string[];
@@ -489,7 +507,7 @@ async function handleBatchAnalysis(dealIds: string[], fundId: string) {
   });
 }
 
-async function generateEnhancedAnalysis(deal: any, strategy?: any): Promise<AnalysisResult> {
+async function generateEnhancedAnalysis(deal: any, strategy?: any, context?: any): Promise<AnalysisResult> {
   // Validate available data and mark missing fields
   const validatedDeal = {
     company_name: deal.company_name || 'N/A',
@@ -504,7 +522,57 @@ async function generateEnhancedAnalysis(deal: any, strategy?: any): Promise<Anal
     website: deal.website || 'N/A'
   };
 
-  const prompt = `CRITICAL INSTRUCTIONS - ZERO TOLERANCE FOR FABRICATION:
+  // Fetch document intelligence
+  let documentData = null;
+  try {
+    const { data: documents } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('deal_id', deal.id);
+    
+    if (documents && documents.length > 0) {
+      documentData = {
+        document_count: documents.length,
+        has_pitch_deck: documents.some(d => d.document_type === 'pitch_deck'),
+        has_financial_model: documents.some(d => d.document_type === 'financial_model'),
+        extracted_insights: documents.map(d => d.extracted_text).filter(Boolean)
+      };
+    }
+  } catch (error) {
+    console.warn('Could not fetch document data:', error);
+  }
+
+  // Fetch notes intelligence
+  let notesIntelligence = null;
+  try {
+    const { data: notesResponse } = await supabase.functions.invoke('notes-intelligence-processor', {
+      body: { dealId: deal.id, action: 'analyze_all' }
+    });
+    
+    if (notesResponse && !notesResponse.error) {
+      notesIntelligence = notesResponse;
+    }
+  } catch (error) {
+    console.warn('Could not fetch notes intelligence:', error);
+  }
+
+  // Get rubric for fund type
+  const fundType = context?.fundType || strategy?.fund_type || 'vc';
+  let rubricBreakdown = null;
+  
+  try {
+    const { getRubricForFundType, generateRubricPrompt } = await import('../shared/scoring-rubrics.ts');
+    const rubric = getRubricForFundType(fundType);
+    
+    // Apply rubric scoring for each category
+    rubricBreakdown = await applyRubricScoring(deal, rubric, documentData, notesIntelligence);
+  } catch (error) {
+    console.warn('Could not apply rubric scoring:', error);
+  }
+
+  const prompt = `ENHANCED ANALYSIS WITH INTELLIGENCE INTEGRATION:
+  
+## CRITICAL INSTRUCTIONS - ZERO TOLERANCE FOR FABRICATION:
 - ONLY use information explicitly provided in the data below
 - If data is missing, incomplete, or not verifiable, use "N/A" or "Unable to validate"
 - DO NOT fabricate, assume, or infer missing information
@@ -633,5 +701,89 @@ ANALYSIS REQUIREMENTS:
     throw new Error('No function call in OpenAI response');
   }
 
-  return JSON.parse(functionCall.arguments);
+  const result = JSON.parse(functionCall.arguments);
+  
+  // Add rubric breakdown and notes intelligence if available
+  if (rubricBreakdown) {
+    result.rubric_breakdown = rubricBreakdown;
+  }
+  
+  if (notesIntelligence) {
+    result.notes_intelligence = {
+      sentiment_analysis: notesIntelligence.sentiment_analysis,
+      key_insights: notesIntelligence.key_insights,
+      investment_implications: notesIntelligence.investment_implications
+    };
+  }
+  
+  return result;
+}
+
+async function applyRubricScoring(deal: any, rubric: any, documentData?: any, notesData?: any): Promise<any> {
+  try {
+    const { generateRubricPrompt, calculateRubricScore } = await import('../shared/scoring-rubrics.ts');
+    
+    const categoryScores: any = {};
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+    
+    // Process each rubric category
+    for (const category of rubric.categories) {
+      const prompt = generateRubricPrompt(rubric, category, deal, documentData, notesData);
+      
+      // Use OpenAI to evaluate this category
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an expert ${rubric.fundType === 'vc' ? 'venture capital' : 'private equity'} analyst using structured rubrics for investment evaluation. Be thorough, evidence-based, and consistent in your scoring.`
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.2,
+          max_tokens: 1500,
+          response_format: { type: 'json_object' }
+        }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const categoryResult = JSON.parse(data.choices[0].message.content);
+        
+        categoryScores[category.name] = {
+          score: categoryResult.overall_category_score,
+          criteria_scores: categoryResult.criteria_scores,
+          insights: categoryResult.category_insights,
+          recommendations: categoryResult.key_recommendations
+        };
+        
+        const weightedScore = categoryResult.overall_category_score * (category.weight / 100);
+        totalWeightedScore += weightedScore;
+        totalWeight += category.weight;
+      }
+    }
+    
+    const overallRubricScore = totalWeight > 0 ? (totalWeightedScore / totalWeight) * 100 : 0;
+    
+    return {
+      overall_rubric_score: Math.round(overallRubricScore),
+      category_scores: categoryScores,
+      fund_type_analysis: `${rubric.fundType.toUpperCase()} fund analysis using structured evaluation rubrics`,
+      rubric_confidence: Math.min(95, Math.max(60, overallRubricScore))
+    };
+    
+  } catch (error) {
+    console.warn('Error applying rubric scoring:', error);
+    return null;
+  }
 }

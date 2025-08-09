@@ -87,11 +87,25 @@ serve(async (req) => {
     // Fetch document data for enhanced analysis
     const documentData = await fetchDocumentData(dealId);
     
-    // Prepare enhanced engine context with fund-specific data
+    // Fetch notes intelligence for enhanced context
+    let notesIntelligence = null;
+    try {
+      const { data: notesResponse } = await supabase.functions.invoke('notes-intelligence-processor', {
+        body: { dealId, action: 'analyze_all' }
+      });
+      if (notesResponse && !notesResponse.error) {
+        notesIntelligence = notesResponse;
+      }
+    } catch (error) {
+      console.warn('Could not fetch notes intelligence:', error);
+    }
+
+    // Prepare enhanced engine context with fund-specific data + intelligence
     const engineContext = {
       dealData,
       strategyData,
       documentData,
+      notesIntelligence,
       fundType: strategyData?.fund_type || 'vc',
       investmentPhilosophy: strategyData?.investment_philosophy || '',
       enhancedCriteria: strategyData?.enhanced_criteria || null,

@@ -95,6 +95,19 @@ serve(async (req) => {
 
     console.log('🎯 AI Memo Generator: Fund type:', fundType, '| Strategy context:', !!enhancedCriteria);
 
+    // Fetch notes intelligence for memo context
+    let notesIntelligence = null;
+    try {
+      const { data: notesResponse } = await supabase.functions.invoke('notes-intelligence-processor', {
+        body: { dealId, action: 'analyze_all' }
+      });
+      if (notesResponse && !notesResponse.error) {
+        notesIntelligence = notesResponse;
+      }
+    } catch (error) {
+      console.warn('Could not fetch notes intelligence for memo:', error);
+    }
+
     // 3. Fetch investment strategy separately  
     const { data: strategyData, error: strategyError } = await supabase
       .from('investment_strategies')
