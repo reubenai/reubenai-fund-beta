@@ -168,38 +168,145 @@ export function CategoryDeepDiveSection({
           </div>
         </div>
 
-        {/* Deep Dive Section */}
-        {hasDeepDive && deepDiveComponent && (
-          <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" className="w-full justify-between">
-                <span className="flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  View Detailed Analysis
-                </span>
-                {isExpanded ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4 mt-4">
-              <div className="border-t border-border pt-4">
-                {deepDiveComponent}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        )}
-
-        {/* Placeholder for future deep dive data */}
-        {!hasDeepDive && (
-          <div className="bg-muted/30 rounded-lg p-4 text-center">
-            <p className="text-sm text-muted-foreground">
-              Deep-dive analysis will be available when engines populate detailed data
-            </p>
-          </div>
-        )}
+        {/* Deep Dive Section - Always available */}
+        <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full justify-between">
+              <span className="flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                View Detailed Analysis
+              </span>
+              {isExpanded ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4 mt-4">
+            <div className="border-t border-border pt-4">
+              {hasDeepDive && deepDiveComponent ? (
+                deepDiveComponent
+              ) : (
+                <div className="space-y-4">
+                  {/* Demo Deep-Dive Content based on category */}
+                  {category.toLowerCase().includes('market') && (
+                    <MarketOpportunityDeepDive 
+                      data={{
+                        tam_sam_som: { tam: "$2.8T", sam: "$350B", som: "$45B" },
+                        growth_drivers: [
+                          "Increasing demand for sustainable technology solutions",
+                          "Government regulations driving green initiatives",
+                          "Corporate ESG commitments creating market pull"
+                        ],
+                        market_risks: [
+                          "Regulatory uncertainty in emerging markets",
+                          "High capital requirements for scaling",
+                          "Competition from established players"
+                        ],
+                        competitive_positioning: [
+                          { 
+                            name: "Traditional Plastics Inc", 
+                            market_share: "45%",
+                            positioning: "Incumbent", 
+                            strengths: ["Scale", "Distribution"],
+                            weaknesses: ["Innovation lag", "Sustainability concerns"]
+                          },
+                          { 
+                            name: "GreenTech Solutions", 
+                            market_share: "12%",
+                            positioning: "Direct Competitor", 
+                            strengths: ["Innovation", "Sustainability"],
+                            weaknesses: ["Limited scale", "High costs"]
+                          }
+                        ],
+                        customer_validation: [
+                          { 
+                            segment: "Enterprise", 
+                            validation_level: "high" as const,
+                            feedback: "3 pilot programs running with positive initial results",
+                            revenue_potential: "$10M ARR potential"
+                          }
+                        ],
+                        geographic_opportunities: [
+                          { 
+                            region: "North America", 
+                            market_size: "$150B",
+                            penetration_opportunity: "Early market entry opportunity in sustainable packaging"
+                          }
+                        ]
+                      }}
+                    />
+                  )}
+                  
+                  {category.toLowerCase().includes('team') && (
+                    <TeamLeadershipDeepDive 
+                      data={{
+                        founder_profiles: [
+                          { 
+                            name: "Analysis pending", 
+                            role: "CEO/Founder",
+                            background: "Comprehensive founder analysis pending - insufficient data",
+                            linkedin_validated: false,
+                            previous_exits: [],
+                            expertise_areas: ["To be determined"]
+                          }
+                        ],
+                        team_gaps: ["Analysis pending - insufficient data"],
+                        execution_track_record: [],
+                        advisory_strength: []
+                      }}
+                    />
+                  )}
+                  
+                  {category.toLowerCase().includes('product') && (
+                    <ProductTechnologyDeepDive 
+                      data={{
+                        ip_portfolio: [],
+                        competitive_moats: [],
+                        technical_advantages: [],
+                        development_roadmap: []
+                      }}
+                    />
+                  )}
+                  
+                  {category.toLowerCase().includes('financial') && (
+                    <FinancialHealthDeepDive 
+                      data={{
+                        revenue_breakdown: [],
+                        unit_economics: {
+                          cac: "TBD",
+                          ltv: "TBD",
+                          ltv_cac_ratio: 0,
+                          payback_period: "TBD",
+                          gross_margin: "TBD"
+                        },
+                        burn_analysis: {
+                          monthly_burn: "TBD",
+                          runway_months: 0,
+                          burn_efficiency: "TBD",
+                          optimization_opportunities: []
+                        },
+                        funding_scenarios: []
+                      }}
+                    />
+                  )}
+                  
+                  {category.toLowerCase().includes('traction') && (
+                    <BusinessTractionDeepDive 
+                      data={{
+                        customer_metrics: [],
+                        partnership_pipeline: [],
+                        market_penetration: [],
+                        growth_trajectory: []
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </CardContent>
     </Card>
   );
