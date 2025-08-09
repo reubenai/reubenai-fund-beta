@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Building2, DollarSign, MapPin, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Building2, DollarSign, MapPin, Calendar, MoreVertical, Brain, Zap } from 'lucide-react';
 import { Deal } from '@/hooks/usePipelineDeals';
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
+import { useAnalysisQueue } from '@/hooks/useAnalysisQueue';
 
 interface DealCardProps {
   deal: Deal;
@@ -25,6 +28,8 @@ const getRAGColor = (level?: string) => {
 
 export const DealCard: React.FC<DealCardProps> = ({ deal, index, onDealClick }) => {
   const { getRAGCategory } = useStrategyThresholds();
+  const { forceAnalysisNow, queueDealAnalysis } = useAnalysisQueue();
+  const [isLoading, setIsLoading] = useState(false);
   
   const formatAmount = (amount?: number) => {
     if (!amount) return 'N/A';
@@ -38,6 +43,24 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, index, onDealClick }) 
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const handleTriggerAnalysis = async (immediate = false) => {
+    setIsLoading(true);
+    try {
+      if (immediate) {
+        await forceAnalysisNow(deal.id);
+      } else {
+        await queueDealAnalysis(deal.id, { 
+          priority: 'normal',
+          triggerReason: 'manual'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to trigger analysis:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -67,17 +90,44 @@ export const DealCard: React.FC<DealCardProps> = ({ deal, index, onDealClick }) 
                 )}
               </div>
               
-              {/* RAG Score Badge */}
-              {deal.overall_score && (
-                (() => {
-                  const rag = getRAGCategory(deal.overall_score);
-                  return (
-                    <Badge variant="outline" className={`text-xs ml-2 ${rag.color}`}>
-                      {deal.overall_score} · {rag.label}
-                    </Badge>
-                  );
-                })()
-              )}
+              <div className="flex items-center gap-1">
+                {/* RAG Score Badge */}
+                {deal.overall_score && (
+                  (() => {
+                    const rag = getRAGCategory(deal.overall_score);
+                    return (
+                      <Badge variant="outline" className={`text-xs ${rag.color}`}>
+                        {deal.overall_score} · {rag.label}
+                      </Badge>
+                    );
+                  })()
+                )}
+                
+                {/* Analysis Menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <MoreVertical className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem 
+                      onClick={() => handleTriggerAnalysis(false)}
+                      disabled={isLoading}
+                    >
+                      <Brain className="w-3 h-3 mr-2" />
+                      Queue Analysis (5min)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleTriggerAnalysis(true)}
+                      disabled={isLoading}
+                    >
+                      <Zap className="w-3 h-3 mr-2" />
+                      Analyze Now
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
 
             {/* Essential Info */}
