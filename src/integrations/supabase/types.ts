@@ -329,6 +329,66 @@ export type Database = {
           },
         ]
       }
+      analysis_cost_tracking: {
+        Row: {
+          cost_per_deal: number | null
+          cost_per_minute: number | null
+          created_at: string | null
+          deal_id: string
+          degradation_reason: string | null
+          degradation_triggered: boolean | null
+          execution_id: string
+          fund_id: string
+          id: string
+          model_costs: Json | null
+          total_cost: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          cost_per_deal?: number | null
+          cost_per_minute?: number | null
+          created_at?: string | null
+          deal_id: string
+          degradation_reason?: string | null
+          degradation_triggered?: boolean | null
+          execution_id: string
+          fund_id: string
+          id?: string
+          model_costs?: Json | null
+          total_cost?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          cost_per_deal?: number | null
+          cost_per_minute?: number | null
+          created_at?: string | null
+          deal_id?: string
+          degradation_reason?: string | null
+          degradation_triggered?: boolean | null
+          execution_id?: string
+          fund_id?: string
+          id?: string
+          model_costs?: Json | null
+          total_cost?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_cost_tracking_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analysis_cost_tracking_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       analysis_execution_log: {
         Row: {
           completed_at: string | null
@@ -585,20 +645,26 @@ export type Database = {
           analysis_version: number | null
           analyzed_at: string | null
           confidence_scores: Json | null
+          cost_tracking: Json | null
           created_at: string
           data_sources: Json | null
           deal_id: string
+          degradation_events: Json | null
           engine_results: Json | null
           financial_notes: string | null
           financial_score: number | null
           id: string
           leadership_notes: string | null
           leadership_score: number | null
+          mandate_snapshot: Json | null
           market_notes: string | null
           market_score: number | null
+          model_executions: Json | null
           overall_score: number | null
           product_notes: string | null
           product_score: number | null
+          prompt_audit: Json | null
+          recency_compliance: Json | null
           thesis_alignment_notes: string | null
           thesis_alignment_score: number | null
           traction_notes: string | null
@@ -610,20 +676,26 @@ export type Database = {
           analysis_version?: number | null
           analyzed_at?: string | null
           confidence_scores?: Json | null
+          cost_tracking?: Json | null
           created_at?: string
           data_sources?: Json | null
           deal_id: string
+          degradation_events?: Json | null
           engine_results?: Json | null
           financial_notes?: string | null
           financial_score?: number | null
           id?: string
           leadership_notes?: string | null
           leadership_score?: number | null
+          mandate_snapshot?: Json | null
           market_notes?: string | null
           market_score?: number | null
+          model_executions?: Json | null
           overall_score?: number | null
           product_notes?: string | null
           product_score?: number | null
+          prompt_audit?: Json | null
+          recency_compliance?: Json | null
           thesis_alignment_notes?: string | null
           thesis_alignment_score?: number | null
           traction_notes?: string | null
@@ -635,20 +707,26 @@ export type Database = {
           analysis_version?: number | null
           analyzed_at?: string | null
           confidence_scores?: Json | null
+          cost_tracking?: Json | null
           created_at?: string
           data_sources?: Json | null
           deal_id?: string
+          degradation_events?: Json | null
           engine_results?: Json | null
           financial_notes?: string | null
           financial_score?: number | null
           id?: string
           leadership_notes?: string | null
           leadership_score?: number | null
+          mandate_snapshot?: Json | null
           market_notes?: string | null
           market_score?: number | null
+          model_executions?: Json | null
           overall_score?: number | null
           product_notes?: string | null
           product_score?: number | null
+          prompt_audit?: Json | null
+          recency_compliance?: Json | null
           thesis_alignment_notes?: string | null
           thesis_alignment_score?: number | null
           traction_notes?: string | null
@@ -2043,6 +2121,57 @@ export type Database = {
           },
         ]
       }
+      ic_packet_exports: {
+        Row: {
+          created_at: string | null
+          deal_id: string
+          expires_at: string | null
+          export_metadata: Json | null
+          exported_by: string
+          file_path: string | null
+          fund_id: string
+          id: string
+          packet_data: Json
+        }
+        Insert: {
+          created_at?: string | null
+          deal_id: string
+          expires_at?: string | null
+          export_metadata?: Json | null
+          exported_by: string
+          file_path?: string | null
+          fund_id: string
+          id?: string
+          packet_data: Json
+        }
+        Update: {
+          created_at?: string | null
+          deal_id?: string
+          expires_at?: string | null
+          export_metadata?: Json | null
+          exported_by?: string
+          file_path?: string | null
+          fund_id?: string
+          id?: string
+          packet_data?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ic_packet_exports_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ic_packet_exports_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ic_session_deals: {
         Row: {
           created_at: string
@@ -2301,6 +2430,7 @@ export type Database = {
           min_investment_amount: number | null
           needs_development_threshold: number | null
           promising_threshold: number | null
+          recency_thresholds: Json | null
           strategy_notes: string | null
           updated_at: string
         }
@@ -2318,6 +2448,7 @@ export type Database = {
           min_investment_amount?: number | null
           needs_development_threshold?: number | null
           promising_threshold?: number | null
+          recency_thresholds?: Json | null
           strategy_notes?: string | null
           updated_at?: string
         }
@@ -2335,6 +2466,7 @@ export type Database = {
           min_investment_amount?: number | null
           needs_development_threshold?: number | null
           promising_threshold?: number | null
+          recency_thresholds?: Json | null
           strategy_notes?: string | null
           updated_at?: string
         }
@@ -2429,6 +2561,42 @@ export type Database = {
           trigger_conditions?: Json
           trigger_priority?: number | null
           trigger_type?: string
+        }
+        Relationships: []
+      }
+      ops_control_switches: {
+        Row: {
+          agent_name: string
+          circuit_breaker_open: boolean | null
+          config: Json | null
+          created_at: string | null
+          enabled: boolean | null
+          failure_count: number | null
+          id: string
+          last_failure_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agent_name: string
+          circuit_breaker_open?: boolean | null
+          config?: Json | null
+          created_at?: string | null
+          enabled?: boolean | null
+          failure_count?: number | null
+          id?: string
+          last_failure_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agent_name?: string
+          circuit_breaker_open?: boolean | null
+          config?: Json | null
+          created_at?: string | null
+          enabled?: boolean | null
+          failure_count?: number | null
+          id?: string
+          last_failure_at?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -3094,6 +3262,14 @@ export type Database = {
         }
         Returns: number
       }
+      check_cost_limits: {
+        Args: {
+          agent_name_param: string
+          current_cost_per_deal: number
+          current_cost_per_minute: number
+        }
+        Returns: Json
+      }
       complete_analysis_queue_item: {
         Args: {
           queue_id_param: string
@@ -3112,6 +3288,10 @@ export type Database = {
       create_default_pipeline_stages: {
         Args: { fund_id_param: string }
         Returns: undefined
+      }
+      generate_ic_packet: {
+        Args: { deal_id_param: string }
+        Returns: Json
       }
       generate_invitation_token: {
         Args: Record<PropertyKey, never>
