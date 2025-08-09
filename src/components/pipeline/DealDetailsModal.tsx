@@ -45,36 +45,7 @@ import { DocumentManager } from '@/components/documents/DocumentManager';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-interface Deal {
-  id: string;
-  company_name: string;
-  industry?: string;
-  location?: string;
-  deal_size?: number;
-  valuation?: number;
-  currency?: string;
-  founder?: string;
-  employee_count?: number;
-  business_model?: string;
-  website?: string;
-  linkedin_url?: string;
-  crunchbase_url?: string;
-  primary_source?: string;
-  web_presence_confidence?: number;
-  source_confidence_score?: number;
-  company_validation_status?: string;
-  rag_reasoning?: any;
-  rag_confidence?: number;
-  next_action?: string;
-  priority?: string;
-  overall_score?: number;
-  score_level?: string;
-  status?: string;
-  description?: string;
-  created_at: string;
-  updated_at: string;
-  notes_count?: number;
-}
+import { Deal } from '@/hooks/useOptimizedPipelineDeals';
 
 interface DealDetailsModalProps {
   deal: Deal | null;

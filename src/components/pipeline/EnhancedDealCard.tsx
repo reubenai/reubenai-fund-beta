@@ -151,35 +151,20 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
               viewDensity={viewDensity}
             />
 
-            {/* Enhanced Analysis Sections - Detailed View Only */}
+            {/* Enhanced Analysis Sections - Only show in detailed view and simplified */}
             {viewDensity === 'detailed' && deal.enhanced_analysis && (
-              <div className="mt-3 space-y-3">
-                {/* Rubric Breakdown */}
+              <div className="mt-3 space-y-2">
+                {/* Only show Rubric Breakdown if it exists */}
                 {deal.enhanced_analysis.rubric_breakdown && (
                   <RubricScoreRadar 
                     rubricBreakdown={deal.enhanced_analysis.rubric_breakdown}
                     fundType={selectedFund?.fund_type === 'pe' ? 'pe' : 'vc'}
                   />
                 )}
-                
-                {/* Fund Type Analysis */}
-                {deal.enhanced_analysis.fund_type_analysis && (
-                  <FundTypeAnalysisPanel 
-                    analysis={deal.enhanced_analysis.fund_type_analysis}
-                  />
-                )}
               </div>
             )}
 
-            {/* Analysis Queue Status (only in detailed view) */}
-            {viewDensity === 'detailed' && (
-              <div className="mt-3">
-                <AnalysisQueueStatus
-                  dealId={deal.id}
-                  autoAnalysisEnabled={deal.auto_analysis_enabled}
-                />
-              </div>
-            )}
+            {/* Remove Analysis Queue Status to reduce clutter */}
 
             {/* Footer */}
             <WebPresenceSection 

@@ -132,35 +132,16 @@ export const EnhancedAnalysisIndicators: React.FC<EnhancedAnalysisIndicatorsProp
   
   return (
     <div className={`flex items-center gap-1 flex-wrap ${viewDensity === 'compact' ? 'gap-1' : 'gap-2'}`}>
-      {/* Notes Intelligence */}
-      {enhanced_analysis.notes_intelligence && getNotesIndicator(enhanced_analysis.notes_intelligence)}
+      {/* Show only most important indicators */}
+      {enhanced_analysis.notes_intelligence && viewDensity !== 'compact' && 
+        getNotesIndicator(enhanced_analysis.notes_intelligence)}
       
-      {/* Analysis Engines Status */}
-      {enhanced_analysis.analysis_engines && getEngineIndicator(enhanced_analysis.analysis_engines)}
+      {/* Analysis Engines Status - only in detailed view */}
+      {viewDensity === 'detailed' && enhanced_analysis.analysis_engines && 
+        getEngineIndicator(enhanced_analysis.analysis_engines)}
       
-      {/* Overall Completeness */}
+      {/* Overall Completeness - always shown but simplified */}
       {getCompletenessIndicator(enhanced_analysis.analysis_completeness)}
-      
-      {/* Fund Type Alignment - only in detailed view */}
-      {viewDensity === 'detailed' && enhanced_analysis.fund_type_analysis && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
-              <Badge variant="outline" className="bg-purple-100 text-purple-700 text-xs">
-                <FileText className="w-3 h-3 mr-1" />
-                {enhanced_analysis.fund_type_analysis.alignment_score}%
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="text-xs">
-                <p className="font-medium">Fund Type Alignment</p>
-                <p>{enhanced_analysis.fund_type_analysis.fund_type.toUpperCase()} Focus</p>
-                <p>Alignment: {enhanced_analysis.fund_type_analysis.alignment_score}%</p>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
     </div>
   );
 };

@@ -39,41 +39,12 @@ import {
 import { DocumentManager } from '@/components/documents/DocumentManager';
 import { EnhancedDocumentAnalysis } from '@/components/documents/EnhancedDocumentAnalysis';
 import { DealNotesManager } from '@/components/notes/DealNotesManager';
+import { EnhancedDealAnalysisTab } from './EnhancedDealAnalysisTab';
+import { Deal } from '@/hooks/useOptimizedPipelineDeals';
 import { useToast } from '@/hooks/use-toast';
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
-
-interface Deal {
-  id: string;
-  company_name: string;
-  industry?: string;
-  location?: string;
-  deal_size?: number;
-  valuation?: number;
-  currency?: string;
-  founder?: string;
-  employee_count?: number;
-  business_model?: string;
-  website?: string;
-  linkedin_url?: string;
-  crunchbase_url?: string;
-  primary_source?: string;
-  web_presence_confidence?: number;
-  source_confidence_score?: number;
-  company_validation_status?: string;
-  rag_reasoning?: any;
-  rag_confidence?: number;
-  next_action?: string;
-  priority?: string;
-  overall_score?: number;
-  score_level?: string;
-  status?: string;
-  description?: string;
-  created_at: string;
-  updated_at: string;
-  notes_count?: number;
-}
 
 interface EnhancedDealDetailsModalProps {
   deal: Deal | null;
@@ -428,12 +399,7 @@ export function EnhancedDealDetailsModal({
 
           {canViewAnalysis && (
             <TabsContent value="analysis" className="space-y-6">
-              <DetailedAnalysisSection
-                engineResults={analysisData?.engine_results || {}}
-                executiveSummary={analysisData?.executive_summary}
-                overallScore={analysisData?.overall_score}
-                overallRecommendation={analysisData?.overall_recommendation}
-              />
+              <EnhancedDealAnalysisTab deal={deal} />
             </TabsContent>
           )}
 

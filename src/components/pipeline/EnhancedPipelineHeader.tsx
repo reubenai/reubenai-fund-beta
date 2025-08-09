@@ -45,11 +45,6 @@ export function EnhancedPipelineHeader({
           <h1 className="text-2xl font-semibold text-foreground">Deal Pipeline</h1>
           <p className="text-muted-foreground mt-1">
             Manage your deal flow and track opportunities
-            {totalDeals > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {totalDeals} deals
-              </Badge>
-            )}
           </p>
         </div>
         
