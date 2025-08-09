@@ -162,7 +162,7 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
             fund_id: dealData.fund_id,
             deal_id: dealId,
             user_id: user.id,
-            activity_type: 'deal_note_added',
+            activity_type: 'deal_note_added' as const,
             title: 'Note Added',
             description: `Added a new note: ${newNote.substring(0, 50)}${newNote.length > 50 ? '...' : ''}`,
             resource_type: 'deal_note',
