@@ -45,21 +45,6 @@ export const DealCardMetrics: React.FC<DealCardMetricsProps> = ({
         </div>
       )}
       
-      {/* Website - Only show in comfortable/detailed view */}
-      {deal.website && viewDensity !== 'compact' && (
-        <div className={`flex items-center gap-2 ${textSize}`}>
-          <ExternalLink className={`${iconSize} text-gray-400 flex-shrink-0`} />
-          <a 
-            href={deal.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-700 truncate"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {formatWebsite(deal.website)}
-          </a>
-        </div>
-      )}
       
       {/* Founder */}
       {deal.founder && (

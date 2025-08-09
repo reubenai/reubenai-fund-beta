@@ -136,12 +136,6 @@ export const EnhancedKanbanColumn: React.FC<EnhancedKanbanColumnProps> = ({
           </div>
         </div>
         
-        {/* Total Value */}
-        {getTotalValue() && (
-          <div className="text-sm text-gray-600 font-medium">
-            Total: {getTotalValue()}
-          </div>
-        )}
         
         {/* Stage Description */}
         {viewDensity === 'detailed' && stage.description && (

@@ -259,95 +259,145 @@ export function EnhancedDealDetailsModal({
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className={`grid w-full ${
+          <TabsList className={`grid w-full bg-slate-50 ${
             canViewAnalysis && canViewActivities 
               ? 'grid-cols-6' 
               : canViewAnalysis || canViewActivities 
                 ? 'grid-cols-5' 
                 : 'grid-cols-4'
           }`}>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="company">Company Details</TabsTrigger>
-            {canViewAnalysis && <TabsTrigger value="analysis">ReubenAI Analysis</TabsTrigger>}
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="notes">Notes</TabsTrigger>
-            {canViewActivities && <TabsTrigger value="activity">Activity</TabsTrigger>}
+            <TabsTrigger value="overview" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="company" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+              Company Details
+            </TabsTrigger>
+            {canViewAnalysis && (
+              <TabsTrigger value="analysis" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+                <Brain className="w-4 h-4 mr-1" />
+                ReubenAI Analysis
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="documents" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+              <FileText className="w-4 h-4 mr-1" />
+              Documents
+            </TabsTrigger>
+            <TabsTrigger value="notes" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+              Notes
+            </TabsTrigger>
+            {canViewActivities && (
+              <TabsTrigger value="activity" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white">
+                Activity
+              </TabsTrigger>
+            )}
           </TabsList>
           
 
           <TabsContent value="overview" className="space-y-6">
-            {/* Key Metrics */}
-            <Card>
+            {/* Executive Summary Card */}
+            <Card className="border-emerald-100 bg-gradient-to-r from-emerald-50 to-slate-50">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Key Metrics
+                <CardTitle className="flex items-center gap-2 text-emerald-800">
+                  <Zap className="h-5 w-5 text-emerald-600" />
+                  Executive Summary
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={enrichCompanyData}
                     disabled={isEnriching}
-                    className="ml-auto"
+                    className="ml-auto border-emerald-200 hover:bg-emerald-50"
                   >
                     <RefreshCw className={`h-4 w-4 mr-2 ${isEnriching ? 'animate-spin' : ''}`} />
                     Enrich Data
                   </Button>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Deal Size</p>
-                  <p className="font-semibold">{formatAmount(deal.deal_size, deal.currency)}</p>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="text-center">
+                    <p className="text-sm text-slate-600 mb-1">Deal Size</p>
+                    <p className="font-semibold text-lg text-emerald-700">
+                      {formatAmount(deal.deal_size, deal.currency)}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-slate-600 mb-1">Valuation</p>
+                    <p className="font-semibold text-lg text-emerald-700">
+                      {formatAmount(deal.valuation, deal.currency)}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-slate-600 mb-1">AI Score</p>
+                    <div className="flex items-center justify-center gap-2">
+                      <p className="font-semibold text-lg text-emerald-700">
+                        {deal.overall_score || 'Pending'}
+                      </p>
+                      <Badge variant="outline" className={rag.color}>
+                        {rag.label}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-slate-600 mb-1">Analysis Status</p>
+                    <Badge 
+                      variant={deal.enhanced_analysis ? "default" : "secondary"}
+                      className={deal.enhanced_analysis ? "bg-emerald-600" : ""}
+                    >
+                      {deal.enhanced_analysis ? 'Complete' : 'Pending'}
+                    </Badge>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Valuation</p>
-                  <p className="font-semibold">{formatAmount(deal.valuation, deal.currency)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Status</p>
-                  <Badge variant="outline">{deal.status || 'Unknown'}</Badge>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Priority</p>
-                  <Badge variant={deal.priority === 'high' ? 'destructive' : 'secondary'}>
-                    {deal.priority || 'Medium'}
-                  </Badge>
-                </div>
+                
+                {/* Analysis Completeness Progress */}
+                {deal.enhanced_analysis?.analysis_completeness && (
+                  <div className="mt-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-slate-600">Analysis Completeness</span>
+                      <span className="text-sm font-medium text-emerald-700">
+                        {deal.enhanced_analysis.analysis_completeness}%
+                      </span>
+                    </div>
+                    <Progress 
+                      value={deal.enhanced_analysis.analysis_completeness} 
+                      className="h-2"
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Enhanced Company Info */}
+            {/* Company & Digital Presence */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5" />
-                    Company Information
+              <Card className="border-slate-200">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-slate-700">
+                    <Building2 className="h-5 w-5 text-emerald-600" />
+                    Company Profile
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4">
                   {deal.industry && (
-                    <div className="flex items-center gap-2">
-                      <Target className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{deal.industry}</span>
+                    <div className="flex items-center gap-3">
+                      <Target className="h-4 w-4 text-emerald-600" />
+                      <span className="text-sm font-medium text-slate-700">{deal.industry}</span>
                     </div>
                   )}
                   {deal.location && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{deal.location}</span>
+                    <div className="flex items-center gap-3">
+                      <MapPin className="h-4 w-4 text-emerald-600" />
+                      <span className="text-sm text-slate-600">{deal.location}</span>
                     </div>
                   )}
                   {deal.founder && (
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{deal.founder}</span>
+                    <div className="flex items-center gap-3">
+                      <User className="h-4 w-4 text-emerald-600" />
+                      <span className="text-sm text-slate-600">{deal.founder}</span>
                     </div>
                   )}
                   {(deal.employee_count || companyDetails?.team_size) && (
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">
+                    <div className="flex items-center gap-3">
+                      <Users className="h-4 w-4 text-emerald-600" />
+                      <span className="text-sm text-slate-600">
                         {companyDetails?.team_size || deal.employee_count} employees
                       </span>
                     </div>
@@ -355,45 +405,50 @@ export function EnhancedDealDetailsModal({
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Globe className="h-5 w-5" />
-                    Digital Presence
+              <Card className="border-slate-200">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-slate-700">
+                    <Globe className="h-5 w-5 text-emerald-600" />
+                    Digital Footprint
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4">
                   {deal.website && (
-                    <div className="flex items-center gap-2">
-                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-3">
+                      <ExternalLink className="h-4 w-4 text-emerald-600" />
                       <a 
                         href={deal.website.startsWith('http') ? deal.website : `https://${deal.website}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline"
+                        className="text-sm text-emerald-700 hover:text-emerald-800 hover:underline"
                       >
                         {deal.website.replace(/^https?:\/\//, '')}
                       </a>
                     </div>
                   )}
                   {deal.linkedin_url && (
-                    <div className="flex items-center gap-2">
-                      <Linkedin className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-3">
+                      <Linkedin className="h-4 w-4 text-emerald-600" />
                       <a 
                         href={deal.linkedin_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline"
+                        className="text-sm text-emerald-700 hover:text-emerald-800 hover:underline"
                       >
                         LinkedIn Profile
                       </a>
                     </div>
                   )}
                   {deal.web_presence_confidence && (
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">Web Validation: {deal.web_presence_confidence}%</span>
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-4 w-4 text-emerald-600" />
+                      <span className="text-sm text-slate-600">
+                        Web Validation: {deal.web_presence_confidence}%
+                      </span>
                     </div>
+                  )}
+                  {!deal.website && !deal.linkedin_url && (
+                    <p className="text-sm text-slate-400 italic">No digital presence data available</p>
                   )}
                 </CardContent>
               </Card>
