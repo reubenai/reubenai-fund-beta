@@ -94,7 +94,7 @@ serve(async (req) => {
       throw new Error(`Deal not found: ${dealError?.message}`);
     }
 
-    // Fetch fund strategy for context
+    // Fetch fund strategy for context including enhanced criteria
     const { data: fund, error: fundError } = await supabase
       .from('funds')
       .select(`
@@ -107,6 +107,18 @@ serve(async (req) => {
     if (fundError) {
       console.warn('Could not fetch fund strategy:', fundError.message);
     }
+
+    // Extract complete strategy context for fund-type-specific analysis
+    const strategy = fund?.investment_strategies?.[0];
+    const enhancedCriteria = strategy?.enhanced_criteria;
+    const fundType = strategy?.fund_type || fund?.fund_type || 'vc';
+    const thresholds = {
+      exciting: strategy?.exciting_threshold || 85,
+      promising: strategy?.promising_threshold || 70,
+      needs_development: strategy?.needs_development_threshold || 50
+    };
+
+    console.log('🎯 Enhanced Deal Analysis: Fund type:', fundType, '| Strategy context:', !!enhancedCriteria);
 
     // Query Fund Memory Engine for contextual intelligence
     let memoryContext = {};
@@ -131,15 +143,28 @@ serve(async (req) => {
       }
     }
 
-    // Call the new Reuben Orchestrator for comprehensive analysis
+    // Call the new Reuben Orchestrator for comprehensive analysis with full strategy context
     const { data: orchestratorResult, error: orchestratorError } = await supabase.functions.invoke('reuben-orchestrator', {
-      body: { dealId: deal.id }
+      body: { 
+        dealId: deal.id,
+        strategyContext: {
+          fundType,
+          enhancedCriteria,
+          thresholds,
+          geography: strategy?.geography,
+          keySignals: strategy?.key_signals
+        }
+      }
     });
     
     let analysisResult;
     if (orchestratorError || !orchestratorResult?.analysis) {
-      console.error('Orchestrator error, falling back to basic analysis:', orchestratorError);
-      analysisResult = await generateEnhancedAnalysis(deal, fund?.investment_strategies?.[0]);
+      console.error('Orchestrator error, falling back to enhanced analysis:', orchestratorError);
+      analysisResult = await generateEnhancedAnalysis(deal, strategy, {
+        fundType,
+        enhancedCriteria,
+        thresholds
+      });
     } else {
       // Map orchestrator results to expected structure
       const orchestratorAnalysis = orchestratorResult.analysis;

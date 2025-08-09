@@ -27,16 +27,34 @@ serve(async (req) => {
   }
 
   try {
-    const { dealData, strategyData, documentData }: FinancialAnalysisRequest = await req.json();
+    const { 
+      dealData, 
+      strategyData, 
+      documentData,
+      fundType,
+      enhancedCriteria,
+      thresholds 
+    } = await req.json();
     
     console.log('💰 Financial Engine: Analyzing financial feasibility for:', dealData?.company_name || 'Unknown Company');
+    console.log('🎯 Fund Type:', fundType, '| Enhanced Criteria:', !!enhancedCriteria);
     
     // Enhanced document-driven financial analysis
     const documentInsights = documentData ? await extractFinancialInsightsFromDocuments(documentData) : null;
     console.log('📄 Financial document insights extracted:', !!documentInsights);
     
-    // Conduct comprehensive financial analysis
-    const financialResult = await analyzeFinancialFeasibility(dealData, strategyData, documentData);
+    // Extract enhanced financial criteria
+    const financialCriteria = enhancedCriteria?.categories?.find((cat: any) => 
+      cat.name?.toLowerCase().includes('financial') || 
+      cat.name?.toLowerCase().includes('health')
+    );
+    
+    // Conduct comprehensive financial analysis with enhanced context
+    const financialResult = await analyzeFinancialFeasibility(dealData, strategyData, documentData, {
+      fundType,
+      financialCriteria,
+      thresholds
+    });
     
     // Store source tracking
     await storeSources(dealData.id, 'financial-engine', financialResult.sources);
@@ -61,8 +79,9 @@ serve(async (req) => {
   }
 });
 
-async function analyzeFinancialFeasibility(dealData: any, strategyData: any, documentData: any = null) {
+async function analyzeFinancialFeasibility(dealData: any, strategyData: any, documentData: any = null, enhancedContext: any = null) {
   const validatedData = validateFinancialData(dealData);
+  const fundType = enhancedContext?.fundType || strategyData?.fund_type || 'vc';
   
   // Analyze available financial documents with enhanced document processing
   const documentAnalysis = await analyzeFinancialDocuments(dealData.id, documentData);
@@ -70,31 +89,31 @@ async function analyzeFinancialFeasibility(dealData: any, strategyData: any, doc
   // Conduct web research for financial validation and market data
   const webResearchData = await conductFinancialWebResearch(dealData);
   
-  // Assess business model and revenue streams
-  const businessModelAnalysis = await analyzeBusinessModel(validatedData, webResearchData);
+  // Assess business model and revenue streams with fund-type-specific focus
+  const businessModelAnalysis = await analyzeBusinessModel(validatedData, webResearchData, fundType);
   
-  // Evaluate unit economics and scalability
-  const unitEconomicsAnalysis = await analyzeUnitEconomics(validatedData, documentAnalysis);
+  // Evaluate unit economics and scalability with fund-type considerations
+  const unitEconomicsAnalysis = await analyzeUnitEconomics(validatedData, documentAnalysis, fundType);
   
   // Assess funding requirements and financial health
-  const fundingAnalysis = await analyzeFundingRequirements(validatedData, strategyData);
+  const fundingAnalysis = await analyzeFundingRequirements(validatedData, strategyData, fundType);
   
-  // Generate comprehensive financial analysis with web-enhanced data
+  // Generate comprehensive financial analysis with fund-type-specific focus
   const aiAnalysis = await generateFinancialAnalysis(validatedData, {
     documentAnalysis,
     businessModelAnalysis,
     unitEconomicsAnalysis,
     fundingAnalysis,
     webResearchData
-  });
+  }, fundType);
   
-  // Calculate financial feasibility score
+  // Calculate financial feasibility score with fund-type weighting
   const financialScore = calculateFinancialScore({
     documentAnalysis,
     businessModelAnalysis,
     unitEconomicsAnalysis,
     fundingAnalysis
-  });
+  }, fundType);
   
   // Determine confidence level
   const confidence = calculateFinancialConfidence(validatedData, {
@@ -127,9 +146,40 @@ async function analyzeFinancialFeasibility(dealData: any, strategyData: any, doc
         businessModelAnalysis,
         unitEconomicsAnalysis
       }),
-      scalability_assessment: unitEconomicsAnalysis.scalability
+      scalability_assessment: unitEconomicsAnalysis.scalability,
+      fund_type_analysis: generateFinancialFundTypeAnalysis(fundType, {
+        documentAnalysis,
+        businessModelAnalysis,
+        unitEconomicsAnalysis,
+        fundingAnalysis
+      })
     },
     validation_status: confidence >= 70 ? 'validated' : confidence >= 50 ? 'partial' : 'unvalidated'
+  };
+}
+
+// Fund-type-specific financial analysis
+function generateFinancialFundTypeAnalysis(fundType: string, analysisData: any): any {
+  if (fundType === 'vc' || fundType === 'venture_capital') {
+    return {
+      focus: 'growth_and_scalability',
+      key_metrics: ['burn_rate', 'runway', 'growth_efficiency', 'unit_economics_trend'],
+      risk_factors: ['cash_burn_acceleration', 'unit_economics_deterioration', 'funding_runway_risk'],
+      success_indicators: ['decreasing_customer_acquisition_cost', 'improving_unit_economics', 'accelerating_growth']
+    };
+  } else if (fundType === 'pe' || fundType === 'private_equity') {
+    return {
+      focus: 'cash_flow_and_profitability',
+      key_metrics: ['ebitda_margin', 'cash_conversion', 'debt_capacity', 'working_capital_efficiency'],
+      risk_factors: ['margin_compression', 'cash_flow_volatility', 'debt_service_capability'],
+      success_indicators: ['stable_cash_flows', 'margin_expansion_potential', 'operational_leverage']
+    };
+  }
+  return {
+    focus: 'general_financial_health',
+    key_metrics: ['revenue_growth', 'profitability', 'cash_position'],
+    risk_factors: ['financial_stability', 'liquidity_risk'],
+    success_indicators: ['revenue_growth', 'improving_margins']
   };
 }
 

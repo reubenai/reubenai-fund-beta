@@ -17,17 +17,36 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { dealId, dealData, teamResearch, webResearch, documentData } = await req.json();
+    const { 
+      dealId, 
+      dealData, 
+      teamResearch, 
+      webResearch, 
+      documentData,
+      fundType,
+      enhancedCriteria,
+      thresholds 
+    } = await req.json();
     
     console.log(`👥 Management Assessment Engine: Analyzing management team for: ${dealData?.company_name || dealId}`);
+    console.log('🎯 Fund Type:', fundType, '| Enhanced Criteria:', !!enhancedCriteria);
 
-    // Perform comprehensive management team assessment
+    // Extract enhanced team/leadership criteria
+    const teamCriteria = enhancedCriteria?.categories?.find((cat: any) => 
+      cat.name?.toLowerCase().includes('team') || 
+      cat.name?.toLowerCase().includes('leadership')
+    );
+
+    // Perform comprehensive management team assessment with fund-type focus
     const managementAssessment = await analyzeManagementTeam({
       dealData,
       teamResearch,
       webResearch,
       supabase,
-      documentData
+      documentData,
+      fundType,
+      teamCriteria,
+      thresholds
     });
 
     console.log(`✅ Management Assessment Engine: Analysis completed for ${dealData?.company_name}`);
@@ -65,37 +84,46 @@ async function analyzeManagementTeam({
   teamResearch,
   webResearch,
   supabase,
-  documentData
+  documentData,
+  fundType = 'vc',
+  teamCriteria = null,
+  thresholds = null
 }) {
-  console.log('👥 Management Assessment Engine: Starting comprehensive analysis');
+  console.log('👥 Management Assessment Engine: Starting fund-type-specific analysis for:', fundType);
   
   // Enhanced document-driven management analysis
   const documentInsights = documentData ? await extractManagementInsightsFromDocuments(documentData) : null;
   console.log('📄 Management Assessment Engine: Document insights extracted');
   
-  // Extract founder and team information with document context
-  const founders = extractFounderInformation(dealData, teamResearch, documentInsights);
-  const teamComposition = analyzeTeamComposition(dealData, teamResearch, documentInsights);
-  const leadershipCapabilities = assessLeadershipCapabilities(founders, teamResearch, documentInsights);
-  const teamGaps = identifyTeamGaps(teamComposition, dealData, documentInsights);
-  const advisoryBoard = analyzeAdvisoryBoard(dealData, teamResearch, documentInsights);
+  // Extract founder and team information with fund-type-specific focus
+  const founders = extractFounderInformation(dealData, teamResearch, documentInsights, fundType);
+  const teamComposition = analyzeTeamComposition(dealData, teamResearch, documentInsights, fundType);
+  const leadershipCapabilities = assessLeadershipCapabilities(founders, teamResearch, documentInsights, fundType);
+  const teamGaps = identifyTeamGaps(teamComposition, dealData, documentInsights, fundType);
+  const advisoryBoard = analyzeAdvisoryBoard(dealData, teamResearch, documentInsights, fundType);
 
   const assessment = {
-    executive_summary: generateExecutiveSummary(founders, teamComposition, leadershipCapabilities, documentInsights),
+    executive_summary: generateExecutiveSummary(founders, teamComposition, leadershipCapabilities, documentInsights, fundType),
     founder_profiles: founders,
     team_composition: teamComposition,
     leadership_assessment: leadershipCapabilities,
-    team_strengths: identifyTeamStrengths(founders, teamComposition, teamResearch, documentInsights),
+    team_strengths: identifyTeamStrengths(founders, teamComposition, teamResearch, documentInsights, fundType),
     team_gaps_risks: teamGaps,
     advisory_board: advisoryBoard,
-    succession_planning: assessSuccessionPlanning(teamComposition, dealData),
+    succession_planning: assessSuccessionPlanning(teamComposition, dealData, fundType),
     compensation_equity: analyzeCompensationStructure(dealData, documentInsights),
-    cultural_fit: assessCulturalFit(dealData, teamResearch, documentInsights),
-    hiring_plan: generateHiringPlan(teamGaps, dealData),
-    management_recommendations: generateManagementRecommendations(founders, teamGaps, dealData, documentInsights),
-    due_diligence_focus: generateDueDiligenceFocus(founders, teamComposition),
+    cultural_fit: assessCulturalFit(dealData, teamResearch, documentInsights, fundType),
+    hiring_plan: generateHiringPlan(teamGaps, dealData, fundType),
+    management_recommendations: generateManagementRecommendations(founders, teamGaps, dealData, documentInsights, fundType),
+    due_diligence_focus: generateDueDiligenceFocus(founders, teamComposition, fundType),
     document_intelligence_score: calculateDocumentIntelligenceScore(documentInsights),
-    confidence: calculateManagementConfidence(teamResearch, dealData, documentInsights)
+    confidence: calculateManagementConfidence(teamResearch, dealData, documentInsights),
+    fund_type_analysis: generateManagementFundTypeAnalysis(fundType, {
+      founders,
+      teamComposition,
+      leadershipCapabilities,
+      teamGaps
+    })
   };
   
   console.log('✅ Management Assessment Engine: Analysis complete');
@@ -758,4 +786,32 @@ function calculateManagementConfidence(teamResearch, dealData) {
   if (teamResearch?.senior_team?.length > 0) confidence += 5;
   
   return Math.min(confidence, 90);
+}
+
+// Import and use fund-type-specific analysis functions
+function generateManagementFundTypeAnalysis(fundType: string, analysisData: any): any {
+  if (fundType === 'vc' || fundType === 'venture_capital') {
+    return {
+      focus: 'vision_and_execution',
+      key_attributes: ['entrepreneurial_vision', 'technical_expertise', 'growth_mindset', 'adaptability'],
+      success_factors: ['founder_market_fit', 'technical_leadership', 'scaling_experience', 'pivoting_ability'],
+      red_flags: ['lack_of_domain_expertise', 'no_technical_co_founder', 'poor_communication', 'rigid_thinking'],
+      assessment_criteria: 'VC prioritizes visionary founders with deep domain expertise and proven ability to execute in uncertain environments'
+    };
+  } else if (fundType === 'pe' || fundType === 'private_equity') {
+    return {
+      focus: 'operational_excellence',
+      key_attributes: ['operational_expertise', 'financial_discipline', 'proven_track_record', 'strategic_thinking'],
+      success_factors: ['value_creation_experience', 'operational_improvements', 'market_expansion', 'efficiency_gains'],
+      red_flags: ['poor_financial_controls', 'lack_of_operational_metrics', 'resistance_to_change', 'weak_governance'],
+      assessment_criteria: 'PE prioritizes experienced operators with proven ability to drive value creation and operational improvements'
+    };
+  }
+  return {
+    focus: 'general_leadership',
+    key_attributes: ['leadership_skills', 'industry_experience', 'team_building'],
+    success_factors: ['strong_execution', 'clear_vision', 'team_cohesion'],
+    red_flags: ['poor_leadership', 'lack_of_experience', 'team_conflicts'],
+    assessment_criteria: 'General assessment of leadership capabilities and team dynamics'
+  };
 }

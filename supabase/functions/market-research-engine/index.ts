@@ -97,10 +97,10 @@ async function conductMarketResearch(dealData: any, strategyData: any, documentD
   // Attempt real-time market research with enhanced context
   const marketIntelligence = await gatherMarketIntelligence(validatedData, documentInsights, strategyData, enhancedContext);
   
-  // Generate AI-powered market analysis with enhanced criteria
+  // Generate AI-powered market analysis with fund-type-specific focus
   const aiAnalysis = await generateMarketAnalysis(validatedData, marketIntelligence, enhancedContext);
   
-  // Calculate market attractiveness score using enhanced weights AND document insights
+  // Calculate market attractiveness score using fund-type-specific criteria
   const marketScore = calculateMarketScore({
     ...marketIntelligence,
     documentInsights
@@ -121,9 +121,35 @@ async function conductMarketResearch(dealData: any, strategyData: any, documentD
       market_trends: marketIntelligence.market_trends,
       tam_sam_som: marketIntelligence.tam_sam_som,
       geographic_alignment: marketIntelligence.geographic_focus,
-      fund_criteria_weight: enhancedContext?.marketCriteria?.weight || 20
+      fund_criteria_weight: enhancedContext?.marketCriteria?.weight || 20,
+      fund_type_analysis: generateFundTypeAnalysis(enhancedContext?.fundType, marketIntelligence)
     },
     validation_status: confidence >= 70 ? 'validated' : confidence >= 50 ? 'partial' : 'unvalidated'
+  };
+}
+
+// Fund-type-specific market analysis
+function generateFundTypeAnalysis(fundType: string, marketIntelligence: any): any {
+  if (fundType === 'vc' || fundType === 'venture_capital') {
+    return {
+      focus: 'growth_and_disruption',
+      key_metrics: ['market_size_expansion', 'innovation_potential', 'disruptive_capability'],
+      analysis_depth: 'tam_sam_som_growth_trajectory',
+      competitive_focus: 'innovation_gaps_and_differentiation'
+    };
+  } else if (fundType === 'pe' || fundType === 'private_equity') {
+    return {
+      focus: 'market_position_and_stability',
+      key_metrics: ['market_share', 'competitive_moat', 'market_maturity'],
+      analysis_depth: 'addressable_market_penetration',
+      competitive_focus: 'market_consolidation_opportunities'
+    };
+  }
+  return {
+    focus: 'general_analysis',
+    key_metrics: ['market_size', 'growth_rate'],
+    analysis_depth: 'basic_market_assessment',
+    competitive_focus: 'standard_competitive_analysis'
   };
 }
 

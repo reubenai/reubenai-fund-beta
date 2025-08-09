@@ -69,16 +69,31 @@ serve(async (req) => {
 
     console.log('📊 Retrieved deal data for:', dealData.company_name);
 
-    // 2. Fetch fund data separately
+    // 2. Fetch fund data with enhanced strategy context
     const { data: fundData, error: fundError } = await supabase
       .from('funds')
-      .select('name, fund_type')
+      .select(`
+        *,
+        investment_strategies (*)
+      `)
       .eq('id', dealData.fund_id)
       .single();
 
     if (fundError) {
       console.warn('⚠️ Fund fetch error:', fundError);
     }
+
+    // Extract complete strategy context for fund-type-specific memo generation
+    const strategy = fundData?.investment_strategies?.[0];
+    const enhancedCriteria = strategy?.enhanced_criteria;
+    const fundType = strategy?.fund_type || fundData?.fund_type || 'vc';
+    const thresholds = {
+      exciting: strategy?.exciting_threshold || 85,
+      promising: strategy?.promising_threshold || 70,
+      needs_development: strategy?.needs_development_threshold || 50
+    };
+
+    console.log('🎯 AI Memo Generator: Fund type:', fundType, '| Strategy context:', !!enhancedCriteria);
 
     // 3. Fetch investment strategy separately  
     const { data: strategyData, error: strategyError } = await supabase
@@ -161,18 +176,26 @@ serve(async (req) => {
             website: dealData.website,
             description: dealData.description,
             business_model: dealData.business_model
-          }
+          },
+          fundType,
+          enhancedCriteria,
+          geography: strategy?.geography,
+          keySignals: strategy?.key_signals,
+          thresholds
         }
       }),
       supabase.functions.invoke('management-assessment-engine', {
         body: { 
           dealId,
-          companyData: {
-            name: dealData.company_name,
+          dealData: {
+            company_name: dealData.company_name,
             founder: dealData.founder,
             industry: dealData.industry,
             employee_count: dealData.employee_count
-          }
+          },
+          fundType,
+          enhancedCriteria,
+          thresholds
         }
       }),
       supabase.functions.invoke('investment-terms-engine', {
