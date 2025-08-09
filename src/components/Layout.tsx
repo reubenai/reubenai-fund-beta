@@ -30,7 +30,7 @@ export function Layout({ children }: LayoutProps) {
               <div className="pt-4">
                 <Breadcrumbs />
               </div>
-              <main className="flex-1 overflow-auto">
+              <main className="flex-1 overflow-auto px-6">
                 {children}
               </main>
             </div>
