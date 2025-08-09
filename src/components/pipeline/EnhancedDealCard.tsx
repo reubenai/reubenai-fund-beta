@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,8 @@ import {
   MessageSquare,
   Users,
   ExternalLink,
-  Star
+  Star,
+  Zap
 } from 'lucide-react';
 import { Deal as BaseDeal } from '@/hooks/usePipelineDeals';
 import { EnhancedDealAnalysis } from '@/types/enhanced-deal-analysis';
@@ -27,6 +28,7 @@ type Deal = BaseDeal & {
 };
 
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
+import { useAnalysisQueue } from '@/hooks/useAnalysisQueue';
 import { useFund } from '@/contexts/FundContext';
 import { DealCardHeader } from './DealCardHeader';
 import { DealCardMetrics } from './DealCardMetrics';
@@ -74,6 +76,8 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
   viewDensity 
 }) => {
   const { getRAGCategory } = useStrategyThresholds();
+  const { forceAnalysisNow, queueDealAnalysis } = useAnalysisQueue();
+  const [isLoading, setIsLoading] = useState(false);
   
   const formatAmount = (amount?: number) => {
     if (!amount) return 'N/A';
@@ -94,6 +98,24 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
       case 'compact': return 'p-3';
       case 'detailed': return 'p-4';
       default: return 'p-3';
+    }
+  };
+
+  const handleTriggerAnalysis = async (immediate = false) => {
+    setIsLoading(true);
+    try {
+      if (immediate) {
+        await forceAnalysisNow(deal.id);
+      } else {
+        await queueDealAnalysis(deal.id, { 
+          priority: 'normal',
+          triggerReason: 'manual'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to trigger analysis:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -123,30 +145,56 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
                   </p>
                 )}
               </div>
-              
-              {/* Enhanced RAG Score */}
-              {deal.overall_score && (
-                (() => {
-                  // Use enhanced analysis if available
-                  let finalScore = deal.overall_score;
-                  if (deal.enhanced_analysis?.rubric_breakdown) {
-                    const rubrics = deal.enhanced_analysis.rubric_breakdown as any[];
-                    const totalWeight = rubrics.reduce((sum, r) => sum + (r.weight || 0), 0);
-                    if (totalWeight > 0) {
-                      finalScore = Math.round(
-                        rubrics.reduce((sum, r) => sum + ((r.score || 0) * (r.weight || 0) / totalWeight), 0)
-                      );
+              <div className="flex items-center gap-1">
+                {/* Enhanced RAG Score */}
+                {deal.overall_score && (
+                  (() => {
+                    // Use enhanced analysis if available
+                    let finalScore = deal.overall_score;
+                    if (deal.enhanced_analysis?.rubric_breakdown) {
+                      const rubrics = deal.enhanced_analysis.rubric_breakdown as any[];
+                      const totalWeight = rubrics.reduce((sum, r) => sum + (r.weight || 0), 0);
+                      if (totalWeight > 0) {
+                        finalScore = Math.round(
+                          rubrics.reduce((sum, r) => sum + ((r.score || 0) * (r.weight || 0) / totalWeight), 0)
+                        );
+                      }
                     }
-                  }
-                  
-                  const rag = getRAGCategory(finalScore);
-                  return (
-                    <Badge variant="outline" className={`text-xs ml-2 ${rag.color}`}>
-                      {finalScore} · {rag.label}
-                    </Badge>
-                  );
-                })()
-              )}
+                    
+                    const rag = getRAGCategory(finalScore);
+                    return (
+                      <Badge variant="outline" className={`text-xs ${rag.color}`}>
+                        {finalScore} · {rag.label}
+                      </Badge>
+                    );
+                  })()
+                )}
+                
+                {/* Analysis Actions Menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                      <MoreVertical className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem 
+                      onClick={() => handleTriggerAnalysis(false)}
+                      disabled={isLoading}
+                    >
+                      <Brain className="w-3 h-3 mr-2" />
+                      Queue Analysis (5min)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleTriggerAnalysis(true)}
+                      disabled={isLoading}
+                    >
+                      <Zap className="w-3 h-3 mr-2" />
+                      Analyze Now
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
 
             {/* Core Metrics */}
