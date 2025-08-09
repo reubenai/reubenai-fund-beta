@@ -33,6 +33,7 @@ import { EnhancedOrganizationsTable } from '@/components/admin/EnhancedOrganizat
 import { AdminSupportTickets } from '@/components/admin/AdminSupportTickets';
 import { ForceAnalysisProcessor } from '@/components/admin/ForceAnalysisProcessor';
 import { ComprehensiveFixVerifier } from '@/components/admin/ComprehensiveFixVerifier';
+import { APIConfigurationPanel } from '@/components/admin/APIConfigurationPanel';
 
 
 interface Organization {
@@ -837,6 +838,7 @@ export default function Admin() {
             </TabsContent>
 
             <TabsContent value="production" className="space-y-6">
+              <APIConfigurationPanel />
               <ComprehensiveFixVerifier />
               <ComprehensiveProductionReadiness />
               <ForceAnalysisProcessor />

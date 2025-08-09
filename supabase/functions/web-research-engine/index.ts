@@ -111,26 +111,21 @@ async function conductWebResearch(dealData: any, researchType: string, searchDep
     console.error(`❌ Web research failed for ${researchType}:`, error);
     console.log('🤖 Attempting AI-driven analysis fallback...');
     
-    // Enhanced AI fallback with zero-fabrication safeguards
-    const aiAnalysis = await performAIAnalysisFallback(dealData, researchType);
-    if (aiAnalysis.success) {
-      research.success = true;
-      research.data = aiAnalysis.data;
-      research.confidence = aiAnalysis.confidence;
-      research.sources = aiAnalysis.sources;
-      research.ai_fallback_used = true;
-      research.data_limitations = aiAnalysis.limitations;
-      console.log('✅ AI fallback analysis completed successfully');
-    } else {
-      research.success = false;
-      research.confidence = 20;
-      research.data = { 
-        error: error.message,
-        fallback_message: 'Web research and AI fallback unavailable - manual research required',
-        analysis_status: 'failed',
-        data_limitations: ['Google Search API unavailable', 'AI analysis limited', 'Manual verification required']
-      };
-    }
+    // Instead of fallback, return clear error state
+    research.success = false;
+    research.confidence = 0;
+    research.data = { 
+      error: error.message,
+      analysis_status: 'failed',
+      configuration_required: 'Google Search API keys must be configured in Supabase Edge Function secrets',
+      required_secrets: ['GOOGLE_SEARCH_API_KEY', 'GOOGLE_SEARCH_ENGINE_ID'],
+      data_limitations: [
+        'Real market research requires Google Search API access',
+        'Configure API keys to get actual market sizing data',
+        'Manual research required until API is configured'
+      ]
+    };
+    console.log('❌ Web research failed - returning error state instead of fallback');
   }
 
   return research;

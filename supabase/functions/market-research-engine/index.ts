@@ -337,31 +337,34 @@ async function gatherMarketIntelligence(dealData: any, documentInsights: any = n
     });
   }
   
-  // Conduct real-time market research using Google Search API
-  const webResearchData = await conductWebResearch(dealData, enhancedContext);
-  if (webResearchData.success) {
-    intelligence.market_size = webResearchData.market_size || intelligence.market_size;
-    intelligence.growth_rate = webResearchData.growth_rate || intelligence.growth_rate;
-    intelligence.competitive_landscape = webResearchData.competitive_landscape || intelligence.competitive_landscape;
-    intelligence.market_trends = webResearchData.market_trends || intelligence.market_trends;
-    intelligence.data_quality = 'web_enhanced';
-    intelligence.sources.push(...webResearchData.sources);
-  }
-  
-  if (dealData.industry !== 'N/A') {
+  // Attempt real-time market research using Google Search API
+  try {
+    const webResearchData = await conductWebResearch(dealData, enhancedContext);
+    if (webResearchData.success) {
+      intelligence.market_size = webResearchData.market_size || intelligence.market_size;
+      intelligence.growth_rate = webResearchData.growth_rate || intelligence.growth_rate;
+      intelligence.competitive_landscape = webResearchData.competitive_landscape || intelligence.competitive_landscape;
+      intelligence.market_trends = webResearchData.market_trends || intelligence.market_trends;
+      intelligence.data_quality = 'web_validated';
+      intelligence.sources.push(...webResearchData.sources);
+      console.log('✅ Market Research Engine: Successfully retrieved real market data');
+    }
+  } catch (error) {
+    console.error('❌ Market Research Engine: Web research failed:', error.message);
     intelligence.sources.push({
-      type: 'web_research',
-      source: 'industry_analysis',
+      type: 'web_research_error',
+      source: 'google_search_api',
       validated: false,
-      confidence: 60
+      confidence: 0,
+      error: error.message
     });
     
-    // Simulate market research findings
-    intelligence.market_size = await simulateMarketSize(dealData.industry);
-    intelligence.growth_rate = await simulateGrowthRate(dealData.industry);
-    intelligence.competitive_landscape = await simulateCompetitiveLandscape(dealData.industry);
-    intelligence.market_trends = await simulateMarketTrends(dealData.industry);
-    intelligence.data_quality = 'simulated';
+    // Return explicit error state instead of simulated data
+    intelligence.market_size = `Market research unavailable: ${error.message}`;
+    intelligence.growth_rate = `Growth data unavailable: API access required`;
+    intelligence.competitive_landscape = `Competitive analysis unavailable: ${error.message}`;
+    intelligence.market_trends = [`Market research engine needs Google Search API configuration`];
+    intelligence.data_quality = 'unavailable';
   }
   
   return intelligence;
@@ -674,9 +677,13 @@ function findMarketSignals(dealData: any, keySignals: string[]): string[] {
 
 async function conductWebResearch(dealData: any, enhancedContext: any = null) {
   try {
-    console.log('🔍 Conducting web research for market intelligence...');
+    console.log('🔍 Market Research Engine: Attempting web research for', dealData.company_name);
     
-    // Call web-research-engine for market-specific research
+    // Check if required API keys are available
+    if (!googleSearchApiKey || !googleSearchEngineId) {
+      throw new Error('Google Search API credentials not configured. Please add GOOGLE_SEARCH_API_KEY and GOOGLE_SEARCH_ENGINE_ID to Supabase Edge Function secrets.');
+    }
+    
     const { data: webResult, error } = await supabase.functions.invoke('web-research-engine', {
       body: {
         dealData,
@@ -686,11 +693,12 @@ async function conductWebResearch(dealData: any, enhancedContext: any = null) {
     });
 
     if (error) {
-      console.error('Web research failed:', error);
-      return { success: false, sources: [] };
+      console.error('❌ Market Research Engine: Web research engine error:', error);
+      throw new Error(`Web research failed: ${error.message}`);
     }
 
     if (webResult.success && webResult.data) {
+      console.log('✅ Market Research Engine: Web research successful with real data');
       const marketData = webResult.data;
       
       return {
@@ -699,14 +707,15 @@ async function conductWebResearch(dealData: any, enhancedContext: any = null) {
         growth_rate: extractGrowthRate(marketData),
         competitive_landscape: extractCompetitiveLandscape(marketData),
         market_trends: extractMarketTrends(marketData),
-        sources: webResult.sources || []
+        sources: webResult.sources || [],
+        data_quality: 'web_validated'
       };
     }
 
-    return { success: false, sources: [] };
+    throw new Error('Web research returned no usable data');
   } catch (error) {
-    console.error('Web research error:', error);
-    return { success: false, sources: [] };
+    console.error('❌ Market Research Engine: Web research failed:', error.message);
+    throw error; // Don't mask the error - let it bubble up
   }
 }
 
