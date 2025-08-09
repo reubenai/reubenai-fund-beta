@@ -163,6 +163,3 @@ verify_jwt = false
 
 [functions.web-research-engine]
 verify_jwt = false
-
-[functions.comprehensive-analysis-engine]
-verify_jwt = false

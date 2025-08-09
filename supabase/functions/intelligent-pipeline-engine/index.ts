@@ -152,13 +152,20 @@ async function getStageRecommendations(dealId: string, fundId: string) {
 }
 
 async function performBatchAnalysis(fundId: string, dealIds: string[]) {
-  const results = await Promise.allSettled(
-    dealIds.map(dealId => 
-      supabase.functions.invoke('comprehensive-analysis-engine', {
-        body: { dealId, fundId }
-      })
-    )
-  );
+  // Call enhanced-deal-analysis with batch mode
+  const { data: batchResult, error } = await supabase.functions.invoke('enhanced-deal-analysis', {
+    body: { 
+      dealIds, 
+      fundId, 
+      action: 'batch' 
+    }
+  });
+
+  if (error) {
+    throw new Error(`Batch analysis failed: ${error.message}`);
+  }
+
+  const results = batchResult.results || [];
 
   const batchResults = results.map((result, index) => ({
     dealId: dealIds[index],

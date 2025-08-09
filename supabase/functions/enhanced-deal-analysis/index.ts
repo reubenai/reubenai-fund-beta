@@ -16,7 +16,10 @@ const googleSearchEngineId = Deno.env.get('GOOGLE_SEARCH_ENGINE_ID')!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 interface DealAnalysisRequest {
-  dealId: string;
+  dealId?: string;
+  dealIds?: string[];
+  fundId?: string;
+  action?: 'single' | 'batch';
 }
 
 interface AnalysisResult {
@@ -66,7 +69,17 @@ serve(async (req) => {
   }
 
   try {
-    const { dealId }: DealAnalysisRequest = await req.json();
+    const { dealId, dealIds, fundId, action = 'single' }: DealAnalysisRequest = await req.json();
+
+    // Handle batch analysis
+    if (action === 'batch' && dealIds && fundId) {
+      return await handleBatchAnalysis(dealIds, fundId);
+    }
+
+    // Handle single deal analysis
+    if (!dealId) {
+      throw new Error('dealId is required for single deal analysis');
+    }
 
     console.log('🔍 Enhanced Deal Analysis: Starting analysis for deal:', dealId);
 
@@ -390,6 +403,63 @@ ${analysisResult.next_steps.map(step => `• ${step}`).join('\n')}
     });
   }
 });
+
+async function handleBatchAnalysis(dealIds: string[], fundId: string) {
+  console.log('🔍 Enhanced Deal Analysis: Starting batch analysis for', dealIds.length, 'deals');
+  
+  const results = await Promise.allSettled(
+    dealIds.map(dealId => 
+      supabase.functions.invoke('enhanced-deal-analysis', {
+        body: { dealId, action: 'single' }
+      })
+    )
+  );
+
+  const batchResults = results.map((result, index) => ({
+    dealId: dealIds[index],
+    status: result.status,
+    data: result.status === 'fulfilled' ? result.value?.data : null,
+    error: result.status === 'rejected' ? result.reason : null
+  }));
+
+  // Store batch analysis results in fund memory
+  if (fundId) {
+    try {
+      await supabase.functions.invoke('enhanced-fund-memory-engine', {
+        body: {
+          action: 'store_memory',
+          fundId,
+          memoryType: 'batch_analysis',
+          title: 'Batch Analysis Complete',
+          description: `Batch analysis completed for ${dealIds.length} deals`,
+          memoryContent: {
+            totalDeals: dealIds.length,
+            successfulAnalyses: batchResults.filter(r => r.status === 'fulfilled').length,
+            failedAnalyses: batchResults.filter(r => r.status === 'rejected').length,
+            results: batchResults
+          },
+          aiServiceName: 'enhanced-deal-analysis',
+          confidenceScore: 85
+        }
+      });
+    } catch (error) {
+      console.warn('⚠️ Enhanced Deal Analysis: Failed to store batch memory:', error);
+    }
+  }
+
+  const successfulAnalyses = batchResults.filter(r => r.status === 'fulfilled').length;
+  const failedAnalyses = batchResults.filter(r => r.status === 'rejected').length;
+
+  return new Response(JSON.stringify({
+    success: true,
+    totalDeals: dealIds.length,
+    successfulAnalyses,
+    failedAnalyses,
+    results: batchResults
+  }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
 
 async function generateEnhancedAnalysis(deal: any, strategy?: any): Promise<AnalysisResult> {
   // Validate available data and mark missing fields
