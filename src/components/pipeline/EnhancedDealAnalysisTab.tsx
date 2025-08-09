@@ -30,6 +30,7 @@ import { RubricScoreRadar } from './RubricScoreRadar';
 import { FundTypeAnalysisPanel } from './FundTypeAnalysisPanel';
 import { ScoringMethodologyCard } from './ScoringMethodologyCard';
 import { EnhancedDealAnalysis, RubricBreakdown, AnalysisEngine, NotesIntelligence, FundTypeAnalysis } from '@/types/enhanced-deal-analysis';
+import { CategoryDeepDiveSection } from '@/components/analysis/CategoryDeepDiveSection';
 import { useAIService } from '@/hooks/useAIService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -320,104 +321,20 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
             </CardContent>
           </Card>
 
-          {/* Detailed Rubric Breakdown */}
+          {/* Enhanced Rubric Breakdown with Deep Dive */}
           <div className="grid gap-4">
             {(analysis.rubric_breakdown || []).map((item, index) => (
-              <Card key={index} className="card-xero">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg capitalize text-foreground">
-                      {item.category.replace(/_/g, ' ')}
-                    </CardTitle>
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline">
-                        {item.score}/100
-                      </Badge>
-                      <Badge variant="outline">
-                        Weight: {item.weight}%
-                      </Badge>
-                      <Badge 
-                        variant="outline"
-                        className={`${
-                          item.confidence >= 80 ? 'text-success' :
-                          item.confidence >= 60 ? 'text-warning' :
-                          'text-destructive'
-                        }`}
-                      >
-                        {item.confidence}% confidence
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Progress Bar */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Score</span>
-                      <span className="font-medium text-foreground">{item.score}/100</span>
-                    </div>
-                    <Progress 
-                      value={item.score} 
-                      className="h-2"
-                    />
-                  </div>
-
-                  {/* Key Insights */}
-                  {item.insights && item.insights.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                        <Brain className="h-4 w-4 text-muted-foreground" />
-                        Key Insights
-                      </h4>
-                      <ul className="space-y-1">
-                        {item.insights.map((insight, i) => (
-                          <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                            <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
-                            {insight}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Strengths and Concerns */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {item.strengths && item.strengths.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold text-success mb-2 flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4" />
-                          Strengths
-                        </h4>
-                        <ul className="space-y-1">
-                          {item.strengths.map((strength, i) => (
-                            <li key={i} className="text-sm text-success flex items-start gap-2">
-                              <span className="w-1.5 h-1.5 bg-success rounded-full mt-2 flex-shrink-0" />
-                              {strength}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {item.concerns && item.concerns.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold text-warning mb-2 flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4" />
-                          Concerns
-                        </h4>
-                        <ul className="space-y-1">
-                          {item.concerns.map((concern, i) => (
-                            <li key={i} className="text-sm text-warning flex items-start gap-2">
-                              <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
-                              {concern}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              <CategoryDeepDiveSection
+                key={index}
+                category={item.category}
+                score={item.score}
+                confidence={item.confidence}
+                weight={item.weight}
+                insights={item.insights}
+                strengths={item.strengths}
+                concerns={item.concerns}
+                detailedAnalysis={item.detailed_analysis}
+              />
             ))}
           </div>
         </TabsContent>

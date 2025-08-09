@@ -8,6 +8,185 @@ export interface RubricBreakdown {
   insights: string[];
   strengths: string[];
   concerns: string[];
+  detailed_analysis?: CategoryDeepDive;
+}
+
+// Deep-dive analysis interfaces for each category
+export interface CategoryDeepDive {
+  market_opportunity?: MarketDeepDive;
+  team_leadership?: TeamDeepDive;
+  product_technology?: ProductDeepDive;
+  financial_health?: FinancialDeepDive;
+  business_traction?: TractionDeepDive;
+}
+
+export interface MarketDeepDive {
+  tam_sam_som?: { tam: string; sam: string; som: string };
+  growth_drivers?: string[];
+  market_risks?: string[];
+  competitive_positioning?: CompetitorAnalysis[];
+  customer_validation?: CustomerInsight[];
+  geographic_opportunities?: GeographicData[];
+}
+
+export interface TeamDeepDive {
+  founder_profiles?: FounderProfile[];
+  team_gaps?: string[];
+  execution_track_record?: ExecutionMetric[];
+  advisory_strength?: AdvisoryData[];
+}
+
+export interface ProductDeepDive {
+  ip_portfolio?: IPAsset[];
+  competitive_moats?: MoatAnalysis[];
+  technical_advantages?: TechAdvantage[];
+  development_roadmap?: RoadmapItem[];
+}
+
+export interface FinancialDeepDive {
+  revenue_breakdown?: RevenueStream[];
+  unit_economics?: UnitEconomicsDetail;
+  burn_analysis?: BurnRateAnalysis;
+  funding_scenarios?: FundingScenario[];
+}
+
+export interface TractionDeepDive {
+  customer_metrics?: CustomerMetric[];
+  partnership_pipeline?: Partnership[];
+  market_penetration?: PenetrationData[];
+  growth_trajectory?: GrowthMetric[];
+}
+
+// Supporting data structures
+export interface CompetitorAnalysis {
+  name: string;
+  market_share?: string;
+  positioning: string;
+  strengths: string[];
+  weaknesses: string[];
+  funding_stage?: string;
+}
+
+export interface CustomerInsight {
+  segment: string;
+  validation_level: 'high' | 'medium' | 'low';
+  feedback: string;
+  revenue_potential?: string;
+}
+
+export interface GeographicData {
+  region: string;
+  market_size: string;
+  penetration_opportunity: string;
+  regulatory_barriers?: string[];
+}
+
+export interface FounderProfile {
+  name: string;
+  role: string;
+  background: string;
+  linkedin_validated?: boolean;
+  previous_exits?: string[];
+  expertise_areas: string[];
+}
+
+export interface ExecutionMetric {
+  milestone: string;
+  achievement_date: string;
+  impact: string;
+  validation_source?: string;
+}
+
+export interface AdvisoryData {
+  name?: string;
+  expertise: string;
+  influence_level: 'high' | 'medium' | 'low';
+  active_involvement: boolean;
+}
+
+export interface IPAsset {
+  type: 'patent' | 'trademark' | 'trade_secret' | 'copyright';
+  status: string;
+  defensibility_score: number;
+  strategic_value: string;
+}
+
+export interface MoatAnalysis {
+  moat_type: string;
+  strength: 'strong' | 'moderate' | 'weak';
+  sustainability: string;
+  competitive_response_time?: string;
+}
+
+export interface TechAdvantage {
+  technology: string;
+  advantage_type: string;
+  differentiation_level: 'high' | 'medium' | 'low';
+  time_to_replicate?: string;
+}
+
+export interface RoadmapItem {
+  feature: string;
+  timeline: string;
+  strategic_importance: 'critical' | 'important' | 'nice_to_have';
+  market_demand: string;
+}
+
+export interface RevenueStream {
+  source: string;
+  percentage: number;
+  growth_rate?: string;
+  sustainability: 'high' | 'medium' | 'low';
+}
+
+export interface UnitEconomicsDetail {
+  cac: string;
+  ltv: string;
+  ltv_cac_ratio: number;
+  payback_period: string;
+  gross_margin: string;
+}
+
+export interface BurnRateAnalysis {
+  monthly_burn: string;
+  runway_months: number;
+  burn_efficiency: string;
+  optimization_opportunities: string[];
+}
+
+export interface FundingScenario {
+  scenario: 'optimistic' | 'base' | 'pessimistic';
+  amount_needed: string;
+  timeline: string;
+  milestones: string[];
+}
+
+export interface CustomerMetric {
+  metric: string;
+  value: string;
+  trend: 'improving' | 'stable' | 'declining';
+  benchmark?: string;
+}
+
+export interface Partnership {
+  partner: string;
+  type: string;
+  status: 'active' | 'pipeline' | 'negotiating';
+  strategic_value: string;
+}
+
+export interface PenetrationData {
+  segment: string;
+  current_penetration: string;
+  addressable_market: string;
+  growth_potential: string;
+}
+
+export interface GrowthMetric {
+  period: string;
+  metric: string;
+  value: string;
+  context: string;
 }
 
 export interface NotesIntelligence {
