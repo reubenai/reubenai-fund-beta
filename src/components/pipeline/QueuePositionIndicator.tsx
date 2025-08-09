@@ -14,19 +14,28 @@ export function QueuePositionIndicator({ dealId, compact = false }: QueuePositio
 
   useEffect(() => {
     const checkStatus = async () => {
-      const result = await getQueueStatus(dealId);
-      if (result.success && result.queueItems && result.queueItems.length > 0) {
-        setQueueStatus(result.queueItems[0]); // Get the latest queue item
+      try {
+        const result = await getQueueStatus(dealId);
+        if (result.success && result.queueItems && result.queueItems.length > 0) {
+          setQueueStatus(result.queueItems[0]); // Get the latest queue item
+        } else {
+          setQueueStatus(null); // Clear status if no queue items
+        }
+      } catch (error) {
+        console.error('Error checking queue status:', error);
+        setQueueStatus(null);
       }
     };
 
-    checkStatus();
-    const interval = setInterval(checkStatus, 10000); // Check every 10 seconds
-    
-    return () => clearInterval(interval);
+    if (dealId) {
+      checkStatus();
+      const interval = setInterval(checkStatus, 10000); // Check every 10 seconds
+      
+      return () => clearInterval(interval);
+    }
   }, [dealId, getQueueStatus]);
 
-  if (!queueStatus) return null;
+  if (!queueStatus || !dealId) return null;
 
   const getStatusDisplay = () => {
     switch (queueStatus.status) {
