@@ -593,6 +593,7 @@ export type Database = {
           leadership_score: number | null
           market_notes: string | null
           market_score: number | null
+          overall_score: number | null
           product_notes: string | null
           product_score: number | null
           thesis_alignment_notes: string | null
@@ -617,6 +618,7 @@ export type Database = {
           leadership_score?: number | null
           market_notes?: string | null
           market_score?: number | null
+          overall_score?: number | null
           product_notes?: string | null
           product_score?: number | null
           thesis_alignment_notes?: string | null
@@ -641,6 +643,7 @@ export type Database = {
           leadership_score?: number | null
           market_notes?: string | null
           market_score?: number | null
+          overall_score?: number | null
           product_notes?: string | null
           product_score?: number | null
           thesis_alignment_notes?: string | null
@@ -2997,6 +3000,17 @@ export type Database = {
       }
       archive_old_activities: {
         Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      calculate_overall_score: {
+        Args: {
+          thesis_score?: number
+          leadership_score?: number
+          market_score?: number
+          product_score?: number
+          financial_score?: number
+          traction_score?: number
+        }
         Returns: number
       }
       complete_analysis_queue_item: {

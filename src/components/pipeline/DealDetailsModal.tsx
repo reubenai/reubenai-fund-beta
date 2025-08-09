@@ -45,7 +45,7 @@ import { DocumentManager } from '@/components/documents/DocumentManager';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-import { Deal } from '@/hooks/useOptimizedPipelineDeals';
+import { Deal } from '@/hooks/usePipelineDeals';
 
 interface DealDetailsModalProps {
   deal: Deal | null;

@@ -274,12 +274,6 @@ export function EnhancedDealDetailsModal({
             {canViewActivities && <TabsTrigger value="activity">Activity</TabsTrigger>}
           </TabsList>
           
-          {/* Temporary debug - enhanced analysis check */}
-          <div className="text-xs text-muted-foreground p-2 bg-gray-50 rounded">
-            Enhanced Analysis Available: {(deal as any).enhanced_analysis ? 'Yes' : 'No'} | 
-            Rubric Breakdown: {(deal as any).enhanced_analysis?.rubric_breakdown?.length || 0} items |
-            Notes Intelligence: {(deal as any).enhanced_analysis?.notes_intelligence ? 'Yes' : 'No'}
-          </div>
 
           <TabsContent value="overview" className="space-y-6">
             {/* Key Metrics */}
