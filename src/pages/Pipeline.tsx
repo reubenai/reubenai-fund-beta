@@ -2,7 +2,7 @@ import React from 'react';
 import { KanbanBoard } from '@/components/pipeline/KanbanBoard';
 import { AnalysisQueueMonitor } from '@/components/pipeline/AnalysisQueueMonitor';
 import { useFund } from '@/contexts/FundContext';
-import { MADFundAnalysisBooster } from '@/components/pipeline/MADFundAnalysisBooster';
+
 import { useSearchParams } from 'react-router-dom';
 // Breadcrumbs removed - using Layout breadcrumbs
 import { useUserRole } from '@/hooks/useUserRole';
@@ -58,11 +58,6 @@ export default function Pipeline() {
             You can see funds across all organizations: {funds.map(f => f.name).join(', ')}
           </div>
         </div>
-      )}
-      
-      {/* MAD Fund Analysis Booster - Only show for Super Admins on MAD Hyperscalers Fund */}
-      {isSuperAdmin && selectedFund.id === 'bb53614c-0015-46b0-b298-b9af1c2c8425' && (
-        <MADFundAnalysisBooster />
       )}
       
       {/* Analysis Queue Monitor */}

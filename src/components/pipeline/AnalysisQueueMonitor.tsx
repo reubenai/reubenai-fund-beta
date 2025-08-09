@@ -5,6 +5,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useEnhancedAnalysisQueue } from '@/hooks/useEnhancedAnalysisQueue';
 import { useAnalysisScheduler } from '@/hooks/useAnalysisScheduler';
 import { ChevronDown, Activity, RotateCcw, Zap } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export function AnalysisQueueMonitor() {
   const [queueStats, setQueueStats] = useState(null);
@@ -43,6 +44,24 @@ export function AnalysisQueueMonitor() {
   const handleProcessBacklog = async () => {
     await processBacklog();
     await refreshStats();
+  };
+
+  const handleQueueCleanup = async () => {
+    try {
+      setIsOpen(true); // Show panel during cleanup
+      
+      const { data, error } = await supabase.functions.invoke('analysis-queue-cleanup');
+      
+      if (error) {
+        console.error('❌ Queue cleanup failed:', error);
+        return;
+      }
+      
+      console.log('✅ Queue cleanup completed:', data);
+      await refreshStats(); // Refresh stats after cleanup
+    } catch (error) {
+      console.error('❌ Queue cleanup error:', error);
+    }
   };
 
   const handleForceProcess = async () => {
@@ -133,6 +152,17 @@ export function AnalysisQueueMonitor() {
               Process Now
             </Button>
 
+            <Button 
+              onClick={handleQueueCleanup}
+              disabled={isProcessing}
+              size="sm"
+              variant="outline"
+              className="flex-1"
+            >
+              <RotateCcw className="w-3 h-3 mr-1" />
+              Clean Queue
+            </Button>
+            
             {hasQueuedItems && (
               <Button
                 onClick={handleProcessBacklog}

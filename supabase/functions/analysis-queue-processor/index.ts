@@ -33,8 +33,8 @@ serve(async (req) => {
     // Process the analysis queue
     const { data: processResult, error: processError } = await supabase
       .rpc('process_analysis_queue', { 
-        batch_size: 3, // Reduced for API quota management
-        max_concurrent: 1 // Reduced for API quota management
+        batch_size: 5,
+        max_concurrent: 3
       });
 
     if (processError) {

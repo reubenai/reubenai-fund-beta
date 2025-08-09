@@ -38,6 +38,8 @@ import { AnalysisQueueStatus } from './AnalysisQueueStatus';
 import { EnhancedAnalysisIndicators } from './EnhancedAnalysisIndicators';
 import { RubricScoreRadar } from './RubricScoreRadar';
 import { FundTypeAnalysisPanel } from './FundTypeAnalysisPanel';
+import { DealAnalysisRefreshButton } from './DealAnalysisRefreshButton';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface EnhancedDealCardProps {
   deal: Deal;
@@ -77,6 +79,7 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
 }) => {
   const { getRAGCategory } = useStrategyThresholds();
   const { forceAnalysisNow, queueDealAnalysis } = useEnhancedAnalysisQueue();
+  const permissions = usePermissions();
   const [isLoading, setIsLoading] = useState(false);
   
   const formatAmount = (amount?: number) => {
@@ -170,7 +173,17 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
                   })()
                 )}
                 
-                {/* Analysis Actions Menu */}
+                {/* Analysis Refresh Button for Fund Managers */}
+                {permissions.canTriggerAnalysis && (
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <DealAnalysisRefreshButton 
+                      dealId={deal.id}
+                      lastAnalyzed={deal.updated_at}
+                      variant="badge"
+                    />
+                  </div>
+                )}
+                
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
@@ -178,20 +191,24 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenuItem 
-                      onClick={() => handleTriggerAnalysis(false)}
-                      disabled={isLoading}
-                    >
-                      <Brain className="w-3 h-3 mr-2" />
-                      Queue Analysis (5min)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleTriggerAnalysis(true)}
-                      disabled={isLoading}
-                    >
-                      <Zap className="w-3 h-3 mr-2" />
-                      Analyze Now
-                    </DropdownMenuItem>
+                    {permissions.canTriggerAnalysis && (
+                      <>
+                        <DropdownMenuItem 
+                          onClick={() => handleTriggerAnalysis(false)}
+                          disabled={isLoading}
+                        >
+                          <Brain className="w-3 h-3 mr-2" />
+                          Queue Analysis (5min)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleTriggerAnalysis(true)}
+                          disabled={isLoading}
+                        >
+                          <Zap className="w-3 h-3 mr-2" />
+                          Analyze Now
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

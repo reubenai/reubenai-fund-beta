@@ -205,7 +205,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
             onSearchChange={setSearchQuery}
             onAddDeal={permissions.canCreateDeals ? () => updateState({ showAddDeal: true }) : undefined}
             onBatchUpload={permissions.canBatchUpload ? () => updateState({ showBatchUpload: true }) : undefined}
-            onSourceDeals={permissions.canUseAISourcing ? () => updateState({ showSourceDeals: true }) : undefined}
+            onSourceDeals={undefined}
             totalDeals={getTotalDeals()}
             showFilters={state.showFilters}
             onToggleFilters={() => updateState({ showFilters: !state.showFilters })}

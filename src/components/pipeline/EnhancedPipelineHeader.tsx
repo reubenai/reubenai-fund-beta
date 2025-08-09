@@ -59,12 +59,15 @@ export function EnhancedPipelineHeader({
             Add Deal
           </Button>
           
-          {onSourceDeals && (
-            <Button onClick={onSourceDeals} className="gap-2">
-              <Search className="h-4 w-4" />
-              Source Deals
-            </Button>
-          )}
+          <Button 
+            disabled
+            variant="outline"
+            className="gap-2 opacity-50 cursor-not-allowed"
+          >
+            <Search className="h-4 w-4" />
+            Source Deals
+            <Badge variant="secondary" className="ml-2 text-xs">Coming Soon</Badge>
+          </Button>
         </div>
       </div>
 
