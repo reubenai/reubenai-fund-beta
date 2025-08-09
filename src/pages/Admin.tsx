@@ -25,7 +25,7 @@ import { EnhancedAdminFundTable } from '@/components/admin/EnhancedAdminFundTabl
 import { EnhancedAdminActivityFeed } from '@/components/admin/EnhancedAdminActivityFeed';
 import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModal';
 import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
-import { ComprehensiveProductionReadiness } from '@/components/admin/ComprehensiveProductionReadiness';
+import { SimplifiedProductionReadiness } from '@/components/admin/SimplifiedProductionReadiness';
 import { AdminInviteUserModal } from '@/components/admin/AdminInviteUserModal';
 import { AdminDealsTable } from '@/components/admin/AdminDealsTable';
 import AdminFundCreationModal from '@/components/admin/AdminFundCreationModal';
@@ -35,7 +35,7 @@ import { ForceAnalysisProcessor } from '@/components/admin/ForceAnalysisProcesso
 import { ComprehensiveFixVerifier } from '@/components/admin/ComprehensiveFixVerifier';
 import { APIConfigurationPanel } from '@/components/admin/APIConfigurationPanel';
 import { DealDataRepairTool } from '@/components/admin/DealDataRepairTool';
-import { PlatformArchitectureDiagram } from '@/components/admin/PlatformArchitectureDiagram';
+import { ComprehensiveArchitectureDiagram } from '@/components/admin/ComprehensiveArchitectureDiagram';
 
 
 interface Organization {
@@ -746,9 +746,13 @@ export default function Admin() {
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Support Tickets
               </TabsTrigger>
-              <TabsTrigger value="production" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <TabsTrigger value="production-readiness" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <Rocket className="h-4 w-4 mr-2" />
                 Production Readiness
+              </TabsTrigger>
+              <TabsTrigger value="architecture" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Database className="h-4 w-4 mr-2" />
+                Architecture
               </TabsTrigger>
             </TabsList>
 
@@ -839,12 +843,12 @@ export default function Admin() {
               <AdminSupportTickets />
             </TabsContent>
 
-            <TabsContent value="production" className="space-y-6">
-              <DealDataRepairTool />
-              <APIConfigurationPanel />
-              <ComprehensiveFixVerifier />
-              <ComprehensiveProductionReadiness />
-              <ForceAnalysisProcessor />
+            <TabsContent value="production-readiness" className="space-y-6">
+              <SimplifiedProductionReadiness />
+            </TabsContent>
+
+            <TabsContent value="architecture" className="space-y-6">
+              <ComprehensiveArchitectureDiagram />
             </TabsContent>
           </Tabs>
         </div>
