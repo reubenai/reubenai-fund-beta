@@ -13,7 +13,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface EnhancedMemoryRequest {
   action: 'contextual_memory_query' | 'decision_learning_capture' | 'pattern_discovery' | 'strategic_evolution' | 'outcome_validation' | 
-          'store' | 'query' | 'store_memory' | 'query_contextual_memory' | 'query_investment_patterns' | 'contextual_memory' | 'performance_tracking';
+          'store' | 'query' | 'store_memory' | 'query_contextual_memory' | 'query_investment_patterns' | 'contextual_memory' | 'performance_tracking' |
+          'store_orchestrator_insights';
   fundId: string;
   dealId?: string;
   sessionId?: string;
@@ -86,6 +87,9 @@ serve(async (req) => {
         break;
       case 'performance_tracking':
         result = await legacyTrackPerformance({ fundId, dealId, data });
+        break;
+      case 'store_orchestrator_insights':
+        result = await storeOrchestratorInsights(fundId, dealId, data);
         break;
       default:
         throw new Error(`Unknown action: ${action}`);
@@ -966,4 +970,88 @@ function legacyIdentifySuccessFactors(preferences: any[]): any[] {
     'Large addressable market',
     'Proven business model'
   ];
+}
+
+/**
+ * Store Orchestrator Insights - Store comprehensive analysis results from the orchestrator
+ */
+async function storeOrchestratorInsights(fundId: string, dealId?: string, insightData?: any): Promise<any> {
+  console.log(`🎯 [Orchestrator Insights] Storing insights for fund: ${fundId}, deal: ${dealId}`);
+  
+  if (!insightData) {
+    throw new Error('No insight data provided');
+  }
+
+  try {
+    // Store the insights in fund memory
+    const memoryEntry = {
+      fund_id: fundId,
+      deal_id: dealId,
+      memory_type: 'orchestrator_analysis',
+      title: `Orchestrator Analysis for ${insightData.company_name || 'Deal'}`,
+      description: 'Comprehensive analysis results from the orchestrator engine',
+      memory_content: insightData,
+      confidence_score: insightData.confidence_level || 75,
+      importance_level: 'high',
+      contextual_tags: [
+        'orchestrator',
+        'comprehensive_analysis',
+        insightData.overall_recommendation?.toLowerCase().replace(/[^a-z0-9]/g, '_') || 'analysis',
+        `score_${Math.floor((insightData.overall_score || 50) / 10) * 10}`
+      ],
+      ai_service_name: 'reuben-orchestrator',
+      created_by: '00000000-0000-0000-0000-000000000000' // System user
+    };
+
+    const { data: storedEntry, error: storageError } = await supabase
+      .from('fund_memory_entries')
+      .insert(memoryEntry)
+      .select()
+      .single();
+
+    if (storageError) {
+      console.error('Failed to store orchestrator insights:', storageError);
+      throw storageError;
+    }
+
+    // Also store structured insights in the fund_memory_insights table
+    if (insightData.engine_results) {
+      const structuredInsights = [];
+      
+      for (const [engineName, engineData] of Object.entries(insightData.engine_results)) {
+        structuredInsights.push({
+          fund_id: fundId,
+          deal_id: dealId,
+          insight_type: `orchestrator_${engineName}`,
+          insight_data: engineData,
+          confidence_score: (engineData as any)?.confidence || 75,
+          source_engines: ['reuben-orchestrator', engineName]
+        });
+      }
+
+      if (structuredInsights.length > 0) {
+        const { error: insightsError } = await supabase
+          .from('fund_memory_insights')
+          .insert(structuredInsights);
+
+        if (insightsError) {
+          console.warn('Failed to store structured insights:', insightsError);
+          // Don't throw, as the main storage succeeded
+        }
+      }
+    }
+
+    console.log('✅ [Orchestrator Insights] Successfully stored insights:', storedEntry.id);
+
+    return {
+      success: true,
+      memory_entry_id: storedEntry.id,
+      insights_stored: insightData.engine_results ? Object.keys(insightData.engine_results).length : 0,
+      message: 'Orchestrator insights stored successfully'
+    };
+
+  } catch (error) {
+    console.error('🚨 [Orchestrator Insights] Error storing insights:', error);
+    throw error;
+  }
 }

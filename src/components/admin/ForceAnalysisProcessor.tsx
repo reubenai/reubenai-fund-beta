@@ -55,8 +55,8 @@ export function ForceAnalysisProcessor() {
       
       if (data.success) {
         toast({
-          title: "✅ Analysis Queue Processed",
-          description: `Processed ${data.summary?.total_processed || 0} deals. ${data.summary?.total_successful || 0} successful, ${data.summary?.total_failed || 0} failed.`,
+          title: "✅ Analysis Queue Processing Complete",
+          description: `Processed ${data.summary?.total_processed || 0} deals in ${data.summary?.iterations_run || 1} iterations. ${data.summary?.total_successful || 0} successful, ${data.summary?.total_failed || 0} failed. ${data.summary?.remaining_queued || 0} deals remaining.`,
         });
       } else {
         toast({

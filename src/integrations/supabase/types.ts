@@ -1350,6 +1350,57 @@ export type Database = {
           },
         ]
       }
+      fund_memory_insights: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          deal_id: string | null
+          fund_id: string
+          id: string
+          insight_data: Json
+          insight_type: string
+          source_engines: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          deal_id?: string | null
+          fund_id: string
+          id?: string
+          insight_data?: Json
+          insight_type: string
+          source_engines?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          deal_id?: string | null
+          fund_id?: string
+          id?: string
+          insight_data?: Json
+          insight_type?: string
+          source_engines?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fund_memory_insights_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fund_memory_insights_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funds: {
         Row: {
           created_at: string
