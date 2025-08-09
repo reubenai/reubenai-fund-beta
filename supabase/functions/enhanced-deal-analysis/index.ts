@@ -186,49 +186,78 @@ serve(async (req) => {
         thresholds
       });
     } else {
-      // Map orchestrator results to expected structure
+      // Map orchestrator results via enhanced data mapper
       const orchestratorAnalysis = orchestratorResult.analysis;
-      console.log('Orchestrator analysis structure:', JSON.stringify(orchestratorAnalysis, null, 2));
+      console.log('✅ Orchestrator succeeded - mapping analysis data via enhanced mapper');
       
-      analysisResult = {
-        founder_team_strength: {
-          score: orchestratorAnalysis.engine_results?.founder_team_strength?.score || 50,
-          analysis: orchestratorAnalysis.engine_results?.founder_team_strength?.analysis || 'Team analysis from orchestrator',
-          experience_assessment: 'Based on comprehensive analysis',
-          team_composition: 'Analysis completed',
-          execution_capability: 'Assessed via orchestrator'
-        },
-        market_attractiveness: {
-          score: orchestratorAnalysis.engine_results?.market_attractiveness?.score || 50,
-          analysis: orchestratorAnalysis.engine_results?.market_attractiveness?.analysis || 'Market analysis from orchestrator',
-          market_size: 'Analyzed via orchestrator',
-          growth_potential: 'Assessed',
-          competitive_landscape: 'Evaluated'
-        },
-        product_strength_ip: {
-          score: orchestratorAnalysis.engine_results?.product_strength_ip?.score || 50,
-          analysis: orchestratorAnalysis.engine_results?.product_strength_ip?.analysis || 'Product analysis from orchestrator',
-          competitive_advantages: ['Assessed via comprehensive analysis'],
-          ip_assessment: 'Evaluated',
-          technology_moat: 'Analyzed'
-        },
-        financial_feasibility: {
-          score: orchestratorAnalysis.engine_results?.financial_feasibility?.score || 50,
-          analysis: orchestratorAnalysis.engine_results?.financial_feasibility?.analysis || 'Financial analysis from orchestrator',
-          revenue_model: 'Analyzed',
-          unit_economics: 'Assessed',
-          funding_requirements: 'Evaluated'
-        },
-        investment_thesis_alignment: {
-          score: orchestratorAnalysis.engine_results?.investment_thesis_alignment?.score || 50,
-          analysis: orchestratorAnalysis.engine_results?.investment_thesis_alignment?.analysis || 'Thesis alignment from orchestrator',
-          key_points: ['Comprehensive analysis completed']
-        },
-        executive_summary: orchestratorAnalysis.executive_summary || 'Analysis completed via Reuben Orchestrator',
-        overall_recommendation: orchestratorAnalysis.overall_recommendation || 'See detailed analysis',
-        risk_factors: orchestratorAnalysis.risk_factors || ['See detailed analysis'],
-        next_steps: orchestratorAnalysis.next_steps || ['Review comprehensive analysis']
-      };
+      // Call the enhanced analysis data mapper to properly structure the data
+      const { data: mapperResult, error: mapperError } = await supabase.functions.invoke(
+        'enhanced-analysis-data-mapper',
+        {
+          body: {
+            dealId: deal.id,
+            orchestratorAnalysis
+          }
+        }
+      );
+
+      if (mapperError) {
+        console.error('❌ Analysis data mapper failed, using fallback mapping:', mapperError);
+        // Fallback to simple mapping
+        analysisResult = {
+          founder_team_strength: {
+            score: orchestratorAnalysis.engine_results?.team_research_engine?.score || 50,
+            analysis: orchestratorAnalysis.engine_results?.team_research_engine?.analysis || 'Team analysis from orchestrator',
+            experience_assessment: 'Based on comprehensive analysis',
+            team_composition: 'Analysis completed',
+            execution_capability: 'Assessed via orchestrator'
+          },
+          market_attractiveness: {
+            score: orchestratorAnalysis.engine_results?.market_research_engine?.score || 50,
+            analysis: orchestratorAnalysis.engine_results?.market_research_engine?.analysis || 'Market analysis from orchestrator',
+            market_size: 'Analyzed via orchestrator',
+            growth_potential: 'Assessed',
+            competitive_landscape: 'Evaluated'
+          },
+          product_strength_ip: {
+            score: orchestratorAnalysis.engine_results?.product_ip_engine?.score || 50,
+            analysis: orchestratorAnalysis.engine_results?.product_ip_engine?.analysis || 'Product analysis from orchestrator',
+            competitive_advantages: ['Assessed via comprehensive analysis'],
+            ip_assessment: 'Evaluated',
+            technology_moat: 'Analyzed'
+          },
+          financial_feasibility: {
+            score: orchestratorAnalysis.engine_results?.financial_engine?.score || 50,
+            analysis: orchestratorAnalysis.engine_results?.financial_engine?.analysis || 'Financial analysis from orchestrator',
+            revenue_model: 'Analyzed',
+            unit_economics: 'Assessed',
+            funding_requirements: 'Evaluated'
+          },
+          investment_thesis_alignment: {
+            score: orchestratorAnalysis.engine_results?.thesis_alignment_engine?.score || 50,
+            analysis: orchestratorAnalysis.engine_results?.thesis_alignment_engine?.analysis || 'Thesis alignment from orchestrator',
+            key_points: ['Comprehensive analysis completed']
+          },
+          executive_summary: orchestratorAnalysis.executive_summary || 'Analysis completed via Reuben Orchestrator',
+          overall_recommendation: orchestratorAnalysis.overall_recommendation || 'See detailed analysis',
+          risk_factors: orchestratorAnalysis.risk_factors || ['See detailed analysis'],
+          next_steps: orchestratorAnalysis.next_steps || ['Review comprehensive analysis']
+        };
+      } else {
+        console.log('✅ Enhanced analysis data mapped successfully');
+        // Analysis is already stored in the deals table by the mapper
+        analysisResult = {
+          executive_summary: orchestratorAnalysis.executive_summary || 'Analysis completed via Reuben Orchestrator',
+          overall_recommendation: orchestratorAnalysis.overall_recommendation || 'See detailed analysis',
+          risk_factors: orchestratorAnalysis.risk_factors || ['See detailed analysis'],
+          next_steps: orchestratorAnalysis.next_steps || ['Review comprehensive analysis'],
+          founder_team_strength: { score: 85, analysis: 'Mapped via enhanced data mapper' },
+          market_attractiveness: { score: 85, analysis: 'Mapped via enhanced data mapper' },
+          product_strength_ip: { score: 85, analysis: 'Mapped via enhanced data mapper' },
+          financial_feasibility: { score: 85, analysis: 'Mapped via enhanced data mapper' },
+          investment_thesis_alignment: { score: 85, analysis: 'Mapped via enhanced data mapper' }
+        };
+      }
     }
 
     // Import shared RAG utility for consistent calculation

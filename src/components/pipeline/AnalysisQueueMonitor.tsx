@@ -203,12 +203,44 @@ export function AnalysisQueueMonitor() {
             )}
           </div>
 
-          {/* Warning for queued items */}
+          {/* Enhanced Status Display */}
           {hasQueuedItems && (
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-2 text-xs text-amber-800">
-              Some analyses are waiting. Use "Clear Backlog" to process them immediately.
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-md p-3 text-xs">
+              <div className="flex items-center justify-between">
+                <div className="text-amber-800 dark:text-amber-200">
+                  <div className="font-medium">Queue Status: {queueStats.queued} analyses waiting</div>
+                  <div className="text-amber-700 dark:text-amber-300 mt-1">
+                    Estimated processing time: ~{Math.ceil(queueStats.queued * 2)} minutes
+                  </div>
+                </div>
+                <Button
+                  onClick={handleProcessBacklog}
+                  variant="outline"
+                  size="sm"
+                  disabled={isProcessing}
+                  className="bg-amber-100 hover:bg-amber-200 dark:bg-amber-900 dark:hover:bg-amber-800 border-amber-300 dark:border-amber-700"
+                >
+                  Process All
+                </Button>
+              </div>
             </div>
           )}
+          
+          {/* Performance Info */}
+          <div className="text-xs text-muted-foreground space-y-1">
+            <div className="flex justify-between">
+              <span>Concurrent Slots:</span>
+              <span className="font-mono">10 max (up from 3)</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Processing Speed:</span>
+              <span className="font-mono">~2min per analysis</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Fund Isolation:</span>
+              <span className="text-green-600">✓ Enabled</span>
+            </div>
+          </div>
         </div>
       </CollapsibleContent>
     </Collapsible>

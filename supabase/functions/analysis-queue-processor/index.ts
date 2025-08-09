@@ -30,11 +30,11 @@ serve(async (req) => {
   try {
     console.log('🔄 Analysis Queue Processor: Starting batch processing...');
 
-    // Process the analysis queue
+    // Process the analysis queue with increased concurrency
     const { data: processResult, error: processError } = await supabase
       .rpc('process_analysis_queue', { 
-        batch_size: 5,
-        max_concurrent: 3
+        batch_size: 10,
+        max_concurrent: 10  // Increased from 3 to 10 for better throughput
       });
 
     if (processError) {

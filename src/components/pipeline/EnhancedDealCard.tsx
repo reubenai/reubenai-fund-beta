@@ -39,6 +39,7 @@ import { EnhancedAnalysisIndicators } from './EnhancedAnalysisIndicators';
 import { RubricScoreRadar } from './RubricScoreRadar';
 import { FundTypeAnalysisPanel } from './FundTypeAnalysisPanel';
 import { DealAnalysisRefreshButton } from './DealAnalysisRefreshButton';
+import { QueuePositionIndicator } from './QueuePositionIndicator';
 import { usePermissions } from '@/hooks/usePermissions';
 
 interface EnhancedDealCardProps {
@@ -173,6 +174,11 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
                   })()
                 )}
                 
+                {/* Queue Position Indicator */}
+                <div onClick={(e) => e.stopPropagation()}>
+                  <QueuePositionIndicator dealId={deal.id} compact />
+                </div>
+
                 {/* Analysis Refresh Button for Fund Managers */}
                 {permissions.canTriggerAnalysis && (
                   <div onClick={(e) => e.stopPropagation()}>
