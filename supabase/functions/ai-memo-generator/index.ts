@@ -234,7 +234,6 @@ serve(async (req) => {
         dealId,
         action: 'single'
       }
-      }
     });
 
     if (ragError) {
