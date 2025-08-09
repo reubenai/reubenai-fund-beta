@@ -135,8 +135,6 @@ export function EnhancedDealDetailsModal({
         setAnalysisData(analysis[0]);
       }
 
-      // Don't auto-enrich data on every modal open
-      // Only enrich when user explicitly clicks the button
     } catch (error) {
       console.error('Error loading enhanced data:', error);
     }
@@ -147,7 +145,7 @@ export function EnhancedDealDetailsModal({
 
     setIsEnriching(true);
     try {
-      // Use the reuben-orchestrator for comprehensive analysis (same as Documents tab)
+      // Use the reuben-orchestrator for comprehensive analysis
       const { data, error } = await supabase.functions.invoke('reuben-orchestrator', {
         body: { 
           dealId: deal.id,
@@ -162,33 +160,56 @@ export function EnhancedDealDetailsModal({
 
       if (error) throw error;
 
-      const enrichedData = data?.enrichment || data;
-      setCompanyDetails(enrichedData?.company_details || {});
+      console.log('Enrichment response:', data);
       
-      // Update deal with enriched information
-      if (enrichedData) {
-        const { error: updateError } = await supabase
-          .from('deals')
-          .update({
-            description: enrichedData.company_details?.description || deal.description,
-            business_model: enrichedData.company_details?.business_model || deal.business_model,
-            employee_count: enrichedData.company_details?.team_size || deal.employee_count,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', deal.id);
+      // Extract enhanced analysis data from the response
+      const engineResults = data?.engines || {};
+      const analysisResults = data?.analysis || {};
+      
+      // Create enhanced analysis object
+      const enhancedAnalysis = {
+        rubric_breakdown: analysisResults.rubric_breakdown || [],
+        notes_intelligence: analysisResults.notes_intelligence || null,
+        analysis_engines: engineResults,
+        fund_type_analysis: analysisResults.fund_type_analysis || null,
+        analysis_completeness: Object.keys(engineResults).length > 0 ? 85 : 30, // Calculate based on available data
+        last_comprehensive_analysis: new Date().toISOString()
+      };
 
-        if (!updateError) {
-          onDealUpdated?.();
-        }
+      // Update deal with enhanced analysis data
+      const { error: updateError } = await supabase
+        .from('deals')
+        .update({
+          enhanced_analysis: enhancedAnalysis,
+          description: data?.company_details?.description || deal.description,
+          business_model: data?.company_details?.business_model || deal.business_model,
+          employee_count: data?.company_details?.team_size || deal.employee_count,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', deal.id);
+
+      if (updateError) {
+        console.error('Error updating deal with enhanced analysis:', updateError);
+        throw updateError;
       }
 
-      // Only toast on successful enrichment, not on every load
-      if (!analysisData && enrichedData) {
-        toast({
-          title: "Company Data Enriched",
-          description: "Enhanced company information has been loaded",
-        });
-      }
+      // Also store in company details state
+      setCompanyDetails(data?.company_details || {});
+      
+      // Force refresh of the deal data
+      setTimeout(() => {
+        onDealUpdated?.();
+        // Reload enhanced data after update
+        loadEnhancedData();
+        // Force a page refresh to get the updated deal data
+        window.location.reload();
+      }, 2000);
+
+      toast({
+        title: "Analysis Complete",
+        description: "Enhanced analysis data has been generated and stored",
+      });
+
     } catch (error) {
       console.error('Error enriching company data:', error);
       toast({
@@ -249,9 +270,11 @@ export function EnhancedDealDetailsModal({
             {canViewActivities && <TabsTrigger value="activity">Activity</TabsTrigger>}
           </TabsList>
           
-          {/* Debug info - remove after fixing */}
+          {/* Temporary debug - enhanced analysis check */}
           <div className="text-xs text-muted-foreground p-2 bg-gray-50 rounded">
-            Debug: Role={role}, canViewAnalysis={String(canViewAnalysis)}, canViewActivities={String(canViewActivities)}, loading={String(loading)}
+            Enhanced Analysis Available: {deal.enhanced_analysis ? 'Yes' : 'No'} | 
+            Rubric Breakdown: {deal.enhanced_analysis?.rubric_breakdown?.length || 0} items |
+            Notes Intelligence: {deal.enhanced_analysis?.notes_intelligence ? 'Yes' : 'No'}
           </div>
 
           <TabsContent value="overview" className="space-y-6">
