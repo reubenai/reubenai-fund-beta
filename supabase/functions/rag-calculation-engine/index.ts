@@ -36,32 +36,53 @@ serve(async (req) => {
   }
 
   try {
-    console.log('RAG Calculation Engine: Processing request - ROUTING THROUGH ENHANCED ANALYSIS');
+    console.log('🎯 RAG Calculation Engine: CONSOLIDATED - Routing through enhanced-deal-analysis');
     
     const request: RAGRequest = await req.json();
-    console.log('RAG request for deal:', request.dealId, '- routing to enhanced-deal-analysis');
+    console.log('RAG request for deal:', request.dealId, '- using consolidated RAG system');
 
-    // CRITICAL FIX: Route through enhanced-deal-analysis for consistency
-    const { data: analysisData, error: analysisError } = await supabase.functions.invoke('enhanced-deal-analysis', {
+    // CONSOLIDATION: Route all RAG calculations through enhanced-deal-analysis
+    // This eliminates duplication and ensures single source of truth
+    const { data: analysisResponse, error: analysisError } = await supabase.functions.invoke('enhanced-deal-analysis', {
       body: { 
         dealId: request.dealId, 
-        action: 'single',
-        includeRAG: true 
+        action: 'single'
       }
     });
 
     if (analysisError) {
+      console.error('Enhanced analysis failed:', analysisError);
       throw new Error(`Enhanced analysis failed: ${analysisError.message}`);
     }
 
-    // Extract RAG result from enhanced analysis
-    const ragResult = analysisData?.ragStatus || await calculateRAGFromAnalysis(analysisData);
+    // Get deal data to extract RAG information
+    const { data: deal, error: dealError } = await supabase
+      .from('deals')
+      .select('overall_score, rag_status, rag_confidence, rag_reasoning, fund_id')
+      .eq('id', request.dealId)
+      .single();
+
+    if (dealError) {
+      throw new Error(`Deal not found: ${dealError.message}`);
+    }
+
+    // Format response using consolidated RAG data
+    const ragResult = {
+      status: deal.rag_status?.toUpperCase() || 'AMBER',
+      confidence: deal.rag_confidence || 50,
+      reasoning: deal.rag_reasoning?.text || `Score ${deal.overall_score}/100`,
+      factors: deal.rag_reasoning?.factors || ['Analysis completed'],
+      recommendations: generateConsolidatedRecommendations(deal.rag_status, deal.overall_score),
+      risk_level: calculateRiskLevel(deal.rag_status, deal.rag_confidence || 50)
+    };
+
+    console.log('🎯 RAG Engine: Consolidated result:', ragResult.status, ragResult.confidence + '%');
 
     return new Response(JSON.stringify({
       success: true,
       data: ragResult,
       timestamp: new Date().toISOString(),
-      source: 'enhanced-deal-analysis'
+      source: 'consolidated-rag-system'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -79,6 +100,40 @@ serve(async (req) => {
     });
   }
 });
+
+// Helper functions for consolidated system
+function generateConsolidatedRecommendations(ragStatus: string, score: number): string[] {
+  const recommendations = [];
+  
+  switch (ragStatus) {
+    case 'exciting':
+      recommendations.push('Proceed with due diligence');
+      recommendations.push('Schedule investment committee presentation');
+      recommendations.push('Prepare term sheet');
+      break;
+    case 'promising':
+      recommendations.push('Conduct additional analysis');
+      recommendations.push('Address identified concerns');
+      recommendations.push('Validate key assumptions');
+      break;
+    case 'needs_development':
+      recommendations.push('Request additional information');
+      recommendations.push('Identify improvement areas');
+      recommendations.push('Consider follow-up meeting');
+      break;
+    default:
+      recommendations.push('Consider passing on opportunity');
+      recommendations.push('Document learnings for future reference');
+  }
+  
+  return recommendations;
+}
+
+function calculateRiskLevel(ragStatus: string, confidence: number): 'LOW' | 'MEDIUM' | 'HIGH' {
+  if (ragStatus === 'not_aligned' || confidence < 50) return 'HIGH';
+  if (ragStatus === 'needs_development' || confidence < 75) return 'MEDIUM';
+  return 'LOW';
+}
 
 async function callOpenAI(messages: any[], model = 'gpt-4.1-2025-04-14') {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {

@@ -336,10 +336,18 @@ async function findSimilarDeals(fundId: string, companyProfile: any): Promise<an
     .eq('fund_id', fundId)
     .not('id', 'eq', companyProfile.current_deal_id || '');
 
-  // Implement similarity scoring based on industry, stage, size, etc.
+  // Import shared RAG utilities for strategy-driven similarity
+  const ragUtils = await import('../shared/rag-utils.ts');
+  
+  // Get fund strategy thresholds for better similarity scoring
+  const thresholds = await ragUtils.getStrategyThresholds(supabase, fundId);
+  
+  // Implement similarity scoring based on industry, stage, size, AND strategy alignment
   return deals?.filter(deal => {
     const similarity = calculateDealSimilarity(companyProfile, deal);
-    return similarity > 0.7; // 70% similarity threshold
+    const strategicAlignment = calculateStrategicSimilarity(companyProfile, deal, thresholds);
+    const overallSimilarity = (similarity * 0.6) + (strategicAlignment * 0.4);
+    return overallSimilarity > 0.7; // 70% similarity threshold with strategy weighting
   }) || [];
 }
 
@@ -432,6 +440,22 @@ function calculateDealSimilarity(profile1: any, profile2: any): number {
   });
 
   return score;
+}
+
+function calculateStrategicSimilarity(profile1: any, profile2: any, thresholds: any): number {
+  // Calculate similarity based on RAG scores and strategic alignment
+  const score1 = profile1.overall_score || 0;
+  const score2 = profile2.overall_score || 0;
+  
+  // Similar RAG categories indicate strategic similarity
+  const category1 = score1 >= thresholds.exciting ? 'exciting' : 
+                   score1 >= thresholds.promising ? 'promising' : 'needs_development';
+  const category2 = score2 >= thresholds.exciting ? 'exciting' : 
+                   score2 >= thresholds.promising ? 'promising' : 'needs_development';
+  
+  if (category1 === category2) return 1.0;
+  if (Math.abs(score1 - score2) <= 15) return 0.7; // Close scores
+  return Math.max(0, 1 - (Math.abs(score1 - score2) / 100)); // Distance-based similarity
 }
 
 function matchesPattern(data: any, pattern: any): boolean {

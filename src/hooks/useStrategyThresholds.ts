@@ -51,7 +51,10 @@ export function useStrategyThresholds() {
   }, [selectedFund?.id]);
 
   const getRAGCategory = (score?: number): { level: string; label: string; color: string } => {
-    if (!score) return { level: 'unknown', label: 'Unknown', color: 'bg-gray-100 text-gray-600' };
+    // CONSOLIDATED RAG CALCULATION - Frontend mirror of backend logic
+    if (!score || score === null || score === undefined) {
+      return { level: 'unknown', label: 'Unknown', color: 'bg-gray-100 text-gray-600' };
+    }
     
     if (score >= thresholds.exciting) {
       return { level: 'exciting', label: 'Exciting', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' };

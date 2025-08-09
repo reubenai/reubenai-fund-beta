@@ -563,7 +563,7 @@ async function generateComprehensiveAnalysis(
   const executiveSummary = await generateExecutiveSummary(dealData, engineResults, overallScore, strategyData, webResearchData);
   
   // Determine overall recommendation
-  const recommendation = determineRecommendation(overallScore, engineResults, strategyData);
+  const recommendation = await determineRecommendation(overallScore, engineResults, strategyData, dealData.fund_id);
   
   // Extract risk factors and next steps
   const riskFactors = extractRiskFactors(engineResults);
@@ -718,21 +718,28 @@ ${webResearchContext}Focus on the key investment thesis and overall attractivene
   }
 }
 
-function determineRecommendation(overallScore: number, engineResults: any, strategyData: any): string {
+async function determineRecommendation(overallScore: number, engineResults: any, strategyData: any, fundId: string): Promise<string> {
+  // Import shared RAG utility for consistent thresholds
+  const ragUtils = await import('../shared/rag-utils.ts');
+  
+  // Use consolidated RAG system for consistent recommendations
   const thresholds = strategyData ? {
     exciting: strategyData.exciting_threshold || 85,
     promising: strategyData.promising_threshold || 70,
     needs_development: strategyData.needs_development_threshold || 50
-  } : { exciting: 85, promising: 70, needs_development: 50 };
+  } : await ragUtils.getStrategyThresholds(supabase, fundId);
   
-  if (overallScore >= thresholds.exciting) {
-    return "STRONG RECOMMEND - Proceed to IC presentation";
-  } else if (overallScore >= thresholds.promising) {
-    return "QUALIFIED RECOMMEND - Conduct deeper due diligence";
-  } else if (overallScore >= thresholds.needs_development) {
-    return "MONITOR - Revisit when more data available";
-  } else {
-    return "PASS - Does not meet investment criteria";
+  const ragCategory = ragUtils.calculateRAGCategory(overallScore, thresholds);
+  
+  switch (ragCategory.level) {
+    case 'exciting':
+      return "STRONG RECOMMEND - Proceed to IC presentation";
+    case 'promising':
+      return "QUALIFIED RECOMMEND - Conduct deeper due diligence";
+    case 'needs_development':
+      return "MONITOR - Revisit when more data available";
+    default:
+      return "PASS - Does not meet investment criteria";
   }
 }
 
@@ -851,4 +858,74 @@ function extractValidationFlags(engineResults: any): any {
   });
   
   return flags;
+}
+
+// Helper functions for data sanitization and pattern extraction
+function generalizeIndustry(industry: string): string {
+  const generalMappings: { [key: string]: string } = {
+    'fintech': 'financial_technology',
+    'healthtech': 'healthcare_technology',
+    'edtech': 'education_technology',
+    'proptech': 'property_technology',
+    'biotech': 'biotechnology',
+    'saas': 'software_services',
+    'ai': 'artificial_intelligence',
+    'ml': 'machine_learning'
+  };
+  
+  return generalMappings[industry.toLowerCase()] || 'technology_general';
+}
+
+function generalizeStage(stage: string): string {
+  const stageMappings: { [key: string]: string } = {
+    'pre-seed': 'early_stage',
+    'seed': 'early_stage',
+    'series-a': 'growth_stage',
+    'series-b': 'growth_stage',
+    'series-c': 'later_stage'
+  };
+  
+  return stageMappings[stage.toLowerCase()] || 'unknown_stage';
+}
+
+function extractGeneralPatterns(engineResult: any): any {
+  if (!engineResult) return { pattern_strength: 'low', confidence: 0 };
+  
+  return {
+    pattern_strength: engineResult.score > 70 ? 'high' : engineResult.score > 50 ? 'medium' : 'low',
+    confidence: engineResult.confidence || 0,
+    validation_status: engineResult.validation_status || 'unvalidated'
+  };
+}
+
+function calculateEnginePerformance(engineResults: any): any {
+  const performance: any = {};
+  
+  Object.entries(engineResults).forEach(([engine, result]: [string, any]) => {
+    performance[engine] = {
+      completion_status: result ? 'completed' : 'failed',
+      confidence: result?.confidence || 0,
+      validation: result?.validation_status || 'unvalidated'
+    };
+  });
+  
+  return performance;
+}
+
+function extractDataQuality(engineResults: any): any {
+  let validatedEngines = 0;
+  let totalEngines = 0;
+  
+  Object.values(engineResults).forEach((result: any) => {
+    totalEngines++;
+    if (result?.validation_status === 'validated') {
+      validatedEngines++;
+    }
+  });
+  
+  return {
+    validation_rate: totalEngines > 0 ? (validatedEngines / totalEngines) * 100 : 0,
+    total_engines: totalEngines,
+    validated_engines: validatedEngines
+  };
 }

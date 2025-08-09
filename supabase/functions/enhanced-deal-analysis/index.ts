@@ -186,24 +186,18 @@ serve(async (req) => {
       };
     }
 
+    // Import shared RAG utility for consistent calculation
+    const ragUtils = await import('../shared/rag-utils.ts');
+    
     // Use overall score from orchestrator if available, otherwise calculate manually
     let overallScore;
     let ragStatus = 'needs_development';
+    let ragConfidence = 50;
+    let ragReasoning = '';
     
     if (orchestratorResult?.analysis?.overall_score) {
       // Use the orchestrator's calculated score for consistency
       overallScore = orchestratorResult.analysis.overall_score;
-      
-      // Determine RAG status based on fund strategy thresholds or defaults
-      const strategy = fund?.investment_strategies?.[0];
-      const excitingThreshold = strategy?.exciting_threshold || 85;
-      const promisingThreshold = strategy?.promising_threshold || 70;
-      
-      if (overallScore >= excitingThreshold) {
-        ragStatus = 'exciting';
-      } else if (overallScore >= promisingThreshold) {
-        ragStatus = 'promising';
-      }
     } else {
       // Fallback calculation if orchestrator didn't provide overall score
       const validScores = [
@@ -215,17 +209,19 @@ serve(async (req) => {
       ].filter(score => score !== null && score !== undefined);
       
       overallScore = validScores.length > 0 ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length) : null;
+    }
 
-      // Determine RAG status based on fund strategy thresholds or defaults
-      const strategy = fund?.investment_strategies?.[0];
-      const excitingThreshold = strategy?.exciting_threshold || 85;
-      const promisingThreshold = strategy?.promising_threshold || 70;
+    // CONSOLIDATED RAG CALCULATION - Single Source of Truth
+    if (overallScore && deal.fund_id) {
+      const thresholds = await ragUtils.getStrategyThresholds(supabase, deal.fund_id);
+      ragStatus = ragUtils.calculateRAGStatus(overallScore, thresholds);
+      ragConfidence = ragUtils.calculateConfidenceScore(analysisResult, deal, 75);
+      ragReasoning = ragUtils.generateRAGReasoning(overallScore, thresholds, [
+        'AI analysis complete',
+        'Strategy alignment verified'
+      ]);
       
-      if (overallScore >= excitingThreshold) {
-        ragStatus = 'exciting';
-      } else if (overallScore >= promisingThreshold) {
-        ragStatus = 'promising';
-      }
+      console.log(`🎯 RAG Calculation: Score ${overallScore} -> ${ragStatus} (confidence: ${ragConfidence}%)`);
     }
 
     // Only store analysis if orchestrator failed and we used fallback analysis
@@ -281,12 +277,19 @@ serve(async (req) => {
         if (insertError) throw insertError;
       }
 
-      // Update deal with overall score and RAG status
+      // Update deal with overall score, RAG status, and reasoning
       const { error: dealUpdateError } = await supabase
         .from('deals')
         .update({
           overall_score: overallScore,
-          rag_status: ragStatus
+          rag_status: ragStatus,
+          rag_confidence: ragConfidence,
+          rag_reasoning: { 
+            text: ragReasoning,
+            factors: ['AI analysis', 'Strategy alignment'],
+            confidence: ragConfidence,
+            calculated_at: new Date().toISOString()
+          }
         })
         .eq('id', dealId);
 
