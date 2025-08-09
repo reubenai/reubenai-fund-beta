@@ -1,5 +1,6 @@
 import React from 'react';
 import { KanbanBoard } from '@/components/pipeline/KanbanBoard';
+import { AnalysisQueueMonitor } from '@/components/pipeline/AnalysisQueueMonitor';
 import { useFund } from '@/contexts/FundContext';
 import { useSearchParams } from 'react-router-dom';
 // Breadcrumbs removed - using Layout breadcrumbs
@@ -42,12 +43,10 @@ export default function Pipeline() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
-      
-      
+    <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
       {/* Debug info for super admin users */}
       {isSuperAdmin && (
-        <div className="mb-4 p-4 bg-muted rounded-lg">
+        <div className="p-4 bg-muted rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <Badge variant="secondary">Super Admin Access</Badge>
             <span className="text-sm text-muted-foreground">
@@ -59,6 +58,9 @@ export default function Pipeline() {
           </div>
         </div>
       )}
+      
+      {/* Analysis Queue Monitor */}
+      <AnalysisQueueMonitor />
       
       <KanbanBoard fundId={selectedFund.id} />
     </div>

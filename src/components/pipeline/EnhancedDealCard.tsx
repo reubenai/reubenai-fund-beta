@@ -28,7 +28,7 @@ type Deal = BaseDeal & {
 };
 
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
-import { useAnalysisQueue } from '@/hooks/useAnalysisQueue';
+import { useEnhancedAnalysisQueue } from '@/hooks/useEnhancedAnalysisQueue';
 import { useFund } from '@/contexts/FundContext';
 import { DealCardHeader } from './DealCardHeader';
 import { DealCardMetrics } from './DealCardMetrics';
@@ -76,7 +76,7 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
   viewDensity 
 }) => {
   const { getRAGCategory } = useStrategyThresholds();
-  const { forceAnalysisNow, queueDealAnalysis } = useAnalysisQueue();
+  const { forceAnalysisNow, queueDealAnalysis } = useEnhancedAnalysisQueue();
   const [isLoading, setIsLoading] = useState(false);
   
   const formatAmount = (amount?: number) => {
