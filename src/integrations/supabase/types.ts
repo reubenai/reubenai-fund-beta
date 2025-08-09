@@ -381,6 +381,7 @@ export type Database = {
           fund_id: string
           id: string
           max_attempts: number
+          max_concurrent_override: number | null
           metadata: Json | null
           priority: string
           scheduled_for: string
@@ -398,6 +399,7 @@ export type Database = {
           fund_id: string
           id?: string
           max_attempts?: number
+          max_concurrent_override?: number | null
           metadata?: Json | null
           priority?: string
           scheduled_for?: string
@@ -415,6 +417,7 @@ export type Database = {
           fund_id?: string
           id?: string
           max_attempts?: number
+          max_concurrent_override?: number | null
           metadata?: Json | null
           priority?: string
           scheduled_for?: string
@@ -2650,6 +2653,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      queue_health_metrics: {
+        Row: {
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_value: number
+          recorded_at: string
+        }
+        Insert: {
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_value: number
+          recorded_at?: string
+        }
+        Update: {
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_value?: number
+          recorded_at?: string
+        }
+        Relationships: []
       }
       sourced_companies: {
         Row: {

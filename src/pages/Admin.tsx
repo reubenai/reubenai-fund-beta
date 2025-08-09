@@ -35,6 +35,7 @@ import { ForceAnalysisProcessor } from '@/components/admin/ForceAnalysisProcesso
 import { ComprehensiveFixVerifier } from '@/components/admin/ComprehensiveFixVerifier';
 import { APIConfigurationPanel } from '@/components/admin/APIConfigurationPanel';
 import { DealDataRepairTool } from '@/components/admin/DealDataRepairTool';
+import { PlatformArchitectureDiagram } from '@/components/admin/PlatformArchitectureDiagram';
 
 
 interface Organization {
