@@ -147,6 +147,11 @@ export default function Help() {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // Scroll to top when component loads
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Pre-populate email when user loads
   React.useEffect(() => {
     if (user?.email && !supportForm.email) {

@@ -164,7 +164,7 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
         canInviteUsers: true,
         canManageUserRoles: true,
         canAccessAdmin: true,
-        canManageOrganizations: false,
+        canManageOrganizations: true, // FIXED: Admins can manage organizations
         canViewAnalytics: true,
         canEditStages: false,
         canDeleteStages: false,
