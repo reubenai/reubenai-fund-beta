@@ -52,8 +52,10 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
   const { toast } = useToast();
 
   const handleRunComprehensiveAnalysis = async () => {
+    console.log('🔄 Triggering comprehensive analysis for deal:', deal.id);
     try {
       const result = await runOrchestrator(deal.id);
+      console.log('Orchestrator result:', result);
       if (result.data) {
         toast({
           title: "Analysis Complete",
@@ -61,6 +63,7 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
         });
         onDealUpdated?.();
       } else {
+        console.error('Analysis failed - orchestrator returned:', result);
         toast({
           title: "Analysis Failed",
           description: result.error || "Analysis could not be completed",
@@ -68,22 +71,41 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
         });
       }
     } catch (error) {
-      console.error('Analysis failed:', error);
+      console.error('Analysis failed with error:', error);
+      toast({
+        title: "Analysis Error", 
+        description: "An error occurred during analysis. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
   const handleEnrichCompany = async () => {
+    console.log('🔍 Triggering company enrichment for:', deal.company_name);
     try {
       const result = await enrichCompany(deal.id, deal.company_name, deal.website);
+      console.log('Enrichment result:', result);
       if (result.data) {
         toast({
           title: "Company Enriched",
           description: "Company data has been enhanced with external sources",
         });
         onDealUpdated?.();
+      } else {
+        console.error('Enrichment failed - no data returned:', result);
+        toast({
+          title: "Enrichment Warning",
+          description: result.error || "Company enrichment completed with limited data",
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      console.error('Enrichment failed:', error);
+      console.error('Enrichment failed with error:', error);
+      toast({
+        title: "Enrichment Failed",
+        description: "Unable to enrich company data. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
