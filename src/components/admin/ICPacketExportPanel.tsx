@@ -20,19 +20,7 @@ import {
 interface ICPacketExport {
   id: string;
   deal_id: string;
-  packet_data: {
-    deal_summary: {
-      company_name: string;
-      industry: string;
-      overall_score: number;
-      rag_status: string;
-    };
-    metadata: {
-      exported_at: string;
-      packet_version: string;
-      compliance_status: string;
-    };
-  };
+  packet_data: any; // Using any to handle the dynamic JSON structure from database
   export_metadata: {
     exported_by_name?: string;
     file_size_kb?: number;
@@ -105,7 +93,7 @@ export function ICPacketExportPanel() {
         .from('ic_packet_exports')
         .insert({
           deal_id: dealId,
-          fund_id: packetData.deal_summary?.fund_id || 'unknown',
+          fund_id: (packetData as any)?.deal_summary?.fund_id || 'unknown',
           packet_data: packetData,
           exported_by: user?.id || 'system',
           export_metadata: {
@@ -120,7 +108,7 @@ export function ICPacketExportPanel() {
       if (exportError) throw exportError;
 
       // Create downloadable file
-      const filename = `ic-packet-${packetData.deal_summary.company_name.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.json`;
+      const filename = `ic-packet-${(packetData as any)?.deal_summary?.company_name?.toLowerCase()?.replace(/\s+/g, '-') || 'unknown'}-${new Date().toISOString().split('T')[0]}.json`;
       
       const blob = new Blob([JSON.stringify(packetData, null, 2)], { 
         type: 'application/json' 
@@ -135,7 +123,7 @@ export function ICPacketExportPanel() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast.success(`IC packet exported for ${packetData.deal_summary.company_name}`);
+      toast.success(`IC packet exported for ${(packetData as any)?.deal_summary?.company_name || 'deal'}`);
       setDealId('');
       fetchRecentExports();
     } catch (error: any) {
