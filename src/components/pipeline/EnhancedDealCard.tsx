@@ -8,7 +8,7 @@ import {
   Building2, 
   DollarSign, 
   MapPin, 
-  Calendar, 
+  Globe, 
   MoreVertical,
   CheckCircle,
   Brain,
@@ -205,13 +205,6 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
                   <span className="text-xs font-medium">{formatAmount(deal.deal_size)}</span>
                 </div>
               )}
-              
-              {deal.location && (
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground truncate">{deal.location}</span>
-                </div>
-              )}
             </div>
 
             {/* Enhanced Analysis Indicators for detailed view */}
@@ -224,17 +217,26 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
               </div>
             )}
 
-            {/* Footer */}
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                <span>{formatDate(deal.updated_at)}</span>
-              </div>
+            {/* Footer with location, website, and founder */}
+            <div className="space-y-1 text-xs text-muted-foreground">
+              {deal.location && (
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  <span className="truncate">{deal.location}</span>
+                </div>
+              )}
+              
+              {deal.website && (
+                <div className="flex items-center gap-1">
+                  <Globe className="w-3 h-3" />
+                  <span className="truncate">{deal.website}</span>
+                </div>
+              )}
               
               {deal.founder && (
                 <div className="flex items-center gap-1">
                   <Building2 className="w-3 h-3" />
-                  <span className="truncate max-w-20">{deal.founder}</span>
+                  <span className="truncate">{deal.founder}</span>
                 </div>
               )}
             </div>
