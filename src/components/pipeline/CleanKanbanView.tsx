@@ -27,16 +27,17 @@ export const CleanKanbanView: React.FC<CleanKanbanViewProps> = ({
   onBatchUpload,
   fundName,
 }) => {
-  // Show professional empty state only if no stages
+  // Show pipeline stages immediately when available, only show empty state if no stages exist
   const totalDeals = Object.values(deals).reduce((sum, stageDeals) => sum + stageDeals.length, 0);
   
   if (stages.length === 0) {
     return (
-      <ProfessionalEmptyState 
-        fundName={fundName}
-        onAddDeal={() => onAddDeal?.()}
-        onBatchUpload={onBatchUpload}
-      />
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-muted-foreground mb-2">Loading Pipeline Stages...</h3>
+          <p className="text-sm text-muted-foreground">Setting up your deal pipeline</p>
+        </div>
+      </div>
     );
   }
 

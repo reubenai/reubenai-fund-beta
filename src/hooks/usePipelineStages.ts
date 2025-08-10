@@ -11,13 +11,14 @@ export const usePipelineStages = (fundId?: string) => {
   const { toast } = useToast();
 
   const fetchStages = useCallback(async () => {
-    if (!fundId) {
-      console.log('📊 [usePipelineStages] No fundId provided');
-      return;
-    }
-
     try {
       setLoading(true);
+      
+      if (!fundId) {
+        console.log('📊 [usePipelineStages] No fundId provided');
+        setStages([]);
+        return;
+      }
       console.log('📊 [usePipelineStages] Fetching stages for fundId:', fundId);
       
       const { data, error } = await supabase
