@@ -175,18 +175,28 @@ export default function Admin() {
         toast.error('Failed to fetch funds');
       }
 
-      // Fetch deals count
-      const { count: dealsCount } = await supabase
-        .from('deals')
-        .select('*', { count: 'exact', head: true });
+      // Use the new dashboard_stats view for consistent counts
+      const { data: dashboardData, error: dashboardError } = await supabase
+        .from('dashboard_stats')
+        .select('*')
+        .single();
+      
+      if (dashboardError) {
+        console.warn('Dashboard stats fetch failed:', dashboardError);
+      }
 
-      // Fetch recent activity count (last 24 hours)
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const { count: recentActivityCount } = await supabase
-        .from('activity_events')
-        .select('*', { count: 'exact', head: true })
-        .gte('occurred_at', yesterday.toISOString());
+      // Get recent activities using the safe function
+      const { data: recentActivities, error: activitiesError } = await supabase
+        .rpc('list_platform_activities', { p_limit: 100 });
+      
+      if (activitiesError) {
+        console.warn('Activities fetch failed:', activitiesError);
+      }
+
+      const activitiesArray = Array.isArray(recentActivities) ? recentActivities : [];
+      const last24hActivities = activitiesArray.filter((activity: any) => 
+        new Date(activity.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)
+      );
 
       setOrganizations(orgsData || []);
       setProfiles(profilesData || []);
@@ -197,11 +207,11 @@ export default function Admin() {
       }));
       setFunds(transformedFunds);
       setStats({
-        totalOrgs: orgsData?.length || 0,
-        totalUsers: profilesData?.length || 0,
-        totalFunds: fundsData?.length || 0,
-        activeDeals: dealsCount || 0,
-        recentActivity: recentActivityCount || 0,
+        totalOrgs: dashboardData?.orgs_active || orgsData?.length || 0,
+        totalUsers: dashboardData?.users_total || profilesData?.length || 0,
+        totalFunds: dashboardData?.funds_active || fundsData?.length || 0,
+        activeDeals: dashboardData?.deals_pipeline || 0,
+        recentActivity: last24hActivities.length,
         pendingIssues: 0, // Implement pending issues logic
       });
     } catch (error) {
