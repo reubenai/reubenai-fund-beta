@@ -53,7 +53,7 @@ export function Breadcrumbs() {
   if (breadcrumbs.length <= 1) return null;
 
   return (
-    <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6 mt-6">
+    <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
       {breadcrumbs.map((crumb, index) => (
         <div key={index} className="flex items-center space-x-2">
           {index === 0 && <Home className="h-4 w-4" />}
