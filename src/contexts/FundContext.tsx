@@ -34,8 +34,15 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Only fetch funds when user is available and role loading is complete
+    // For non-super admins, also ensure organizationId is available
     if (user && !roleLoading) {
-      fetchFunds();
+      if (isSuperAdmin || organizationId) {
+        fetchFunds();
+      } else {
+        console.log('⏳ [FundContext] Waiting for organizationId to be available for non-super admin user');
+        setLoading(false); // Stop loading since we're waiting for organizationId
+      }
     }
   }, [user, roleLoading, isSuperAdmin, organizationId]);
 
@@ -83,6 +90,13 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error = response.error;
       } else {
         // Regular users only see funds from their organization
+        if (!organizationId) {
+          console.error('❌ Organization ID is required for non-super admin users');
+          setFunds([]);
+          setSelectedFund(null);
+          return;
+        }
+        
         console.log('  - Fetching organization-specific funds for organizationId:', organizationId);
         const response = await supabase
           .from('funds')
