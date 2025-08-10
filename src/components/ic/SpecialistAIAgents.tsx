@@ -87,16 +87,63 @@ export function SpecialistAIAgents({ dealId, fundId, memoId, onResultsUpdate }: 
           : result
       ));
 
-      // Simulate agent execution with edge function call
+      // Map specialist agents to existing engines instead of creating new ones
       const startTime = Date.now();
+      let engineName = '';
+      let engineBody = {};
       
-      const { data, error } = await supabase.functions.invoke('ic-specialist-agent', {
-        body: {
-          agentId,
-          dealId,
-          fundId,
-          memoId
-        }
+      // Map each specialist agent to corresponding existing engine
+      switch (agentId) {
+        case 'market-positioning':
+          engineName = 'market-intelligence-engine';
+          engineBody = { 
+            dealId, 
+            enhancedMode: true, 
+            competitiveDepth: 'deep',
+            marketSizingAccuracy: 'high'
+          };
+          break;
+        case 'competitive-intelligence':
+          engineName = 'market-intelligence-engine';
+          engineBody = { 
+            dealId, 
+            focus: 'competitive_analysis',
+            enhancedMode: true
+          };
+          break;
+        case 'financial-sensitivity':
+          engineName = 'financial-engine';
+          engineBody = { 
+            dealId,
+            projectionYears: 5,
+            sensitivityAnalysis: true,
+            riskAdjustedModeling: true
+          };
+          break;
+        case 'team-risk-profile':
+          engineName = 'management-assessment-engine';
+          engineBody = { 
+            dealId,
+            deepDive: true,
+            leadershipAssessment: true,
+            riskProfiling: true
+          };
+          break;
+        case 'exit-scenarios':
+          engineName = 'exit-strategy-engine';
+          engineBody = { 
+            dealId,
+            probabilityWeighting: true,
+            returnProjections: true,
+            comparableAnalysis: true
+          };
+          break;
+        default:
+          throw new Error(`Unknown agent ID: ${agentId}`);
+      }
+      
+      const { data, error } = await supabase.functions.invoke(engineName, {
+        body: engineBody
       });
 
       if (error) throw error;

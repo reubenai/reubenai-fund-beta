@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, FileText, Vote, Users, Plus, Clock, CheckCircle, XCircle, Clock3, Send, Eye, Edit, Trash2 } from 'lucide-react';
+import { Calendar, FileText, Vote, Users, Plus, Clock, CheckCircle, XCircle, Clock3, Send, Eye, Edit, Trash2, RefreshCw } from 'lucide-react';
 import { useFund } from '@/contexts/FundContext';
 import { ICMemoModal } from '@/components/ic/ICMemoModal';
 import { VotingModal } from '@/components/ic/VotingModal';
@@ -24,6 +24,12 @@ import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 import { DataValidator, NetworkHandler } from '@/utils/edgeCaseHandler';
 import { performanceMonitor } from '@/utils/performanceMonitor';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useICWorkflow } from '@/hooks/useICWorkflow';
+import { useControlledAnalysis } from '@/hooks/useControlledAnalysis';
+import { SpecialistAIAgents } from '@/components/ic/SpecialistAIAgents';
+import { EnhancedWorkflowManager } from '@/components/ic/EnhancedWorkflowManager';
+import { WorkflowStatusBadge } from '@/components/ic/WorkflowStatusBadge';
+import { BulkAnalysisControls } from '@/components/ic/BulkAnalysisControls';
 // Breadcrumbs removed - using Layout breadcrumbs
 
 interface Deal {
@@ -43,6 +49,8 @@ export default function EnhancedICPage() {
   const { toast } = useToast();
   const { getRAGCategory } = useStrategyThresholds();
   const { canCreateICMemos, canManageICMembers, canVoteOnDeals, canReviewMemos } = usePermissions();
+  const { submitMemoForReview, approveMemo, rejectMemo, scheduleForIC, startVoting, recordDecision } = useICWorkflow();
+  const { triggerAnalysis, blockAnalysis, getAnalysisHistory } = useControlledAnalysis();
   const [activeTab, setActiveTab] = useState('pipeline');
   const [showMemoModal, setShowMemoModal] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
@@ -523,6 +531,22 @@ export default function EnhancedICPage() {
             </div>
           </div>
 
+          {/* Bulk Analysis Controls */}
+          <BulkAnalysisControls 
+            deals={deals}
+            fundId={selectedFund.id}
+            onRefresh={fetchICData}
+          />
+
+          {/* Specialist AI Agents */}
+          <SpecialistAIAgents
+            dealId={selectedDealForMemo?.id || ''}
+            fundId={selectedFund.id}
+            onResultsUpdate={(results) => {
+              console.log('Specialist agent results updated:', results);
+            }}
+          />
+
           <div className="space-y-4">
             {deals.length > 0 ? (
               deals.map((deal) => {
@@ -558,6 +582,24 @@ export default function EnhancedICPage() {
                             </div>
                            </div>
                            <div className="flex gap-2">
+                             <Button 
+                               variant="outline"
+                               size="sm"
+                               onClick={async () => {
+                                  await triggerAnalysis({
+                                    type: 'manual_trigger',
+                                    dealId: deal.id,
+                                    metadata: { triggeredFrom: 'ic_page' }
+                                  });
+                                 toast({
+                                   title: "Analysis Triggered",
+                                   description: "Deal analysis has been queued for processing"
+                                 });
+                               }}
+                             >
+                               <RefreshCw className="h-4 w-4 mr-2" />
+                               Re-Analyze
+                             </Button>
                              <Button 
                                size="sm"
                                onClick={() => {
