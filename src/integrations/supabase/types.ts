@@ -660,6 +660,7 @@ export type Database = {
           market_notes: string | null
           market_score: number | null
           model_executions: Json | null
+          organization_id: string | null
           overall_score: number | null
           product_notes: string | null
           product_score: number | null
@@ -691,6 +692,7 @@ export type Database = {
           market_notes?: string | null
           market_score?: number | null
           model_executions?: Json | null
+          organization_id?: string | null
           overall_score?: number | null
           product_notes?: string | null
           product_score?: number | null
@@ -722,6 +724,7 @@ export type Database = {
           market_notes?: string | null
           market_score?: number | null
           model_executions?: Json | null
+          organization_id?: string | null
           overall_score?: number | null
           product_notes?: string | null
           product_score?: number | null
@@ -1020,6 +1023,7 @@ export type Database = {
           linkedin_url: string | null
           location: string | null
           next_action: string | null
+          organization_id: string | null
           overall_score: number | null
           primary_source: string | null
           priority: string | null
@@ -1057,6 +1061,7 @@ export type Database = {
           linkedin_url?: string | null
           location?: string | null
           next_action?: string | null
+          organization_id?: string | null
           overall_score?: number | null
           primary_source?: string | null
           priority?: string | null
@@ -1094,6 +1099,7 @@ export type Database = {
           linkedin_url?: string | null
           location?: string | null
           next_action?: string | null
+          organization_id?: string | null
           overall_score?: number | null
           primary_source?: string | null
           priority?: string | null
@@ -3359,18 +3365,16 @@ export type Database = {
       }
       rls_gaps: {
         Row: {
-          schema: unknown | null
+          schema_name: unknown | null
           table_name: unknown | null
         }
         Relationships: []
       }
       rls_smells: {
         Row: {
-          policyname: unknown | null
-          qual: string | null
-          schemaname: unknown | null
-          tablename: unknown | null
-          with_check: string | null
+          policy_name: unknown | null
+          schema_name: unknown | null
+          table_name: unknown | null
         }
         Relationships: []
       }
@@ -3428,6 +3432,16 @@ export type Database = {
           organization_id: string
           is_deleted: boolean
           created_at: string
+          updated_at: string
+        }[]
+      }
+      admin_list_all_orgs: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          domain: string | null
+          id: string
+          name: string
           updated_at: string
         }[]
       }
@@ -3743,6 +3757,7 @@ export type Database = {
         | "approved"
         | "rejected"
         | "invested"
+        | "archived"
       document_analysis_status:
         | "pending"
         | "processing"
@@ -3921,6 +3936,7 @@ export const Constants = {
         "approved",
         "rejected",
         "invested",
+        "archived",
       ],
       document_analysis_status: [
         "pending",
