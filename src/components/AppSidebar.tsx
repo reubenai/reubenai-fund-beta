@@ -1,6 +1,7 @@
 import { Target, TrendingUp, Users, Brain, BarChart3, Briefcase, PieChart, Settings, Plug, HelpCircle, BookOpen, LogOut, Building2, Shield } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -55,23 +56,28 @@ export function AppSidebar() {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { funds, selectedFund, setSelectedFund } = useFund();
+  const { profile, isSuperAdmin, role } = useUserRole();
   const currentPath = location.pathname;
-  const [profile, setProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     if (user) {
-      fetchUserData();
+      fetchUserProfile();
     }
   }, [user]);
 
-  const fetchUserData = async () => {
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', user?.id)
-      .single();
-    
-    setProfile(profileData);
+  const fetchUserProfile = async () => {
+    try {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+      
+      setUserProfile(profileData);
+    } catch (error) {
+      console.error('Error fetching user profile in AppSidebar:', error);
+    }
   };
 
   const isActive = (path: string) => currentPath === path;
@@ -267,7 +273,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
               {/* Show Admin Dashboard only for super_admin */}
-              {profile?.role === 'super_admin' && (
+              {(isSuperAdmin || role === 'super_admin') && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink 
@@ -324,17 +330,18 @@ export function AppSidebar() {
         <SidebarFooter className="p-4 border-t border-border/50 mt-auto">
           <div className="flex items-center space-x-3 mb-4">
             <Avatar className="h-9 w-9 ring-2 ring-border/50">
-              <AvatarImage src={profile?.avatar_url} />
+              <AvatarImage src={userProfile?.avatar_url} />
               <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                {profile?.first_name?.[0]}{profile?.last_name?.[0]}
+                {user?.user_metadata?.first_name?.[0] || userProfile?.first_name?.[0] || user?.email?.[0]?.toUpperCase()}
+                {user?.user_metadata?.last_name?.[0] || userProfile?.last_name?.[0]}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground truncate">
-                {profile?.first_name} {profile?.last_name}
+                {user?.user_metadata?.first_name || userProfile?.first_name} {user?.user_metadata?.last_name || userProfile?.last_name || user?.email?.split('@')[0]}
               </p>
               <p className="text-xs text-muted-foreground truncate font-medium">
-                {profile?.role || 'User'}
+                {isSuperAdmin ? 'Super Admin' : (role || 'User')}
               </p>
             </div>
           </div>

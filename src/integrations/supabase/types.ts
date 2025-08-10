@@ -3429,11 +3429,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_jwt_org_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       is_admin_by_email: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
       is_reuben_email: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_super_admin_by_email: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
