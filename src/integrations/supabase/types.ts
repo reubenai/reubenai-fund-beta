@@ -3339,6 +3339,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_set_user_role: {
+        Args: {
+          p_user_email: string
+          p_role: Database["public"]["Enums"]["user_role"]
+          p_org_id?: string
+        }
+        Returns: boolean
+      }
       analyze_decision_patterns: {
         Args: { fund_id_param: string }
         Returns: Json
@@ -3346,6 +3354,22 @@ export type Database = {
       archive_old_activities: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      auth_email: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      auth_is_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      auth_org_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      auth_user_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       calculate_overall_score: {
         Args: {
@@ -3388,6 +3412,10 @@ export type Database = {
       create_default_pipeline_stages: {
         Args: { fund_id_param: string }
         Returns: undefined
+      }
+      emergency_disable_rls: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       generate_ic_packet: {
         Args: { deal_id_param: string }
