@@ -177,8 +177,13 @@ export default function Admin() {
         toast.error('Failed to fetch funds');
       }
 
-      // Get real-time system health to sync with SystemHealthStatus
+      // Get real-time system health, cost data, and agent data
       let systemStatus: 'healthy' | 'degraded' | 'critical' = 'healthy';
+      let dailyCost = 0;
+      let activeAgents = 0;
+      let totalAgents = 0;
+      let pendingIssues = 0;
+      
       try {
         // Test database connection
         const dbStart = Date.now();
@@ -187,11 +192,56 @@ export default function Admin() {
         
         if (dbError) {
           systemStatus = 'critical';
+          pendingIssues++;
         } else if (dbResponseTime > 1000) {
           systemStatus = 'degraded';
+          pendingIssues++;
         }
+        
+        // Get daily cost from analysis_cost_tracking
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const { data: costData } = await supabase
+          .from('analysis_cost_tracking')
+          .select('total_cost')
+          .gte('created_at', today.toISOString());
+        
+        if (costData) {
+          dailyCost = costData.reduce((sum, item) => sum + (item.total_cost || 0), 0);
+        }
+        
+        // Get agent status from ops_control_switches
+        const { data: agentData } = await supabase
+          .from('ops_control_switches')
+          .select('agent_name, enabled, config');
+        
+        if (agentData) {
+          totalAgents = agentData.length;
+          activeAgents = agentData.filter(agent => agent.enabled).length;
+          
+          // Count degraded agents as pending issues
+          const degradedAgents = agentData.filter(agent => {
+            if (!agent.enabled) return false;
+            const config = agent.config as any;
+            return config && config.degradation_triggered === true;
+          });
+          pendingIssues += degradedAgents.length;
+        }
+        
+        // Count failed analysis queue items as pending issues
+        const { data: failedAnalyses } = await supabase
+          .from('analysis_queue')
+          .select('id')
+          .eq('status', 'failed')
+          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+        
+        if (failedAnalyses) {
+          pendingIssues += failedAnalyses.length;
+        }
+        
       } catch (err) {
         systemStatus = 'critical';
+        pendingIssues++;
       }
 
       // Use the new dashboard_stats view for consistent counts
@@ -231,11 +281,11 @@ export default function Admin() {
         totalFunds: dashboardData?.funds_active || fundsData?.length || 0,
         activeDeals: dashboardData?.deals_pipeline || 0,
         recentActivity: last24hActivities.length,
-        pendingIssues: 0, // Implement pending issues logic
-        systemStatus, // Use the real-time status
-        dailyCost: 0,
-        activeAgents: 0,
-        totalAgents: 0
+        pendingIssues,
+        systemStatus,
+        dailyCost,
+        activeAgents,
+        totalAgents
       });
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -804,10 +854,6 @@ export default function Admin() {
                 <Database className="h-4 w-4 mr-2" />
                 Architecture
               </TabsTrigger>
-              <TabsTrigger value="phase7" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <Settings className="h-4 w-4 mr-2" />
-                Phase 7
-              </TabsTrigger>
             </TabsList>
 
         <TabsContent value="organizations" className="space-y-6">
@@ -905,86 +951,6 @@ export default function Admin() {
               <ComprehensiveArchitectureDiagram />
             </TabsContent>
 
-            <TabsContent value="phase7" className="space-y-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight">Phase 7: Multi-Tenant Enforcement & Verification</h2>
-                  <p className="text-muted-foreground">
-                    Tenant isolation audit, cross-org analytics, and onboarding tools.
-                  </p>
-                </div>
-                <OrganizationOnboarding />
-              </div>
-
-              {/* 7.1 Critical Admin Access Status */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">7.1 Critical Admin Access & Context</h3>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <SystemHealthStatus />
-                  <JWTClaimsDebugger />
-                </div>
-              </div>
-
-
-              {/* 7.3 Deal Analysis Pre-Check */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">7.3 Deal Analysis Pre-Check</h3>
-                <DealAnalysisPreCheck />
-              </div>
-
-              {/* Fund Context Status */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Fund Context Hand-off Status</h3>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Available Funds</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{contextFunds.length}</div>
-                      <p className="text-xs text-muted-foreground">
-                        {isSuperAdmin ? 'All funds visible' : 'Organization funds only'}
-                      </p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Selected Fund</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-sm font-bold">
-                        {selectedFund?.name || 'None Selected'}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedFund?.organization?.name || 'No organization'}
-                      </p>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Deal Analysis Readiness</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-2">
-                        {selectedFund ? (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-500" />
-                        )}
-                        <span className="text-sm">
-                          {selectedFund ? 'Ready for Analysis' : 'No Fund Context'}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {selectedFund ? 'fund_id available for deal endpoints' : 'Must select fund before deal ingestion'}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </TabsContent>
           </Tabs>
         </div>
         
