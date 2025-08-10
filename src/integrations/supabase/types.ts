@@ -747,6 +747,54 @@ export type Database = {
           },
         ]
       }
+      deal_analysis_catalysts: {
+        Row: {
+          analysis_queued: boolean | null
+          catalyst_type: string
+          deal_id: string
+          id: string
+          metadata: Json | null
+          queue_id: string | null
+          triggered_at: string
+          triggered_by: string
+        }
+        Insert: {
+          analysis_queued?: boolean | null
+          catalyst_type: string
+          deal_id: string
+          id?: string
+          metadata?: Json | null
+          queue_id?: string | null
+          triggered_at?: string
+          triggered_by: string
+        }
+        Update: {
+          analysis_queued?: boolean | null
+          catalyst_type?: string
+          deal_id?: string
+          id?: string
+          metadata?: Json | null
+          queue_id?: string | null
+          triggered_at?: string
+          triggered_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_analysis_catalysts_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_analysis_catalysts_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "analysis_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_analysis_sources: {
         Row: {
           confidence_score: number | null
@@ -1002,6 +1050,8 @@ export type Database = {
       }
       deals: {
         Row: {
+          analysis_blocked_until: string | null
+          analysis_failure_count: number | null
           analysis_queue_status: string | null
           auto_analysis_enabled: boolean | null
           business_model: string | null
@@ -1015,11 +1065,13 @@ export type Database = {
           description: string | null
           employee_count: number | null
           enhanced_analysis: Json | null
+          first_analysis_completed: boolean | null
           founder: string | null
           fund_id: string
           id: string
           industry: string | null
           last_analysis_trigger: string | null
+          last_analysis_trigger_reason: string | null
           linkedin_url: string | null
           location: string | null
           next_action: string | null
@@ -1040,6 +1092,8 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          analysis_blocked_until?: string | null
+          analysis_failure_count?: number | null
           analysis_queue_status?: string | null
           auto_analysis_enabled?: boolean | null
           business_model?: string | null
@@ -1053,11 +1107,13 @@ export type Database = {
           description?: string | null
           employee_count?: number | null
           enhanced_analysis?: Json | null
+          first_analysis_completed?: boolean | null
           founder?: string | null
           fund_id: string
           id?: string
           industry?: string | null
           last_analysis_trigger?: string | null
+          last_analysis_trigger_reason?: string | null
           linkedin_url?: string | null
           location?: string | null
           next_action?: string | null
@@ -1078,6 +1134,8 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          analysis_blocked_until?: string | null
+          analysis_failure_count?: number | null
           analysis_queue_status?: string | null
           auto_analysis_enabled?: boolean | null
           business_model?: string | null
@@ -1091,11 +1149,13 @@ export type Database = {
           description?: string | null
           employee_count?: number | null
           enhanced_analysis?: Json | null
+          first_analysis_completed?: boolean | null
           founder?: string | null
           fund_id?: string
           id?: string
           industry?: string | null
           last_analysis_trigger?: string | null
+          last_analysis_trigger_reason?: string | null
           linkedin_url?: string | null
           location?: string | null
           next_action?: string | null
@@ -2040,6 +2100,50 @@ export type Database = {
         }
         Relationships: []
       }
+      ic_memo_workflow_audit: {
+        Row: {
+          action_at: string
+          action_by: string
+          from_state: string | null
+          id: string
+          is_override: boolean | null
+          memo_id: string
+          metadata: Json | null
+          reason: string | null
+          to_state: string
+        }
+        Insert: {
+          action_at?: string
+          action_by: string
+          from_state?: string | null
+          id?: string
+          is_override?: boolean | null
+          memo_id: string
+          metadata?: Json | null
+          reason?: string | null
+          to_state: string
+        }
+        Update: {
+          action_at?: string
+          action_by?: string
+          from_state?: string | null
+          id?: string
+          is_override?: boolean | null
+          memo_id?: string
+          metadata?: Json | null
+          reason?: string | null
+          to_state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ic_memo_workflow_audit_memo_id_fkey"
+            columns: ["memo_id"]
+            isOneToOne: false
+            referencedRelation: "ic_memos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ic_memos: {
         Row: {
           approved_at: string | null
@@ -2058,18 +2162,28 @@ export type Database = {
           is_published: boolean | null
           memo_content: Json
           overall_score: number | null
+          override_reason: string | null
           published_at: string | null
           publishing_notes: string | null
           rag_status: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
           review_notes: string | null
           review_priority: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          scheduled_at: string | null
+          scheduled_by: string | null
           status: string
+          submitted_at: string | null
+          submitted_by: string | null
           submitted_for_review_at: string | null
+          super_admin_override: boolean | null
           template_id: string | null
           title: string
           updated_at: string
+          workflow_state: string | null
         }
         Insert: {
           approved_at?: string | null
@@ -2088,18 +2202,28 @@ export type Database = {
           is_published?: boolean | null
           memo_content?: Json
           overall_score?: number | null
+          override_reason?: string | null
           published_at?: string | null
           publishing_notes?: string | null
           rag_status?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           review_notes?: string | null
           review_priority?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          scheduled_at?: string | null
+          scheduled_by?: string | null
           status?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
           submitted_for_review_at?: string | null
+          super_admin_override?: boolean | null
           template_id?: string | null
           title: string
           updated_at?: string
+          workflow_state?: string | null
         }
         Update: {
           approved_at?: string | null
@@ -2118,18 +2242,28 @@ export type Database = {
           is_published?: boolean | null
           memo_content?: Json
           overall_score?: number | null
+          override_reason?: string | null
           published_at?: string | null
           publishing_notes?: string | null
           rag_status?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
           review_notes?: string | null
           review_priority?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          scheduled_at?: string | null
+          scheduled_by?: string | null
           status?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
           submitted_for_review_at?: string | null
+          super_admin_override?: boolean | null
           template_id?: string | null
           title?: string
           updated_at?: string
+          workflow_state?: string | null
         }
         Relationships: [
           {
@@ -3703,6 +3837,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      should_queue_analysis: {
+        Args: { p_deal_id: string; p_catalyst_type: string; p_user_id: string }
+        Returns: Json
+      }
       user_can_access_activity: {
         Args: { activity_fund_id: string; activity_deal_id: string }
         Returns: boolean
@@ -3738,6 +3876,14 @@ export type Database = {
           claims_valid: boolean
           missing_claims: string[]
         }[]
+      }
+      validate_memo_workflow_transition: {
+        Args: {
+          current_state: string
+          new_state: string
+          is_super_admin?: boolean
+        }
+        Returns: boolean
       }
       verify_rls_policies_for_org: {
         Args: { test_org_id: string }
