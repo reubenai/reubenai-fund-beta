@@ -19,6 +19,14 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Fund filtering states
+  const [fundSearchQuery, setFundSearchQuery] = useState('');
+  const [fundTypeFilter, setFundTypeFilter] = useState('');
+  const [fundStatusFilter, setFundStatusFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
   const [stats, setStats] = useState({
     activeFunds: 0,
     activeDeals: 0,
@@ -39,6 +47,11 @@ const Index = () => {
       activeFunds: funds.length,
     }));
   }, [funds]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [fundSearchQuery, fundTypeFilter, fundStatusFilter]);
 
   const fetchUserData = async () => {
     // Fetch user profile
@@ -212,68 +225,164 @@ const Index = () => {
           </Button>
         </div>
 
+        {/* Fund Filters for Super Admins */}
+        {(profile?.role === 'super_admin' || profile?.role === 'admin') && (
+          <div className="mb-4 space-y-4">
+            <div className="flex gap-4 items-center">
+              <div className="flex-1">
+                <Input
+                  placeholder="Search funds by name, organization, or type..."
+                  value={fundSearchQuery}
+                  onChange={(e) => setFundSearchQuery(e.target.value)}
+                  className="max-w-md"
+                />
+              </div>
+              <select
+                value={fundTypeFilter}
+                onChange={(e) => setFundTypeFilter(e.target.value)}
+                className="px-3 py-2 border border-slate-200 rounded-md text-sm"
+              >
+                <option value="">All Types</option>
+                <option value="venture_capital">Venture Capital</option>
+                <option value="private_equity">Private Equity</option>
+              </select>
+              <select
+                value={fundStatusFilter}
+                onChange={(e) => setFundStatusFilter(e.target.value)}
+                className="px-3 py-2 border border-slate-200 rounded-md text-sm"
+              >
+                <option value="">All Status</option>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
+          </div>
+        )}
+
         {/* Admin Table View */}
         {(profile?.role === 'super_admin' || profile?.role === 'admin') ? (
-          <div className="bg-white border border-slate-200 rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fund Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Size</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Organization</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {funds.map((fund) => (
-                  <TableRow key={fund.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium text-slate-900">{fund.name}</div>
-                        <div className="text-sm text-slate-600 line-clamp-1">
-                          {fund.description || 'Investment fund focused on exceptional opportunities.'}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {fund.fund_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium">
-                        {fund.target_size ? `$${(fund.target_size / 1000000).toFixed(0)}M` : 'TBD'}
+          (() => {
+            // Filter funds based on search and filters
+            const filteredFunds = funds.filter(fund => {
+              const matchesSearch = !fundSearchQuery || 
+                fund.name.toLowerCase().includes(fundSearchQuery.toLowerCase()) ||
+                fund.organization?.name.toLowerCase().includes(fundSearchQuery.toLowerCase()) ||
+                fund.fund_type.toLowerCase().includes(fundSearchQuery.toLowerCase());
+              
+              const matchesType = !fundTypeFilter || fund.fund_type === fundTypeFilter;
+              const matchesStatus = !fundStatusFilter || fund.is_active.toString() === fundStatusFilter;
+              
+              return matchesSearch && matchesType && matchesStatus;
+            });
+
+            // Pagination
+            const totalPages = Math.ceil(filteredFunds.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const paginatedFunds = filteredFunds.slice(startIndex, startIndex + itemsPerPage);
+
+            return (
+              <div>
+                <div className="bg-white border border-slate-200 rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Fund Name</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Size</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Organization</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedFunds.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-slate-500">
+                            No funds found matching your criteria
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        paginatedFunds.map((fund) => (
+                          <TableRow key={fund.id}>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium text-slate-900">{fund.name}</div>
+                                <div className="text-sm text-slate-600 line-clamp-1">
+                                  {fund.description || 'Investment fund focused on exceptional opportunities.'}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {fund.fund_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-medium">
+                                {fund.target_size ? `$${(fund.target_size / 1000000).toFixed(0)}M` : 'TBD'}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={fund.is_active ? "default" : "secondary"}>
+                                {fund.is_active ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm text-slate-600">{fund.organization?.name || 'Unknown Organization'}</span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex gap-2 justify-end">
+                                <Link to={`/pipeline?fund=${fund.id}`}>
+                                  <Button variant="ghost" size="sm" className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
+                                    Pipeline
+                                  </Button>
+                                </Link>
+                                <Link to={`/strategy?fund=${fund.id}`}>
+                                  <Button variant="outline" size="sm">
+                                    Strategy
+                                  </Button>
+                                </Link>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-4 px-4">
+                    <div className="text-sm text-slate-600">
+                      Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredFunds.length)} of {filteredFunds.length} funds
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      <span className="px-3 py-1 text-sm text-slate-700">
+                        Page {currentPage} of {totalPages}
                       </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={fund.is_active ? "default" : "secondary"}>
-                        {fund.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-slate-600">{fund.organization?.name || 'Unknown Organization'}</span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex gap-2 justify-end">
-                        <Link to={`/pipeline?fund=${fund.id}`}>
-                          <Button variant="ghost" size="sm" className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
-                            Pipeline
-                          </Button>
-                        </Link>
-                        <Link to={`/strategy?fund=${fund.id}`}>
-                          <Button variant="outline" size="sm">
-                            Strategy
-                          </Button>
-                        </Link>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()
         ) : (
           /* Regular User Card View */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
