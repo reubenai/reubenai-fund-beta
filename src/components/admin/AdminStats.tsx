@@ -42,7 +42,7 @@ export function AdminStats({ stats }: AdminStatsProps) {
     {
       title: 'Funds',
       value: stats.totalFunds,
-      description: 'Investment funds',
+      description: 'Total investment funds',
       icon: TrendingUp,
       color: 'text-purple-600'
     },
