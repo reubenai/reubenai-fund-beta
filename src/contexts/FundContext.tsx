@@ -139,19 +139,33 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }));
 
-      console.log('  - Query result:');
-      console.log('    - Data count:', fundsData?.length || 0);
-      console.log('    - Fund names:', fundsData?.map(f => f.name) || []);
+      // CRITICAL SECURITY: Final verification for non-super admin users
+      let secureData = fundsData;
+      if (!isSuperAdmin && organizationId && fundsData) {
+        // Double-check: filter out any funds that don't belong to user's organization
+        secureData = fundsData.filter(fund => fund.organization_id === organizationId);
+        
+        if (secureData.length !== fundsData.length) {
+          console.error('🚨 SECURITY: Filtered out unauthorized funds in FundContext');
+          console.error('Original count:', fundsData.length, 'Filtered count:', secureData.length);
+        }
+      }
 
-      setFunds(fundsData || []);
+      console.log('  - Final secure query result:');
+      console.log('    - Data count:', secureData?.length || 0);
+      console.log('    - Fund names:', secureData?.map(f => f.name) || []);
+      console.log('    - Fund orgs:', secureData?.map(f => f.organization_id) || []);
+      console.log('    - User org:', organizationId);
+
+      setFunds(secureData || []);
       
       // Auto-select first fund if none selected or if current selection is invalid
-      if (fundsData && fundsData.length > 0) {
-        const isCurrentFundValid = selectedFund && fundsData.find(f => f.id === selectedFund.id);
+      if (secureData && secureData.length > 0) {
+        const isCurrentFundValid = selectedFund && secureData.find(f => f.id === selectedFund.id);
         
         if (!isCurrentFundValid) {
-          console.log('  - Auto-selecting first fund:', fundsData[0].name);
-          setSelectedFund(fundsData[0]);
+          console.log('  - Auto-selecting first fund:', secureData[0].name);
+          setSelectedFund(secureData[0]);
         } else {
           console.log('  - Current fund selection is valid:', selectedFund.name);
         }
