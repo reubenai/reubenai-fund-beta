@@ -3553,6 +3553,18 @@ export type Database = {
           health_status: string
         }[]
       }
+      get_deals_analysis_readiness: {
+        Args: { fund_id_param: string }
+        Returns: {
+          deal_id: string
+          company_name: string
+          validation_score: number
+          is_ready: boolean
+          issue_count: number
+          warning_count: number
+          completeness_score: number
+        }[]
+      }
       get_jwt_org_id: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -3621,6 +3633,14 @@ export type Database = {
       user_can_manage_fund: {
         Args: { target_fund_id: string }
         Returns: boolean
+      }
+      validate_deal_for_analysis: {
+        Args: { deal_id_param: string }
+        Returns: Json
+      }
+      validate_fund_strategy_for_analysis: {
+        Args: { fund_id_param: string }
+        Returns: Json
       }
       validate_jwt_claims: {
         Args: Record<PropertyKey, never>

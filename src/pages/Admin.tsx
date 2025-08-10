@@ -27,6 +27,7 @@ import { SystemHealthStatus } from '@/components/admin/SystemHealthStatus';
 import { TenantIsolationAudit } from '@/components/admin/TenantIsolationAudit';
 import { CrossOrgAnalytics } from '@/components/admin/CrossOrgAnalytics';
 import { OrganizationOnboarding } from '@/components/admin/OrganizationOnboarding';
+import { DealAnalysisPreCheck } from '@/components/admin/DealAnalysisPreCheck';
 import { EnhancedAdminActivityFeed } from '@/components/admin/EnhancedAdminActivityFeed';
 import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModal';
 import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
@@ -898,6 +899,12 @@ export default function Admin() {
                   <TenantIsolationAudit />
                   <CrossOrgAnalytics />
                 </div>
+              </div>
+
+              {/* 7.3 Deal Analysis Pre-Check */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">7.3 Deal Analysis Pre-Check</h3>
+                <DealAnalysisPreCheck />
               </div>
 
               {/* Fund Context Status */}
