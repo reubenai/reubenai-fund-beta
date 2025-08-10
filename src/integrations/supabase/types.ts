@@ -3365,6 +3365,22 @@ export type Database = {
           updated_at: string
         }[]
       }
+      admin_get_all_funds_with_orgs: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          organization_id: string
+          fund_type: Database["public"]["Enums"]["fund_type"]
+          description: string
+          target_size: number
+          currency: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+          organization_name: string
+        }[]
+      }
       admin_get_all_organizations: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -3426,6 +3442,10 @@ export type Database = {
         Returns: string
       }
       auth_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      auth_uid: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
@@ -3559,6 +3579,18 @@ export type Database = {
       user_can_manage_fund: {
         Args: { target_fund_id: string }
         Returns: boolean
+      }
+      validate_jwt_claims: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_id: string
+          email: string
+          role: string
+          org_id: string
+          is_super_admin: boolean
+          claims_valid: boolean
+          missing_claims: string[]
+        }[]
       }
     }
     Enums: {
