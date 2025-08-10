@@ -2942,6 +2942,18 @@ export type Database = {
         }
         Relationships: []
       }
+      roles_catalog: {
+        Row: {
+          role: string
+        }
+        Insert: {
+          role: string
+        }
+        Update: {
+          role?: string
+        }
+        Relationships: []
+      }
       sourced_companies: {
         Row: {
           ai_analysis_score: number | null
@@ -3364,6 +3376,10 @@ export type Database = {
         Returns: boolean
       }
       auth_org_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      auth_role: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
