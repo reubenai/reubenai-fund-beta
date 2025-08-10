@@ -27,10 +27,13 @@ export function Layout({ children }: LayoutProps) {
           <SidebarInset className="flex-1 min-w-0">
             <div className="flex h-full flex-col">
               <AppHeader />
-              <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 ml-0">
-                <Breadcrumbs />
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+                <div className="flex items-center gap-2">
+                  <SidebarTrigger className="h-6 w-6" />
+                  <Breadcrumbs />
+                </div>
               </div>
-              <main className="flex-1 overflow-auto px-4 md:px-6 py-4 max-w-full ml-0">
+              <main className="flex-1 overflow-auto px-4 md:px-6 py-4 max-w-full">
                 {children}
               </main>
             </div>
