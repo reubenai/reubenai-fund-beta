@@ -27,19 +27,27 @@ export const CleanKanbanView: React.FC<CleanKanbanViewProps> = ({
   onBatchUpload,
   fundName,
 }) => {
-  // Show pipeline stages immediately when available, only show empty state if no stages exist
+  // CRITICAL DEBUG: Log what we're receiving
+  console.log('🎯 [CleanKanbanView] CRITICAL DEBUG - Received stages:', stages.length, 'stage names:', stages.map(s => s.name));
+  console.log('🎯 [CleanKanbanView] CRITICAL DEBUG - Received deals:', Object.keys(deals).length, 'deal keys:', Object.keys(deals));
+
   const totalDeals = Object.values(deals).reduce((sum, stageDeals) => sum + stageDeals.length, 0);
   
   if (stages.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <h3 className="text-lg font-semibold text-muted-foreground mb-2">Loading Pipeline Stages...</h3>
+        <div className="text-center space-y-3">
+          <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
+          <h3 className="text-lg font-semibold text-muted-foreground">Loading Pipeline Stages...</h3>
           <p className="text-sm text-muted-foreground">Setting up your deal pipeline</p>
+          <p className="text-xs text-muted-foreground/70">If this persists, check console for debugging info</p>
         </div>
       </div>
     );
   }
+
+  // CRITICAL: Force render stages even if deals are empty
+  console.log('🎯 [CleanKanbanView] CRITICAL SUCCESS - Rendering', stages.length, 'stages');
 
   return (
     <div className="h-full">

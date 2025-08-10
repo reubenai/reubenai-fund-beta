@@ -36,6 +36,9 @@ interface KanbanBoardProps {
 }
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
+  // CRITICAL DEBUG: Log fundId immediately
+  console.log('🏗️ [KanbanBoard] CRITICAL DEBUG - Received fundId:', fundId, 'type:', typeof fundId);
+  
   const {
     deals,
     stages,
@@ -46,6 +49,14 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
     addDeal,
     refreshDeals
   } = usePipelineDeals(fundId);
+
+  // CRITICAL DEBUG: Log what usePipelineDeals returns
+  console.log('🏗️ [KanbanBoard] CRITICAL DEBUG - usePipelineDeals returned:', {
+    stagesCount: stages.length,
+    dealsKeys: Object.keys(deals),
+    loading,
+    stageNames: stages.map(s => s.name)
+  });
 
   const { selectedFund } = useFund();
   const permissions = usePermissions();

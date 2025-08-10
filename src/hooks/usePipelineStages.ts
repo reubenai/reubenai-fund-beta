@@ -19,7 +19,11 @@ export const usePipelineStages = (fundId?: string) => {
         setStages([]);
         return;
       }
-      console.log('📊 [usePipelineStages] Fetching stages for fundId:', fundId);
+      console.log('📊 [usePipelineStages] CRITICAL DEBUG - Fetching stages for fundId:', fundId);
+      console.log('📊 [usePipelineStages] CRITICAL DEBUG - Fund ID type:', typeof fundId, 'length:', fundId.length);
+      
+      // CRITICAL DEBUG: Log the exact query being executed
+      console.log('📊 [usePipelineStages] CRITICAL DEBUG - Executing query with fund_id:', fundId);
       
       const { data, error } = await supabase
         .from('pipeline_stages')
@@ -27,10 +31,19 @@ export const usePipelineStages = (fundId?: string) => {
         .eq('fund_id', fundId)
         .order('position', { ascending: true });
 
-      if (error) throw error;
+      console.log('📊 [usePipelineStages] CRITICAL DEBUG - Query response:', { 
+        data: data?.length || 0, 
+        error: error?.message || 'none',
+        rawData: data 
+      });
+
+      if (error) {
+        console.error('📊 [usePipelineStages] CRITICAL ERROR - Database query failed:', error);
+        throw error;
+      }
       
-      console.log('📊 [usePipelineStages] Fetched stages:', data?.length || 0, 'stages');
-      console.log('📊 [usePipelineStages] Stage names:', data?.map(s => s.name) || []);
+      console.log('📊 [usePipelineStages] CRITICAL SUCCESS - Fetched stages:', data?.length || 0, 'stages');
+      console.log('📊 [usePipelineStages] CRITICAL SUCCESS - Stage names:', data?.map(s => s.name) || []);
       
       setStages(data || []);
     } catch (error) {
