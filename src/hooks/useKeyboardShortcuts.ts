@@ -15,6 +15,9 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
   const [isVisible, setIsVisible] = useState(false);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    // Guard against null/undefined event or key
+    if (!event || !event.key) return;
+    
     // Show help dialog with ? key
     if (event.key === '?' && !event.ctrlKey && !event.altKey) {
       event.preventDefault();
@@ -30,7 +33,7 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
 
     // Check for matches
     for (const shortcut of shortcuts) {
-      if (shortcut.disabled) continue;
+      if (shortcut.disabled || !shortcut.key) continue;
 
       const matches = 
         event.key.toLowerCase() === shortcut.key.toLowerCase() &&
