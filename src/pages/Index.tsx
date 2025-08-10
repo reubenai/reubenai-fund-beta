@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Building2, TrendingUp, FileText, Users, Zap, Target, BarChart3, Plus, BookOpen, Video, MessageSquare, HelpCircle, Search } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFund } from '@/contexts/FundContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { FundCreationWizard } from '@/components/funds/FundCreationWizard';
@@ -14,6 +15,7 @@ import { FundCreationWizard } from '@/components/funds/FundCreationWizard';
 const Index = () => {
   const { user } = useAuth();
   const { funds } = useFund();
+  const { isSuperAdmin, role } = useUserRole();
   const [profile, setProfile] = useState<any>(null);
   const [showFundWizard, setShowFundWizard] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -226,7 +228,7 @@ const Index = () => {
         </div>
 
         {/* Fund Filters for Super Admins */}
-        {(profile?.role === 'super_admin' || profile?.role === 'admin') && (
+        {(isSuperAdmin || role === 'admin') && (
           <div className="mb-4 space-y-4">
             <div className="flex gap-4 items-center">
               <div className="flex-1">
@@ -260,7 +262,7 @@ const Index = () => {
         )}
 
         {/* Admin Table View */}
-        {(profile?.role === 'super_admin' || profile?.role === 'admin') ? (
+        {(isSuperAdmin || role === 'admin') ? (
           (() => {
             // Filter funds based on search and filters
             const filteredFunds = funds.filter(fund => {
