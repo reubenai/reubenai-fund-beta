@@ -24,8 +24,6 @@ import { AdminUserTable } from '@/components/admin/AdminUserTable';
 import { EnhancedAdminFundTable } from '@/components/admin/EnhancedAdminFundTable';
 import { JWTClaimsDebugger } from '@/components/admin/JWTClaimsDebugger';
 import { SystemHealthStatus } from '@/components/admin/SystemHealthStatus';
-import { TenantIsolationAudit } from '@/components/admin/TenantIsolationAudit';
-import { CrossOrgAnalytics } from '@/components/admin/CrossOrgAnalytics';
 import { OrganizationOnboarding } from '@/components/admin/OrganizationOnboarding';
 import { DealAnalysisPreCheck } from '@/components/admin/DealAnalysisPreCheck';
 import { EnhancedPlatformActivity } from '@/components/admin/EnhancedPlatformActivity';
@@ -113,6 +111,10 @@ export default function Admin() {
     activeDeals: 0,
     recentActivity: 0,
     pendingIssues: 0,
+    systemStatus: 'healthy' as 'healthy' | 'degraded' | 'critical',
+    dailyCost: 0,
+    activeAgents: 0,
+    totalAgents: 0
   });
   const [showArchivedFunds, setShowArchivedFunds] = useState(false);
   const [thesisConfigFund, setThesisConfigFund] = useState<Fund | null>(null);
@@ -175,6 +177,23 @@ export default function Admin() {
         toast.error('Failed to fetch funds');
       }
 
+      // Get real-time system health to sync with SystemHealthStatus
+      let systemStatus: 'healthy' | 'degraded' | 'critical' = 'healthy';
+      try {
+        // Test database connection
+        const dbStart = Date.now();
+        const { error: dbError } = await supabase.from('funds').select('id').limit(1);
+        const dbResponseTime = Date.now() - dbStart;
+        
+        if (dbError) {
+          systemStatus = 'critical';
+        } else if (dbResponseTime > 1000) {
+          systemStatus = 'degraded';
+        }
+      } catch (err) {
+        systemStatus = 'critical';
+      }
+
       // Use the new dashboard_stats view for consistent counts
       const { data: dashboardData, error: dashboardError } = await supabase
         .from('dashboard_stats')
@@ -213,6 +232,10 @@ export default function Admin() {
         activeDeals: dashboardData?.deals_pipeline || 0,
         recentActivity: last24hActivities.length,
         pendingIssues: 0, // Implement pending issues logic
+        systemStatus, // Use the real-time status
+        dailyCost: 0,
+        activeAgents: 0,
+        totalAgents: 0
       });
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -902,14 +925,6 @@ export default function Admin() {
                 </div>
               </div>
 
-              {/* 7.2 Multi-Tenant Enforcement */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">7.2 Multi-Tenant Enforcement & Verification</h3>
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <TenantIsolationAudit />
-                  <CrossOrgAnalytics />
-                </div>
-              </div>
 
               {/* 7.3 Deal Analysis Pre-Check */}
               <div className="space-y-4">
