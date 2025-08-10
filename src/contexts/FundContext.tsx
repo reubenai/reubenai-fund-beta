@@ -43,50 +43,83 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      // Debug: Log authentication state
-      console.log('🔍 [FundContext] Debugging fund fetch:');
+      console.log('🔍 [FundContext] Phase 7.1 - Fund Context Integrity Check');
       console.log('  - User:', user?.email);
       console.log('  - isSuperAdmin:', isSuperAdmin);
       console.log('  - organizationId:', organizationId);
-      console.log('  - roleLoading:', roleLoading);
       
-      // Check auth session
-      const { data: session } = await supabase.auth.getSession();
-      console.log('  - Session valid:', !!session.session);
-      console.log('  - Session user:', session.session?.user?.email);
+      // Phase 7.1: JWT Claims Consistency Check
+      const { data: claimsData, error: claimsError } = await supabase
+        .rpc('validate_jwt_claims');
       
-      // With the new RLS system, super admins can see all funds automatically
-      // Regular users can only see funds in their organization
-      let fundsQuery = supabase
-        .from('funds')
-        .select(`
-          *,
-          organization:organizations(name)
-        `)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      console.log('  - Executing query (RLS will handle filtering automatically)...');
-      const { data: fundsData, error } = await fundsQuery;
-
-      console.log('  - Query result:');
-      console.log('    - Error:', error);
-      console.log('    - Data count:', fundsData?.length || 0);
-      console.log('    - Fund names:', fundsData?.map(f => f.name) || []);
-
-      if (error) {
-        console.error('Fund fetch error:', error);
-        // Don't throw, just set empty array and log the error
+      if (claimsError) {
+        console.error('❌ JWT Claims validation failed:', claimsError);
         setFunds([]);
         setSelectedFund(null);
         return;
       }
+      
+      const claims = claimsData?.[0];
+      console.log('  - JWT Claims valid:', claims?.claims_valid);
+      console.log('  - Missing claims:', claims?.missing_claims);
+      
+      if (!claims?.claims_valid) {
+        console.error('❌ Required JWT claims missing:', claims?.missing_claims);
+        setFunds([]);
+        setSelectedFund(null);
+        return;
+      }
+      
+      // Phase 7.1: Fund Context Integrity - Super Admin vs Regular User
+      let fundsData;
+      
+      if (isSuperAdmin) {
+        console.log('  - Super Admin: Fetching ALL funds');
+        // Super Admin → full visibility of all funds, regardless of org_id
+        const { data, error } = await supabase
+          .rpc('admin_get_all_funds_with_orgs');
+          
+        if (error) {
+          console.error('❌ Super admin fund fetch error:', error);
+          setFunds([]);
+          setSelectedFund(null);
+          return;
+        }
+        
+        fundsData = data?.map(fund => ({
+          ...fund,
+          organization: { name: fund.organization_name }
+        }));
+      } else {
+        console.log('  - Regular User: Fetching org-restricted funds');
+        // Non-Super Admin → restricted to their org_id funds only
+        const { data, error } = await supabase
+          .from('funds')
+          .select(`
+            *,
+            organization:organizations(name)
+          `)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('❌ Regular user fund fetch error:', error);
+          setFunds([]);
+          setSelectedFund(null);
+          return;
+        }
+        
+        fundsData = data;
+      }
+
+      console.log('  - Query result:');
+      console.log('    - Data count:', fundsData?.length || 0);
+      console.log('    - Fund names:', fundsData?.map(f => f.name) || []);
 
       setFunds(fundsData || []);
       
       // Auto-select first fund if none selected or if current selection is invalid
       if (fundsData && fundsData.length > 0) {
-        // Check if current selectedFund is still valid
         const isCurrentFundValid = selectedFund && fundsData.find(f => f.id === selectedFund.id);
         
         if (!isCurrentFundValid) {

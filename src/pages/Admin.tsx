@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield, Archive, ArchiveRestore, Filter, Target, Upload, Rocket, Kanban, MessageSquare } from 'lucide-react';
+import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield, Archive, ArchiveRestore, Filter, Target, Upload, Rocket, Kanban, MessageSquare, CheckCircle, XCircle, Settings } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,8 @@ import {
 import { AdminStats } from '@/components/admin/AdminStats';
 import { AdminUserTable } from '@/components/admin/AdminUserTable';
 import { EnhancedAdminFundTable } from '@/components/admin/EnhancedAdminFundTable';
+import { JWTClaimsDebugger } from '@/components/admin/JWTClaimsDebugger';
+import { SystemHealthStatus } from '@/components/admin/SystemHealthStatus';
 import { EnhancedAdminActivityFeed } from '@/components/admin/EnhancedAdminActivityFeed';
 import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModal';
 import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
@@ -36,7 +38,8 @@ import { ComprehensiveFixVerifier } from '@/components/admin/ComprehensiveFixVer
 import { APIConfigurationPanel } from '@/components/admin/APIConfigurationPanel';
 import { DealDataRepairTool } from '@/components/admin/DealDataRepairTool';
 import { ComprehensiveArchitectureDiagram } from '@/components/admin/ComprehensiveArchitectureDiagram';
-
+import { useFund } from '@/contexts/FundContext';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface Organization {
   id: string;
@@ -83,6 +86,8 @@ interface DbFund {
 export default function Admin() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { selectedFund, funds: contextFunds } = useFund();
+  const { isSuperAdmin } = useUserRole();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -762,6 +767,10 @@ export default function Admin() {
                 <Database className="h-4 w-4 mr-2" />
                 Architecture
               </TabsTrigger>
+              <TabsTrigger value="phase7" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Phase 7
+              </TabsTrigger>
             </TabsList>
 
         <TabsContent value="organizations" className="space-y-6">
@@ -857,6 +866,71 @@ export default function Admin() {
 
             <TabsContent value="architecture" className="space-y-6">
               <ComprehensiveArchitectureDiagram />
+            </TabsContent>
+
+            <TabsContent value="phase7" className="space-y-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight">Phase 7: Critical Admin Access & Context</h2>
+                  <p className="text-muted-foreground">
+                    Fund context integrity, JWT claims validation, and system health monitoring.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <SystemHealthStatus />
+                <JWTClaimsDebugger />
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Fund Context Integrity Status</h3>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Available Funds</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{contextFunds.length}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {isSuperAdmin ? 'All funds visible' : 'Organization funds only'}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Selected Fund</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-sm font-bold">
+                        {selectedFund?.name || 'None Selected'}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedFund?.organization?.name || 'No organization'}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Context Status</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-2">
+                        {selectedFund ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-500" />
+                        )}
+                        <span className="text-sm">
+                          {selectedFund ? 'Ready for Analysis' : 'No Fund Context'}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
