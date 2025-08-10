@@ -70,12 +70,31 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Phase 7: Use admin RPC function to avoid RLS recursion
-      console.log('  - Fetching funds using admin RPC (bypasses RLS recursion)');
+      // Phase 7: Fetch funds based on user role
+      console.log('  - Fetching funds based on user role');
       
-      // Use the working admin RPC function
-      const { data, error } = await supabase
-        .rpc('admin_get_all_funds');
+      let data, error;
+      
+      if (isSuperAdmin) {
+        // Super admins can see all funds
+        console.log('  - Using admin RPC for super admin');
+        const response = await supabase.rpc('admin_get_all_funds');
+        data = response.data;
+        error = response.error;
+      } else {
+        // Regular users only see funds from their organization
+        console.log('  - Fetching organization-specific funds for organizationId:', organizationId);
+        const response = await supabase
+          .from('funds')
+          .select(`
+            *,
+            organization:organizations(name)
+          `)
+          .eq('organization_id', organizationId)
+          .eq('is_active', true);
+        data = response.data;
+        error = response.error;
+      }
 
       if (error) {
         console.error('❌ Fund fetch error:', error);
@@ -85,10 +104,11 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       // Transform data to match expected format
-      // admin_get_all_funds includes organization_name field
       const fundsData = data?.map((fund: any) => ({
         ...fund,
-        organization: { name: fund.organization_name || 'Unknown Organization' }
+        organization: { 
+          name: fund.organization?.name || fund.organization_name || 'Unknown Organization' 
+        }
       }));
 
       console.log('  - Query result:');

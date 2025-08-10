@@ -44,6 +44,9 @@ interface UserProfile {
   avatar_url: string | null;
   created_at: string;
   updated_at: string;
+  organization?: {
+    name: string;
+  };
 }
 
 interface NotificationSettings {
@@ -120,7 +123,10 @@ export default function Settings() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          *,
+          organization:organizations(name)
+        `)
         .eq('user_id', user.id)
         .single();
 
@@ -439,6 +445,17 @@ export default function Settings() {
                 <div className="mt-2">
                   <Badge variant="outline">{profile?.role || 'Loading...'}</Badge>
                 </div>
+              </div>
+              <div>
+                <Label htmlFor="organization">Organization</Label>
+                <div className="mt-2">
+                  <Badge variant="secondary">
+                    {profile?.organization?.name || 'Not Assigned'}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Contact <a href="mailto:support@goreuben.com" className="text-primary hover:underline">support@goreuben.com</a> if you'd like to change your Role or adjust your Organization settings
+                </p>
               </div>
               <Button 
                 onClick={handleProfileSave}
