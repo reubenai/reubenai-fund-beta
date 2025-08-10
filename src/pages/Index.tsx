@@ -285,18 +285,20 @@ const Index = () => {
             return (
               <div>
                 <div className="bg-white border border-slate-200 rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Fund Name</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Size</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Organization</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                  {/* Fixed height container with scrolling */}
+                  <div className="max-h-96 overflow-y-auto">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-white z-10">
+                        <TableRow>
+                          <TableHead>Fund Name</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Size</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Organization</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                       {paginatedFunds.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center py-8 text-slate-500">
@@ -349,8 +351,9 @@ const Index = () => {
                           </TableRow>
                         ))
                       )}
-                    </TableBody>
-                  </Table>
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
 
                 {/* Pagination */}

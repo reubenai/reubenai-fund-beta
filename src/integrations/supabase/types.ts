@@ -3543,6 +3543,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      create_activity_with_context: {
+        Args: {
+          p_fund_id: string
+          p_activity_type: string
+          p_title: string
+          p_deal_id?: string
+          p_description?: string
+          p_context_data?: Json
+        }
+        Returns: string
+      }
       create_default_investment_strategy: {
         Args: {
           fund_id_param: string
@@ -3634,6 +3645,14 @@ export type Database = {
       is_super_admin_by_email: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      jwt_is_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      jwt_org_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       list_platform_activities: {
         Args: { p_limit?: number; p_offset?: number }

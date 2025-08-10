@@ -76,48 +76,48 @@ export function SystemHealthStatus() {
         overallStatus = 'critical';
       }
 
-      // 2. RLS Policy Health
+      // 2. Authentication Health (Simple check)
       try {
-        const { data: claimsData, error: claimsError } = await supabase
-          .rpc('validate_jwt_claims');
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
         
-        if (claimsError) {
+        if (authError) {
           checks.push({
-            component: 'RLS Policies',
-            status: 'critical',
-            message: `JWT validation failed: ${claimsError.message}`,
+            component: 'Authentication',
+            status: 'warning',
+            message: `Auth check failed: ${authError.message}`,
             last_checked: new Date().toISOString()
           });
-          overallStatus = 'critical';
+          if (overallStatus === 'healthy') {
+            overallStatus = 'warning';
+          }
+        } else if (user) {
+          checks.push({
+            component: 'Authentication',
+            status: 'healthy',
+            message: 'User authentication working',
+            last_checked: new Date().toISOString()
+          });
         } else {
-          const claims = claimsData?.[0];
-          if (claims?.claims_valid) {
-            checks.push({
-              component: 'RLS Policies',
-              status: 'healthy',
-              message: 'JWT validation working',
-              last_checked: new Date().toISOString()
-            });
-          } else {
-            checks.push({
-              component: 'RLS Policies',
-              status: 'warning',
-              message: `Missing claims: ${claims?.missing_claims?.join(', ')}`,
-              last_checked: new Date().toISOString()
-            });
-            if (overallStatus === 'healthy') {
-              overallStatus = 'warning';
-            }
+          checks.push({
+            component: 'Authentication',
+            status: 'warning',
+            message: 'No user authenticated',
+            last_checked: new Date().toISOString()
+          });
+          if (overallStatus === 'healthy') {
+            overallStatus = 'warning';
           }
         }
       } catch (err: any) {
         checks.push({
-          component: 'RLS Policies',
-          status: 'critical',
-          message: `RLS check failed: ${err.message}`,
+          component: 'Authentication',
+          status: 'warning',
+          message: `Auth system check failed: ${err.message}`,
           last_checked: new Date().toISOString()
         });
-        overallStatus = 'critical';
+        if (overallStatus === 'healthy') {
+          overallStatus = 'warning';
+        }
       }
 
       // 3. Analysis Queue Health

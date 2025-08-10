@@ -28,7 +28,7 @@ import { TenantIsolationAudit } from '@/components/admin/TenantIsolationAudit';
 import { CrossOrgAnalytics } from '@/components/admin/CrossOrgAnalytics';
 import { OrganizationOnboarding } from '@/components/admin/OrganizationOnboarding';
 import { DealAnalysisPreCheck } from '@/components/admin/DealAnalysisPreCheck';
-import { EnhancedAdminActivityFeed } from '@/components/admin/EnhancedAdminActivityFeed';
+import { EnhancedPlatformActivity } from '@/components/admin/EnhancedPlatformActivity';
 import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModal';
 import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
 import { SimplifiedProductionReadiness } from '@/components/admin/SimplifiedProductionReadiness';
@@ -973,9 +973,9 @@ export default function Admin() {
           </Tabs>
         </div>
         
-        {/* Activity Feed Sidebar */}
+        {/* Platform Activity Sidebar */}
         <div className="lg:col-span-1">
-          <EnhancedAdminActivityFeed />
+          <EnhancedPlatformActivity />
         </div>
       </div>
 
