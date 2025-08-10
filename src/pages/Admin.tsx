@@ -24,6 +24,9 @@ import { AdminUserTable } from '@/components/admin/AdminUserTable';
 import { EnhancedAdminFundTable } from '@/components/admin/EnhancedAdminFundTable';
 import { JWTClaimsDebugger } from '@/components/admin/JWTClaimsDebugger';
 import { SystemHealthStatus } from '@/components/admin/SystemHealthStatus';
+import { TenantIsolationAudit } from '@/components/admin/TenantIsolationAudit';
+import { CrossOrgAnalytics } from '@/components/admin/CrossOrgAnalytics';
+import { OrganizationOnboarding } from '@/components/admin/OrganizationOnboarding';
 import { EnhancedAdminActivityFeed } from '@/components/admin/EnhancedAdminActivityFeed';
 import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModal';
 import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
@@ -871,20 +874,35 @@ export default function Admin() {
             <TabsContent value="phase7" className="space-y-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-xl font-bold tracking-tight">Phase 7: Critical Admin Access & Context</h2>
+                  <h2 className="text-xl font-bold tracking-tight">Phase 7: Multi-Tenant Enforcement & Verification</h2>
                   <p className="text-muted-foreground">
-                    Fund context integrity, JWT claims validation, and system health monitoring.
+                    Tenant isolation audit, cross-org analytics, and onboarding tools.
                   </p>
+                </div>
+                <OrganizationOnboarding />
+              </div>
+
+              {/* 7.1 Critical Admin Access Status */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">7.1 Critical Admin Access & Context</h3>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <SystemHealthStatus />
+                  <JWTClaimsDebugger />
                 </div>
               </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
-                <SystemHealthStatus />
-                <JWTClaimsDebugger />
+              {/* 7.2 Multi-Tenant Enforcement */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">7.2 Multi-Tenant Enforcement & Verification</h3>
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <TenantIsolationAudit />
+                  <CrossOrgAnalytics />
+                </div>
               </div>
 
+              {/* Fund Context Status */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Fund Context Integrity Status</h3>
+                <h3 className="text-lg font-semibold">Fund Context Hand-off Status</h3>
                 <div className="grid gap-4 md:grid-cols-3">
                   <Card>
                     <CardHeader className="pb-2">
@@ -914,7 +932,7 @@ export default function Admin() {
 
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">Context Status</CardTitle>
+                      <CardTitle className="text-sm font-medium">Deal Analysis Readiness</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="flex items-center gap-2">
@@ -927,6 +945,9 @@ export default function Admin() {
                           {selectedFund ? 'Ready for Analysis' : 'No Fund Context'}
                         </span>
                       </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {selectedFund ? 'fund_id available for deal endpoints' : 'Must select fund before deal ingestion'}
+                      </p>
                     </CardContent>
                   </Card>
                 </div>

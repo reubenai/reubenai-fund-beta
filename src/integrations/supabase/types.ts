@@ -3429,6 +3429,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      audit_tenant_isolation: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          total_rows: number
+          null_org_id_count: number
+          invalid_org_id_count: number
+          valid_org_id_count: number
+          organization_list: string[]
+          issues_found: boolean
+          severity: string
+        }[]
+      }
       auth_email: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -3495,6 +3508,20 @@ export type Database = {
         Args: { fund_id_param: string }
         Returns: undefined
       }
+      create_organization_with_admin: {
+        Args: {
+          org_name: string
+          org_domain: string
+          admin_email: string
+          admin_role?: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: {
+          organization_id: string
+          user_id: string
+          success: boolean
+          message: string
+        }[]
+      }
       emergency_disable_rls: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -3510,6 +3537,21 @@ export type Database = {
       get_archival_statistics: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      get_cross_org_analytics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          organization_id: string
+          organization_name: string
+          fund_count: number
+          total_deals: number
+          active_deals: number
+          completed_analyses: number
+          failed_analyses: number
+          queue_success_rate: number
+          last_activity: string
+          health_status: string
+        }[]
       }
       get_jwt_org_id: {
         Args: Record<PropertyKey, never>
@@ -3590,6 +3632,17 @@ export type Database = {
           is_super_admin: boolean
           claims_valid: boolean
           missing_claims: string[]
+        }[]
+      }
+      verify_rls_policies_for_org: {
+        Args: { test_org_id: string }
+        Returns: {
+          table_name: string
+          policy_test: string
+          expected_behavior: string
+          actual_result: string
+          test_passed: boolean
+          security_risk: string
         }[]
       }
     }
