@@ -83,13 +83,13 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let data, error;
       
       if (isSuperAdmin) {
-        // Super admins can see all funds
+        // Super admins can see all funds - use the special admin function
         console.log('  - Using admin RPC for super admin');
-        const response = await supabase.rpc('admin_get_all_funds');
+        const response = await supabase.rpc('admin_get_all_funds_with_orgs');
         data = response.data;
         error = response.error;
       } else {
-        // Regular users only see funds from their organization
+        // CRITICAL: Regular users MUST only see funds from their organization via RLS
         if (!organizationId) {
           console.error('❌ Organization ID is required for non-super admin users');
           setFunds([]);
@@ -98,6 +98,9 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         console.log('  - Fetching organization-specific funds for organizationId:', organizationId);
+        console.log('  - ⚠️ SECURITY: Using RLS-enforced query to prevent data leakage');
+        
+        // This query MUST respect RLS policies - never bypass them for regular users
         const response = await supabase
           .from('funds')
           .select(`
@@ -108,6 +111,17 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq('is_active', true);
         data = response.data;
         error = response.error;
+        
+        // CRITICAL SECURITY CHECK: Verify all returned funds belong to user's organization
+        if (data && data.length > 0) {
+          const unauthorizedFunds = data.filter(fund => fund.organization_id !== organizationId);
+          if (unauthorizedFunds.length > 0) {
+            console.error('🚨 SECURITY BREACH DETECTED: User has access to unauthorized funds:', unauthorizedFunds);
+            console.error('🚨 User org:', organizationId, 'Unauthorized fund orgs:', unauthorizedFunds.map(f => f.organization_id));
+            // Block access to prevent data breach
+            data = data.filter(fund => fund.organization_id === organizationId);
+          }
+        }
       }
 
       if (error) {
