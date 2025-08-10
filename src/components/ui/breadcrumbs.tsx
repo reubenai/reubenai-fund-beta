@@ -26,7 +26,10 @@ export function useBreadcrumbs(): BreadcrumbItem[] {
     '/what-is-reubenai': 'What is ReubenAI?'
   };
 
-  const pathSegments = location.pathname.split('/').filter(Boolean);
+  // Handle route aliases - map /deals to /pipeline for breadcrumbs
+  const normalizedPath = location.pathname === '/deals' ? '/pipeline' : location.pathname;
+
+  const pathSegments = normalizedPath.split('/').filter(Boolean);
   const breadcrumbs: BreadcrumbItem[] = [
     { label: 'Home', href: '/' }
   ];
