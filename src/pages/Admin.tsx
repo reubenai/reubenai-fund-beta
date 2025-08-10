@@ -199,34 +199,42 @@ export default function Admin() {
           pendingIssues++;
         }
         
-        // Get daily cost from analysis_cost_tracking
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // Get daily cost from analysis_cost_tracking (last 24 hours)
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
         const { data: costData } = await supabase
           .from('analysis_cost_tracking')
           .select('total_cost')
-          .gte('created_at', today.toISOString());
+          .gte('created_at', twentyFourHoursAgo.toISOString());
         
         if (costData) {
-          dailyCost = costData.reduce((sum, item) => sum + (item.total_cost || 0), 0);
+          dailyCost = costData.reduce((sum, item) => sum + (Number(item.total_cost) || 0), 0);
         }
         
         // Get agent status from ops_control_switches
         const { data: agentData } = await supabase
           .from('ops_control_switches')
-          .select('agent_name, enabled, config');
+          .select('agent_name, enabled, circuit_breaker_open, failure_count');
         
         if (agentData) {
           totalAgents = agentData.length;
-          activeAgents = agentData.filter(agent => agent.enabled).length;
+          activeAgents = agentData.filter(agent => agent.enabled && !agent.circuit_breaker_open).length;
           
-          // Count degraded agents as pending issues
-          const degradedAgents = agentData.filter(agent => {
-            if (!agent.enabled) return false;
-            const config = agent.config as any;
-            return config && config.degradation_triggered === true;
-          });
-          pendingIssues += degradedAgents.length;
+          // Count issues: disabled agents, circuit breakers, and high failure counts
+          const disabledAgents = agentData.filter(agent => !agent.enabled).length;
+          const circuitBreakerOpen = agentData.filter(agent => agent.circuit_breaker_open).length;
+          const highFailureAgents = agentData.filter(agent => agent.failure_count > 5).length;
+          
+          pendingIssues += disabledAgents + circuitBreakerOpen + highFailureAgents;
+        }
+        
+        // Get pending analysis queue items
+        const { data: queueData } = await supabase
+          .from('analysis_queue')
+          .select('id')
+          .eq('status', 'queued');
+        
+        if (queueData) {
+          pendingIssues += Math.min(queueData.length, 10); // Cap at 10 for display
         }
         
         // Count failed analysis queue items as pending issues
