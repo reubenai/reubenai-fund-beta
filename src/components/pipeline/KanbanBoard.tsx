@@ -175,7 +175,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
     return filtered;
   }, [deals, state.filters]);
 
-  if (loading || stages.length === 0) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
@@ -187,11 +187,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
             <div key={i} className="flex-shrink-0 w-80 h-96 bg-gray-200 rounded-lg animate-pulse"></div>
           ))}
         </div>
-        {stages.length === 0 && !loading && (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">Loading pipeline stages...</p>
-          </div>
-        )}
       </div>
     );
   }

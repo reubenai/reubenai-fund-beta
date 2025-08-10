@@ -27,10 +27,10 @@ export const CleanKanbanView: React.FC<CleanKanbanViewProps> = ({
   onBatchUpload,
   fundName,
 }) => {
-  // Show professional empty state if no stages or no deals
+  // Show professional empty state only if no stages
   const totalDeals = Object.values(deals).reduce((sum, stageDeals) => sum + stageDeals.length, 0);
   
-  if (stages.length === 0 || totalDeals === 0) {
+  if (stages.length === 0) {
     return (
       <ProfessionalEmptyState 
         fundName={fundName}
