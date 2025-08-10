@@ -1,6 +1,6 @@
 import React from 'react';
 import { KanbanBoard } from '@/components/pipeline/KanbanBoard';
-import { ControlledAnalysisStatus } from '@/components/pipeline/ControlledAnalysisStatus';
+import { InvestmentStatusIndicator } from '@/components/pipeline/InvestmentStatusIndicator';
 import { useFund } from '@/contexts/FundContext';
 
 import { useSearchParams } from 'react-router-dom';
@@ -61,7 +61,7 @@ export default function Pipeline() {
       )}
       
       {/* Controlled Analysis Status */}
-      <ControlledAnalysisStatus />
+      <InvestmentStatusIndicator />
       
       <KanbanBoard fundId={selectedFund.id} />
     </div>

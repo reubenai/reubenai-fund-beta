@@ -33,7 +33,6 @@ export const usePipelineDeals = (fundId?: string) => {
 
   const fetchDeals = useCallback(async () => {
     if (!fundId) return;
-    if (stages.length === 0) return;
 
     try {
       setLoading(true);

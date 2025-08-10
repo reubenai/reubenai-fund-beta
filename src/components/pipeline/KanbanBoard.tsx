@@ -231,6 +231,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
               onStageEdit={undefined} // Stage editing disabled platform-wide
               onStageDelete={undefined} // Stage deletion disabled platform-wide
               onAddDeal={permissions.canCreateDeals ? handleAddDeal : undefined}
+              onBatchUpload={permissions.canBatchUpload ? () => updateState({ showBatchUpload: true }) : undefined}
+              fundName={selectedFund?.name}
             />
           </div>
         )}

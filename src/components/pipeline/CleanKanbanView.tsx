@@ -2,6 +2,7 @@ import React from 'react';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { Deal, PipelineStage } from '@/hooks/usePipelineDeals';
 import { EnhancedKanbanColumn } from './EnhancedKanbanColumn';
+import { ProfessionalEmptyState } from './ProfessionalEmptyState';
 
 interface CleanKanbanViewProps {
   deals: Record<string, Deal[]>;
@@ -11,6 +12,8 @@ interface CleanKanbanViewProps {
   onStageEdit?: (stageId: string, newTitle: string) => void;
   onStageDelete?: (stageId: string) => void;
   onAddDeal?: (stageId?: string) => void;
+  onBatchUpload?: () => void;
+  fundName?: string;
 }
 
 export const CleanKanbanView: React.FC<CleanKanbanViewProps> = ({
@@ -21,15 +24,19 @@ export const CleanKanbanView: React.FC<CleanKanbanViewProps> = ({
   onStageEdit,
   onStageDelete,
   onAddDeal,
+  onBatchUpload,
+  fundName,
 }) => {
-  if (stages.length === 0) {
+  // Show professional empty state if no stages or no deals
+  const totalDeals = Object.values(deals).reduce((sum, stageDeals) => sum + stageDeals.length, 0);
+  
+  if (stages.length === 0 || totalDeals === 0) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
-          <p className="text-muted-foreground mb-4">No pipeline stages found for this fund.</p>
-          <p className="text-sm text-muted-foreground">Pipeline stages need to be created first.</p>
-        </div>
-      </div>
+      <ProfessionalEmptyState 
+        fundName={fundName}
+        onAddDeal={() => onAddDeal?.()}
+        onBatchUpload={onBatchUpload}
+      />
     );
   }
 
