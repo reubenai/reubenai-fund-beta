@@ -9,6 +9,7 @@ import { BatchUploadModal } from './BatchUploadModal';
 import { DealDetailsModal } from './DealDetailsModal';
 import { DealSourcingModal } from './DealSourcingModal';
 import { PipelineFilters } from './PipelineFilters';
+import { DebugPipelineStages } from './DebugPipelineStages';
 import { useToast } from '@/hooks/use-toast';
 import { useFund } from '@/contexts/FundContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -204,6 +205,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
 
   return (
     <div className="h-full bg-white">
+      {/* CRITICAL DEBUG COMPONENT */}
+      <DebugPipelineStages fundId={fundId} />
+      
       <div className="border-b bg-white">
         <div className="px-8 py-6 space-y-4">
           <EnhancedPipelineHeader

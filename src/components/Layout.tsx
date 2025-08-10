@@ -28,7 +28,6 @@ export function Layout({ children }: LayoutProps) {
             <AppHeader />
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <div className="flex items-center gap-3">
-                <SidebarTrigger className="h-6 w-6 hover:bg-muted rounded-md p-1" />
                 <Breadcrumbs />
               </div>
             </div>
