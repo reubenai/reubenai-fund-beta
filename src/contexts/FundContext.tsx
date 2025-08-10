@@ -70,19 +70,12 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Phase 7: Simplified Fund Fetching with New RLS
-      console.log('  - Fetching funds (RLS automatically applies visibility)');
+      // Phase 7: Use admin RPC function to avoid RLS recursion
+      console.log('  - Fetching funds using admin RPC (bypasses RLS recursion)');
       
-      // Now that RLS is properly configured, we can use a single query
-      // Super Admins will see all funds, regular users only their org funds
+      // Use the working admin RPC function
       const { data, error } = await supabase
-        .from('funds')
-        .select(`
-          *,
-          organizations!inner(name)
-        `)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .rpc('admin_get_all_funds');
 
       if (error) {
         console.error('❌ Fund fetch error:', error);
@@ -92,9 +85,10 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       // Transform data to match expected format
-      const fundsData = data?.map(fund => ({
+      // admin_get_all_funds includes organization_name field
+      const fundsData = data?.map((fund: any) => ({
         ...fund,
-        organization: { name: fund.organizations.name }
+        organization: { name: fund.organization_name || 'Unknown Organization' }
       }));
 
       console.log('  - Query result:');
