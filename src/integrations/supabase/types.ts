@@ -3568,6 +3568,10 @@ export type Database = {
           message: string
         }[]
       }
+      current_user_email: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       emergency_disable_rls: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -3616,6 +3620,10 @@ export type Database = {
         Returns: string
       }
       is_admin_by_email: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_reuben_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
