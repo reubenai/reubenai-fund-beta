@@ -3348,7 +3348,32 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      dashboard_stats: {
+        Row: {
+          deals_pipeline: number | null
+          funds_active: number | null
+          orgs_active: number | null
+          users_total: number | null
+        }
+        Relationships: []
+      }
+      rls_gaps: {
+        Row: {
+          schema: unknown | null
+          table_name: unknown | null
+        }
+        Relationships: []
+      }
+      rls_smells: {
+        Row: {
+          policyname: unknown | null
+          qual: string | null
+          schemaname: unknown | null
+          tablename: unknown | null
+          with_check: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_get_all_funds: {
@@ -3413,6 +3438,13 @@ export type Database = {
           p_org_id?: string
         }
         Returns: boolean
+      }
+      admin_update_profile_role: {
+        Args: {
+          p_profile_id: string
+          p_role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: undefined
       }
       admin_update_user_role: {
         Args: {
@@ -3580,6 +3612,18 @@ export type Database = {
       is_super_admin_by_email: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      list_platform_activities: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          id: string
+          title: string
+          activity_type: string
+          priority: string
+          user_id: string
+          fund_id: string
+          created_at: string
+        }[]
       }
       populate_enhanced_analysis: {
         Args: { target_deal_id: string }
