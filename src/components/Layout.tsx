@@ -22,15 +22,15 @@ export function Layout({ children }: LayoutProps) {
   return (
     <>
       <SidebarProvider defaultOpen={true}>
-        <div className="flex min-h-screen w-full bg-background overflow-x-auto">
+        <div className="flex min-h-screen w-full bg-background">
           <AppSidebar />
           <SidebarInset className="flex-1 min-w-0">
-            <div className="flex h-full flex-col min-w-[1200px]">
+            <div className="flex h-full flex-col">
               <AppHeader />
-              <div className="flex items-center justify-between px-6 py-3 border-b border-border/50">
+              <div className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-border/50">
                 <Breadcrumbs />
               </div>
-              <main className="flex-1 overflow-auto px-6 py-4">
+              <main className="flex-1 overflow-auto px-4 md:px-6 py-4 max-w-full">
                 {children}
               </main>
             </div>
