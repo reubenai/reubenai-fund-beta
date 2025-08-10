@@ -27,6 +27,7 @@ import { SystemHealthStatus } from '@/components/admin/SystemHealthStatus';
 import { OrganizationOnboarding } from '@/components/admin/OrganizationOnboarding';
 import { DealAnalysisPreCheck } from '@/components/admin/DealAnalysisPreCheck';
 import { EnhancedPlatformActivity } from '@/components/admin/EnhancedPlatformActivity';
+import { AIAgentsHealthPanel } from '@/components/admin/AIAgentsHealthPanel';
 import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModal';
 import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
 import { SimplifiedProductionReadiness } from '@/components/admin/SimplifiedProductionReadiness';
@@ -949,6 +950,7 @@ export default function Admin() {
 
             <TabsContent value="architecture" className="space-y-6">
               <ComprehensiveArchitectureDiagram />
+              <AIAgentsHealthPanel />
             </TabsContent>
 
           </Tabs>

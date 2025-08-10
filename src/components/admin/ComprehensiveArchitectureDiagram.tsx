@@ -143,61 +143,97 @@ export function ComprehensiveArchitectureDiagram() {
                 <text x="1000" y="125" textAnchor="middle" className="fill-muted-foreground text-sm">30+ Specialized AI Engines</text>
               </g>
 
-              {/* AI Analysis Engines - Row 1 */}
+              {/* Core AI Analysis Engines - 5 Primary */}
               <g>
-                <rect x="850" y="180" width="120" height="50" fill="hsl(var(--chart-2))" opacity="0.1" stroke="hsl(var(--chart-2))" strokeWidth="1" rx="4"/>
-                <text x="910" y="200" textAnchor="middle" className="fill-foreground text-xs font-medium">Financial Engine</text>
-                <text x="910" y="215" textAnchor="middle" className="fill-muted-foreground text-xs">Revenue Analysis</text>
+                <rect x="850" y="180" width="90" height="45" fill="hsl(var(--chart-2))" opacity="0.1" stroke="hsl(var(--chart-2))" strokeWidth="1" rx="4"/>
+                <text x="895" y="200" textAnchor="middle" className="fill-foreground text-xs font-medium">Financial</text>
+                <text x="895" y="215" textAnchor="middle" className="fill-muted-foreground text-xs">Engine</text>
               </g>
 
               <g>
-                <rect x="980" y="180" width="120" height="50" fill="hsl(var(--chart-3))" opacity="0.1" stroke="hsl(var(--chart-3))" strokeWidth="1" rx="4"/>
-                <text x="1040" y="200" textAnchor="middle" className="fill-foreground text-xs font-medium">Market Engine</text>
-                <text x="1040" y="215" textAnchor="middle" className="fill-muted-foreground text-xs">TAM/SAM/SOM</text>
+                <rect x="950" y="180" width="90" height="45" fill="hsl(var(--chart-3))" opacity="0.1" stroke="hsl(var(--chart-3))" strokeWidth="1" rx="4"/>
+                <text x="995" y="200" textAnchor="middle" className="fill-foreground text-xs font-medium">Market</text>
+                <text x="995" y="215" textAnchor="middle" className="fill-muted-foreground text-xs">Intelligence</text>
               </g>
 
               <g>
-                <rect x="1110" y="180" width="120" height="50" fill="hsl(var(--chart-4))" opacity="0.1" stroke="hsl(var(--chart-4))" strokeWidth="1" rx="4"/>
-                <text x="1170" y="200" textAnchor="middle" className="fill-foreground text-xs font-medium">Team Engine</text>
-                <text x="1170" y="215" textAnchor="middle" className="fill-muted-foreground text-xs">Founder Research</text>
-              </g>
-
-              {/* AI Analysis Engines - Row 2 */}
-              <g>
-                <rect x="850" y="240" width="120" height="50" fill="hsl(var(--chart-5))" opacity="0.1" stroke="hsl(var(--chart-5))" strokeWidth="1" rx="4"/>
-                <text x="910" y="260" textAnchor="middle" className="fill-foreground text-xs font-medium">Product Engine</text>
-                <text x="910" y="275" textAnchor="middle" className="fill-muted-foreground text-xs">IP Assessment</text>
+                <rect x="1050" y="180" width="90" height="45" fill="hsl(var(--chart-4))" opacity="0.1" stroke="hsl(var(--chart-4))" strokeWidth="1" rx="4"/>
+                <text x="1095" y="200" textAnchor="middle" className="fill-foreground text-xs font-medium">Team</text>
+                <text x="1095" y="215" textAnchor="middle" className="fill-muted-foreground text-xs">Research</text>
               </g>
 
               <g>
-                <rect x="980" y="240" width="120" height="50" fill="hsl(var(--primary))" opacity="0.1" stroke="hsl(var(--primary))" strokeWidth="1" rx="4"/>
-                <text x="1040" y="260" textAnchor="middle" className="fill-foreground text-xs font-medium">Thesis Engine</text>
-                <text x="1040" y="275" textAnchor="middle" className="fill-muted-foreground text-xs">Alignment Score</text>
+                <rect x="1150" y="180" width="90" height="45" fill="hsl(var(--chart-5))" opacity="0.1" stroke="hsl(var(--chart-5))" strokeWidth="1" rx="4"/>
+                <text x="1195" y="200" textAnchor="middle" className="fill-foreground text-xs font-medium">Product</text>
+                <text x="1195" y="215" textAnchor="middle" className="fill-muted-foreground text-xs">IP</text>
               </g>
 
               <g>
-                <rect x="1110" y="240" width="120" height="50" fill="hsl(var(--accent))" opacity="0.1" stroke="hsl(var(--accent))" strokeWidth="1" rx="4"/>
-                <text x="1170" y="260" textAnchor="middle" className="fill-foreground text-xs font-medium">Orchestrator</text>
-                <text x="1170" y="275" textAnchor="middle" className="fill-muted-foreground text-xs">Reuben Master</text>
+                <rect x="1250" y="180" width="90" height="45" fill="hsl(var(--primary))" opacity="0.1" stroke="hsl(var(--primary))" strokeWidth="1" rx="4"/>
+                <text x="1295" y="200" textAnchor="middle" className="fill-foreground text-xs font-medium">Thesis</text>
+                <text x="1295" y="215" textAnchor="middle" className="fill-muted-foreground text-xs">Alignment</text>
               </g>
 
-              {/* Additional Edge Functions */}
+              {/* Supporting Analysis Engines - Row 2 */}
               <g>
-                <rect x="850" y="300" width="120" height="50" fill="hsl(var(--chart-1))" opacity="0.1" stroke="hsl(var(--chart-1))" strokeWidth="1" rx="4"/>
-                <text x="910" y="320" textAnchor="middle" className="fill-foreground text-xs font-medium">Risk Engine</text>
-                <text x="910" y="335" textAnchor="middle" className="fill-muted-foreground text-xs">Mitigation</text>
-              </g>
-
-              <g>
-                <rect x="980" y="300" width="120" height="50" fill="hsl(var(--chart-2))" opacity="0.1" stroke="hsl(var(--chart-2))" strokeWidth="1" rx="4"/>
-                <text x="1040" y="320" textAnchor="middle" className="fill-foreground text-xs font-medium">Fund Memory</text>
-                <text x="1040" y="335" textAnchor="middle" className="fill-muted-foreground text-xs">Intelligence</text>
+                <rect x="850" y="240" width="85" height="40" fill="hsl(var(--accent))" opacity="0.1" stroke="hsl(var(--accent))" strokeWidth="1" rx="4"/>
+                <text x="892" y="258" textAnchor="middle" className="fill-foreground text-xs font-medium">Risk</text>
+                <text x="892" y="272" textAnchor="middle" className="fill-muted-foreground text-xs">Mitigation</text>
               </g>
 
               <g>
-                <rect x="1110" y="300" width="120" height="50" fill="hsl(var(--chart-3))" opacity="0.1" stroke="hsl(var(--chart-3))" strokeWidth="1" rx="4"/>
-                <text x="1170" y="320" textAnchor="middle" className="fill-foreground text-xs font-medium">PDF Generator</text>
-                <text x="1170" y="335" textAnchor="middle" className="fill-muted-foreground text-xs">Memo Export</text>
+                <rect x="945" y="240" width="85" height="40" fill="hsl(var(--chart-1))" opacity="0.1" stroke="hsl(var(--chart-1))" strokeWidth="1" rx="4"/>
+                <text x="987" y="258" textAnchor="middle" className="fill-foreground text-xs font-medium">Fund</text>
+                <text x="987" y="272" textAnchor="middle" className="fill-muted-foreground text-xs">Memory</text>
+              </g>
+
+              <g>
+                <rect x="1040" y="240" width="85" height="40" fill="hsl(var(--chart-2))" opacity="0.1" stroke="hsl(var(--chart-2))" strokeWidth="1" rx="4"/>
+                <text x="1082" y="258" textAnchor="middle" className="fill-foreground text-xs font-medium">Exit</text>
+                <text x="1082" y="272" textAnchor="middle" className="fill-muted-foreground text-xs">Strategy</text>
+              </g>
+
+              <g>
+                <rect x="1135" y="240" width="85" height="40" fill="hsl(var(--chart-3))" opacity="0.1" stroke="hsl(var(--chart-3))" strokeWidth="1" rx="4"/>
+                <text x="1177" y="258" textAnchor="middle" className="fill-foreground text-xs font-medium">Document</text>
+                <text x="1177" y="272" textAnchor="middle" className="fill-muted-foreground text-xs">Processor</text>
+              </g>
+
+              <g>
+                <rect x="1230" y="240" width="85" height="40" fill="hsl(var(--chart-4))" opacity="0.1" stroke="hsl(var(--chart-4))" strokeWidth="1" rx="4"/>
+                <text x="1272" y="258" textAnchor="middle" className="fill-foreground text-xs font-medium">Web</text>
+                <text x="1272" y="272" textAnchor="middle" className="fill-muted-foreground text-xs">Research</text>
+              </g>
+
+              {/* Orchestration & Control Layer - Row 3 */}
+              <g>
+                <rect x="850" y="295" width="120" height="45" fill="hsl(var(--destructive))" opacity="0.1" stroke="hsl(var(--destructive))" strokeWidth="2" rx="4"/>
+                <text x="910" y="315" textAnchor="middle" className="fill-foreground text-xs font-bold">Reuben</text>
+                <text x="910" y="330" textAnchor="middle" className="fill-muted-foreground text-xs">Orchestrator</text>
+              </g>
+
+              <g>
+                <rect x="980" y="295" width="85" height="45" fill="hsl(var(--chart-5))" opacity="0.1" stroke="hsl(var(--chart-5))" strokeWidth="1" rx="4"/>
+                <text x="1022" y="315" textAnchor="middle" className="fill-foreground text-xs font-medium">Cost</text>
+                <text x="1022" y="330" textAnchor="middle" className="fill-muted-foreground text-xs">Guard</text>
+              </g>
+
+              <g>
+                <rect x="1075" y="295" width="85" height="45" fill="hsl(var(--primary))" opacity="0.1" stroke="hsl(var(--primary))" strokeWidth="1" rx="4"/>
+                <text x="1117" y="315" textAnchor="middle" className="fill-foreground text-xs font-medium">LLM</text>
+                <text x="1117" y="330" textAnchor="middle" className="fill-muted-foreground text-xs">Control</text>
+              </g>
+
+              <g>
+                <rect x="1170" y="295" width="85" height="45" fill="hsl(var(--accent))" opacity="0.1" stroke="hsl(var(--accent))" strokeWidth="1" rx="4"/>
+                <text x="1212" y="315" textAnchor="middle" className="fill-foreground text-xs font-medium">Enhanced</text>
+                <text x="1212" y="330" textAnchor="middle" className="fill-muted-foreground text-xs">Analysis</text>
+              </g>
+
+              <g>
+                <rect x="1265" y="295" width="85" height="45" fill="hsl(var(--chart-1))" opacity="0.1" stroke="hsl(var(--chart-1))" strokeWidth="1" rx="4"/>
+                <text x="1307" y="315" textAnchor="middle" className="fill-foreground text-xs font-medium">Universal</text>
+                <text x="1307" y="330" textAnchor="middle" className="fill-muted-foreground text-xs">Processor</text>
               </g>
 
               {/* Database Layer */}
