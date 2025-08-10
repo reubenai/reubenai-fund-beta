@@ -55,6 +55,8 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('  - Session valid:', !!session.session);
       console.log('  - Session user:', session.session?.user?.email);
       
+      // With the new RLS system, super admins can see all funds automatically
+      // Regular users can only see funds in their organization
       let fundsQuery = supabase
         .from('funds')
         .select(`
@@ -64,16 +66,7 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      // Super Admin can see all funds across all organizations
-      // Other roles are filtered by their organization via RLS policies
-      if (!isSuperAdmin && organizationId) {
-        console.log('  - Adding organization filter for non-super-admin');
-        fundsQuery = fundsQuery.eq('organization_id', organizationId);
-      } else {
-        console.log('  - Super admin: no organization filter applied');
-      }
-
-      console.log('  - Executing query...');
+      console.log('  - Executing query (RLS will handle filtering automatically)...');
       const { data: fundsData, error } = await fundsQuery;
 
       console.log('  - Query result:');
@@ -81,7 +74,13 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('    - Data count:', fundsData?.length || 0);
       console.log('    - Fund names:', fundsData?.map(f => f.name) || []);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Fund fetch error:', error);
+        // Don't throw, just set empty array and log the error
+        setFunds([]);
+        setSelectedFund(null);
+        return;
+      }
 
       setFunds(fundsData || []);
       
@@ -102,6 +101,8 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       console.error('❌ Error fetching funds:', error);
+      setFunds([]);
+      setSelectedFund(null);
     } finally {
       setLoading(false);
     }

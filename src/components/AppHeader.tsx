@@ -1,26 +1,54 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Building2 } from "lucide-react";
+import { Search, Building2, ChevronDown } from "lucide-react";
 import { useFund } from '@/contexts/FundContext';
 import { GlobalSearchModal } from '@/components/search/GlobalSearchModal';
 import { useAppKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect } from 'react';
 
 export function AppHeader() {
-  const { selectedFund } = useFund();
+  const { selectedFund, funds, setSelectedFund } = useFund();
   const { searchVisible, setSearchVisible } = useAppKeyboardShortcuts();
 
   return (
     <header className="h-14 flex items-center border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/95 px-4 gap-4 relative">
       <SidebarTrigger className="h-8 w-8 hover:bg-muted rounded-md transition-colors z-50" />
       
-      {/* Current Fund Display */}
-      {selectedFund && (
-        <div className="flex items-center gap-2 px-3 py-1 bg-muted/50 rounded-md">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground">{selectedFund.name}</span>
-        </div>
+      {/* Fund Selector */}
+      {funds.length > 0 && (
+        <Select 
+          value={selectedFund?.id || ""} 
+          onValueChange={(value) => {
+            const fund = funds.find(f => f.id === value);
+            if (fund) setSelectedFund(fund);
+          }}
+        >
+          <SelectTrigger className="w-[250px] h-8 bg-muted/50">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <SelectValue placeholder="Select a fund">
+                {selectedFund?.name}
+              </SelectValue>
+            </div>
+          </SelectTrigger>
+          <SelectContent>
+            {funds.map((fund) => (
+              <SelectItem key={fund.id} value={fund.id}>
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  <span>{fund.name}</span>
+                  {fund.organization?.name && (
+                    <span className="text-xs text-muted-foreground">
+                      ({fund.organization.name})
+                    </span>
+                  )}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       )}
 
       {/* Spacer */}
