@@ -122,6 +122,7 @@ export default function Admin() {
   const [bulkUploadFund, setBulkUploadFund] = useState<Fund | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showCreateFundModal, setShowCreateFundModal] = useState(false);
+  const [isResettingPasswords, setIsResettingPasswords] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -793,6 +794,54 @@ export default function Admin() {
     }
   };
 
+  const batchResetPasswords = async () => {
+    if (!confirm('This will reset ALL user passwords to "ReubenDemo123!". Are you sure?')) {
+      return;
+    }
+
+    setIsResettingPasswords(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('batch-password-reset', {
+        body: {
+          newPassword: 'ReubenDemo123!',
+          confirmReset: true
+        }
+      });
+
+      if (error) {
+        console.error('Batch password reset error:', error);
+        toast.error(`Failed to reset passwords: ${error.message}`);
+        return;
+      }
+
+      console.log('Batch password reset result:', data);
+      
+      if (data.results) {
+        toast.success(`Password reset completed! Successful: ${data.results.successful}, Failed: ${data.results.failed}`);
+        
+        if (data.results.failed > 0) {
+          console.error('Failed password resets:', data.results.errors);
+          toast.error(`${data.results.failed} password resets failed. Check console for details.`);
+        }
+      } else {
+        toast.success('Batch password reset initiated successfully');
+      }
+      
+      // Log admin activity
+      await logAdminActivity('batch_password_reset', 'Executed batch password reset for all users', {
+        results: data.results,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (error) {
+      console.error('Error calling batch password reset:', error);
+      toast.error('Failed to execute batch password reset');
+    } finally {
+      setIsResettingPasswords(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -912,6 +961,39 @@ export default function Admin() {
         </TabsContent>
 
             <TabsContent value="users" className="space-y-4">
+              {/* Emergency Password Reset */}
+              <Card className="border-destructive/20 bg-destructive/5">
+                <CardHeader>
+                  <CardTitle className="text-destructive flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    Emergency Password Reset
+                  </CardTitle>
+                  <CardDescription>
+                    Reset all user passwords to "ReubenDemo123!" and force re-login. Use only if users are locked out.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={batchResetPasswords}
+                    disabled={isResettingPasswords}
+                    variant="destructive"
+                    className="w-full"
+                  >
+                    {isResettingPasswords ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Resetting Passwords...
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="h-4 w-4 mr-2" />
+                        Reset All User Passwords
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
               <AdminUserTable 
                 profiles={profiles}
                 organizations={organizations}
