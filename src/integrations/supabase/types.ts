@@ -3351,11 +3351,57 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_get_all_funds: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          organization_id: string
+          fund_type: Database["public"]["Enums"]["fund_type"]
+          target_size: number
+          currency: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      admin_get_all_organizations: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          domain: string
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      admin_get_all_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          user_id: string
+          email: string
+          first_name: string
+          last_name: string
+          role: Database["public"]["Enums"]["user_role"]
+          organization_id: string
+          is_deleted: boolean
+          created_at: string
+          updated_at: string
+        }[]
+      }
       admin_set_user_role: {
         Args: {
           p_user_email: string
           p_role: Database["public"]["Enums"]["user_role"]
           p_org_id?: string
+        }
+        Returns: boolean
+      }
+      admin_update_user_role: {
+        Args: {
+          p_user_id: string
+          p_role: Database["public"]["Enums"]["user_role"]
         }
         Returns: boolean
       }

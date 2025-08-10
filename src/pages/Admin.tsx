@@ -139,24 +139,32 @@ export default function Admin() {
 
       setProfile(profileData);
 
-      // Fetch all organizations
-      const { data: orgsData } = await supabase
-        .from('organizations')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Fetch all organizations using admin function
+      const { data: orgsData, error: orgsError } = await supabase
+        .rpc('admin_get_all_organizations');
+        
+      if (orgsError) {
+        console.error('Error fetching organizations:', orgsError);
+        toast.error('Failed to fetch organizations');
+      }
 
-      // Fetch all profiles (filter out soft-deleted users)
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('*')
-        .or('is_deleted.is.null,is_deleted.eq.false') // Filter out soft-deleted users
-        .order('created_at', { ascending: false });
+      // Fetch all profiles using admin function
+      const { data: profilesData, error: profilesError } = await supabase
+        .rpc('admin_get_all_profiles');
+      
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        toast.error('Failed to fetch user profiles');
+      }
 
-      // Fetch all funds
-      const { data: fundsData } = await supabase
-        .from('funds')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Fetch all funds using admin function  
+      const { data: fundsData, error: fundsError } = await supabase
+        .rpc('admin_get_all_funds');
+        
+      if (fundsError) {
+        console.error('Error fetching funds:', fundsError);
+        toast.error('Failed to fetch funds');
+      }
 
       // Fetch deals count
       const { count: dealsCount } = await supabase

@@ -33,7 +33,7 @@ export function AppHeader() {
               </SelectValue>
             </div>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-50">
             {funds.map((fund) => (
               <SelectItem key={fund.id} value={fund.id}>
                 <div className="flex items-center gap-2">
