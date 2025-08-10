@@ -70,47 +70,32 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Phase 7.1: Fund Context Integrity - Super Admin vs Regular User
-      let fundsData;
+      // Phase 7: Simplified Fund Fetching with New RLS
+      console.log('  - Fetching funds (RLS automatically applies visibility)');
       
-      if (isSuperAdmin) {
-        console.log('  - Super Admin: Fetching ALL funds');
-        // Super Admin → full visibility of all funds, regardless of org_id
-        const { data, error } = await supabase
-          .rpc('admin_get_all_funds_with_orgs');
-          
-        if (error) {
-          console.error('❌ Super admin fund fetch error:', error);
-          setFunds([]);
-          setSelectedFund(null);
-          return;
-        }
-        
-        fundsData = data?.map(fund => ({
-          ...fund,
-          organization: { name: fund.organization_name }
-        }));
-      } else {
-        console.log('  - Regular User: Fetching org-restricted funds');
-        // Non-Super Admin → restricted to their org_id funds only
-        const { data, error } = await supabase
-          .from('funds')
-          .select(`
-            *,
-            organization:organizations(name)
-          `)
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
+      // Now that RLS is properly configured, we can use a single query
+      // Super Admins will see all funds, regular users only their org funds
+      const { data, error } = await supabase
+        .from('funds')
+        .select(`
+          *,
+          organizations!inner(name)
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('❌ Regular user fund fetch error:', error);
-          setFunds([]);
-          setSelectedFund(null);
-          return;
-        }
-        
-        fundsData = data;
+      if (error) {
+        console.error('❌ Fund fetch error:', error);
+        setFunds([]);
+        setSelectedFund(null);
+        return;
       }
+      
+      // Transform data to match expected format
+      const fundsData = data?.map(fund => ({
+        ...fund,
+        organization: { name: fund.organizations.name }
+      }));
 
       console.log('  - Query result:');
       console.log('    - Data count:', fundsData?.length || 0);

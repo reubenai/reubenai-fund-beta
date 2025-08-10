@@ -12,6 +12,7 @@ const STAGE_NAME_TO_STATUS: Record<string, DealStatus> = {
   'approved': 'approved',
   'rejected': 'rejected',
   'invested': 'invested',
+  'archived': 'archived',
   
   // Alternative naming variations
   'initial_review': 'screening',
@@ -35,6 +36,7 @@ const STATUS_TO_DISPLAY_NAME: Record<DealStatus, string> = {
   'approved': 'Approved',
   'rejected': 'Rejected',
   'invested': 'Invested',
+  'archived': 'Archived',
 };
 
 /**
@@ -104,7 +106,7 @@ export function stageKeyToStatus(stageKey: string): DealStatus {
 export function isValidDealStatus(status: string): status is DealStatus {
   const validStatuses: DealStatus[] = [
     'sourced', 'screening', 'due_diligence', 
-    'investment_committee', 'approved', 'rejected', 'invested'
+    'investment_committee', 'approved', 'rejected', 'invested', 'archived'
   ];
   return validStatuses.includes(status as DealStatus);
 }
