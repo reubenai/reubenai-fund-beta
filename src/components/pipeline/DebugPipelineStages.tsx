@@ -15,13 +15,28 @@ export const DebugPipelineStages: React.FC<DebugPipelineStagesProps> = ({ fundId
     console.log('🔧 [DebugPipelineStages] Direct database fetch for fundId:', fundId);
     
     try {
-      const { data, error } = await supabase
+      // First, check user authentication
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('🔧 [DebugPipelineStages] Current user:', user?.email);
+      
+      // Then fetch stages with detailed error logging
+      const { data, error, count } = await supabase
         .from('pipeline_stages')
-        .select('*')
+        .select('*', { count: 'exact' })
         .eq('fund_id', fundId)
         .order('position', { ascending: true });
 
-      console.log('🔧 [DebugPipelineStages] Direct fetch result:', { data, error });
+      console.log('🔧 [DebugPipelineStages] Direct fetch result:', { 
+        data, 
+        error: error?.message || 'none',
+        count,
+        user: user?.email 
+      });
+      
+      if (error) {
+        console.error('🔧 [DebugPipelineStages] Database error:', error);
+      }
+      
       setDirectStages(data || []);
     } catch (err) {
       console.error('🔧 [DebugPipelineStages] Direct fetch error:', err);
@@ -35,21 +50,29 @@ export const DebugPipelineStages: React.FC<DebugPipelineStagesProps> = ({ fundId
   }, [fundId]);
 
   return (
-    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-      <h3 className="font-semibold text-red-800 mb-2">DEBUG: Pipeline Stages Direct Fetch</h3>
-      <p className="text-sm text-red-600 mb-2">Fund ID: {fundId}</p>
-      <Button onClick={fetchDirectly} disabled={loading} size="sm">
-        {loading ? 'Fetching...' : 'Fetch Directly'}
-      </Button>
-      <div className="mt-2">
-        <p className="text-sm">Direct stages count: {directStages.length}</p>
-        {directStages.length > 0 && (
-          <ul className="text-xs mt-1">
-            {directStages.map(stage => (
-              <li key={stage.id}>{stage.position}: {stage.name}</li>
-            ))}
-          </ul>
-        )}
+    <div className="p-4 bg-red-50 border border-red-200 rounded-lg mb-6">
+      <h3 className="font-semibold text-red-800 mb-2">🚨 CRITICAL DEBUG: Pipeline Stages</h3>
+      <div className="space-y-2 text-sm">
+        <p><strong>Fund ID:</strong> {fundId}</p>
+        <Button onClick={fetchDirectly} disabled={loading} size="sm" className="mr-2">
+          {loading ? 'Fetching...' : 'Test Direct DB Fetch'}
+        </Button>
+        <div className="bg-white p-2 rounded border">
+          <p><strong>Direct stages count:</strong> {directStages.length}</p>
+          {directStages.length > 0 && (
+            <div className="mt-1">
+              <p><strong>Stage names:</strong></p>
+              <ul className="text-xs mt-1 list-disc list-inside">
+                {directStages.map(stage => (
+                  <li key={stage.id}>{stage.position}: {stage.name}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {directStages.length === 0 && (
+            <p className="text-red-600 text-xs">❌ No stages returned - RLS or permission issue</p>
+          )}
+        </div>
       </div>
     </div>
   );
