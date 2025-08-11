@@ -239,8 +239,16 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
     );
   }
 
-  // Calculate overall analysis score - handle both data structures
+  // Calculate overall analysis score - EMERGENCY FIX for missing data
   const getAnalysisScore = () => {
+    // CRITICAL: Check if we have ANY analysis data at all
+    console.log('🔍 Analysis data structure:', {
+      hasRubricBreakdown: !!(analysis.rubric_breakdown && analysis.rubric_breakdown.length > 0),
+      hasAnalysisEngines: !!(analysis.analysis_engines && Object.keys(analysis.analysis_engines).length > 0),
+      dealOverallScore: deal.overall_score,
+      fullAnalysis: analysis
+    });
+
     // First try rubric_breakdown if available
     if (analysis.rubric_breakdown && analysis.rubric_breakdown.length > 0) {
       const totalWeight = analysis.rubric_breakdown.reduce((sum, item) => sum + item.weight, 0);
@@ -401,21 +409,37 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
             </CardContent>
           </Card>
 
-          {/* Enhanced Rubric Breakdown with Deep Dive */}
+          {/* Enhanced Rubric Breakdown with Deep Dive - EMERGENCY FALLBACK */}
           <div className="grid gap-4">
-            {(analysis.rubric_breakdown || []).map((item, index) => (
-              <CategoryDeepDiveSection
-                key={index}
-                category={item.category}
-                score={item.score}
-                confidence={item.confidence}
-                weight={item.weight}
-                insights={item.insights}
-                strengths={item.strengths}
-                concerns={item.concerns}
-                detailedAnalysis={(analysis as any).detailed_breakdown}
-              />
-            ))}
+            {(analysis.rubric_breakdown && analysis.rubric_breakdown.length > 0) ? (
+              analysis.rubric_breakdown.map((item, index) => (
+                <CategoryDeepDiveSection
+                  key={index}
+                  category={item.category}
+                  score={item.score}
+                  confidence={item.confidence}
+                  weight={item.weight}
+                  insights={item.insights}
+                  strengths={item.strengths}
+                  concerns={item.concerns}
+                  detailedAnalysis={(analysis as any).detailed_breakdown}
+                />
+              ))
+            ) : (
+              <Card className="card-xero">
+                <CardContent className="p-6">
+                  <div className="text-center space-y-4">
+                    <AlertCircle className="h-12 w-12 text-warning mx-auto" />
+                    <div>
+                      <h3 className="text-lg font-semibold">Analysis Data Missing</h3>
+                      <p className="text-muted-foreground">
+                        No rubric breakdown found. Please run comprehensive analysis.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
 
