@@ -25,6 +25,7 @@ class DocumentService {
     onProgress?: (progress: DocumentUploadProgress) => void
   ): Promise<DealDocument | null> {
     try {
+      console.log('📁 DocumentService: Starting upload for deal:', input.dealId);
       onProgress?.({ progress: 0, status: 'uploading', message: 'Starting upload...' });
 
       // Validate file
@@ -51,11 +52,46 @@ class DocumentService {
         throw new Error('File type not supported');
       }
 
-      // Ensure user is authenticated (RLS requires it)
-      const { data: userData } = await supabase.auth.getUser();
+      // Enhanced authentication validation
+      const { data: userData, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        console.error('🔐 Authentication error:', authError);
+        throw new Error(`Authentication failed: ${authError.message}`);
+      }
+      
       if (!userData?.user?.id) {
+        console.error('🔐 No user data available');
         throw new Error('You must be signed in to upload documents');
       }
+
+      console.log('🔐 User authenticated:', { 
+        userId: userData.user.id, 
+        email: userData.user.email,
+        dealId: input.dealId 
+      });
+
+      // Verify deal exists and user has access
+      const { data: dealData, error: dealError } = await supabase
+        .from('deals')
+        .select('id, fund_id, company_name')
+        .eq('id', input.dealId)
+        .single();
+
+      if (dealError) {
+        console.error('💼 Deal verification failed:', dealError);
+        throw new Error(`Cannot access deal: ${dealError.message}`);
+      }
+
+      if (!dealData) {
+        console.error('💼 Deal not found:', input.dealId);
+        throw new Error('Deal not found or access denied');
+      }
+
+      console.log('💼 Deal verified:', { 
+        dealId: dealData.id, 
+        fundId: dealData.fund_id, 
+        companyName: dealData.company_name 
+      });
 
       // Generate unique filename
       const timestamp = Date.now();
@@ -79,12 +115,12 @@ class DocumentService {
 
       onProgress?.({ progress: 60, status: 'processing', message: 'Creating document record...' });
 
-      // Create document record
+      // Create document record with enhanced logging
       const documentData: DealDocumentInsert = {
         deal_id: input.dealId,
         name: input.file.name,
         file_path: uploadData.path,          // e.g. "<dealId>/<timestamp>_file.ext"
-        storage_path: filePath,              // align storage_path with full path for consistency
+        storage_path: uploadData.path,       // Use same path for consistency
         bucket_name: 'deal-documents',
         content_type: input.file.type,
         file_size: input.file.size,
@@ -98,6 +134,14 @@ class DocumentService {
         }
       };
 
+      console.log('💾 Creating document record:', {
+        dealId: documentData.deal_id,
+        fileName: documentData.name,
+        filePath: documentData.file_path,
+        uploadedBy: documentData.uploaded_by,
+        category: documentData.document_category
+      });
+
       const { data: documentRecord, error: dbError } = await supabase
         .from('deal_documents')
         .insert(documentData)
@@ -105,16 +149,40 @@ class DocumentService {
         .maybeSingle();
 
       if (dbError) {
+        console.error('💾 Database insert failed:', {
+          error: dbError,
+          code: dbError.code,
+          message: dbError.message,
+          details: dbError.details,
+          hint: dbError.hint,
+          documentData
+        });
+        
         // Clean up uploaded file if DB insert fails
+        console.log('🧹 Cleaning up uploaded file due to DB error');
         await supabase.storage.from('deal-documents').remove([uploadData.path]);
+        
+        // Enhanced error message for common RLS issues
+        if (dbError.code === '42501' || dbError.message.includes('row-level security')) {
+          throw new Error(`Access denied: You don't have permission to upload documents for this deal. Contact your administrator.`);
+        }
+        
         throw new Error(`Database error: ${dbError.message}`);
       }
 
       if (!documentRecord) {
+        console.error('💾 Document record creation returned null');
         // Clean up and signal failure
         await supabase.storage.from('deal-documents').remove([uploadData.path]);
         throw new Error('Document record was not created');
       }
+
+      console.log('✅ Document upload successful:', {
+        documentId: documentRecord.id,
+        dealId: documentRecord.deal_id,
+        fileName: documentRecord.name,
+        filePath: documentRecord.file_path
+      });
 
       onProgress?.({ progress: 100, status: 'complete', message: 'Upload complete!' });
 
@@ -126,20 +194,28 @@ class DocumentService {
             analysisType: 'quick'
           }
         });
-        console.log(`Document processing triggered for ${documentRecord.id}`);
+        console.log(`📋 Document processing triggered for ${documentRecord.id}`);
       } catch (processingError) {
-        console.warn('Failed to trigger document processing:', processingError);
+        console.warn('⚠️ Failed to trigger document processing:', processingError);
         // Don't fail the upload if processing trigger fails
       }
 
       return documentRecord;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      console.error('❌ Document upload failed:', {
+        error: error,
+        dealId: input.dealId,
+        fileName: input.file.name,
+        message: errorMessage
+      });
+      
       onProgress?.({ 
         progress: 0, 
         status: 'error', 
-        message: error instanceof Error ? error.message : 'Upload failed' 
+        message: errorMessage
       });
-      console.error('Document upload error:', error);
+      
       return null;
     }
   }
