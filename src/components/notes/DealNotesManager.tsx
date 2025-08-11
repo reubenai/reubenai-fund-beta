@@ -173,7 +173,12 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
           
           // Trigger analysis if note is significant
           if (newNote.length > 50 || newCategory === 'due_diligence' || newSentiment !== 'neutral') {
-            await triggerDealAnalysis(dealId, 'note_added', dealData.fund_id);
+            try {
+              await triggerDealAnalysis(dealId, 'manual_trigger', dealData.fund_id);
+            } catch (analysisError) {
+              console.error('Failed to trigger analysis:', analysisError);
+              // Don't fail the note creation if analysis trigger fails
+            }
           }
         }
       } catch (activityError) {
