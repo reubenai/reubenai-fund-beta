@@ -4,6 +4,7 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Plus, Edit2, Check, X, MoreVertical, Palette } from 'lucide-react';
 import { Deal, PipelineStage } from '@/hooks/usePipelineDeals';
 import { EnhancedDealCard } from './EnhancedDealCard';
@@ -63,8 +64,8 @@ export const EnhancedKanbanColumn: React.FC<EnhancedKanbanColumnProps> = ({
   };
 
   return (
-    <Card className={`flex-shrink-0 ${getColumnWidth()} bg-slate-50 border-slate-200`}>
-      <CardHeader className="pb-3">
+    <Card className={`flex-shrink-0 ${getColumnWidth()} bg-slate-50 border-slate-200 flex flex-col h-[calc(100vh-12rem)]`}>
+      <CardHeader className="pb-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           {isEditing ? (
             <div className="flex items-center gap-2 flex-1">
@@ -123,6 +124,11 @@ export const EnhancedKanbanColumn: React.FC<EnhancedKanbanColumnProps> = ({
             <Badge variant="secondary" className="bg-white text-gray-600">
               {deals.length}
             </Badge>
+            {getTotalValue() && (
+              <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-200">
+                {getTotalValue()}
+              </Badge>
+            )}
             {onAddDeal && (
               <Button
                 size="sm"
@@ -136,43 +142,44 @@ export const EnhancedKanbanColumn: React.FC<EnhancedKanbanColumnProps> = ({
           </div>
         </div>
         
-        
         {/* Stage Description */}
         {viewDensity === 'detailed' && stage.description && (
           <p className="text-xs text-gray-500 mt-1">{stage.description}</p>
         )}
       </CardHeader>
 
-      <CardContent className="pt-0">
-        <Droppable droppableId={stage.id}>
-          {(provided, snapshot) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className={`
-                min-h-[200px] transition-colors duration-200
-                ${snapshot.isDraggingOver ? 'bg-emerald-50 rounded-lg' : ''}
-              `}
-            >
-              {deals.length === 0 ? (
-                <div className="flex items-center justify-center h-32 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-lg">
-                  {snapshot.isDraggingOver ? 'Drop deal here' : 'No deals yet'}
-                </div>
-              ) : (
-                deals.map((deal, index) => (
-                  <EnhancedDealCard
-                    key={deal.id}
-                    deal={deal as any}
-                    index={index}
-                    onDealClick={onDealClick}
-                    viewDensity={viewDensity}
-                  />
-                ))
-              )}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
+      <CardContent className="pt-0 flex-1 overflow-hidden">
+        <ScrollArea className="h-full">
+          <Droppable droppableId={stage.id}>
+            {(provided, snapshot) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className={`
+                  min-h-[200px] transition-colors duration-200 space-y-2 pb-2
+                  ${snapshot.isDraggingOver ? 'bg-emerald-50 rounded-lg p-2' : ''}
+                `}
+              >
+                {deals.length === 0 ? (
+                  <div className="flex items-center justify-center h-32 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-lg">
+                    {snapshot.isDraggingOver ? 'Drop deal here' : 'No deals yet'}
+                  </div>
+                ) : (
+                  deals.map((deal, index) => (
+                    <EnhancedDealCard
+                      key={deal.id}
+                      deal={deal as any}
+                      index={index}
+                      onDealClick={onDealClick}
+                      viewDensity={viewDensity}
+                    />
+                  ))
+                )}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </ScrollArea>
       </CardContent>
     </Card>
   );
