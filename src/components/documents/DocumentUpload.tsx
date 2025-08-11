@@ -51,23 +51,24 @@ const DOCUMENT_CATEGORIES: { value: Database['public']['Enums']['document_catego
 ];
 
 export function DocumentUpload({ dealId, companyName, onUploadComplete, onUploadStart }: DocumentUploadProps) {
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL LOGIC
   const [selectedFiles, setSelectedFiles] = useState<SelectedFile[]>([]);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const [error, setError] = useState<any | null>(null);
   const { logDocumentUploaded } = useActivityTracking();
   const { triggerDealAnalysis } = useAnalysisIntegration();
   const permissions = usePermissions();
+  const { toast } = useToast();
 
-  // Check permissions first - moved after all hooks
-  if (!permissions.canUploadDocuments) {
-    return (
-      <div className="text-center p-8 bg-muted/20 rounded-lg">
-        <p className="text-muted-foreground">
-          You don't have permission to upload documents. Contact your administrator for access.
-        </p>
-      </div>
-    );
-  }
+  // Debug permission loading for fund_manager users
+  React.useEffect(() => {
+    console.log('DocumentUpload permissions debug:', {
+      canUploadDocuments: permissions.canUploadDocuments,
+      role: permissions.role,
+      loading: permissions.loading,
+      userId: dealId // For debugging context
+    });
+  }, [permissions.canUploadDocuments, permissions.role, permissions.loading, dealId]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setError(null);
@@ -204,6 +205,26 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
       }
     }
   };
+
+  // Loading state while permissions resolve
+  if (permissions.loading) {
+    return (
+      <div className="text-center p-8 bg-muted/20 rounded-lg">
+        <p className="text-muted-foreground">Loading permissions...</p>
+      </div>
+    );
+  }
+
+  // Permission denied state
+  if (!permissions.canUploadDocuments) {
+    return (
+      <div className="text-center p-8 bg-muted/20 rounded-lg">
+        <p className="text-muted-foreground">
+          You don't have permission to upload documents. Contact your administrator for access.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
