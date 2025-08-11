@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { Upload, Download, CheckCircle, AlertCircle, XCircle, FileSpreadsheet } 
 import { useToast } from '@/hooks/use-toast';
 import { CsvParsingService } from '@/services/CsvParsingService';
 import { EnhancedBatchUploadModal } from './EnhancedBatchUploadModal';
+import SimpleErrorBoundary from '@/components/common/SimpleErrorBoundary';
 
 interface BatchUploadModalProps {
   open: boolean;
@@ -35,14 +37,25 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
   fundId,
   onUploadComplete
 }) => {
-  // Use enhanced version for new workflow
+  // Wrap the enhanced modal with an error boundary and fall back to legacy if it fails to render
   return (
-    <EnhancedBatchUploadModal
-      open={open}
-      onClose={onClose}
-      fundId={fundId}
-      onUploadComplete={onUploadComplete}
-    />
+    <SimpleErrorBoundary
+      fallback={
+        <LegacyBatchUploadModal
+          open={open}
+          onClose={onClose}
+          fundId={fundId}
+          onUploadComplete={onUploadComplete}
+        />
+      }
+    >
+      <EnhancedBatchUploadModal
+        open={open}
+        onClose={onClose}
+        fundId={fundId}
+        onUploadComplete={onUploadComplete}
+      />
+    </SimpleErrorBoundary>
   );
 };
 
@@ -177,7 +190,7 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5" />
-            Batch Upload Deals
+            Batch Upload Deals (Legacy Fallback)
           </DialogTitle>
         </DialogHeader>
 

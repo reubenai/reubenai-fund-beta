@@ -51,6 +51,12 @@ class DocumentService {
         throw new Error('File type not supported');
       }
 
+      // Ensure user is authenticated (RLS requires it)
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user?.id) {
+        throw new Error('You must be signed in to upload documents');
+      }
+
       // Generate unique filename
       const timestamp = Date.now();
       const sanitizedName = input.file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
@@ -77,15 +83,15 @@ class DocumentService {
       const documentData: DealDocumentInsert = {
         deal_id: input.dealId,
         name: input.file.name,
-        file_path: uploadData.path,
-        storage_path: fileName,
+        file_path: uploadData.path,          // e.g. "<dealId>/<timestamp>_file.ext"
+        storage_path: filePath,              // align storage_path with full path for consistency
         bucket_name: 'deal-documents',
         content_type: input.file.type,
         file_size: input.file.size,
         document_type: input.documentType,
         document_category: input.documentCategory || 'other',
         tags: input.tags || [],
-        uploaded_by: (await supabase.auth.getUser()).data.user?.id!,
+        uploaded_by: userData.user.id,
         metadata: {
           originalName: input.file.name,
           uploadedAt: new Date().toISOString()
@@ -96,7 +102,7 @@ class DocumentService {
         .from('deal_documents')
         .insert(documentData)
         .select()
-        .single();
+        .maybeSingle();
 
       if (dbError) {
         // Clean up uploaded file if DB insert fails
@@ -104,9 +110,15 @@ class DocumentService {
         throw new Error(`Database error: ${dbError.message}`);
       }
 
+      if (!documentRecord) {
+        // Clean up and signal failure
+        await supabase.storage.from('deal-documents').remove([uploadData.path]);
+        throw new Error('Document record was not created');
+      }
+
       onProgress?.({ progress: 100, status: 'complete', message: 'Upload complete!' });
 
-      // Trigger document processing
+      // Trigger document processing (non-blocking)
       try {
         await supabase.functions.invoke('document-processor', {
           body: {
