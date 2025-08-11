@@ -409,38 +409,47 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
             </CardContent>
           </Card>
 
-          {/* Enhanced Rubric Breakdown with Deep Dive - EMERGENCY FALLBACK */}
-          <div className="grid gap-4">
-            {(analysis.rubric_breakdown && analysis.rubric_breakdown.length > 0) ? (
-              analysis.rubric_breakdown.map((item, index) => (
-                <CategoryDeepDiveSection
-                  key={index}
-                  category={item.category}
-                  score={item.score}
-                  confidence={item.confidence}
-                  weight={item.weight}
-                  insights={item.insights}
-                  strengths={item.strengths}
-                  concerns={item.concerns}
-                  detailedAnalysis={(analysis as any).detailed_breakdown}
-                />
-              ))
-            ) : (
-              <Card className="card-xero">
-                <CardContent className="p-6">
-                  <div className="text-center space-y-4">
-                    <AlertCircle className="h-12 w-12 text-warning mx-auto" />
-                    <div>
-                      <h3 className="text-lg font-semibold">Analysis Data Missing</h3>
-                      <p className="text-muted-foreground">
-                        No rubric breakdown found. Please run comprehensive analysis.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+           {/* CORRECTED: Enhanced Rubric Breakdown with correct detailed analysis mapping */}
+           <div className="grid gap-4">
+             {(analysis.rubric_breakdown && analysis.rubric_breakdown.length > 0) ? (
+               analysis.rubric_breakdown.map((item, index) => {
+                 // Map category names to detailed_breakdown keys correctly
+                 const categoryKey = item.category.toLowerCase()
+                   .replace('market opportunity', 'market_opportunity')
+                   .replace('product & technology', 'product_technology')
+                   .replace('team & leadership', 'team_leadership')
+                   .replace('financial & traction', 'financial_traction');
+                 
+                 return (
+                   <CategoryDeepDiveSection
+                     key={index}
+                     category={item.category}
+                     score={item.score}
+                     confidence={item.confidence}
+                     weight={item.weight}
+                     insights={item.insights}
+                     strengths={item.strengths}
+                     concerns={item.concerns}
+                     detailedAnalysis={(analysis as any).detailed_breakdown?.[categoryKey] || {}}
+                   />
+                 );
+               })
+             ) : (
+               <Card className="card-xero">
+                 <CardContent className="p-6">
+                   <div className="text-center space-y-4">
+                     <AlertCircle className="h-12 w-12 text-warning mx-auto" />
+                     <div>
+                       <h3 className="text-lg font-semibold">Analysis Data Missing</h3>
+                       <p className="text-muted-foreground">
+                         No rubric breakdown found. Please run comprehensive analysis.
+                       </p>
+                     </div>
+                   </div>
+                 </CardContent>
+               </Card>
+             )}
+           </div>
         </TabsContent>
 
         <TabsContent value="engines" className="space-y-4">

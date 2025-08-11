@@ -57,137 +57,143 @@ serve(async (req) => {
       overall_score: orchestratorAnalysis.overall_score || 0,
       overall_recommendation: orchestratorAnalysis.overall_recommendation || 'See detailed analysis',
       
-      // Unified rubric breakdown with 5 categories (20% weight each = 100%)
+      // CORRECTED: Proper VC Rubric with correct 4 categories at 25% each (totaling 100%)
       rubric_breakdown: [
         {
-          category: 'Market Attractiveness',
+          category: 'Market Opportunity',
           score: engine_results.market_research_engine?.score || engine_results.market_intelligence_engine?.score || 50,
-          confidence: 90,
-          weight: 20, // 20% weight
+          confidence: (engine_results.market_research_engine?.data || engine_results.market_intelligence_engine?.data) ? 90 : 50,
+          weight: 25, // 25% weight for VC (4 categories)
           insights: Array.isArray(engine_results.market_research_engine?.analysis || engine_results.market_intelligence_engine?.analysis) 
             ? (engine_results.market_research_engine?.analysis || engine_results.market_intelligence_engine?.analysis)
-            : [engine_results.market_research_engine?.analysis || engine_results.market_intelligence_engine?.analysis || 'Market analysis completed'],
-          recommendations: ['See detailed market analysis'],
-          strengths: ['Market analysis available'],
+            : [engine_results.market_research_engine?.analysis || engine_results.market_intelligence_engine?.analysis || 'Market analysis pending'],
+          recommendations: ['Market timing assessment', 'Competitive landscape review', 'Customer validation'],
+          strengths: (engine_results.market_research_engine?.data || engine_results.market_intelligence_engine?.data) ? ['Market intelligence available', 'Data-driven analysis'] : ['Analysis scheduled'],
           concerns: ((engine_results.market_research_engine?.score || engine_results.market_intelligence_engine?.score) || 50) < 50 ? ['Market concerns identified'] : [],
           detailed_breakdown: engine_results.market_research_engine?.data || engine_results.market_intelligence_engine?.data || {}
         },
         {
-          category: 'Product Strength & IP',
+          category: 'Product & Technology',
           score: engine_results.product_ip_engine?.score || 65,
-          confidence: 85,
-          weight: 20, // 20% weight
+          confidence: engine_results.product_ip_engine?.data ? 85 : 50,
+          weight: 25, // 25% weight for VC (4 categories)
           insights: Array.isArray(engine_results.product_ip_engine?.analysis) 
             ? engine_results.product_ip_engine.analysis 
-            : [engine_results.product_ip_engine?.analysis || 'Product analysis completed'],
-          recommendations: ['See detailed product analysis'],
-          strengths: ['Product analysis available'],
+            : [engine_results.product_ip_engine?.analysis || 'Product analysis pending'],
+          recommendations: ['IP strategy review', 'Technical execution assessment', 'Innovation differentiation'],
+          strengths: engine_results.product_ip_engine?.data ? ['Product analysis available', 'Technical assessment'] : ['Analysis scheduled'],
           concerns: (engine_results.product_ip_engine?.score || 65) < 50 ? ['Product concerns identified'] : [],
           detailed_breakdown: engine_results.product_ip_engine?.data || {}
         },
         {
-          category: 'Founder Team Strength',
+          category: 'Team & Leadership',
           score: engine_results.team_research_engine?.score || 65,
-          confidence: 80,
-          weight: 20, // 20% weight
+          confidence: engine_results.team_research_engine?.data ? 80 : 50,
+          weight: 25, // 25% weight for VC (4 categories)
           insights: Array.isArray(engine_results.team_research_engine?.analysis) 
             ? engine_results.team_research_engine.analysis 
-            : [engine_results.team_research_engine?.analysis || 'Team analysis completed'],
-          recommendations: ['See detailed team analysis'],
-          strengths: ['Team analysis available'],
+            : [engine_results.team_research_engine?.analysis || 'Team analysis pending'],
+          recommendations: ['Founder quality assessment', 'Team composition review', 'Execution capability evaluation'],
+          strengths: engine_results.team_research_engine?.data ? ['Team analysis available', 'Leadership assessment'] : ['Analysis scheduled'],
           concerns: (engine_results.team_research_engine?.score || 65) < 50 ? ['Team concerns identified'] : [],
           detailed_breakdown: engine_results.team_research_engine?.data || {}
         },
         {
-          category: 'Financial Feasibility',
+          category: 'Financial & Traction',
           score: engine_results.financial_engine?.score || 50,
-          confidence: 85,
-          weight: 20, // 20% weight
+          confidence: engine_results.financial_engine?.data ? 85 : 50,
+          weight: 25, // 25% weight for VC (4 categories)
           insights: Array.isArray(engine_results.financial_engine?.analysis) 
             ? engine_results.financial_engine.analysis 
-            : [engine_results.financial_engine?.analysis || 'Financial analysis completed'],
-          recommendations: ['See detailed financial analysis'],
-          strengths: ['Financial analysis available'],
+            : [engine_results.financial_engine?.analysis || 'Financial analysis pending'],
+          recommendations: ['Unit economics review', 'Revenue growth assessment', 'Funding requirements evaluation'],
+          strengths: engine_results.financial_engine?.data ? ['Financial analysis available', 'Traction metrics'] : ['Analysis scheduled'],
           concerns: (engine_results.financial_engine?.score || 50) < 50 ? ['Financial concerns identified'] : [],
           detailed_breakdown: engine_results.financial_engine?.data || {}
-        },
-        {
-          category: 'Strategic Timing',
-          score: engine_results.thesis_alignment_engine?.score || 38,
-          confidence: 85,
-          weight: 20, // 20% weight
-          insights: Array.isArray(engine_results.thesis_alignment_engine?.analysis) 
-            ? engine_results.thesis_alignment_engine.analysis 
-            : [engine_results.thesis_alignment_engine?.analysis || 'Strategic alignment completed'],
-          recommendations: ['See detailed strategic analysis'],
-          strengths: ['Strategic analysis available'],
-          concerns: (engine_results.thesis_alignment_engine?.score || 38) < 50 ? ['Strategic concerns identified'] : [],
-          detailed_breakdown: engine_results.thesis_alignment_engine?.data || {}
         }
       ],
 
-      // Deep dive sections structure for CategoryDeepDiveSection components
+      // CORRECTED: Deep dive sections with proper VC category names
       detailed_breakdown: {
-        'market_attractiveness': engine_results.market_research_engine?.data || engine_results.market_intelligence_engine?.data || {
+        'market_opportunity': engine_results.market_research_engine?.data || engine_results.market_intelligence_engine?.data || {
           tam_sam_som: {
             tam: '$1B+',
-            sam: '$100M+',
+            sam: '$100M+', 
             som: '$10M+'
           },
           growth_drivers: ['Market expansion opportunities'],
           market_risks: ['Competitive pressure'],
           competitive_positioning: ['Analysis in progress'],
           customer_validation: ['Customer research needed'],
-          geographic_opportunities: ['Geographic expansion potential']
+          geographic_opportunities: ['Geographic expansion potential'],
+          deal_dynamics: ['Market timing considerations', 'Competitive dynamics'],
+          trust_transparency: ['Governance assessment', 'Compliance review']
         },
 
         'product_technology': engine_results.product_ip_engine?.data || {
           ip_portfolio: ['Patent analysis pending'],
           competitive_moats: ['Technology differentiation'],
           technical_advantages: ['Technical analysis in progress'],
-          development_roadmap: ['Roadmap analysis needed']
+          development_roadmap: ['Roadmap analysis needed'],
+          innovation_score: 'TBD'
         },
 
         'team_leadership': engine_results.team_research_engine?.data || {
           founder_profiles: ['Founder research in progress'],
           team_gaps: ['Team assessment pending'],
           execution_track_record: ['Track record analysis needed'],
-          advisory_board_strength: ['Advisory board evaluation']
+          advisory_board_strength: ['Advisory board evaluation'],
+          founder_quality: 'TBD'
         },
 
         'financial_traction': engine_results.financial_engine?.data || {
           revenue_stream_analysis: ['Revenue analysis pending'],
           unit_economics: { ltv_cac_ratio: 'TBD', gross_margin: 'TBD' },
           burn_rate_analysis: { monthly_burn: 'TBD', runway: 'TBD' },
-          funding_scenarios: ['Funding scenario analysis needed']
+          funding_scenarios: ['Funding scenario analysis needed'],
+          customer_metrics: 'TBD'
         }
       },
 
-      // Analysis engines status with proper naming
+      // CORRECTED: Analysis engines status with data-based confidence and validation
       analysis_engines: Object.entries(engine_results).reduce((acc, [engineName, result]) => {
         const cleanName = engineName.replace(/_engine$/, '').replace(/_/g, ' ');
+        const hasRealData = result.data && Object.keys(result.data).length > 0;
         acc[engineName] = {
           name: cleanName.charAt(0).toUpperCase() + cleanName.slice(1),
-          status: 'completed',
+          status: hasRealData ? 'complete' : 'partial',
           score: result.score || 0,
           last_updated: new Date().toISOString(),
-          confidence: 85,
-          analysis_data: result.data || {}
+          confidence: hasRealData ? 90 : 50, // Data-based confidence
+          validation_status: hasRealData ? 'validated' : 'partial',
+          analysis_data: result.data || {},
+          analysis: result.analysis || 'Analysis pending'
         };
         return acc;
       }, {} as any),
 
-      // Notes intelligence (if available)
+      // CORRECTED: Notes intelligence with proper structure
       notes_intelligence: orchestratorAnalysis.notes_intelligence || {
-        sentiment_analysis: { overall_sentiment: 'positive', confidence: 75 },
-        key_insights: ['Comprehensive AI analysis completed'],
+        sentiment: 'pending',
+        key_insights: orchestratorAnalysis.engine_results ? ['AI analysis engines completed', 'Comprehensive analysis available'] : ['Analysis engines pending'],
         risk_flags: orchestratorAnalysis.risk_factors || [],
-        investment_implications: { recommendation: orchestratorAnalysis.overall_recommendation }
+        trend_indicators: ['Analysis trend data pending'],
+        confidence_level: Object.keys(orchestratorAnalysis.engine_results || {}).length > 0 ? 75 : 50,
+        last_analyzed: new Date().toISOString()
       },
 
       // Fund type analysis
       fund_type_analysis: orchestratorAnalysis.fund_type_analysis || null,
 
+      // CORRECTED: Analysis completeness and metadata
+      analysis_completeness: (() => {
+        const engineDataCount = Object.values(engine_results).filter(result => result?.data && Object.keys(result.data).length > 0).length;
+        const totalEngines = Object.keys(engine_results).length;
+        return totalEngines > 0 ? Math.round((engineDataCount / totalEngines) * 100) : 0;
+      })(),
+      
+      last_comprehensive_analysis: new Date().toISOString(),
+      
       // Metadata
       analysis_metadata: {
         analysis_date: new Date().toISOString(),
@@ -195,7 +201,7 @@ serve(async (req) => {
         data_sources: Object.keys(engine_results),
         confidence_score: Math.round(
           Object.values(engine_results).reduce((sum, r) => sum + (r.score || 0), 0) / 
-          Object.keys(engine_results).length
+          Math.max(Object.keys(engine_results).length, 1)
         )
       }
     };

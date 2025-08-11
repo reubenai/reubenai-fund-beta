@@ -28,11 +28,11 @@ interface EngineResult {
 
 interface DetailedAnalysisSectionProps {
   engineResults: {
-    product_strength_ip?: EngineResult;
-    financial_feasibility?: EngineResult;
-    founder_team_strength?: EngineResult;
-    market_attractiveness?: EngineResult;
-    investment_thesis_alignment?: EngineResult;
+    market_opportunity?: EngineResult;
+    product_technology?: EngineResult;
+    team_leadership?: EngineResult;
+    financial_traction?: EngineResult;
+    thesis_alignment?: EngineResult;
   };
   executiveSummary?: string;
   overallScore?: number;
@@ -41,22 +41,22 @@ interface DetailedAnalysisSectionProps {
 
 const getEngineIcon = (engineType: string) => {
   switch (engineType) {
-    case 'product_strength_ip': return <Lightbulb className="h-5 w-5" />;
-    case 'financial_feasibility': return <DollarSign className="h-5 w-5" />;
-    case 'founder_team_strength': return <Users className="h-5 w-5" />;
-    case 'market_attractiveness': return <TrendingUp className="h-5 w-5" />;
-    case 'investment_thesis_alignment': return <Target className="h-5 w-5" />;
+    case 'market_opportunity': return <TrendingUp className="h-5 w-5" />;
+    case 'product_technology': return <Lightbulb className="h-5 w-5" />;
+    case 'team_leadership': return <Users className="h-5 w-5" />;
+    case 'financial_traction': return <DollarSign className="h-5 w-5" />;
+    case 'thesis_alignment': return <Target className="h-5 w-5" />;
     default: return <Info className="h-5 w-5" />;
   }
 };
 
 const getEngineTitle = (engineType: string) => {
   switch (engineType) {
-    case 'product_strength_ip': return 'Product Strength & IP';
-    case 'financial_feasibility': return 'Financial Feasibility';
-    case 'founder_team_strength': return 'Founder & Team Strength';
-    case 'market_attractiveness': return 'Market Attractiveness';
-    case 'investment_thesis_alignment': return 'Investment Thesis Alignment';
+    case 'market_opportunity': return 'Market Opportunity';
+    case 'product_technology': return 'Product & Technology';
+    case 'team_leadership': return 'Team & Leadership';
+    case 'financial_traction': return 'Financial & Traction';
+    case 'thesis_alignment': return 'Thesis Alignment';
     default: return engineType;
   }
 };
