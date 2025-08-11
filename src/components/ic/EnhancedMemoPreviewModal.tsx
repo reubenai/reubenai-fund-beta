@@ -6,6 +6,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
   Download, 
   Edit3, 
   Eye, 
@@ -23,7 +31,10 @@ import {
   AlertTriangle,
   History,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  MoreHorizontal,
+  Mail,
+  Calendar
 } from 'lucide-react';
 import { useMemoCache } from '@/hooks/useMemoCache';
 import { useEnhancedToast } from '@/hooks/useEnhancedToast';
@@ -456,15 +467,31 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
               )}
               
               {canEditMemo() && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsEditing(!isEditing)}
-                  disabled={memoState.isGenerating}
-                >
-                  {isEditing ? <Eye className="w-4 h-4 mr-2" /> : <Edit3 className="w-4 h-4 mr-2" />}
-                  {isEditing ? 'Preview' : 'Edit'}
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditing(!isEditing)}
+                    disabled={memoState.isGenerating}
+                  >
+                    {isEditing ? <Eye className="w-4 h-4 mr-2" /> : <Edit3 className="w-4 h-4 mr-2" />}
+                    {isEditing ? 'Preview' : 'Edit'}
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSaveMemo}
+                    disabled={isSaving || memoState.isGenerating}
+                  >
+                    {isSaving ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    Save
+                  </Button>
+                </>
               )}
               
               {!canEditMemo() && canEditICMemos && (
@@ -477,41 +504,15 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    if (memoState.existsInDb && Object.keys(memoState.content).length > 0) {
-                      if (confirm('Regenerating will overwrite your current memo content. Are you sure you want to continue?')) {
-                        handleGenerateMemo();
-                      }
-                    } else {
-                      handleGenerateMemo();
-                    }
-                  }}
-                  disabled={memoState.isGenerating || isSaving}
+                  disabled={true}
+                  className="bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100"
                 >
-                  {memoState.isGenerating ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                  )}
-                  {memoState.existsInDb ? 'Regenerate' : 'Generate'} with AI
+                  <Brain className="w-4 h-4 mr-2" />
+                  AI-Assisted Memo
+                  <Badge variant="secondary" className="ml-2 text-xs">Soon</Badge>
                 </Button>
               )}
               
-              {canEditMemo() && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSaveMemo}
-                  disabled={isSaving || memoState.isGenerating}
-                >
-                  {isSaving ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4 mr-2" />
-                  )}
-                Save
-                </Button>
-              )}
 
               <Button
                 variant="outline"
@@ -523,35 +524,36 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 History ({versionState.versions.length})
               </Button>
               
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePreviewClient}
-                disabled={isPreviewing || memoState.isGenerating}
-                className="gap-2"
-              >
-                {isPreviewing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
-                Preview
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadClient}
-                disabled={isClientDownloading || memoState.isGenerating}
-                className="gap-2"
-              >
-                {isClientDownloading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Download className="w-4 h-4" />
-                )}
-                Download Memo
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    disabled={true}
+                    className="gap-2"
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                    Quick Actions
+                    <Badge variant="secondary" className="ml-2 text-xs">Soon</Badge>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled>
+                    <Mail className="w-4 h-4 mr-2" />
+                    Email Memo
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled>
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Add to IC Meeting
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </DialogHeader>

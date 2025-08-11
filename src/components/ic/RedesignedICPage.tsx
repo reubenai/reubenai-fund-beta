@@ -184,9 +184,6 @@ export default function RedesignedICPage() {
               <TabsTrigger value="pipeline" className="h-10 px-6 rounded-md">
                 <FileText className="h-4 w-4 mr-2" />
                 Pipeline
-                <Badge variant="secondary" className="ml-2 text-xs">
-                  Role Filtered
-                </Badge>
               </TabsTrigger>
 
               {canReviewMemos && (
