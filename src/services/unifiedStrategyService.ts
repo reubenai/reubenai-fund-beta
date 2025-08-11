@@ -287,6 +287,32 @@ class UnifiedStrategyService {
     }
   }
 
+  // Upsert strategy for fund (create if doesn't exist, update if it does)
+  async upsertFundStrategy(fundId: string, updates: any): Promise<EnhancedStrategy | null> {
+    try {
+      const { data, error } = await supabase
+        .from('investment_strategies')
+        .upsert({
+          fund_id: fundId,
+          ...updates
+        }, {
+          onConflict: 'fund_id'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error upserting strategy:', error);
+        return null;
+      }
+
+      return data as EnhancedStrategy;
+    } catch (error) {
+      console.error('Unexpected error in upsertFundStrategy:', error);
+      return null;
+    }
+  }
+
   // Multi-level validation (weights, completeness)
   validateStrategy(wizardData: EnhancedWizardData): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];

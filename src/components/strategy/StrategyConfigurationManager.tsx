@@ -87,13 +87,16 @@ export function StrategyConfigurationManager({ fundId, fundName, fundType }: Str
   // Create a default strategy object if none exists
   const strategyToEdit = strategy || {
     fund_id: fundId,
+    fund_type: fundType,
     industries: [],
     geography: [],
     key_signals: [],
     exciting_threshold: 85,
     promising_threshold: 70,
     needs_development_threshold: 50,
-    strategy_notes: ''
+    strategy_notes: '',
+    min_investment_amount: 0,
+    max_investment_amount: 0
   };
 
   return (

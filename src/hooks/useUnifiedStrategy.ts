@@ -90,23 +90,32 @@ export function useUnifiedStrategy(fundId?: string) {
   };
 
   const updateStrategy = async (updates: Partial<EnhancedStrategy>) => {
-    if (!strategy?.id) return null;
+    if (!fundId) return null;
     
     setLoading(true);
     setError(null);
     
     try {
-      const updatedStrategy = await unifiedStrategyService.updateFundStrategy(strategy.id, updates);
+      let updatedStrategy;
+      
+      if (strategy?.id) {
+        // Update existing strategy
+        updatedStrategy = await unifiedStrategyService.updateFundStrategy(strategy.id, updates);
+      } else {
+        // Use upsert for creating/updating when no strategy exists
+        updatedStrategy = await unifiedStrategyService.upsertFundStrategy(fundId, updates);
+      }
+      
       if (updatedStrategy) {
         setStrategy(updatedStrategy);
         toast({
           title: 'Success',
-          description: 'Strategy updated successfully'
+          description: strategy?.id ? 'Strategy updated successfully' : 'Strategy created successfully'
         });
       }
       return updatedStrategy;
     } catch (err) {
-      const errorMessage = 'Failed to update strategy';
+      const errorMessage = strategy?.id ? 'Failed to update strategy' : 'Failed to create strategy';
       setError(errorMessage);
       toast({
         title: 'Error',
