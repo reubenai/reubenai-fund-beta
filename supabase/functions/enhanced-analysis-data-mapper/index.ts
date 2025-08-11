@@ -57,14 +57,16 @@ serve(async (req) => {
       overall_score: orchestratorAnalysis.overall_score || 0,
       overall_recommendation: orchestratorAnalysis.overall_recommendation || 'See detailed analysis',
       
-      // Rubric breakdown from engine results
+      // Rubric breakdown from engine results with proper array formatting
       rubric_breakdown: Object.entries(engine_results).map(([engineName, result]) => ({
         category: engineName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
         score: result.score || 0,
         confidence: 85, // Default confidence
         weight: 0.2, // Equal weighting
-        insights: result.analysis || 'Analysis completed',
+        insights: Array.isArray(result.analysis) ? result.analysis : [result.analysis || 'Analysis completed'],
         recommendations: ['See detailed engine analysis'],
+        strengths: ['Detailed analysis available'],
+        concerns: result.score < 50 ? ['Requires further investigation'] : [],
         detailed_breakdown: result.data || {}
       })),
 
