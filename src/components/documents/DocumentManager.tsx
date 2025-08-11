@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DocumentUpload } from './DocumentUpload';
 import { DocumentList } from './DocumentList';
@@ -16,7 +16,7 @@ interface DocumentManagerProps {
   className?: string;
 }
 
-export function DocumentManager({ dealId, companyName, className }: DocumentManagerProps) {
+export const DocumentManager = React.memo(function DocumentManager({ dealId, companyName, className }: DocumentManagerProps) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedDocument, setSelectedDocument] = useState<DealDocument | null>(null);
   const [documents, setDocuments] = useState<DealDocument[]>([]);
@@ -26,12 +26,34 @@ export function DocumentManager({ dealId, companyName, className }: DocumentMana
     setRefreshTrigger(prev => prev + 1);
   };
 
+  // Memoize tab configuration to prevent re-renders
+  const tabsConfig = useMemo(() => {
+    if (permissions.loading) {
+      return { gridCols: 'grid-cols-2', showUpload: false };
+    }
+    return {
+      gridCols: permissions.canUploadDocuments ? 'grid-cols-3' : 'grid-cols-2',
+      showUpload: permissions.canUploadDocuments
+    };
+  }, [permissions.loading, permissions.canUploadDocuments]);
+
+  // Don't render until permissions are loaded to prevent hook order issues
+  if (permissions.loading) {
+    return (
+      <div className={className}>
+        <div className="flex items-center justify-center p-8">
+          <div className="text-sm text-muted-foreground">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={className}>
       <Tabs defaultValue="list" className="w-full">
-        <TabsList className={`grid w-full ${permissions.canUploadDocuments ? 'grid-cols-3' : 'grid-cols-2'}`}>
+        <TabsList className={`grid w-full ${tabsConfig.gridCols}`}>
           <TabsTrigger value="list">Documents</TabsTrigger>
-          {permissions.canUploadDocuments && (
+          {tabsConfig.showUpload && (
             <TabsTrigger value="upload">Upload</TabsTrigger>
           )}
           <TabsTrigger value="analysis" className="flex items-center gap-2">
@@ -50,7 +72,7 @@ export function DocumentManager({ dealId, companyName, className }: DocumentMana
           />
         </TabsContent>
         
-        {permissions.canUploadDocuments && (
+        {tabsConfig.showUpload && (
           <TabsContent value="upload" className="space-y-4">
             <DocumentUpload
               dealId={dealId}
@@ -78,4 +100,4 @@ export function DocumentManager({ dealId, companyName, className }: DocumentMana
       )}
     </div>
   );
-}
+});

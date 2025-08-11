@@ -95,11 +95,11 @@ export function ScoringMethodologyCard({
                         {item.category.replace(/_/g, ' ')}
                       </span>
                       <Badge variant="outline" className="text-xs">
-                        {item.weight}% weight
+                        {Math.round(item.weight)}% weight
                       </Badge>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      Score: {item.score} × Weight: {item.normalizedWeight.toFixed(1)}% = {item.contribution.toFixed(1)} points
+                      Score: {item.score} × Weight: {Math.round(item.weight)}% = {item.contribution.toFixed(1)} points
                     </div>
                   </div>
                   <div className="text-right">

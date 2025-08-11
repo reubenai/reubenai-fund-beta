@@ -126,47 +126,49 @@ serve(async (req) => {
         }
       ],
 
-      // Deep dive sections with correct property names for components
-      market_opportunity: engine_results.market_research_engine?.data || engine_results.market_intelligence_engine?.data ? {
-        tam_sam_som: {
-          tam: engine_results.market_research_engine?.data?.tam || engine_results.market_intelligence_engine?.data?.tam || '$1B+',
-          sam: engine_results.market_research_engine?.data?.sam || engine_results.market_intelligence_engine?.data?.sam || '$100M+',
-          som: engine_results.market_research_engine?.data?.som || engine_results.market_intelligence_engine?.data?.som || '$10M+'
-        },
-        growth_drivers: engine_results.market_research_engine?.data?.growth_drivers || engine_results.market_intelligence_engine?.data?.growth_drivers || ['Market expansion'],
-        market_risks: engine_results.market_research_engine?.data?.market_risks || engine_results.market_intelligence_engine?.data?.market_risks || [],
-        competitive_positioning: engine_results.market_research_engine?.data?.competitors || engine_results.market_intelligence_engine?.data?.competitors || [],
-        customer_validation: engine_results.market_research_engine?.data?.customer_validation || engine_results.market_intelligence_engine?.data?.customer_validation || [],
-        geographic_opportunities: engine_results.market_research_engine?.data?.geographic_opportunities || engine_results.market_intelligence_engine?.data?.geographic_opportunities || []
-      } : null,
+      // Deep dive sections structure for CategoryDeepDiveSection components
+      detailed_breakdown: {
+        market_opportunity: engine_results.market_research_engine?.data || engine_results.market_intelligence_engine?.data ? {
+          tam_sam_som: {
+            tam: engine_results.market_research_engine?.data?.tam || engine_results.market_intelligence_engine?.data?.tam || '$1B+',
+            sam: engine_results.market_research_engine?.data?.sam || engine_results.market_intelligence_engine?.data?.sam || '$100M+',
+            som: engine_results.market_research_engine?.data?.som || engine_results.market_intelligence_engine?.data?.som || '$10M+'
+          },
+          growth_drivers: engine_results.market_research_engine?.data?.growth_drivers || engine_results.market_intelligence_engine?.data?.growth_drivers || ['Market expansion'],
+          market_risks: engine_results.market_research_engine?.data?.market_risks || engine_results.market_intelligence_engine?.data?.market_risks || [],
+          competitive_positioning: engine_results.market_research_engine?.data?.competitors || engine_results.market_intelligence_engine?.data?.competitors || [],
+          customer_validation: engine_results.market_research_engine?.data?.customer_validation || engine_results.market_intelligence_engine?.data?.customer_validation || [],
+          geographic_opportunities: engine_results.market_research_engine?.data?.geographic_opportunities || engine_results.market_intelligence_engine?.data?.geographic_opportunities || []
+        } : null,
 
-      team_leadership: engine_results.team_research_engine?.data ? {
-        founder_profiles: engine_results.team_research_engine.data.founders || [],
-        team_gaps: engine_results.team_research_engine.data.team_gaps || [],
-        execution_track_record: engine_results.team_research_engine.data.track_record || [],
-        advisory_board_strength: engine_results.team_research_engine.data.advisors || []
-      } : null,
+        team_leadership: engine_results.team_research_engine?.data ? {
+          founder_profiles: engine_results.team_research_engine.data.founders || [],
+          team_gaps: engine_results.team_research_engine.data.team_gaps || [],
+          execution_track_record: engine_results.team_research_engine.data.track_record || [],
+          advisory_board_strength: engine_results.team_research_engine.data.advisors || []
+        } : null,
 
-      product_technology: engine_results.product_ip_engine?.data ? {
-        ip_portfolio: engine_results.product_ip_engine.data.ip_assets || [],
-        competitive_moats: engine_results.product_ip_engine.data.competitive_moats || [],
-        technical_advantages: engine_results.product_ip_engine.data.technical_advantages || [],
-        development_roadmap: engine_results.product_ip_engine.data.roadmap || []
-      } : null,
+        product_technology: engine_results.product_ip_engine?.data ? {
+          ip_portfolio: engine_results.product_ip_engine.data.ip_assets || [],
+          competitive_moats: engine_results.product_ip_engine.data.competitive_moats || [],
+          technical_advantages: engine_results.product_ip_engine.data.technical_advantages || [],
+          development_roadmap: engine_results.product_ip_engine.data.roadmap || []
+        } : null,
 
-      financial_health: engine_results.financial_engine?.data ? {
-        revenue_stream_analysis: engine_results.financial_engine.data.revenue_streams || [],
-        unit_economics: engine_results.financial_engine.data.unit_economics || {},
-        burn_rate_analysis: engine_results.financial_engine.data.burn_analysis || {},
-        funding_scenarios: engine_results.financial_engine.data.funding_scenarios || []
-      } : null,
+        financial_health: engine_results.financial_engine?.data ? {
+          revenue_stream_analysis: engine_results.financial_engine.data.revenue_streams || [],
+          unit_economics: engine_results.financial_engine.data.unit_economics || {},
+          burn_rate_analysis: engine_results.financial_engine.data.burn_analysis || {},
+          funding_scenarios: engine_results.financial_engine.data.funding_scenarios || []
+        } : null,
 
-      business_traction: engine_results.market_intelligence_engine?.data ? {
-        customer_metrics: engine_results.market_intelligence_engine.data.customer_metrics || [],
-        partnership_pipeline: engine_results.market_intelligence_engine.data.partnerships || [],
-        market_penetration: engine_results.market_intelligence_engine.data.market_penetration || {},
-        growth_trajectory: engine_results.market_intelligence_engine.data.growth_trajectory || {}
-      } : null,
+        business_traction: engine_results.market_intelligence_engine?.data ? {
+          customer_metrics: engine_results.market_intelligence_engine.data.customer_metrics || [],
+          partnership_pipeline: engine_results.market_intelligence_engine.data.partnerships || [],
+          market_penetration: engine_results.market_intelligence_engine.data.market_penetration || {},
+          growth_trajectory: engine_results.market_intelligence_engine.data.growth_trajectory || {}
+        } : null
+      },
 
       // Analysis engines status with proper naming
       analysis_engines: Object.entries(engine_results).reduce((acc, [engineName, result]) => {

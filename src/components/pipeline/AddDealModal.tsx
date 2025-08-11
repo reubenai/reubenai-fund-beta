@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,7 @@ interface AddDealModalProps {
   initialStage?: string;
 }
 
-export const AddDealModal: React.FC<AddDealModalProps> = ({
+export const AddDealModal = React.memo<AddDealModalProps>(({
   open,
   onClose,
   onAddDeal,
@@ -43,6 +43,11 @@ export const AddDealModal: React.FC<AddDealModalProps> = ({
   const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([]);
   const { toast } = useToast();
   const { triggerDealAnalysis } = useAnalysisIntegration();
+
+  // Memoize form validation to prevent unnecessary re-renders
+  const isFormValid = useMemo(() => {
+    return formData.company_name.trim().length > 0;
+  }, [formData.company_name]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -410,4 +415,4 @@ export const AddDealModal: React.FC<AddDealModalProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+});
