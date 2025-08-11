@@ -2155,6 +2155,7 @@ export type Database = {
           content_word_count: number | null
           created_at: string
           created_by: string
+          custom_sections: Json | null
           data_richness_score: number | null
           deal_id: string
           executive_summary: string | null
@@ -2195,6 +2196,7 @@ export type Database = {
           content_word_count?: number | null
           created_at?: string
           created_by: string
+          custom_sections?: Json | null
           data_richness_score?: number | null
           deal_id: string
           executive_summary?: string | null
@@ -2235,6 +2237,7 @@ export type Database = {
           content_word_count?: number | null
           created_at?: string
           created_by?: string
+          custom_sections?: Json | null
           data_richness_score?: number | null
           deal_id?: string
           executive_summary?: string | null

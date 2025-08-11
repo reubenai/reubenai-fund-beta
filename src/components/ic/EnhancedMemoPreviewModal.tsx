@@ -34,7 +34,8 @@ import {
   ChevronUp,
   MoreHorizontal,
   Mail,
-  Calendar
+  Calendar,
+  Plus
 } from 'lucide-react';
 import { useMemoCache } from '@/hooks/useMemoCache';
 import { useEnhancedToast } from '@/hooks/useEnhancedToast';
@@ -101,6 +102,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showDataQuality, setShowDataQuality] = useState(false);
   const [serverPdfHealthy, setServerPdfHealthy] = useState<'unknown' | 'ok' | 'down'>('unknown');
+  const [customSections, setCustomSections] = useState<Array<{key: string, title: string, content?: string}>>([]);
   
   const { memoState, loadMemo, generateMemo, cancelGeneration, updateContent } = useMemoCache(deal.id, fundId);
   const { versionState, loadVersions, saveVersion, restoreVersion } = useMemoVersions(deal.id, fundId);
@@ -143,8 +145,29 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     if (isOpen && deal.id) {
       loadMemo();
       loadVersions();
+      loadCustomSections();
     }
   }, [isOpen, deal.id, loadMemo, loadVersions]);
+
+  const loadCustomSections = async () => {
+    try {
+      const { data: memo, error } = await supabase
+        .from('ic_memos')
+        .select('custom_sections')
+        .eq('deal_id', deal.id)
+        .eq('fund_id', fundId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (memo?.custom_sections && Array.isArray(memo.custom_sections)) {
+        const sections = memo.custom_sections as Array<{key: string, title: string, content?: string}>;
+        setCustomSections(sections);
+      }
+    } catch (error) {
+      console.error('Error loading custom sections:', error);
+    }
+  };
 
   const handleGenerateMemo = async () => {
     const loadingToast = showLoadingToast(
@@ -177,6 +200,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
         fund_id: fundId,
         title: `IC Memo - ${deal.company_name}`,
         memo_content: memoState.content as any,
+        custom_sections: customSections,
         status: memoState.status || 'draft',
         is_published: false,
         overall_score: deal.overall_score,
@@ -206,10 +230,67 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
 
   const getSections = () => {
     const content: Record<string, string> = (memoState.content as any)?.sections || (memoState.content as any) || {};
-    return MEMO_SECTIONS.map((s) => ({
+    const allSections = [...MEMO_SECTIONS, ...customSections.map(s => ({ ...s, icon: FileText, description: 'Custom section' }))];
+    return allSections.map((s) => ({
       title: s.title,
-      content: (content as any)[s.key] || ''
+      content: s.key.startsWith('custom_') ? (s as any).content || '' : (content as any)[s.key] || ''
     }));
+  };
+
+  const addCustomSection = async () => {
+    const sectionNumber = customSections.length + 1;
+    const newSection = {
+      key: `custom_section_${Date.now()}`,
+      title: `Custom Section ${sectionNumber}`,
+      content: ''
+    };
+    
+    const updatedSections = [...customSections, newSection];
+    setCustomSections(updatedSections);
+    setActiveSection(newSection.key);
+    
+    // Auto-save custom sections to database
+    try {
+      await supabase.from('ic_memos').upsert({
+        deal_id: deal.id,
+        fund_id: fundId,
+        title: `IC Memo - ${deal.company_name}`,
+        memo_content: memoState.content as any,
+        custom_sections: updatedSections,
+        status: memoState.status || 'draft',
+        is_published: false,
+        overall_score: deal.overall_score,
+        rag_status: deal.rag_status,
+        created_by: (await supabase.auth.getUser()).data.user?.id
+      });
+    } catch (error) {
+      console.error('Error saving custom section:', error);
+    }
+  };
+
+  const updateCustomSection = async (key: string, updates: { title?: string; content?: string }) => {
+    const updatedSections = customSections.map(section =>
+      section.key === key ? { ...section, ...updates } : section
+    );
+    setCustomSections(updatedSections);
+    
+    // Auto-save to database
+    try {
+      await supabase.from('ic_memos').upsert({
+        deal_id: deal.id,
+        fund_id: fundId,
+        title: `IC Memo - ${deal.company_name}`,
+        memo_content: memoState.content as any,
+        custom_sections: updatedSections,
+        status: memoState.status || 'draft',
+        is_published: false,
+        overall_score: deal.overall_score,
+        rag_status: deal.rag_status,
+        created_by: (await supabase.auth.getUser()).data.user?.id
+      });
+    } catch (error) {
+      console.error('Error updating custom section:', error);
+    }
   };
 
   const handlePreviewClient = async () => {
@@ -561,14 +642,29 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
         <div className="flex flex-1 overflow-hidden min-h-0">
           {/* Sidebar Navigation */}
           <div className="w-80 border-r bg-muted/30 p-4 overflow-y-auto flex-shrink-0">
-            <h3 className="font-semibold text-sm text-muted-foreground mb-4 uppercase tracking-wide">
-              Memo Sections
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                Memo Sections
+              </h3>
+              {canEditMemo() && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={addCustomSection}
+                  className="gap-2 text-xs"
+                >
+                  <Plus className="w-3 h-3" />
+                  Add Section
+                </Button>
+              )}
+            </div>
             <div className="space-y-2">
-              {MEMO_SECTIONS.map((section) => {
-                const IconComponent = section.icon;
+              {[...MEMO_SECTIONS, ...customSections].map((section) => {
+                const IconComponent = 'icon' in section ? section.icon : FileText;
                 const isActive = activeSection === section.key;
-                const hasContent = memoState.content[section.key as keyof typeof memoState.content];
+                const hasContent = section.key.startsWith('custom_') 
+                  ? customSections.find(s => s.key === section.key)?.content || ''
+                  : memoState.content[section.key as keyof typeof memoState.content];
                 
                 return (
                   <button
@@ -587,7 +683,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                           {section.title}
                         </div>
                         <div className={`text-xs ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'} truncate`}>
-                          {section.description}
+                          {'description' in section ? section.description : 'Custom section'}
                         </div>
                       </div>
                       {hasContent && (
@@ -661,26 +757,46 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
               </div>
             ) : (
               <div className="p-6 overflow-y-auto flex-1 min-h-0">
-                {MEMO_SECTIONS.map((section) => {
+                {[...MEMO_SECTIONS, ...customSections].map((section) => {
                   if (activeSection !== section.key) return null;
                   
-                  const IconComponent = section.icon;
-                  const content = memoState.content[section.key as keyof typeof memoState.content] || '';
+                  const IconComponent = 'icon' in section ? section.icon : FileText;
+                  const isCustom = section.key.startsWith('custom_');
+                  const content = isCustom 
+                    ? customSections.find(s => s.key === section.key)?.content || ''
+                    : memoState.content[section.key as keyof typeof memoState.content] || '';
                   
                   return (
                     <div key={section.key} className="space-y-4">
                       <div className="flex items-center gap-3 pb-4 border-b">
                         <IconComponent className="w-5 h-5 text-primary" />
-                        <div>
-                          <h2 className="text-2xl font-bold">{section.title}</h2>
-                          <p className="text-muted-foreground">{section.description}</p>
+                        <div className="flex-1">
+                          {canEditICMemos && isEditing && isCustom ? (
+                            <input
+                              type="text"
+                              value={section.title}
+                              onChange={(e) => updateCustomSection(section.key, { title: e.target.value })}
+                              className="text-2xl font-bold bg-transparent border-none outline-none focus:ring-2 focus:ring-primary rounded px-2 py-1"
+                            />
+                          ) : (
+                            <h2 className="text-2xl font-bold">{section.title}</h2>
+                          )}
+                          <p className="text-muted-foreground">
+                            {'description' in section ? section.description : 'Custom section'}
+                          </p>
                         </div>
                       </div>
                       
                       {canEditICMemos && isEditing ? (
                         <Textarea
                           value={content}
-                          onChange={(e) => updateContent(section.key, e.target.value)}
+                          onChange={(e) => {
+                            if (isCustom) {
+                              updateCustomSection(section.key, { content: e.target.value });
+                            } else {
+                              updateContent(section.key, e.target.value);
+                            }
+                          }}
                           className="min-h-[500px] font-mono text-sm"
                           placeholder={`Enter ${section.title.toLowerCase()} content...`}
                         />
@@ -698,7 +814,10 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                                 <FileText className="h-12 w-12 mx-auto mb-4" />
                                 <p>No content available for this section</p>
                                 <p className="text-xs mt-2">
-                                  Generate a memo to populate this section with AI analysis
+                                  {isCustom 
+                                    ? 'Click Edit to add content to this custom section'
+                                    : 'Generate a memo to populate this section with AI analysis'
+                                  }
                                 </p>
                               </div>
                             )}
