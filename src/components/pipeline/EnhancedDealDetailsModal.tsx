@@ -52,6 +52,8 @@ import { ThesisAlignmentSection } from '@/components/analysis/ThesisAlignmentSec
 import { MarketOpportunityAssessment } from '@/components/analysis/MarketOpportunityAssessment';
 import { FounderTeamStrengthAssessment } from '@/components/analysis/FounderTeamStrengthAssessment';
 import { ProductIPMoatAssessment } from '@/components/analysis/ProductIPMoatAssessment';
+import { TractionFinancialFeasibilityAssessment } from '@/components/analysis/TractionFinancialFeasibilityAssessment';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 // Extend the Deal type to include enhanced_analysis
 type Deal = BaseDeal & {
@@ -730,20 +732,63 @@ export function EnhancedDealDetailsModal({
 
           {canViewAnalysis && (
             <TabsContent value="analysis" className="space-y-6">
-              {/* Thesis Alignment Section */}
-              <ThesisAlignmentSection deal={deal} />
-              
-              {/* Market Opportunity Assessment */}
-              <MarketOpportunityAssessment deal={deal} />
-              
-              {/* Founder & Team Strength Assessment */}
-              <FounderTeamStrengthAssessment deal={deal} />
-              
-              {/* Product & IP Moat Assessment */}
-              <ProductIPMoatAssessment deal={deal} />
+              {/* Assessment Sections with Accordion */}
+              <Accordion type="multiple" className="w-full space-y-4" defaultValue={["thesis", "market", "team", "product", "traction"]}>
+                <AccordionItem value="thesis" className="border rounded-lg">
+                  <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
+                    Thesis Alignment Assessment
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <ThesisAlignmentSection deal={deal} />
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="market" className="border rounded-lg">
+                  <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
+                    Market Opportunity Assessment
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <MarketOpportunityAssessment deal={deal} />
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="team" className="border rounded-lg">
+                  <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
+                    Founder & Team Strength Assessment
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <FounderTeamStrengthAssessment deal={deal} />
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="product" className="border rounded-lg">
+                  <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
+                    Product & IP Moat Assessment
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <ProductIPMoatAssessment deal={deal} />
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="traction" className="border rounded-lg">
+                  <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
+                    Traction & Financial Feasibility Assessment
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <TractionFinancialFeasibilityAssessment deal={deal} />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
               
               {/* AI Analysis Section */}
-              <EnhancedDealAnalysisTab deal={deal} />
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">AI Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <EnhancedDealAnalysisTab deal={deal} />
+                </CardContent>
+              </Card>
             </TabsContent>
           )}
 
