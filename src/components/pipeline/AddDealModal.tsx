@@ -13,6 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
 import { useAnalysisIntegration } from '@/hooks/useAnalysisIntegration';
 import { FileText, Upload, Building2 } from 'lucide-react';
+import { MultiSelect } from '@/components/ui/multi-select';
+import { STANDARDIZED_SECTORS, sectorsToString, sectorsFromString } from '@/constants/sectors';
 
 interface AddDealModalProps {
   open: boolean;
@@ -31,7 +33,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
   const [formData, setFormData] = useState({
     company_name: '',
     description: '',
-    industry: '',
+    industry: [] as string[], // Changed to array for multi-select
     location: '',
     website: '',
     linkedin_url: '',
@@ -80,7 +82,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
         company_name: formData.company_name,
         created_by: user.id,
         description: formData.description || undefined,
-        industry: formData.industry || undefined,
+        industry: formData.industry.length > 0 ? sectorsToString(formData.industry) : undefined, // Convert array to string
         location: formData.location || undefined,
         website: formData.website || undefined,
         linkedin_url: formData.linkedin_url || undefined,
@@ -191,7 +193,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
     setFormData({
       company_name: '',
       description: '',
-      industry: '',
+      industry: [], // Reset to empty array
       location: '',
       website: '',
       linkedin_url: '',
@@ -206,7 +208,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
     onClose();
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -262,13 +264,18 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
                   {/* Industry & Location */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="industry">Industry</Label>
-                      <Input
-                        id="industry"
+                      <Label htmlFor="industry">Industry / Sectors</Label>
+                      <MultiSelect
+                        options={STANDARDIZED_SECTORS}
                         value={formData.industry}
-                        onChange={(e) => handleInputChange('industry', e.target.value)}
-                        placeholder="e.g. SaaS, Fintech"
+                        onValueChange={(value) => handleInputChange('industry', value)}
+                        placeholder="Select industries..."
+                        searchPlaceholder="Search sectors..."
+                        maxDisplay={2}
                       />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Select multiple sectors that best describe the company
+                      </p>
                     </div>
                     <div>
                       <Label htmlFor="location">Location</Label>
