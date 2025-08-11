@@ -153,6 +153,25 @@ serve(async (req) => {
     // Store results in database
     await storeAnalysisResults(dealId, comprehensiveAnalysis);
     
+    // Update deals.enhanced_analysis with structured results for frontend
+    console.log('🔄 Mapping analysis results for frontend...');
+    try {
+      const { error: mapperError } = await supabase.functions.invoke('enhanced-analysis-data-mapper', {
+        body: {
+          dealId,
+          orchestratorAnalysis: comprehensiveAnalysis
+        }
+      });
+      
+      if (mapperError) {
+        console.error('❌ Failed to map analysis data:', mapperError);
+      } else {
+        console.log('✅ Analysis data mapped to enhanced_analysis field');
+      }
+    } catch (error) {
+      console.error('❌ Error calling enhanced-analysis-data-mapper:', error);
+    }
+    
     console.log('✅ Comprehensive analysis completed for deal:', dealId);
     
     return new Response(JSON.stringify({
