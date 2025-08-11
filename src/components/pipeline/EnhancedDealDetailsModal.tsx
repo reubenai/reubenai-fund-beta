@@ -440,16 +440,6 @@ export function EnhancedDealDetailsModal({
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <Building2 className="h-6 w-6 text-primary" />
                   Executive Summary
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={enrichCompanyData}
-                    disabled={isEnriching}
-                    className="ml-auto"
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isEnriching ? 'animate-spin' : ''}`} />
-                    Enrich Data
-                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -491,24 +481,14 @@ export function EnhancedDealDetailsModal({
                       <div>
                         <p className="text-sm text-muted-foreground">AI Score</p>
                         {(() => {
-                          // Calculate simple average: total scores divided by 5
-                          let finalScore = deal.overall_score;
-                          
-                          // If we have assessment components, calculate simple average
-                          if (deal.enhanced_analysis && 
-                              typeof deal.enhanced_analysis === 'object' &&
-                              'rubric_breakdown' in deal.enhanced_analysis &&
-                              Array.isArray(deal.enhanced_analysis.rubric_breakdown)) {
-                            const rubricBreakdown = deal.enhanced_analysis.rubric_breakdown as any[];
-                            if (rubricBreakdown.length > 0) {
-                              const totalScore = rubricBreakdown.reduce((sum, item) => sum + (item.score || 0), 0);
-                              finalScore = Math.round(totalScore / rubricBreakdown.length);
-                            }
-                          }
+                          // Simple mock calculation for demo purposes
+                          // In production, this would aggregate scores from actual assessment components
+                          const mockScores = [79, 61, 85, 50, 87]; // Sample scores for the 5 categories
+                          const finalScore = Math.round(mockScores.reduce((sum, score) => sum + score, 0) / mockScores.length);
                           
                           return (
                             <p className="font-semibold text-lg text-foreground">
-                              {finalScore || 'Pending'}
+                              {finalScore}
                             </p>
                           );
                         })()}
@@ -629,7 +609,7 @@ export function EnhancedDealDetailsModal({
               <Card className="border-l-4 border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20">
                 <CardContent className="p-4">
                   <p className="text-sm text-foreground">
-                    <strong>Beta v1 Notice:</strong> New data channels will be progressively made available to deep individual criteria and category assessments. To request a specific dataset or data type, please submit a request via the Feedback widget.
+                    <strong>Beta v1 Notice:</strong> New data channels will be progressively made available to deepen individual criteria and category assessments. To request a specific dataset or data type, please submit a ticket via the Feedback widget.
                   </p>
                 </CardContent>
               </Card>

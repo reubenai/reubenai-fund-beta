@@ -590,13 +590,6 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                           Edit Deal
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuItem 
-                        onClick={() => handleTriggerAnalysis(deal.id)}
-                        disabled={triggeringAnalysis.has(deal.id)}
-                      >
-                        <Zap className="mr-2 h-4 w-4" />
-                        {triggeringAnalysis.has(deal.id) ? 'Triggering...' : 'Trigger Analysis'}
-                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

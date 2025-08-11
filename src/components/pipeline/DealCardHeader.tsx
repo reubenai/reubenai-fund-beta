@@ -142,10 +142,6 @@ export const DealCardHeader: React.FC<DealCardHeaderProps> = ({
               <Star className="w-4 h-4 mr-2" />
               Add to Favorites
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Brain className="w-4 h-4 mr-2" />
-              Trigger Analysis
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
