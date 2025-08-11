@@ -800,6 +800,7 @@ export type Database = {
           confidence_score: number | null
           created_at: string
           data_retrieved: Json | null
+          data_snippet: string | null
           deal_id: string
           engine_name: string
           id: string
@@ -813,6 +814,7 @@ export type Database = {
           confidence_score?: number | null
           created_at?: string
           data_retrieved?: Json | null
+          data_snippet?: string | null
           deal_id: string
           engine_name: string
           id?: string
@@ -826,6 +828,7 @@ export type Database = {
           confidence_score?: number | null
           created_at?: string
           data_retrieved?: Json | null
+          data_snippet?: string | null
           deal_id?: string
           engine_name?: string
           id?: string
