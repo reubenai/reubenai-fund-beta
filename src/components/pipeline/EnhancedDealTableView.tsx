@@ -3,6 +3,7 @@ import { Deal } from '@/hooks/usePipelineDeals';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useControlledAnalysis } from '@/hooks/useControlledAnalysis';
 import {
   Table,
   TableBody,
@@ -163,6 +164,9 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
   const [selectedDeals, setSelectedDeals] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [triggeringAnalysis, setTriggeringAnalysis] = useState<Set<string>>(new Set());
+  
+  const { triggerAnalysis } = useControlledAnalysis();
 
   // Flatten deals from all stages
   const allDeals = useMemo(() => {
@@ -237,6 +241,24 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
   const handleStageChange = (deal: Deal & { stage: string }, newStage: string) => {
     if (onStageChange && deal.stage !== newStage) {
       onStageChange(deal.id, deal.stage, newStage);
+    }
+  };
+
+  const handleTriggerAnalysis = async (dealId: string) => {
+    setTriggeringAnalysis(prev => new Set(prev).add(dealId));
+    
+    try {
+      await triggerAnalysis({
+        type: 'manual_trigger',
+        dealId,
+        metadata: { source: 'deal_table_action' }
+      });
+    } finally {
+      setTriggeringAnalysis(prev => {
+        const updated = new Set(prev);
+        updated.delete(dealId);
+        return updated;
+      });
     }
   };
 
@@ -568,9 +590,12 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                           Edit Deal
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleTriggerAnalysis(deal.id)}
+                        disabled={triggeringAnalysis.has(deal.id)}
+                      >
                         <Zap className="mr-2 h-4 w-4" />
-                        Trigger Analysis
+                        {triggeringAnalysis.has(deal.id) ? 'Triggering...' : 'Trigger Analysis'}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
