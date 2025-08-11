@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Deal } from '@/hooks/usePipelineDeals';
 import { supabase } from '@/integrations/supabase/client';
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
+import { useAnalysisIntegration } from '@/hooks/useAnalysisIntegration';
 import { FileText, Upload, Building2 } from 'lucide-react';
 
 interface AddDealModalProps {
@@ -41,6 +42,7 @@ export const AddDealModal: React.FC<AddDealModalProps> = ({
   const [createdDeal, setCreatedDeal] = useState<Deal | null>(null);
   const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([]);
   const { toast } = useToast();
+  const { triggerDealAnalysis } = useAnalysisIntegration();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,6 +109,9 @@ export const AddDealModal: React.FC<AddDealModalProps> = ({
         }
 
         setCreatedDeal(newDeal);
+        
+        // Trigger initial analysis with enforcement
+        await triggerDealAnalysis(newDeal.id, 'initial', newDeal.fund_id);
         
         // If we have uploaded documents, switch to the documents tab
         if (uploadedDocuments.length > 0) {

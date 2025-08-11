@@ -11,10 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { documentService, UploadDocumentInput, DocumentUploadProgress } from '@/services/DocumentService';
 import { useActivityTracking } from '@/hooks/useActivityTracking';
+import { useAnalysisIntegration } from '@/hooks/useAnalysisIntegration';
 import { Database } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { EnhancedDocumentErrorHandler, DocumentErrors } from './EnhancedDocumentErrorHandler';
 import { usePermissions } from '@/hooks/usePermissions';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DocumentUploadProps {
   dealId: string;
@@ -53,6 +55,7 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const [error, setError] = useState<any | null>(null);
   const { logDocumentUploaded } = useActivityTracking();
+  const { triggerDealAnalysis } = useAnalysisIntegration();
   const permissions = usePermissions();
 
   // Check permissions first - moved after all hooks
@@ -150,6 +153,14 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
         if (result) {
           // Log activity
           await logDocumentUploaded(dealId, companyName, selectedFile.file.name, selectedFile.documentType);
+          
+          // Trigger analysis if document should trigger reanalysis
+          if (result.triggers_reanalysis) {
+            const { data: dealData } = await supabase.from('deals').select('fund_id').eq('id', dealId).single();
+            if (dealData) {
+              await triggerDealAnalysis(dealId, 'document_upload', dealData.fund_id);
+            }
+          }
           
           // Remove from uploading list
           setUploadingFiles(prev => prev.filter(u => u.id !== selectedFile.id));

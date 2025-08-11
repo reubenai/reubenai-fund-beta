@@ -29,6 +29,8 @@ import { SpecialistAIAgents } from './SpecialistAIAgents';
 import { BulkAnalysisControls } from './BulkAnalysisControls';
 import { ICMemoModal } from './ICMemoModal';
 import { VotingModal } from './VotingModal';
+import { ICMemoApprovalFlow } from './ICMemoApprovalFlow';
+import { ICVotingAndDecisions } from './ICVotingAndDecisions';
 
 interface Deal {
   id: string;
@@ -234,25 +236,26 @@ export default function RedesignedICPage() {
 
             {canReviewMemos && (
               <TabsContent value="reviews" className="space-y-6">
-                <EnhancedReviewQueue
-                  fundId={selectedFund.id}
-                  onViewMemo={handleDealSelect}
-                />
+                <div className="grid gap-6">
+                  <EnhancedReviewQueue
+                    fundId={selectedFund.id}
+                    onViewMemo={handleDealSelect}
+                  />
+                  <ICMemoApprovalFlow
+                    fundId={selectedFund.id}
+                    onStatusChange={(status) => {
+                      toast({
+                        title: "Memo Status Updated",
+                        description: `Memo status changed to ${status}`,
+                      });
+                    }}
+                  />
+                </div>
               </TabsContent>
             )}
 
             <TabsContent value="voting" className="space-y-6">
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-6">
-                  <div className="text-center py-8">
-                    <Vote className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Voting & Decisions</h3>
-                    <p className="text-muted-foreground">
-                      Voting functionality will be displayed here based on active decisions
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <ICVotingAndDecisions fundId={selectedFund.id} userRole={role} />
             </TabsContent>
 
             <TabsContent value="committee" className="space-y-6">

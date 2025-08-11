@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useAnalysisIntegration } from '@/hooks/useAnalysisIntegration';
 import { supabase } from '@/integrations/supabase/client';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -82,6 +83,7 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
   
   const { user } = useAuth();
   const { toast } = useToast();
+  const { triggerDealAnalysis } = useAnalysisIntegration();
   const permissions = usePermissions();
 
   useEffect(() => {
@@ -168,6 +170,11 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
             resource_type: 'deal_note',
             resource_id: data.id
           });
+          
+          // Trigger analysis if note is significant
+          if (newNote.length > 50 || newCategory === 'due_diligence' || newSentiment !== 'neutral') {
+            await triggerDealAnalysis(dealId, 'note_added', dealData.fund_id);
+          }
         }
       } catch (activityError) {
         console.error('Failed to log activity:', activityError);
