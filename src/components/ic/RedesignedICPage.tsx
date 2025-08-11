@@ -196,19 +196,22 @@ export default function RedesignedICPage() {
                 </TabsTrigger>
               )}
 
-              <TabsTrigger value="schedule" className="h-10 px-6 rounded-md">
+              <TabsTrigger value="schedule" className="h-10 px-6 rounded-md" disabled>
                 <Calendar className="h-4 w-4 mr-2" />
                 Schedule IC
+                <Badge variant="secondary" className="ml-2 text-xs">Soon</Badge>
               </TabsTrigger>
 
-              <TabsTrigger value="voting" className="h-10 px-6 rounded-md">
+              <TabsTrigger value="voting" className="h-10 px-6 rounded-md" disabled>
                 <Vote className="h-4 w-4 mr-2" />
                 Voting & Decisions
+                <Badge variant="secondary" className="ml-2 text-xs">Soon</Badge>
               </TabsTrigger>
 
-              <TabsTrigger value="committee" className="h-10 px-6 rounded-md">
+              <TabsTrigger value="committee" className="h-10 px-6 rounded-md" disabled>
                 <Users className="h-4 w-4 mr-2" />
                 Committee
+                <Badge variant="secondary" className="ml-2 text-xs">Soon</Badge>
               </TabsTrigger>
             </TabsList>
 

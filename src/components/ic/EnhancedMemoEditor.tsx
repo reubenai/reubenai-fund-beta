@@ -32,13 +32,16 @@ import {
   Shield,
   FileText,
   Loader2,
-  Mail
+  Mail,
+  MoreHorizontal,
+  Plus
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { exportMemoToPDF } from '@/utils/pdfClient';
 import DataQualityDashboard from './DataQualityDashboard';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useMemoVersions } from '@/hooks/useMemoVersions';
 
 interface InvestmentMemo {
   id: string;
@@ -98,14 +101,24 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [customSections, setCustomSections] = useState<Array<{key: string, title: string, icon?: any, color?: string}>>([]);
   const { toast } = useToast();
   const { canEditICMemos } = usePermissions();
+  
+  // Initialize memo versioning
+  const { versionState, loadVersions, saveVersion, restoreVersion } = useMemoVersions(
+    memo?.dealId || '', 
+    memo?.id || ''
+  );
 
   useEffect(() => {
     if (memo) {
       setEditedMemo(memo);
+      if (memo.dealId && memo.id) {
+        loadVersions();
+      }
     }
-  }, [memo]);
+  }, [memo, loadVersions]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -122,6 +135,11 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
     
     setIsSaving(true);
     try {
+      // Save version to database
+      if (editedMemo.dealId && editedMemo.id) {
+        await saveVersion(editedMemo.content, `Manual save at ${new Date().toLocaleString()}`);
+      }
+      
       onSave(editedMemo);
       toast({
         title: "Memo Saved",
@@ -136,6 +154,16 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const addCustomSection = () => {
+    const sectionNumber = customSections.length + 1;
+    const newSection = {
+      key: `custom_section_${sectionNumber}`,
+      title: `Custom Section ${sectionNumber}`
+    };
+    setCustomSections(prev => [...prev, newSection]);
+    setActiveSection(newSection.key);
   };
 
   const handleGenerateWithAI = async () => {
@@ -257,13 +285,13 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                     disabled={true}
                     className="transition-all duration-200 hover:scale-105 hover:shadow-md"
                   >
-                    <Download className="w-4 h-4 mr-2" />
-                    Share Memo
+                    <MoreHorizontal className="w-4 h-4 mr-2" />
+                    Quick Actions
                     <Badge variant="secondary" className="ml-2 text-xs">Soon</Badge>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuLabel>Share Options</DropdownMenuLabel>
+                  <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem disabled>
                     <Download className="w-4 h-4 mr-2" />
@@ -272,6 +300,10 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                   <DropdownMenuItem disabled>
                     <Mail className="w-4 h-4 mr-2" />
                     Email Memo
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled>
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Add to IC Meeting
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -285,8 +317,18 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                     className="transition-all duration-200 hover:scale-105 hover:shadow-md bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100"
                   >
                     <Brain className="w-4 h-4 mr-2" />
-                    AI-assisted memo mode
+                    AI-Assisted Memo
                     <Badge variant="secondary" className="ml-2 text-xs">Soon</Badge>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsPreviewMode(!isPreviewMode)}
+                    className="transition-all duration-200 hover:scale-105 hover:shadow-md"
+                  >
+                    {isPreviewMode ? <Edit3 className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                    {isPreviewMode ? 'Edit' : 'Preview'}
                   </Button>
                   
                   <Button
@@ -350,8 +392,19 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
             <div className="px-6 pt-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Memo Sections</h3>
-                <div className="text-sm text-muted-foreground">
-                  {STANDARD_SECTIONS.findIndex(s => s.key === activeSection) + 1} of {STANDARD_SECTIONS.length}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={addCustomSection}
+                    className="gap-2 text-xs"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Add Section
+                  </Button>
+                  <div className="text-sm text-muted-foreground">
+                    {[...STANDARD_SECTIONS, ...customSections].findIndex(s => s.key === activeSection) + 1} of {STANDARD_SECTIONS.length + customSections.length}
+                  </div>
                 </div>
               </div>
               <TabsList className="grid grid-cols-7 lg:grid-cols-14 h-auto p-1">
@@ -368,11 +421,24 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                     </div>
                   </TabsTrigger>
                 ))}
+                {customSections.map((section, index) => (
+                  <TabsTrigger
+                    key={section.key}
+                    value={section.key}
+                    className="text-xs p-2 transition-all duration-200 hover:scale-105"
+                    title={section.title}
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <FileText className="w-3 h-3 text-indigo-600" />
+                      <div className="text-[10px] leading-none">{STANDARD_SECTIONS.length + index + 1}</div>
+                    </div>
+                  </TabsTrigger>
+                ))}
               </TabsList>
             </div>
 
             <div className="flex-1 overflow-hidden p-6">
-              {STANDARD_SECTIONS.map((section) => (
+              {[...STANDARD_SECTIONS, ...customSections].map((section) => (
                 <TabsContent
                   key={section.key}
                   value={section.key}
@@ -382,8 +448,25 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
                     <CardHeader className="pb-3">
                       <CardTitle className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <section.icon className={`w-5 h-5 ${section.color}`} />
-                          {section.title}
+                          {'icon' in section ? (
+                            <section.icon className={`w-5 h-5 ${section.color}`} />
+                          ) : (
+                            <FileText className="w-5 h-5 text-indigo-600" />
+                          )}
+                          {customSections.includes(section) ? (
+                            <Input
+                              value={section.title}
+                              onChange={(e) => {
+                                const updatedSections = customSections.map(s =>
+                                  s.key === section.key ? { ...s, title: e.target.value } : s
+                                );
+                                setCustomSections(updatedSections);
+                              }}
+                              className="text-lg font-semibold border-0 bg-transparent p-0 h-auto"
+                            />
+                          ) : (
+                            section.title
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           {editedMemo.content?.[section.key] && (
