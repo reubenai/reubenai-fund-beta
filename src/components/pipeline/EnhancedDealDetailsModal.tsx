@@ -49,6 +49,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEnhancedDealActivities } from '@/hooks/useEnhancedDealActivities';
 import { EnhancedActivityTable } from '@/components/activities/EnhancedActivityTable';
 import { ThesisAlignmentSection } from '@/components/analysis/ThesisAlignmentSection';
+import { MarketOpportunityAssessment } from '@/components/analysis/MarketOpportunityAssessment';
 
 // Extend the Deal type to include enhanced_analysis
 type Deal = BaseDeal & {
@@ -729,6 +730,9 @@ export function EnhancedDealDetailsModal({
             <TabsContent value="analysis" className="space-y-6">
               {/* Thesis Alignment Section */}
               <ThesisAlignmentSection deal={deal} />
+              
+              {/* Market Opportunity Assessment */}
+              <MarketOpportunityAssessment deal={deal} />
               
               {/* AI Analysis Section */}
               <EnhancedDealAnalysisTab deal={deal} />
