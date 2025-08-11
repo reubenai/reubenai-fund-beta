@@ -84,13 +84,13 @@ serve(async (req) => {
     }
 
     // Extract complete strategy context for fund-type-specific memo generation
-    const strategy = fundData?.investment_strategies?.[0];
-    const enhancedCriteria = strategy?.enhanced_criteria;
-    const fundType = strategy?.fund_type || fundData?.fund_type || 'vc';
+    const strategyData = fundData?.investment_strategies?.[0];
+    const enhancedCriteria = strategyData?.enhanced_criteria;
+    const fundType = strategyData?.fund_type || fundData?.fund_type || 'vc';
     const thresholds = {
-      exciting: strategy?.exciting_threshold || 85,
-      promising: strategy?.promising_threshold || 70,
-      needs_development: strategy?.needs_development_threshold || 50
+      exciting: strategyData?.exciting_threshold || 85,
+      promising: strategyData?.promising_threshold || 70,
+      needs_development: strategyData?.needs_development_threshold || 50
     };
 
     console.log('🎯 AI Memo Generator: Fund type:', fundType, '| Strategy context:', !!enhancedCriteria);

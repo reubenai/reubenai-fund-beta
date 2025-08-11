@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,8 @@ import { useUnifiedStrategy } from '@/hooks/useUnifiedStrategy';
 import { EnhancedCriteriaEditor } from './EnhancedCriteriaEditor';
 import { getTemplateByFundType } from '@/types/vc-pe-criteria';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { useToast } from '@/hooks/use-toast';
 
 interface CleanThesisConfigurationProps {
   strategy: EnhancedStrategy;
@@ -37,6 +39,7 @@ export function CleanThesisConfiguration({
   const [criteriaEditing, setCriteriaEditing] = useState(false);
   const { updateStrategy, loading } = useUnifiedStrategy();
   const { canConfigureStrategy } = usePermissions();
+  const { toast } = useToast();
 
   // Get enhanced criteria or default template
   const enhancedCriteria = strategy.enhanced_criteria || 
@@ -59,6 +62,26 @@ export function CleanThesisConfiguration({
   const updateField = (field: keyof EnhancedStrategy, value: any) => {
     setEditedStrategy(prev => ({ ...prev, [field]: value }));
   };
+
+  // Auto-save for Investment Thesis
+  const handleAutoSave = useCallback(async () => {
+    try {
+      await updateStrategy(editedStrategy);
+      toast({
+        title: "Auto-saved",
+        description: "Changes saved automatically",
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    }
+  }, [editedStrategy, updateStrategy, toast]);
+
+  useAutoSave(editedStrategy.strategy_notes, {
+    onSave: handleAutoSave,
+    delay: 3000,
+    enabled: canConfigureStrategy && !!editedStrategy.strategy_notes
+  });
 
   return (
     <Tabs defaultValue="overview" className="space-y-6">

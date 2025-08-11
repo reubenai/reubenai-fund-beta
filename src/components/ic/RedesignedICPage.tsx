@@ -65,18 +65,10 @@ export default function RedesignedICPage() {
   const [isAIAgentsExpanded, setIsAIAgentsExpanded] = useState(false);
   const [degradationMode, setDegradationMode] = useState(false);
 
-  // Auto-select appropriate tab based on role
+  // Always default to pipeline tab
   useEffect(() => {
-    if (role === 'analyst') {
-      setActiveTab('pipeline');
-    } else if (canReviewMemos) {
-      setActiveTab('reviews');
-    } else if (canVoteOnDeals) {
-      setActiveTab('voting');
-    } else {
-      setActiveTab('pipeline');
-    }
-  }, [role, canReviewMemos, canVoteOnDeals]);
+    setActiveTab('pipeline');
+  }, []);
 
   const handleActionClick = (action: string) => {
     switch (action) {

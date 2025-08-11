@@ -27,6 +27,7 @@ interface AlignmentCheck {
   reasoning: string;
   icon: React.ReactNode;
   weight: number;
+  score?: number;
 }
 
 interface AlignmentAssessment {
@@ -133,31 +134,38 @@ export function ThesisAlignmentSection({ deal }: ThesisAlignmentSectionProps) {
     });
 
     // Deal Size Check
-    const dealSizeAligned = (!strategy.min_investment_amount || !deal.deal_size || deal.deal_size >= strategy.min_investment_amount) &&
-                           (!strategy.max_investment_amount || !deal.deal_size || deal.deal_size <= strategy.max_investment_amount);
+    const dealSizeAligned = deal.deal_size && 
+      (deal.deal_size >= (strategy.min_investment_amount || 0)) &&
+      (deal.deal_size <= (strategy.max_investment_amount || Infinity));
     
     checks.push({
       criterion: 'Investment Size',
-      aligned: dealSizeAligned,
-      reasoning: dealSizeAligned 
-        ? `Deal size ${formatCurrency(deal.deal_size)} within fund range` 
-        : `Deal size ${formatCurrency(deal.deal_size)} outside range: ${formatCurrency(strategy.min_investment_amount)} - ${formatCurrency(strategy.max_investment_amount)}`,
+      aligned: dealSizeAligned || false,
+      reasoning: !deal.deal_size 
+        ? 'Deal size not specified - requires clarification'
+        : dealSizeAligned 
+          ? `Deal size ${formatCurrency(deal.deal_size)} within fund range` 
+          : `Deal size ${formatCurrency(deal.deal_size)} outside range: ${formatCurrency(strategy.min_investment_amount)} - ${formatCurrency(strategy.max_investment_amount)}`,
       icon: <DollarSign className="h-4 w-4" />,
-      weight: 20
+      weight: 20,
+      score: dealSizeAligned ? 80 : deal.deal_size ? 30 : 45
     });
 
     // Score Threshold Check
-    const scoreAligned = !deal.overall_score || 
+    const scoreAligned = deal.overall_score && 
       deal.overall_score >= (strategy.needs_development_threshold || 50);
     
     checks.push({
       criterion: 'Quality Score',
-      aligned: scoreAligned,
-      reasoning: scoreAligned 
-        ? `Score ${deal.overall_score} meets minimum threshold` 
-        : `Score ${deal.overall_score} below minimum threshold of ${strategy.needs_development_threshold}`,
+      aligned: scoreAligned || false,
+      reasoning: !deal.overall_score 
+        ? 'No quality assessment available - analysis pending'
+        : scoreAligned 
+          ? `Score ${deal.overall_score} meets minimum threshold` 
+          : `Score ${deal.overall_score} below minimum threshold of ${strategy.needs_development_threshold}`,
       icon: <TrendingUp className="h-4 w-4" />,
-      weight: 25
+      weight: 25,
+      score: scoreAligned ? 85 : deal.overall_score ? 40 : 50
     });
 
     // Key Signals Check (if available)

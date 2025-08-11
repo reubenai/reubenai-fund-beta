@@ -331,15 +331,12 @@ export default function Auth() {
                 )}
               </Button>
               
-              {/* Forgot Password Link */}
+              {/* Password Info */}
               <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => setMode('reset')}
-                  className="text-sm text-primary hover:underline"
-                >
-                  Forgot your password?
-                </button>
+                <p className="text-xs text-muted-foreground">
+                  New users receive launch passwords via email.<br/>
+                  Please change your password after first login.
+                </p>
               </div>
             </form>
           )}
