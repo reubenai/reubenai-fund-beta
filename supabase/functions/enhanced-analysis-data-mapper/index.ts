@@ -57,13 +57,13 @@ serve(async (req) => {
       overall_score: orchestratorAnalysis.overall_score || 0,
       overall_recommendation: orchestratorAnalysis.overall_recommendation || 'See detailed analysis',
       
-      // Unified rubric breakdown with equal 25% weights (4 core categories)
+      // Unified rubric breakdown with 5 categories (20% weight each = 100%)
       rubric_breakdown: [
         {
           category: 'Market Attractiveness',
           score: engine_results.market_research_engine?.score || engine_results.market_intelligence_engine?.score || 50,
           confidence: 90,
-          weight: 25, // 25% weight
+          weight: 20, // 20% weight
           insights: Array.isArray(engine_results.market_research_engine?.analysis || engine_results.market_intelligence_engine?.analysis) 
             ? (engine_results.market_research_engine?.analysis || engine_results.market_intelligence_engine?.analysis)
             : [engine_results.market_research_engine?.analysis || engine_results.market_intelligence_engine?.analysis || 'Market analysis completed'],
@@ -73,10 +73,10 @@ serve(async (req) => {
           detailed_breakdown: engine_results.market_research_engine?.data || engine_results.market_intelligence_engine?.data || {}
         },
         {
-          category: 'Product & Technology',
+          category: 'Product Strength & IP',
           score: engine_results.product_ip_engine?.score || 65,
           confidence: 85,
-          weight: 25, // 25% weight
+          weight: 20, // 20% weight
           insights: Array.isArray(engine_results.product_ip_engine?.analysis) 
             ? engine_results.product_ip_engine.analysis 
             : [engine_results.product_ip_engine?.analysis || 'Product analysis completed'],
@@ -86,10 +86,10 @@ serve(async (req) => {
           detailed_breakdown: engine_results.product_ip_engine?.data || {}
         },
         {
-          category: 'Team & Leadership',
+          category: 'Founder Team Strength',
           score: engine_results.team_research_engine?.score || 65,
           confidence: 80,
-          weight: 25, // 25% weight
+          weight: 20, // 20% weight
           insights: Array.isArray(engine_results.team_research_engine?.analysis) 
             ? engine_results.team_research_engine.analysis 
             : [engine_results.team_research_engine?.analysis || 'Team analysis completed'],
@@ -99,10 +99,10 @@ serve(async (req) => {
           detailed_breakdown: engine_results.team_research_engine?.data || {}
         },
         {
-          category: 'Financial & Traction',
+          category: 'Financial Feasibility',
           score: engine_results.financial_engine?.score || 50,
           confidence: 85,
-          weight: 25, // 25% weight
+          weight: 20, // 20% weight
           insights: Array.isArray(engine_results.financial_engine?.analysis) 
             ? engine_results.financial_engine.analysis 
             : [engine_results.financial_engine?.analysis || 'Financial analysis completed'],
@@ -110,6 +110,19 @@ serve(async (req) => {
           strengths: ['Financial analysis available'],
           concerns: (engine_results.financial_engine?.score || 50) < 50 ? ['Financial concerns identified'] : [],
           detailed_breakdown: engine_results.financial_engine?.data || {}
+        },
+        {
+          category: 'Strategic Timing',
+          score: engine_results.thesis_alignment_engine?.score || 38,
+          confidence: 85,
+          weight: 20, // 20% weight
+          insights: Array.isArray(engine_results.thesis_alignment_engine?.analysis) 
+            ? engine_results.thesis_alignment_engine.analysis 
+            : [engine_results.thesis_alignment_engine?.analysis || 'Strategic alignment completed'],
+          recommendations: ['See detailed strategic analysis'],
+          strengths: ['Strategic analysis available'],
+          concerns: (engine_results.thesis_alignment_engine?.score || 38) < 50 ? ['Strategic concerns identified'] : [],
+          detailed_breakdown: engine_results.thesis_alignment_engine?.data || {}
         }
       ],
 
