@@ -154,6 +154,8 @@ class DocumentService {
       // Create document record with enhanced logging
       const documentData: DealDocumentInsert = {
         deal_id: input.dealId,
+        fund_id: dealData.fund_id,
+        organization_id: fundData.organization_id,
         name: input.file.name,
         file_path: uploadData.path,          // e.g. "<dealId>/<timestamp>_file.ext"
         storage_path: uploadData.path,       // Use same path for consistency
