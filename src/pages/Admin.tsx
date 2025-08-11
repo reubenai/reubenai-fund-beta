@@ -33,6 +33,8 @@ import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
 import { SimplifiedProductionReadiness } from '@/components/admin/SimplifiedProductionReadiness';
 import { AdminInviteUserModal } from '@/components/admin/AdminInviteUserModal';
 import { AdminDealsTable } from '@/components/admin/AdminDealsTable';
+import { IntegrationTestRunner } from '@/components/verification/IntegrationTestRunner';
+import { SyntheticDealTester } from '@/components/verification/SyntheticDealTester';
 import AdminFundCreationModal from '@/components/admin/AdminFundCreationModal';
 import { EnhancedOrganizationsTable } from '@/components/admin/EnhancedOrganizationsTable';
 import { AdminSupportTickets } from '@/components/admin/AdminSupportTickets';
@@ -861,6 +863,10 @@ export default function Admin() {
                 <Rocket className="h-4 w-4 mr-2" />
                 Production Readiness
               </TabsTrigger>
+              <TabsTrigger value="verification" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Verification Testing
+              </TabsTrigger>
               <TabsTrigger value="architecture" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <Database className="h-4 w-4 mr-2" />
                 Architecture
@@ -957,6 +963,20 @@ export default function Admin() {
 
             <TabsContent value="production-readiness" className="space-y-6">
               <SimplifiedProductionReadiness />
+            </TabsContent>
+
+            <TabsContent value="verification" className="space-y-6">
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-semibold mb-4">Integration Test Suite</h2>
+                  <IntegrationTestRunner />
+                </div>
+                
+                <div>
+                  <h2 className="text-2xl font-semibold mb-4">End-to-End Testing</h2>
+                  <SyntheticDealTester />
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="architecture" className="space-y-6">
