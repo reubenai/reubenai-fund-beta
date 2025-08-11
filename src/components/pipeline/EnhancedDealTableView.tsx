@@ -162,36 +162,13 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Table Controls */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-muted-foreground">
-            {sortedDeals.length} deals total
-          </span>
-          {selectedDeals.size > 0 && (
-            <Badge variant="secondary">
-              {selectedDeals.size} selected
-            </Badge>
-          )}
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
-            Export Selected
-          </Button>
-          <Button variant="outline" size="sm">
-            Bulk Actions
-          </Button>
-        </div>
-      </div>
-
-      {/* Enhanced Deal Table */}
-      <div className="rounded-md border border-border bg-card">
+    <div className="space-y-4 h-full flex flex-col">
+      {/* Table Container with Scroll */}
+      <div className="flex-1 border border-border rounded-lg bg-card overflow-auto">
         <Table>
-          <TableHeader>
+          <TableHeader className="sticky top-0 bg-card z-10">
             <TableRow className="hover:bg-transparent border-b border-border">
-              <TableHead className="w-12">
+              <TableHead className="w-12 sticky left-0 bg-card z-20">
                 <input
                   type="checkbox"
                   className="rounded border-border"
@@ -206,7 +183,7 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
               </TableHead>
               
               <TableHead 
-                className="cursor-pointer select-none hover:bg-muted/50 transition-colors"
+                className="sticky left-12 bg-card z-20 cursor-pointer select-none hover:bg-muted/50 transition-colors min-w-[200px]"
                 onClick={() => handleSort('company_name')}
               >
                 <div className="flex items-center">
@@ -216,7 +193,7 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
               </TableHead>
               
               <TableHead 
-                className="cursor-pointer select-none hover:bg-muted/50 transition-colors"
+                className="cursor-pointer select-none hover:bg-muted/50 transition-colors min-w-[100px]"
                 onClick={() => handleSort('industry')}
               >
                 <div className="flex items-center">
@@ -226,7 +203,7 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
               </TableHead>
               
               <TableHead 
-                className="cursor-pointer select-none hover:bg-muted/50 transition-colors"
+                className="cursor-pointer select-none hover:bg-muted/50 transition-colors min-w-[100px]"
                 onClick={() => handleSort('status')}
               >
                 <div className="flex items-center">
@@ -236,7 +213,7 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
               </TableHead>
               
               <TableHead 
-                className="cursor-pointer select-none hover:bg-muted/50 transition-colors text-right"
+                className="cursor-pointer select-none hover:bg-muted/50 transition-colors text-right min-w-[120px]"
                 onClick={() => handleSort('deal_size')}
               >
                 <div className="flex items-center justify-end">
@@ -246,19 +223,19 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
               </TableHead>
               
               <TableHead 
-                className="cursor-pointer select-none hover:bg-muted/50 transition-colors text-center"
+                className="cursor-pointer select-none hover:bg-muted/50 transition-colors text-center min-w-[120px]"
                 onClick={() => handleSort('overall_score')}
               >
                 <div className="flex items-center justify-center">
-                  RAG Score
+                  ReubenAI Score
                   {getSortIcon('overall_score')}
                 </div>
               </TableHead>
               
-              <TableHead>Location</TableHead>
+              <TableHead className="min-w-[120px]">Location</TableHead>
               
               <TableHead 
-                className="cursor-pointer select-none hover:bg-muted/50 transition-colors"
+                className="cursor-pointer select-none hover:bg-muted/50 transition-colors min-w-[140px]"
                 onClick={() => handleSort('updated_at')}
               >
                 <div className="flex items-center">
@@ -278,7 +255,7 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                 className="cursor-pointer hover:bg-muted/50 transition-colors border-b border-border"
                 onClick={() => onDealClick(deal)}
               >
-                <TableCell onClick={(e) => e.stopPropagation()}>
+                <TableCell className="sticky left-0 bg-card z-20" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
                     className="rounded border-border"
@@ -295,7 +272,7 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                   />
                 </TableCell>
                 
-                <TableCell>
+                <TableCell className="sticky left-12 bg-card z-20 min-w-[200px]">
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2">
                       <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />

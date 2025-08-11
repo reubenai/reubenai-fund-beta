@@ -121,28 +121,20 @@ export const PipelineHeader: React.FC<PipelineHeaderProps> = ({
           />
         </div>
 
-        {/* View Controls */}
+        {/* View Controls - Only Table View */}
         <div className="flex items-center gap-2">
-          {/* View Switcher */}
+          {/* Table View Only Badge */}
           <div className="flex bg-white border border-slate-200 rounded-lg p-1">
-            {Object.entries(viewIcons).map(([view, Icon]) => (
-              <Button
-                key={view}
-                variant={currentView === view ? "default" : "ghost"}
-                size="sm"
-                onClick={() => onViewChange(view as any)}
-                className={`h-8 px-3 ${
-                  currentView === view 
-                    ? 'bg-emerald-600 text-white' 
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-              </Button>
-            ))}
+            <Button
+              variant="default"
+              size="sm"
+              className="h-8 px-3 bg-emerald-600 text-white"
+              disabled
+            >
+              <Table className="w-4 h-4" />
+            </Button>
           </div>
 
-          {/* Action Buttons */}
           <Button 
             variant="outline" 
             size="sm"
@@ -151,15 +143,6 @@ export const PipelineHeader: React.FC<PipelineHeaderProps> = ({
           >
             <Filter className="w-4 h-4 mr-2" />
             Filters
-          </Button>
-
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-
-          <Button variant="outline" size="sm">
-            <Settings className="w-4 h-4" />
           </Button>
         </div>
       </div>

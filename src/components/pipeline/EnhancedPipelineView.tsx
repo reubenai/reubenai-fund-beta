@@ -53,7 +53,7 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fund
   const { toast } = useToast();
 
   const [state, setState] = useState<PipelineViewState>({
-    currentView: 'table', // Default to table view (AffinityCRM style)
+    currentView: 'table', // Only table view available
     viewDensity: 'comfortable',
     showFilters: false,
     filters: {},
@@ -193,9 +193,9 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fund
             onBatchUpload={permissions.canBatchUpload ? () => updateState({ showBatchUpload: true }) : () => {}}
             onDealSourcing={undefined}
             currentView={state.currentView}
-            onViewChange={(view) => updateState({ currentView: view })}
+            onViewChange={() => {}} // Disabled - only table view
             viewDensity={state.viewDensity}
-            onDensityChange={(density) => updateState({ viewDensity: density })}
+            onDensityChange={() => {}} // Disabled for now
             totalDeals={getTotalDeals()}
             showFilters={state.showFilters}
             onToggleFilters={() => updateState({ showFilters: !state.showFilters })}
@@ -211,43 +211,16 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fund
       </div>
 
       <div className="flex-1 bg-background overflow-hidden">
-        {state.currentView === 'table' && (
-          <div className="h-full p-8">
-            <EnhancedDealTableView
-              deals={filteredDeals}
-              stages={stages}
-              onDealClick={handleDealClick}
-              onStageChange={permissions.canMoveDealsBetweenStages ? moveDeal : undefined}
-              loading={loading}
-            />
-          </div>
-        )}
-
-        {state.currentView === 'kanban' && (
-          <div className="h-full p-8">
-            <CleanKanbanView
-              deals={filteredDeals}
-              stages={stages}
-              onDragEnd={permissions.canMoveDealsBetweenStages ? handleDragEnd : undefined}
-              onDealClick={handleDealClick}
-              onStageEdit={undefined}
-              onStageDelete={undefined}
-              onAddDeal={permissions.canCreateDeals ? handleAddDeal : undefined}
-              onBatchUpload={permissions.canBatchUpload ? () => updateState({ showBatchUpload: true }) : undefined}
-              fundName={selectedFund?.name}
-            />
-          </div>
-        )}
-
-        {(state.currentView === 'list' || state.currentView === 'funnel') && (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center py-12 bg-card rounded-lg border border-border">
-              <p className="text-muted-foreground">
-                {state.currentView === 'list' ? 'List' : 'Funnel'} view coming soon...
-              </p>
-            </div>
-          </div>
-        )}
+        {/* Only Table View Available */}
+        <div className="h-full p-8">
+          <EnhancedDealTableView
+            deals={filteredDeals}
+            stages={stages}
+            onDealClick={handleDealClick}
+            onStageChange={permissions.canMoveDealsBetweenStages ? moveDeal : undefined}
+            loading={loading}
+          />
+        </div>
       </div>
 
       <AddDealModal
