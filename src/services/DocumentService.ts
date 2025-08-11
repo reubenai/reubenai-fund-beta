@@ -70,27 +70,63 @@ class DocumentService {
         dealId: input.dealId 
       });
 
-      // Verify deal exists and user has access
+      // First get basic deal info
       const { data: dealData, error: dealError } = await supabase
         .from('deals')
         .select('id, fund_id, company_name')
         .eq('id', input.dealId)
         .single();
 
-      if (dealError) {
-        console.error('💼 Deal verification failed:', dealError);
-        throw new Error(`Cannot access deal: ${dealError.message}`);
+      if (dealError || !dealData) {
+        console.error('💼 Deal lookup failed:', dealError);
+        throw new Error(`Deal not found: ${dealError?.message || 'Unknown error'}`);
       }
 
-      if (!dealData) {
-        console.error('💼 Deal not found:', input.dealId);
-        throw new Error('Deal not found or access denied');
+      // Then get fund and organization info
+      const { data: fundData, error: fundError } = await supabase
+        .from('funds')
+        .select('id, name, organization_id')
+        .eq('id', dealData.fund_id)
+        .single();
+
+      if (fundError || !fundData) {
+        console.error('💼 Fund lookup failed:', fundError);
+        throw new Error(`Fund not found: ${fundError?.message || 'Unknown error'}`);
       }
 
-      console.log('💼 Deal verified:', { 
+      console.log('💼 Deal and fund found:', { 
         dealId: dealData.id, 
         fundId: dealData.fund_id, 
-        companyName: dealData.company_name 
+        companyName: dealData.company_name,
+        organizationId: fundData.organization_id
+      });
+
+      // Verify user has access to this deal's organization
+      const { data: accessData, error: accessError } = await supabase
+        .from('profiles')
+        .select('user_id, organization_id, role, is_deleted')
+        .eq('user_id', userData.user.id)
+        .eq('organization_id', fundData.organization_id)
+        .maybeSingle();
+
+      if (accessError) {
+        console.error('🔒 Organization access check failed:', accessError);
+        throw new Error(`Access validation failed: ${accessError.message}`);
+      }
+
+      if (!accessData || accessData.is_deleted) {
+        console.error('🔒 User lacks access to organization:', {
+          userId: userData.user.id,
+          organizationId: fundData.organization_id,
+          accessData
+        });
+        throw new Error('Access denied: You do not have permission to upload documents for this deal');
+      }
+
+      console.log('✅ Organization access verified:', { 
+        userId: accessData.user_id,
+        organizationId: accessData.organization_id,
+        userRole: accessData.role
       });
 
       // Generate unique filename
