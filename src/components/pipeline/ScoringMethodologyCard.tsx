@@ -28,17 +28,16 @@ export function ScoringMethodologyCard({
 }: ScoringMethodologyCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Calculate weighted score breakdown - EMERGENCY FIX
-  const totalWeight = rubricBreakdown.reduce((sum, item) => sum + item.weight, 0);
+  // Unified scoring system - use rubric breakdown as source of truth
   const scoringDetails = rubricBreakdown.map(item => ({
     ...item,
-    normalizedWeight: totalWeight > 0 ? (item.weight / totalWeight) * 100 : 0,
-    // CRITICAL FIX: weights are percentages, so calculate weighted score directly
     contribution: (item.score * item.weight / 100),
     confidenceImpact: item.confidence / 100
   }));
 
+  // Overall score should match calculated score (unified system)
   const calculatedScore = scoringDetails.reduce((sum, item) => sum + item.contribution, 0);
+  const unifiedScore = Math.round(calculatedScore);
 
   return (
     <Card className="card-xero">
@@ -47,7 +46,7 @@ export function ScoringMethodologyCard({
           <Calculator className="h-5 w-5 text-muted-foreground" />
           Scoring Methodology
           <Badge variant="outline" className="ml-auto">
-            Calculated: {Math.round(calculatedScore)}
+            Score: {unifiedScore}
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -55,12 +54,8 @@ export function ScoringMethodologyCard({
         {/* High-level calculation */}
         <div className="bg-muted/30 rounded-lg p-4 space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-foreground">Overall Score</span>
-            <span className="text-lg font-bold text-foreground">{overallScore}</span>
-          </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Calculated Score</span>
-            <span className="text-foreground">{Math.round(calculatedScore)}</span>
+            <span className="text-sm font-medium text-foreground">Weighted Average Score</span>
+            <span className="text-lg font-bold text-foreground">{unifiedScore}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="text-muted-foreground">Analysis Completeness</span>

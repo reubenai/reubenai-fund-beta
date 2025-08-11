@@ -34,6 +34,8 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
     industry: '',
     location: '',
     website: '',
+    linkedin_url: '',
+    crunchbase_url: '',
     deal_size: '',
     valuation: '',
     currency: 'USD'
@@ -81,6 +83,8 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
         industry: formData.industry || undefined,
         location: formData.location || undefined,
         website: formData.website || undefined,
+        linkedin_url: formData.linkedin_url || undefined,
+        crunchbase_url: formData.crunchbase_url || undefined,
         deal_size: formData.deal_size ? parseInt(formData.deal_size) : undefined,
         valuation: formData.valuation ? parseInt(formData.valuation) : undefined,
         currency: formData.currency || undefined
@@ -118,17 +122,12 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
         // Trigger initial analysis with enforcement
         await triggerDealAnalysis(newDeal.id, 'initial', newDeal.fund_id);
         
-        // If we have uploaded documents, switch to the documents tab
-        if (uploadedDocuments.length > 0) {
-          setActiveTab('documents');
-        } else {
-          // If no documents, move to documents tab for pitch deck upload
-          setActiveTab('documents');
-        }
+        // Auto-navigate to documents tab for pitch deck upload
+        setActiveTab('documents');
 
         toast({
           title: "Success",
-          description: `Deal "${formData.company_name}" created successfully. ${uploadedDocuments.length === 0 ? 'Now upload pitch deck and supporting documents.' : 'Documents uploaded successfully.'}`,
+          description: `Deal "${formData.company_name}" created successfully. Please upload pitch deck and supporting documents for AI analysis.`,
         });
       }
     } catch (error) {
@@ -195,6 +194,8 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
       industry: '',
       location: '',
       website: '',
+      linkedin_url: '',
+      crunchbase_url: '',
       deal_size: '',
       valuation: '',
       currency: 'USD'
@@ -284,7 +285,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
                     </div>
                   </div>
 
-                  {/* Website */}
+                  {/* Website & Social URLs */}
                   <div>
                     <Label htmlFor="website">Website</Label>
                     <Input
@@ -294,6 +295,29 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
                       onChange={(e) => handleInputChange('website', e.target.value)}
                       placeholder="https://company.com"
                     />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="linkedin_url">LinkedIn URL</Label>
+                      <Input
+                        id="linkedin_url"
+                        type="url"
+                        value={formData.linkedin_url}
+                        onChange={(e) => handleInputChange('linkedin_url', e.target.value)}
+                        placeholder="https://linkedin.com/company/..."
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="crunchbase_url">Crunchbase URL</Label>
+                      <Input
+                        id="crunchbase_url"
+                        type="url"
+                        value={formData.crunchbase_url}
+                        onChange={(e) => handleInputChange('crunchbase_url', e.target.value)}
+                        placeholder="https://crunchbase.com/organization/..."
+                      />
+                    </div>
                   </div>
 
                   {/* Financial Info */}
