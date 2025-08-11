@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield, Archive, ArchiveRestore, Filter, Target, Upload, Rocket, Kanban, MessageSquare, CheckCircle, XCircle, Settings } from 'lucide-react';
+import { Building2, Users, TrendingUp, Database, Plus, Edit, Save, X, Shield, Archive, ArchiveRestore, Filter, Target, Upload, Kanban, MessageSquare, Settings } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -30,10 +30,8 @@ import { EnhancedPlatformActivity } from '@/components/admin/EnhancedPlatformAct
 import { AIAgentsHealthPanel } from '@/components/admin/AIAgentsHealthPanel';
 import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModal';
 import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
-import { SimplifiedProductionReadiness } from '@/components/admin/SimplifiedProductionReadiness';
 import { AdminInviteUserModal } from '@/components/admin/AdminInviteUserModal';
 import { AdminDealsTable } from '@/components/admin/AdminDealsTable';
-import { VerificationChecklist } from '@/components/verification/VerificationChecklist';
 import AdminFundCreationModal from '@/components/admin/AdminFundCreationModal';
 import { EnhancedOrganizationsTable } from '@/components/admin/EnhancedOrganizationsTable';
 import { AdminSupportTickets } from '@/components/admin/AdminSupportTickets';
@@ -858,14 +856,6 @@ export default function Admin() {
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Support Tickets
               </TabsTrigger>
-              <TabsTrigger value="production-readiness" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <Rocket className="h-4 w-4 mr-2" />
-                Production Readiness
-              </TabsTrigger>
-              <TabsTrigger value="verification" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Phase 8 Verification
-              </TabsTrigger>
             </TabsList>
 
         <TabsContent value="organizations" className="space-y-6">
@@ -958,14 +948,6 @@ export default function Admin() {
 
 
 
-            <TabsContent value="production-readiness" className="space-y-6">
-              <SimplifiedProductionReadiness />
-              <AIAgentsHealthPanel />
-            </TabsContent>
-
-            <TabsContent value="verification" className="space-y-6">
-              <VerificationChecklist />
-            </TabsContent>
 
           </Tabs>
         </div>
