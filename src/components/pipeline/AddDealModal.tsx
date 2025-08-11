@@ -13,6 +13,7 @@ import { useAnalysisIntegration } from '@/hooks/useAnalysisIntegration';
 import { Building2 } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { STANDARDIZED_SECTORS, sectorsToString } from '@/constants/sectors';
+import { LOCATION_OPTIONS, locationsToString, stringToLocations } from '@/constants/locations';
 
 interface AddDealModalProps {
   open: boolean;
@@ -31,7 +32,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
     company_name: '',
     description: '',
     industry: [] as string[], // Changed to array for multi-select
-    location: '',
+    location: [] as string[], // Changed to array for multi-select
     website: '',
     linkedin_url: '',
     crunchbase_url: '',
@@ -88,7 +89,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
         created_by: user.id,
         description: formData.description || undefined,
         industry: formData.industry.length > 0 ? sectorsToString(formData.industry) : undefined, // Convert array to string
-        location: formData.location || undefined,
+        location: formData.location.length > 0 ? locationsToString(formData.location) : undefined, // Convert array to string
         website: formData.website || undefined,
         linkedin_url: formData.linkedin_url || undefined,
         crunchbase_url: formData.crunchbase_url || undefined,
@@ -155,7 +156,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
       company_name: '',
       description: '',
       industry: [], // Reset to empty array
-      location: '',
+      location: [], // Reset to empty array
       website: '',
       linkedin_url: '',
       crunchbase_url: '',
@@ -229,12 +230,17 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
                 </div>
                 <div>
                   <Label htmlFor="location">Location</Label>
-                  <Input
-                    id="location"
+                  <MultiSelect
+                    options={LOCATION_OPTIONS}
                     value={formData.location}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
-                    placeholder="e.g. San Francisco, CA"
+                    onValueChange={(value) => handleInputChange('location', value)}
+                    placeholder="Select locations..."
+                    searchPlaceholder="Search countries and ecosystems..."
+                    maxDisplay={2}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Select countries or startup ecosystems
+                  </p>
                 </div>
               </div>
 
@@ -252,7 +258,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="linkedin_url">LinkedIn URL</Label>
+                  <Label htmlFor="linkedin_url">Company LinkedIn Profile</Label>
                   <Input
                     id="linkedin_url"
                     type="url"
