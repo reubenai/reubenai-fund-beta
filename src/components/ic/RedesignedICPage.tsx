@@ -307,11 +307,13 @@ export default function RedesignedICPage() {
 
         {/* Sidebar - Control Panel */}
         <div className="space-y-6">
-          {/* Load Control Guards */}
-          <LoadControlGuards
-            onCostThresholdReached={handleCostThresholdReached}
-            onDegradationMode={handleDegradationMode}
-          />
+          {/* Load Control Guards - Only for Super Admins */}
+          {isSuperAdmin && (
+            <LoadControlGuards
+              onCostThresholdReached={handleCostThresholdReached}
+              onDegradationMode={handleDegradationMode}
+            />
+          )}
 
           {/* Bulk Analysis Controls - Only for Fund Managers */}
           {canBatchOperations && (
