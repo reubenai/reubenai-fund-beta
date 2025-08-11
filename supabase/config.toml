@@ -166,3 +166,12 @@ verify_jwt = false
 
 [functions.batch-password-reset]
 verify_jwt = false
+
+[functions.emergency-data-fix]
+verify_jwt = false
+
+[functions.force-analysis-queue-processor-fix]
+verify_jwt = false
+
+[functions.enhanced-analysis-data-mapper]
+verify_jwt = false

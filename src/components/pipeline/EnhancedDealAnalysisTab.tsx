@@ -34,6 +34,7 @@ import { CategoryDeepDiveSection } from '@/components/analysis/CategoryDeepDiveS
 import { useAIService } from '@/hooks/useAIService';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useEmergencyFix } from '@/hooks/useEmergencyFix';
 
 interface EnhancedDealAnalysisTabProps {
   deal: Deal & { enhanced_analysis?: EnhancedDealAnalysis };
@@ -52,6 +53,7 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
   } = useAIService();
   const { toast } = useToast();
   const { canTriggerAnalysis } = usePermissions();
+  const { triggerEmergencyFix } = useEmergencyFix();
 
   const handleRunComprehensiveAnalysis = async () => {
     console.log('🔄 Triggering comprehensive analysis for deal:', deal.id);
@@ -190,6 +192,28 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
                   </Button>
                 </div>
 
+                {/* Emergency Fix Button (for development) */}
+                <div className="mt-4 pt-4 border-t border-border">
+                  <Button 
+                    onClick={async () => {
+                      const success = await triggerEmergencyFix();
+                      if (success) {
+                        onDealUpdated?.();
+                      }
+                    }}
+                    disabled={isLoading}
+                    variant="secondary"
+                    size="sm"
+                    className="gap-2"
+                  >
+                    <Shield className="h-4 w-4" />
+                    Emergency Fix (Beta v1)
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Fixes analysis data display issues for beta testing
+                  </p>
+                </div>
+
                 {isLoading && currentStage && (
                   <div className="mt-4 p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -239,27 +263,36 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
     );
   }
 
-  // UNIFIED SCORING SYSTEM - Single source of truth from analysis_engines
+  // UNIFIED SCORING SYSTEM - Single source of truth from rubric_breakdown
   const getAnalysisScore = () => {
     console.log('🔍 Unified scoring system - Analysis data:', {
       hasRubricBreakdown: !!(analysis.rubric_breakdown && analysis.rubric_breakdown.length > 0),
       hasAnalysisEngines: !!(analysis.analysis_engines && Object.keys(analysis.analysis_engines).length > 0),
-      dealOverallScore: deal.overall_score
+      dealOverallScore: deal.overall_score,
+      rubricScores: analysis.rubric_breakdown?.map(r => ({ category: r.category, score: r.score }))
     });
 
-    // CORRECTED: Use rubric_breakdown as the single source of truth (populated by enhanced-analysis-data-mapper)
+    // FIXED: Use rubric_breakdown as primary source of truth
     if (analysis.rubric_breakdown && analysis.rubric_breakdown.length > 0) {
-      const totalWeight = analysis.rubric_breakdown.reduce((sum, item) => sum + item.weight, 0);
-      if (totalWeight === 0) return deal.overall_score || 0;
+      const validCategories = analysis.rubric_breakdown.filter(item => item.score > 0);
       
-      const weightedScore = analysis.rubric_breakdown.reduce(
-        (sum, item) => sum + (item.score * item.weight / 100), 0
+      if (validCategories.length === 0) {
+        console.log('⚠️ All rubric scores are zero, using deal overall_score:', deal.overall_score);
+        return deal.overall_score || 0;
+      }
+      
+      const totalWeight = validCategories.reduce((sum, item) => sum + (item.weight || 16.67), 0);
+      const weightedScore = validCategories.reduce(
+        (sum, item) => sum + ((item.score || 0) * (item.weight || 16.67) / 100), 0
       );
-      console.log('📊 Unified scoring result:', Math.round(weightedScore));
-      return Math.round(weightedScore);
+      
+      const calculatedScore = totalWeight > 0 ? Math.round(weightedScore) : (deal.overall_score || 0);
+      console.log('📊 Calculated weighted score:', calculatedScore, 'from', validCategories.length, 'categories');
+      return calculatedScore;
     }
     
     // Fallback to deal overall_score if rubric not available
+    console.log('⚠️ No rubric breakdown, using deal overall_score:', deal.overall_score);
     return deal.overall_score || 0;
   };
 

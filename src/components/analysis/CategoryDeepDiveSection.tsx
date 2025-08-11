@@ -117,23 +117,23 @@ export function CategoryDeepDiveSection({
       <CardContent className="space-y-4">
         {/* Basic Analysis (existing functionality) */}
         <div className="space-y-4">
-          {/* Key Insights */}
-          {safeInsights && safeInsights.length > 0 && (
-            <div>
-              <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-                <Zap className="h-4 w-4 text-muted-foreground" />
-                Key Insights
-              </h4>
-              <ul className="space-y-1">
-                {safeInsights.map((insight, i) => (
-                  <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
-                    {insight}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+           {/* Key Insights */}
+           {safeInsights && safeInsights.length > 0 && safeInsights[0] !== 'Analysis scheduled' && (
+             <div>
+               <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                 <Zap className="h-4 w-4 text-muted-foreground" />
+                 Key Insights
+               </h4>
+               <ul className="space-y-1">
+                 {safeInsights.map((insight, i) => (
+                   <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                     <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                     {insight}
+                   </li>
+                 ))}
+               </ul>
+             </div>
+           )}
 
           {/* Strengths and Concerns */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
