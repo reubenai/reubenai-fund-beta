@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +47,9 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
   const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([]);
   const { toast } = useToast();
   const { triggerDealAnalysis } = useAnalysisIntegration();
+  
+  // Ref to prevent duplicate submissions
+  const submissionInProgress = useRef(false);
 
   // Memoize form validation to prevent unnecessary re-renders
   const isFormValid = useMemo(() => {
@@ -55,6 +58,11 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent duplicate submissions
+    if (submissionInProgress.current) {
+      return;
+    }
     
     if (!formData.company_name.trim()) {
       toast({
@@ -65,6 +73,8 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
       return;
     }
 
+    // Set submission guard and loading state immediately
+    submissionInProgress.current = true;
     setLoading(true);
     try {
       // Get current user
@@ -141,6 +151,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
       });
     } finally {
       setLoading(false);
+      submissionInProgress.current = false;
     }
   };
 
@@ -205,6 +216,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
     setCreatedDeal(null);
     setUploadedDocuments([]);
     setActiveTab('basic');
+    submissionInProgress.current = false;
     onClose();
   };
 
@@ -404,7 +416,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
                     {!createdDeal ? (
                       <Button 
                         type="submit" 
-                        disabled={loading}
+                        disabled={loading || !isFormValid}
                         className="bg-brand-emerald hover:bg-brand-emerald-dark"
                       >
                         {loading ? 'Creating Deal...' : 'Create Deal'}
