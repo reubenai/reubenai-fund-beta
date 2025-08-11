@@ -29,15 +29,15 @@ export function EnhancedAnalysisStatus({
   const [isExpanded, setIsExpanded] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState<any>(null);
 
-  // Check if we have real engine data
+  // Check if we have real engine data (fix status detection)
   const hasRealData = enhancedAnalysis?.analysis_engines ? 
     Object.values(enhancedAnalysis.analysis_engines).some((engine: any) => 
-      engine.status === 'complete' && engine.data_sources === 'real_analysis'
+      engine.status === 'completed' && engine.analysis_data && Object.keys(engine.analysis_data).length > 0
     ) : false;
 
   const completedEngines = enhancedAnalysis?.analysis_engines ? 
     Object.values(enhancedAnalysis.analysis_engines).filter((engine: any) => 
-      engine.status === 'complete'
+      engine.status === 'completed'
     ).length : 0;
 
   const totalEngines = enhancedAnalysis?.analysis_engines ? 
@@ -97,8 +97,8 @@ export function EnhancedAnalysisStatus({
               <div className="grid gap-2">
                 {Object.entries(enhancedAnalysis.analysis_engines).map(([engineName, engine]) => {
                   const engineData = engine as any;
-                  const isComplete = engineData.status === 'complete';
-                  const hasRealData = engineData.data_sources === 'real_analysis';
+                  const isComplete = engineData.status === 'completed';
+                  const hasRealData = engineData.analysis_data && Object.keys(engineData.analysis_data).length > 0;
                   
                   return (
                     <div 

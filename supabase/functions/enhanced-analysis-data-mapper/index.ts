@@ -111,9 +111,11 @@ serve(async (req) => {
         growth_trajectory: engine_results.market_intelligence_engine.data.growth_trajectory || {}
       } : null,
 
-      // Analysis engines status
+      // Analysis engines status with proper naming
       analysis_engines: Object.entries(engine_results).reduce((acc, [engineName, result]) => {
+        const cleanName = engineName.replace(/_engine$/, '').replace(/_/g, ' ');
         acc[engineName] = {
+          name: cleanName.charAt(0).toUpperCase() + cleanName.slice(1),
           status: 'completed',
           score: result.score || 0,
           last_updated: new Date().toISOString(),
@@ -146,18 +148,48 @@ serve(async (req) => {
       }
     };
 
-    // Store enhanced analysis in deals table
+    // Store enhanced analysis in deals table and populate deal_analyses
     const { error: updateError } = await supabase
       .from('deals')
       .update({ 
         enhanced_analysis: enhancedAnalysis,
-        overall_score: orchestratorAnalysis.overall_score
+        overall_score: orchestratorAnalysis.overall_score,
+        first_analysis_completed: true
       })
       .eq('id', dealId);
+
+    // Also populate deal_analyses table with structured scores
+    const { error: analysisError } = await supabase
+      .from('deal_analyses')
+      .upsert({
+        deal_id: dealId,
+        overall_score: orchestratorAnalysis.overall_score,
+        thesis_alignment_score: engine_results.thesis_alignment_engine?.score || null,
+        market_score: engine_results.market_research_engine?.score || null,
+        product_score: engine_results.product_ip_engine?.score || null,
+        financial_score: engine_results.financial_engine?.score || null,
+        leadership_score: engine_results.team_research_engine?.score || null,
+        traction_score: engine_results.market_intelligence_engine?.score || null,
+        thesis_alignment_notes: engine_results.thesis_alignment_engine?.analysis || null,
+        market_notes: engine_results.market_research_engine?.analysis || null,
+        product_notes: engine_results.product_ip_engine?.analysis || null,
+        financial_notes: engine_results.financial_engine?.analysis || null,
+        leadership_notes: engine_results.team_research_engine?.analysis || null,
+        traction_notes: engine_results.market_intelligence_engine?.analysis || null,
+        engine_results: engine_results,
+        analyzed_at: new Date().toISOString()
+      }, { 
+        onConflict: 'deal_id' 
+      });
 
     if (updateError) {
       console.error('❌ Failed to store enhanced analysis:', updateError);
       throw updateError;
+    }
+
+    if (analysisError) {
+      console.error('❌ Failed to store deal analysis:', analysisError);
+      // Don't throw - enhanced_analysis is more important
     }
 
     console.log('✅ Enhanced analysis mapped and stored for deal:', dealId);

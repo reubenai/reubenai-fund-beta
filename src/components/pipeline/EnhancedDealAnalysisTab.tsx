@@ -239,15 +239,29 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
     );
   }
 
-  // Calculate overall analysis score - this becomes the unified source of truth
+  // Calculate overall analysis score - handle both data structures
   const getAnalysisScore = () => {
-    if (!analysis.rubric_breakdown) return deal.overall_score || 0;
-    const totalWeight = analysis.rubric_breakdown.reduce((sum, item) => sum + item.weight, 0);
-    if (totalWeight === 0) return deal.overall_score || 0;
-    const weightedScore = analysis.rubric_breakdown.reduce(
-      (sum, item) => sum + (item.score * item.weight / totalWeight), 0
-    );
-    return Math.round(weightedScore);
+    // First try rubric_breakdown if available
+    if (analysis.rubric_breakdown && analysis.rubric_breakdown.length > 0) {
+      const totalWeight = analysis.rubric_breakdown.reduce((sum, item) => sum + item.weight, 0);
+      if (totalWeight === 0) return deal.overall_score || 0;
+      const weightedScore = analysis.rubric_breakdown.reduce(
+        (sum, item) => sum + (item.score * item.weight / totalWeight), 0
+      );
+      return Math.round(weightedScore);
+    }
+    
+    // Fallback to analysis_engines average if rubric_breakdown not available
+    if (analysis.analysis_engines && Object.keys(analysis.analysis_engines).length > 0) {
+      const engines = Object.values(analysis.analysis_engines) as any[];
+      const scores = engines.filter(e => e.score && e.score > 0).map(e => e.score);
+      if (scores.length > 0) {
+        return Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
+      }
+    }
+    
+    // Final fallback to deal overall_score
+    return deal.overall_score || 0;
   };
 
   const analysisScore = getAnalysisScore();
@@ -415,50 +429,58 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
             </CardHeader>
             <CardContent>
               <div className="grid gap-4">
-                {Object.entries(analysis.analysis_engines || {}).map(([engineName, engine]) => (
-                  <div 
-                    key={engineName} 
-                    className="flex items-center justify-between p-4 border border-border/50 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${
-                        engine.status === 'complete' ? 'bg-success' :
-                        engine.status === 'partial' ? 'bg-warning' :
-                        engine.status === 'pending' ? 'bg-primary' :
-                        'bg-destructive'
-                      }`} />
-                      <div>
-                        <h4 className="font-semibold text-foreground capitalize">
-                          {engineName.replace(/_/g, ' ')}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          Last run: {engine.last_run ? format(new Date(engine.last_run), 'MMM dd, yyyy') : 'Never'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant="outline"
-                          className={`${
-                            engine.status === 'complete' ? 'text-success' :
-                            engine.status === 'partial' ? 'text-warning' :
-                            engine.status === 'pending' ? 'text-primary' :
-                            'text-destructive'
-                          }`}
-                        >
-                          {engine.status}
-                        </Badge>
-                        <span className="text-lg font-bold text-foreground">
-                          {engine.score || 0}
-                        </span>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {engine.confidence || 0}% confidence
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                 {Object.entries(analysis.analysis_engines || {}).map(([engineName, engine]) => {
+                   // Cast to any to handle extended engine properties
+                   const engineData = engine as any;
+                   const isCompleted = engineData.status === 'completed' || engineData.status === 'complete';
+                   const hasRealData = engineData.analysis_data && Object.keys(engineData.analysis_data).length > 0;
+                   
+                   return (
+                     <div 
+                       key={engineName} 
+                       className="flex items-center justify-between p-4 border border-border/50 rounded-lg"
+                     >
+                       <div className="flex items-center gap-3">
+                         <div className={`w-3 h-3 rounded-full ${
+                           isCompleted ? 'bg-success' :
+                           engineData.status === 'partial' ? 'bg-warning' :
+                           engineData.status === 'pending' ? 'bg-primary' :
+                           'bg-destructive'
+                         }`} />
+                         <div>
+                           <h4 className="font-semibold text-foreground capitalize">
+                             {engineData.name || engineName.replace(/_/g, ' ')}
+                           </h4>
+                           <p className="text-sm text-muted-foreground">
+                             Last run: {engineData.last_updated || engineData.last_run ? 
+                               format(new Date(engineData.last_updated || engineData.last_run), 'MMM dd, yyyy') : 'Never'}
+                           </p>
+                         </div>
+                       </div>
+                       <div className="text-right space-y-1">
+                         <div className="flex items-center gap-2">
+                           <Badge 
+                             variant="outline"
+                             className={`${
+                               isCompleted ? 'text-success' :
+                               engineData.status === 'partial' ? 'text-warning' :
+                               engineData.status === 'pending' ? 'text-primary' :
+                               'text-destructive'
+                             }`}
+                           >
+                             {isCompleted && hasRealData ? 'Real Data' : engineData.status}
+                          </Badge>
+                           <span className="text-lg font-bold text-foreground">
+                             {engineData.score || 0}
+                           </span>
+                         </div>
+                         <div className="text-sm text-muted-foreground">
+                           {engineData.confidence || 0}% confidence
+                         </div>
+                       </div>
+                     </div>
+                   );
+                 })}
                 
                 {(!analysis.analysis_engines || Object.keys(analysis.analysis_engines).length === 0) && (
                   <div className="text-center py-8 text-muted-foreground">
