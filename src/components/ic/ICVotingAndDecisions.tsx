@@ -183,7 +183,7 @@ export function ICVotingAndDecisions({ fundId, userRole }: ICVotingAndDecisionsP
           .insert({
             user_id: (await supabase.auth.getUser()).data.user?.id,
             fund_id: decision.memo.deal.fund_id,
-            activity_type: 'ic_decision_finalized',
+            activity_type: 'deal_updated',
             title: `IC Decision: ${finalOutcome.toUpperCase()}`,
             description: `Final decision for ${decision.memo.deal.company_name}: ${finalOutcome}`,
             context_data: {
@@ -255,7 +255,7 @@ export function ICVotingAndDecisions({ fundId, userRole }: ICVotingAndDecisionsP
       {/* Filters */}
       <div className="flex items-center gap-4">
         <Filter className="h-5 w-5 text-muted-foreground" />
-        <Select value={filter} onValueChange={setFilter}>
+        <Select value={filter} onValueChange={(value: any) => setFilter(value)}>
           <SelectTrigger className="w-48">
             <SelectValue />
           </SelectTrigger>
@@ -369,7 +369,7 @@ export function ICVotingAndDecisions({ fundId, userRole }: ICVotingAndDecisionsP
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Your Vote</label>
-                <Select value={myVote} onValueChange={setMyVote}>
+                <Select value={myVote} onValueChange={(value: any) => setMyVote(value)}>
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select your vote" />
                   </SelectTrigger>

@@ -65,8 +65,8 @@ export function ICMemoApprovalFlow({ memoId, fundId, onStatusChange }: ICMemoApp
 
       if (error) throw error;
       setMemo(data as ICMemo);
-      setReviewNotes(data.review_notes || '');
-      setApprovalNotes(data.approval_notes || '');
+      setReviewNotes((data as any).review_notes || '');
+      setApprovalNotes((data as any).approval_notes || '');
     } catch (error) {
       console.error('Error fetching memo:', error);
       toast({

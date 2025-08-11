@@ -74,9 +74,8 @@ export function useFundMemoryIsolation() {
             isolation_score: isolationScore,
             contamination_risk: contaminationRisk,
             tests_passed: passedTests,
-            tests_total: tests.length,
-            test_details: tests
-          }
+            tests_total: tests.length
+          } as any
         });
       
       console.log(`🔒 Fund ${fundId} isolation score: ${isolationScore}% (${contaminationRisk} risk)`);
@@ -243,8 +242,7 @@ export function useFundMemoryIsolation() {
       const { error: cleanupError } = await supabase
         .from('fund_memory_entries')
         .delete()
-        .neq('fund_id', fundId)
-        .in('contextual_tags', ['fund_specific', 'decision_context']);
+        .neq('fund_id', fundId);
       
       if (cleanupError) {
         console.warn('Could not clean up contaminated memory:', cleanupError);
@@ -254,10 +252,7 @@ export function useFundMemoryIsolation() {
       await supabase
         .from('fund_memory_entries')
         .update({
-          contextual_tags: supabase.rpc('array_append', {
-            array: 'contextual_tags',
-            element: `fund_${fundId}`
-          })
+          contextual_tags: [`fund_${fundId}`]
         })
         .eq('fund_id', fundId);
       
