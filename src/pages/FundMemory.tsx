@@ -3,6 +3,7 @@ import { useFund } from '@/contexts/FundContext';
 import { EnhancedFundMemoryDashboard } from '@/components/fund-memory/EnhancedFundMemoryDashboard';
 import { ActivityInsightsDashboard } from '@/components/activity/ActivityInsightsDashboard';
 import { ActivityDigest } from '@/components/activity/ActivityDigest';
+import { FundMemoryIsolationMonitor } from '@/components/fund-memory/FundMemoryIsolationMonitor';
 
 export default function FundMemory() {
   const { selectedFund } = useFund();
@@ -28,6 +29,10 @@ export default function FundMemory() {
           />
         </div>
         <div className="space-y-6">
+          <FundMemoryIsolationMonitor 
+            fundId={selectedFund.id} 
+            fundName={selectedFund.name} 
+          />
           <ActivityInsightsDashboard timeRange="7d" />
           <ActivityDigest timeRange="24h" showSignificantOnly={true} maxItems={8} />
         </div>
