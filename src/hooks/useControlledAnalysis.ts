@@ -72,13 +72,13 @@ export function useControlledAnalysis() {
 
       if (catalystError) throw catalystError;
 
-      // Queue the analysis
+      // Queue the analysis with immediate processing for manual triggers
       const { data: queueData, error: queueError } = await supabase
         .rpc('queue_deal_analysis', {
           deal_id_param: catalyst.dealId,
           trigger_reason_param: catalyst.type,
-          priority_param: eligibility.priority || 'normal',
-          delay_minutes: eligibility.delay_minutes || 5
+          priority_param: eligibility.priority || (catalyst.type === 'manual_trigger' ? 'high' : 'normal'),
+          delay_minutes: catalyst.type === 'manual_trigger' ? 0 : (eligibility.delay_minutes || 5)
         });
 
       if (queueError) throw queueError;
@@ -105,7 +105,9 @@ export function useControlledAnalysis() {
 
       toast({
         title: "Analysis Queued",
-        description: `Analysis scheduled for ${eligibility.delay_minutes || 5} minutes`,
+        description: catalyst.type === 'manual_trigger' 
+          ? "Analysis starting immediately..." 
+          : `Analysis scheduled for ${eligibility.delay_minutes || 5} minutes`,
         variant: "default"
       });
 
