@@ -451,9 +451,23 @@ export function EnhancedDealDetailsModal({
                         <DollarSign className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Deal Size</p>
+                        <p className="text-sm text-muted-foreground">Capital Raised to Date</p>
                         <p className="font-semibold text-lg text-foreground">
-                          {formatAmount(deal.deal_size, deal.currency)}
+                          {formatAmount((deal as any).capital_raised_to_date || deal.deal_size, deal.currency)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-lg border bg-background">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-primary/10">
+                        <DollarSign className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Current Round</p>
+                        <p className="font-semibold text-lg text-foreground">
+                          {formatAmount((deal as any).current_round_size, deal.currency)}
                         </p>
                       </div>
                     </div>
@@ -472,9 +486,7 @@ export function EnhancedDealDetailsModal({
                       </div>
                     </div>
                   </div>
-                  
                 </div>
-
                 {/* Company Info - Comprehensive AffinityCRM-style layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Company Details */}

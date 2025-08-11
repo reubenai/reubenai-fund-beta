@@ -1106,6 +1106,7 @@ export type Database = {
           analysis_queue_status: string | null
           auto_analysis_enabled: boolean | null
           business_model: string | null
+          capital_raised_to_date: number | null
           co_founders: string[] | null
           company_name: string
           company_stage: string | null
@@ -1116,6 +1117,7 @@ export type Database = {
           created_by: string
           crunchbase_url: string | null
           currency: string | null
+          current_round_size: number | null
           deal_size: number | null
           description: string | null
           employee_count: number | null
@@ -1161,6 +1163,7 @@ export type Database = {
           analysis_queue_status?: string | null
           auto_analysis_enabled?: boolean | null
           business_model?: string | null
+          capital_raised_to_date?: number | null
           co_founders?: string[] | null
           company_name: string
           company_stage?: string | null
@@ -1171,6 +1174,7 @@ export type Database = {
           created_by: string
           crunchbase_url?: string | null
           currency?: string | null
+          current_round_size?: number | null
           deal_size?: number | null
           description?: string | null
           employee_count?: number | null
@@ -1216,6 +1220,7 @@ export type Database = {
           analysis_queue_status?: string | null
           auto_analysis_enabled?: boolean | null
           business_model?: string | null
+          capital_raised_to_date?: number | null
           co_founders?: string[] | null
           company_name?: string
           company_stage?: string | null
@@ -1226,6 +1231,7 @@ export type Database = {
           created_by?: string
           crunchbase_url?: string | null
           currency?: string | null
+          current_round_size?: number | null
           deal_size?: number | null
           description?: string | null
           employee_count?: number | null

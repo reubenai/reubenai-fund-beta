@@ -536,14 +536,9 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                 
                 <TableCell className="text-center">
                   <div className="flex items-center justify-center space-x-2">
-                    <Badge variant={getRAGBadgeVariant(deal.rag_status)}>
-                      {formatScore(deal.overall_score)}
+                    <Badge variant="outline" className="text-muted-foreground">
+                      Coming Soon
                     </Badge>
-                    {deal.rag_confidence && (
-                      <div className="text-xs text-muted-foreground">
-                        {deal.rag_confidence}% conf
-                      </div>
-                    )}
                   </div>
                 </TableCell>
                 
