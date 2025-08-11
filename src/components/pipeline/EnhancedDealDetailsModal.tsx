@@ -46,6 +46,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
+import { useEnhancedDealActivities } from '@/hooks/useEnhancedDealActivities';
+import { EnhancedActivityTable } from '@/components/activities/EnhancedActivityTable';
+import { ThesisAlignmentSection } from '@/components/analysis/ThesisAlignmentSection';
 
 // Extend the Deal type to include enhanced_analysis
 type Deal = BaseDeal & {
@@ -90,11 +93,17 @@ export function EnhancedDealDetailsModal({
 }: EnhancedDealDetailsModalProps) {
   const [isEnriching, setIsEnriching] = useState(false);
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
-  const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
   const [analysisData, setAnalysisData] = useState<any>(null);
   const { toast } = useToast();
   const { getRAGCategory } = useStrategyThresholds();
   const { canViewActivities, canViewAnalysis, role, loading } = usePermissions();
+  
+  // Enhanced activity hook with user data and 30-day filter
+  const { 
+    activities: enhancedActivities, 
+    loading: activitiesLoading, 
+    refresh: refreshActivities 
+  } = useEnhancedDealActivities(deal?.id);
 
   // Debug logging
   console.log('Deal Modal Permissions Debug:', {
@@ -115,31 +124,6 @@ export function EnhancedDealDetailsModal({
     if (!deal) return;
 
     try {
-      // Load activity events with better error handling and fund_id fallback
-      const { data: activities, error: activityError } = await supabase
-        .from('activity_events')
-        .select('*')
-        .or(`deal_id.eq.${deal.id},fund_id.eq.${deal.fund_id}`)
-        .order('occurred_at', { ascending: false })
-        .limit(20);
-
-      if (activityError) {
-        console.error('Error loading activity events:', activityError);
-        // Try with just fund_id if deal_id fails
-        const { data: fallbackActivities } = await supabase
-          .from('activity_events')
-          .select('*')
-          .eq('fund_id', deal.fund_id)
-          .order('occurred_at', { ascending: false })
-          .limit(10);
-        
-        if (fallbackActivities) {
-          setActivityEvents(fallbackActivities);
-        }
-      } else if (activities) {
-        setActivityEvents(activities);
-      }
-
       // Load analysis data
       const { data: analysis, error: analysisError } = await supabase
         .from('deal_analyses')
@@ -151,6 +135,9 @@ export function EnhancedDealDetailsModal({
       if (!analysisError && analysis && analysis.length > 0) {
         setAnalysisData(analysis[0]);
       }
+
+      // Refresh activities from the enhanced hook
+      refreshActivities();
 
     } catch (error) {
       console.error('Error loading enhanced data:', error);
@@ -452,9 +439,9 @@ export function EnhancedDealDetailsModal({
               Company Overview
             </TabsTrigger>
             {canViewAnalysis && (
-              <TabsTrigger value="analysis" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            <TabsTrigger value="analysis" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                 <Brain className="w-4 h-4 mr-1" />
-                AI Analysis
+                ReubenAI
               </TabsTrigger>
             )}
             <TabsTrigger value="documents" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
@@ -740,6 +727,10 @@ export function EnhancedDealDetailsModal({
 
           {canViewAnalysis && (
             <TabsContent value="analysis" className="space-y-6">
+              {/* Thesis Alignment Section */}
+              <ThesisAlignmentSection deal={deal} />
+              
+              {/* AI Analysis Section */}
               <EnhancedDealAnalysisTab deal={deal} />
             </TabsContent>
           )}
@@ -760,39 +751,10 @@ export function EnhancedDealDetailsModal({
 
           {canViewActivities && (
             <TabsContent value="activity" className="space-y-6">
-              <Card className="card-xero">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-hierarchy-3">
-                    <Activity className="h-5 w-5 text-muted-foreground" />
-                    Recent Activity
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {activityEvents.length > 0 ? (
-                    <div className="space-y-4">
-                      {activityEvents.map((event) => (
-                        <div key={event.id} className="flex items-start gap-3 pb-4 border-b border-border/40 last:border-0">
-                          <div className="w-8 h-8 bg-slate-50 rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-sm">
-                            <Activity className="h-4 w-4 text-slate-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-foreground">{event.title}</p>
-                            <p className="text-sm text-muted-foreground">{event.description}</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {format(new Date(event.occurred_at), 'MMM d, yyyy at h:mm a')}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Clock className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                      <p className="text-sm text-muted-foreground">No activity recorded yet</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <EnhancedActivityTable 
+                activities={enhancedActivities} 
+                loading={activitiesLoading} 
+              />
             </TabsContent>
           )}
         </Tabs>
