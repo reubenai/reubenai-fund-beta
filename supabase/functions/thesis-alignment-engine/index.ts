@@ -185,111 +185,28 @@ function calculateSectorAlignment(dealData: any, strategyData: any, webValidatio
     return { score: 40, details: "Company industry not specified" };
   }
   
-  // Support both single industry and multiple industries from deal data
-  const dealSectors = Array.isArray(dealData.industries) 
-    ? dealData.industries 
-    : dealData.industry 
-    ? [dealData.industry]
-    : [];
-    
-  if (!dealSectors.length) {
-    return { score: 40, details: "Company sectors not specified" };
-  }
-  
-  const strategySectors = strategyData.industries;
-  
-  // Direct matches first (exact string match)
-  const directMatches = dealSectors.filter(sector => strategySectors.includes(sector));
-  if (directMatches.length > 0) {
-    return { 
-      score: 95, 
-      details: `Strong sector alignment - Direct match: ${directMatches.join(', ')}` 
-    };
-  }
-  
-  // Enhanced category-level matching with detailed sector mapping
-  const categoryMatches = dealSectors.filter(dealSector => 
-    strategySectors.some(strategySector => {
-      // Check if sectors belong to same high-level category
-      const dealCat = categorizeDetailedSector(dealSector);
-      const strategyCat = categorizeDetailedSector(strategySector);
-      return dealCat && strategyCat && dealCat === strategyCat;
-    })
+  // Check for exact match
+  const exactMatch = strategyData.industries.some((industry: string) => 
+    dealData.industry.toLowerCase().includes(industry.toLowerCase()) ||
+    industry.toLowerCase().includes(dealData.industry.toLowerCase())
   );
   
-  if (categoryMatches.length > 0) {
-    return { 
-      score: 75, 
-      details: `Good sector alignment - Category match for: ${categoryMatches.join(', ')}` 
-    };
+  if (exactMatch) {
+    return { score: 95, details: `Strong sector alignment - ${dealData.industry} matches fund focus` };
   }
   
-  // Fuzzy string matching as fallback
-  const fuzzyMatches = dealSectors.filter(sector => 
-    strategySectors.some(strategySector => 
-      sector.toLowerCase().includes(strategySector.toLowerCase()) ||
-      strategySector.toLowerCase().includes(sector.toLowerCase())
-    )
-  );
+  // Check for adjacent sectors (simplified logic)
+  const adjacentMatch = strategyData.industries.some((industry: string) => {
+    const industryKeywords = industry.toLowerCase().split(/[\s&,]+/);
+    const dealKeywords = dealData.industry.toLowerCase().split(/[\s&,]+/);
+    return industryKeywords.some(keyword => dealKeywords.includes(keyword));
+  });
   
-  if (fuzzyMatches.length > 0) {
-    return { 
-      score: 60, 
-      details: `Moderate sector alignment - Similar sectors: ${fuzzyMatches.join(', ')}` 
-    };
+  if (adjacentMatch) {
+    return { score: 70, details: `Moderate sector alignment - ${dealData.industry} adjacent to fund focus` };
   }
   
-  return { 
-    score: 25, 
-    details: `Poor sector alignment - No matches found between ${dealSectors.join(', ')} and fund focus` 
-  };
-}
-
-// Helper function to categorize detailed sectors into high-level categories
-function categorizeDetailedSector(sector: string): string | null {
-  const sectorMapping: Record<string, string[]> = {
-    'Technology': [
-      'artificial-intelligence', 'software-development-tools', 'data-analytics', 
-      'blockchain-cryptocurrency', 'cybersecurity', 'cloud-computing-infrastructure', 
-      'saas-platforms', 'mobile-applications', 'web-development', 'gaming-entertainment', 
-      'vr-ar', 'iot-devices', 'consumer-electronics'
-    ],
-    'Healthcare': [
-      'healthcare-services', 'medical-devices-equipment', 'pharmaceuticals-biotech', 
-      'digital-health-telemedicine', 'health-insurance', 'mental-health-wellness'
-    ],
-    'FinTech': [
-      'fintech-financial-services', 'payments-processing', 'lending-credit', 
-      'investment-wealth-management', 'insurance-insurtech', 'cryptocurrency-blockchain'
-    ],
-    'E-commerce': [
-      'e-commerce-platforms', 'marketplace-platforms', 'retail-consumer-goods', 
-      'fashion-apparel', 'beauty-personal-care'
-    ],
-    'Manufacturing': [
-      'manufacturing-industrial', 'automotive-transportation', 'aerospace-defense', 
-      'chemicals-materials'
-    ],
-    'Energy': [
-      'energy-utilities', 'renewable-energy-cleantech', 'oil-gas'
-    ]
-  };
-  
-  const normalizedSector = sector.toLowerCase().replace(/[^a-z0-9]/g, '-');
-  
-  for (const [category, sectors] of Object.entries(sectorMapping)) {
-    if (sectors.some(s => 
-      s === normalizedSector || 
-      normalizedSector.includes(s) || 
-      s.includes(normalizedSector) ||
-      sector.toLowerCase().includes(s.replace(/-/g, ' ')) ||
-      s.replace(/-/g, ' ').includes(sector.toLowerCase())
-    )) {
-      return category;
-    }
-  }
-  
-  return null;
+  return { score: 25, details: `Poor sector alignment - ${dealData.industry} outside fund focus areas` };
 }
 
 function calculateGeographyAlignment(dealData: any, strategyData: any, webValidationData: any = null): { score: number, details: string } {
