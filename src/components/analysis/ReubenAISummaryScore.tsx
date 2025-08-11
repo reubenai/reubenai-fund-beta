@@ -80,10 +80,10 @@ export function ReubenAISummaryScore({ deal, onScoreCalculated }: ReubenAISummar
 
         setAssessmentScores(mockScores);
 
-        // Calculate weighted average
-        const totalWeight = mockScores.reduce((sum, score) => sum + score.weight, 0);
-        const weightedSum = mockScores.reduce((sum, score) => sum + (score.score * score.weight), 0);
-        const finalScore = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0;
+        // Calculate simple sum product (weight * score/100 then summed)
+        const finalScore = Math.round(
+          mockScores.reduce((sum, score) => sum + (score.weight * score.score / 100), 0)
+        );
         
         setOverallScore(finalScore);
         onScoreCalculated?.(finalScore);
@@ -115,7 +115,7 @@ export function ReubenAISummaryScore({ deal, onScoreCalculated }: ReubenAISummar
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-xl">
           <Bot className="h-6 w-6 text-primary" />
-          ReubenAI Overall Score
+          ReubenAI Summary Score
         </CardTitle>
       </CardHeader>
       
@@ -129,7 +129,7 @@ export function ReubenAISummaryScore({ deal, onScoreCalculated }: ReubenAISummar
             <div>
               <p className="text-2xl font-bold">{overallScore}/100</p>
               <p className="text-sm text-muted-foreground">
-                Weighted average across {assessmentScores.length} categories
+                Sum product calculation across {assessmentScores.length} categories
               </p>
             </div>
           </div>

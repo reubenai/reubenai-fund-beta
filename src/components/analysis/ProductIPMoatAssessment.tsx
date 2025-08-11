@@ -308,14 +308,7 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shield className="h-5 w-5" />
-          Product & IP Moat
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="space-y-6">
+      <CardContent className="pt-6 space-y-6">
         {/* Overall Status */}
         <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
           <div className="flex items-center gap-3">

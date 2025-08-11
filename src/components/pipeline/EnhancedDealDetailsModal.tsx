@@ -733,6 +733,15 @@ export function EnhancedDealDetailsModal({
 
           {canViewAnalysis && (
             <TabsContent value="analysis" className="space-y-6">
+              {/* Beta Notice */}
+              <Card className="border-l-4 border-l-amber-500 bg-amber-50/50">
+                <CardContent className="p-4">
+                  <p className="text-sm text-foreground">
+                    <strong>Beta v1 Notice:</strong> New data channels will be progressively made available to deep individual criteria and category assessments. To request a specific dataset or data type, please submit a request via the Feedback widget.
+                  </p>
+                </CardContent>
+              </Card>
+              
               {/* ReubenAI Summary Score */}
               <ReubenAISummaryScore deal={deal} />
               
