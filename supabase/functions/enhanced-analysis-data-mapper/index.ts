@@ -57,17 +57,17 @@ serve(async (req) => {
       overall_score: orchestratorAnalysis.overall_score || 0,
       overall_recommendation: orchestratorAnalysis.overall_recommendation || 'See detailed analysis',
       
-      // CORRECTED: Proper VC Rubric with correct 4 categories at 25% each (totaling 100%)
+      // CORRECTED: Complete 6-Category VC Rubric (each ~16.67% weight)
       rubric_breakdown: [
         {
           category: 'Market Opportunity',
           score: engine_results.market_research_engine?.score || engine_results.market_intelligence_engine?.score || 50,
           confidence: (engine_results.market_research_engine?.data || engine_results.market_intelligence_engine?.data) ? 90 : 50,
-          weight: 25, // 25% weight for VC (4 categories)
+          weight: 16.67, // 6 categories for complete VC analysis
           insights: Array.isArray(engine_results.market_research_engine?.analysis || engine_results.market_intelligence_engine?.analysis) 
             ? (engine_results.market_research_engine?.analysis || engine_results.market_intelligence_engine?.analysis)
             : [engine_results.market_research_engine?.analysis || engine_results.market_intelligence_engine?.analysis || 'Market analysis pending'],
-          recommendations: ['Market timing assessment', 'Competitive landscape review', 'Customer validation'],
+          recommendations: ['Market timing assessment', 'Deal dynamics evaluation', 'Competitive landscape review', 'Customer validation'],
           strengths: (engine_results.market_research_engine?.data || engine_results.market_intelligence_engine?.data) ? ['Market intelligence available', 'Data-driven analysis'] : ['Analysis scheduled'],
           concerns: ((engine_results.market_research_engine?.score || engine_results.market_intelligence_engine?.score) || 50) < 50 ? ['Market concerns identified'] : [],
           detailed_breakdown: engine_results.market_research_engine?.data || engine_results.market_intelligence_engine?.data || {}
@@ -76,7 +76,7 @@ serve(async (req) => {
           category: 'Product & Technology',
           score: engine_results.product_ip_engine?.score || 65,
           confidence: engine_results.product_ip_engine?.data ? 85 : 50,
-          weight: 25, // 25% weight for VC (4 categories)
+          weight: 16.67,
           insights: Array.isArray(engine_results.product_ip_engine?.analysis) 
             ? engine_results.product_ip_engine.analysis 
             : [engine_results.product_ip_engine?.analysis || 'Product analysis pending'],
@@ -89,7 +89,7 @@ serve(async (req) => {
           category: 'Team & Leadership',
           score: engine_results.team_research_engine?.score || 65,
           confidence: engine_results.team_research_engine?.data ? 80 : 50,
-          weight: 25, // 25% weight for VC (4 categories)
+          weight: 16.67,
           insights: Array.isArray(engine_results.team_research_engine?.analysis) 
             ? engine_results.team_research_engine.analysis 
             : [engine_results.team_research_engine?.analysis || 'Team analysis pending'],
@@ -102,7 +102,7 @@ serve(async (req) => {
           category: 'Financial & Traction',
           score: engine_results.financial_engine?.score || 50,
           confidence: engine_results.financial_engine?.data ? 85 : 50,
-          weight: 25, // 25% weight for VC (4 categories)
+          weight: 16.67,
           insights: Array.isArray(engine_results.financial_engine?.analysis) 
             ? engine_results.financial_engine.analysis 
             : [engine_results.financial_engine?.analysis || 'Financial analysis pending'],
@@ -110,6 +110,39 @@ serve(async (req) => {
           strengths: engine_results.financial_engine?.data ? ['Financial analysis available', 'Traction metrics'] : ['Analysis scheduled'],
           concerns: (engine_results.financial_engine?.score || 50) < 50 ? ['Financial concerns identified'] : [],
           detailed_breakdown: engine_results.financial_engine?.data || {}
+        },
+        {
+          category: 'Trust & Transparency',
+          score: engine_results.thesis_alignment_engine?.score || 70,
+          confidence: engine_results.thesis_alignment_engine?.data ? 85 : 50,
+          weight: 16.67,
+          insights: Array.isArray(engine_results.thesis_alignment_engine?.analysis) 
+            ? engine_results.thesis_alignment_engine.analysis 
+            : [engine_results.thesis_alignment_engine?.analysis || 'Thesis alignment analysis pending'],
+          recommendations: ['Governance assessment', 'Transparency review', 'Compliance evaluation'],
+          strengths: engine_results.thesis_alignment_engine?.data ? ['Thesis alignment available', 'Strategic assessment'] : ['Analysis scheduled'],
+          concerns: (engine_results.thesis_alignment_engine?.score || 70) < 50 ? ['Alignment concerns identified'] : [],
+          detailed_breakdown: engine_results.thesis_alignment_engine?.data || {}
+        },
+        {
+          category: 'Strategic Timing',
+          score: Math.round((
+            (engine_results.market_research_engine?.score || 50) * 0.4 +
+            (engine_results.financial_engine?.score || 50) * 0.3 +
+            (engine_results.thesis_alignment_engine?.score || 70) * 0.3
+          )),
+          confidence: Object.keys(engine_results).length > 2 ? 75 : 50,
+          weight: 16.66, // Slight adjustment for 100% total
+          insights: ['Strategic timing assessment based on market, financial, and alignment factors'],
+          recommendations: ['Market timing optimization', 'Investment timing strategy', 'Exit planning consideration'],
+          strengths: Object.keys(engine_results).length > 2 ? ['Multi-factor timing analysis'] : ['Basic timing assessment'],
+          concerns: Object.keys(engine_results).length < 3 ? ['Limited timing data'] : [],
+          detailed_breakdown: {
+            market_timing_score: engine_results.market_research_engine?.score || 50,
+            financial_timing_score: engine_results.financial_engine?.score || 50,
+            strategic_alignment_score: engine_results.thesis_alignment_engine?.score || 70,
+            timing_recommendation: 'Based on comprehensive analysis'
+          }
         }
       ],
 
@@ -152,6 +185,24 @@ serve(async (req) => {
           burn_rate_analysis: { monthly_burn: 'TBD', runway: 'TBD' },
           funding_scenarios: ['Funding scenario analysis needed'],
           customer_metrics: 'TBD'
+        },
+
+        'trust_transparency': engine_results.thesis_alignment_engine?.data || {
+          governance_structure: ['Governance assessment pending'],
+          transparency_practices: ['Transparency review needed'],
+          compliance_status: ['Compliance evaluation required'],
+          stakeholder_management: ['Stakeholder analysis pending']
+        },
+
+        'strategic_timing': {
+          market_timing_factors: ['Market timing analysis based on current conditions'],
+          investment_timing_rationale: ['Investment timing assessment'],
+          exit_timing_considerations: ['Exit strategy timing evaluation'],
+          overall_timing_score: Math.round((
+            (engine_results.market_research_engine?.score || 50) * 0.4 +
+            (engine_results.financial_engine?.score || 50) * 0.3 +
+            (engine_results.thesis_alignment_engine?.score || 70) * 0.3
+          ))
         }
       },
 

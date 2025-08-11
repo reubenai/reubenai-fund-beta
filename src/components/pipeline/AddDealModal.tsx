@@ -221,14 +221,10 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-1">
             <TabsTrigger value="basic" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
-              Company Info
-            </TabsTrigger>
-            <TabsTrigger value="documents" disabled={!createdDeal} className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              Pitch Deck & Documents
+              Create Deal & Upload Pitch Deck
             </TabsTrigger>
           </TabsList>
 
@@ -359,82 +355,64 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
                     />
                   </div>
 
+                  {/* Pitch Deck Upload Section */}
+                  {createdDeal && (
+                    <div className="space-y-4 pt-6 border-t border-border">
+                      <div className="flex items-center gap-2 text-lg font-medium">
+                        <FileText className="h-5 w-5" />
+                        Upload Pitch Deck
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Upload your pitch deck to trigger comprehensive AI analysis. Our system will automatically analyze all aspects of your company.
+                      </p>
+                      <DocumentUpload
+                        dealId={createdDeal.id}
+                        companyName={createdDeal.company_name}
+                        onUploadComplete={handleDocumentUpload}
+                      />
+                      
+                      {uploadedDocuments.length > 0 && (
+                        <div className="space-y-2 pt-4">
+                          <h4 className="font-medium">Uploaded Documents</h4>
+                          {uploadedDocuments.map((doc, index) => (
+                            <div key={index} className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                              <FileText className="h-5 w-5 text-green-600" />
+                              <div className="flex-1">
+                                <p className="font-medium">{doc.name}</p>
+                                <p className="text-sm text-muted-foreground">{doc.document_category}</p>
+                              </div>
+                              <div className="text-sm text-green-600">✓ Uploaded</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Actions */}
                   <div className="flex justify-end gap-3 pt-4">
                     <Button type="button" variant="outline" onClick={onClose}>
                       Cancel
                     </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={loading}
-                      className="bg-brand-emerald hover:bg-brand-emerald-dark"
-                    >
-                      {loading ? 'Creating Deal...' : 'Create Deal & Continue'}
-                    </Button>
+                    {!createdDeal ? (
+                      <Button 
+                        type="submit" 
+                        disabled={loading}
+                        className="bg-brand-emerald hover:bg-brand-emerald-dark"
+                      >
+                        {loading ? 'Creating Deal...' : 'Create Deal'}
+                      </Button>
+                    ) : (
+                      <Button onClick={handleComplete} className="bg-brand-emerald hover:bg-brand-emerald-dark">
+                        Complete & Analyze Deal
+                      </Button>
+                    )}
                   </div>
                 </form>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="documents" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Upload Pitch Deck & Supporting Documents
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Upload your pitch deck and other documents. Our AI will automatically analyze them and integrate insights into the deal analysis.
-                </p>
-              </CardHeader>
-              <CardContent>
-                {createdDeal ? (
-                  <DocumentUpload
-                    dealId={createdDeal.id}
-                    companyName={createdDeal.company_name}
-                    onUploadComplete={handleDocumentUpload}
-                  />
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Create the deal first to upload documents</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {uploadedDocuments.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Uploaded Documents</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {uploadedDocuments.map((doc, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                        <FileText className="h-5 w-5 text-green-600" />
-                        <div className="flex-1">
-                          <p className="font-medium">{doc.name}</p>
-                          <p className="text-sm text-muted-foreground">{doc.document_category}</p>
-                        </div>
-                        <div className="text-sm text-green-600">✓ Uploaded</div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            <div className="flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button onClick={handleComplete} className="bg-brand-emerald hover:bg-brand-emerald-dark">
-                Complete & Analyze Deal
-              </Button>
-            </div>
-          </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>

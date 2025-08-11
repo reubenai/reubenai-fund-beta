@@ -33,7 +33,7 @@ export async function testOrchestratorIntegration(dealId: string) {
     console.log('✅ Deal found:', deal.company_name);
 
     // 2. Check if AI analysis exists
-    if (!deal.deal_analyses || deal.deal_analyses.length === 0) {
+    if (!deal.deal_analyses || !Array.isArray(deal.deal_analyses) || deal.deal_analyses.length === 0) {
       console.log('⚠️  No AI analysis found - triggering orchestrator...');
       
       // Trigger comprehensive analysis
@@ -96,7 +96,7 @@ export async function testOrchestratorIntegration(dealId: string) {
     return {
       success: true,
       deal: deal.company_name,
-      hasAnalysis: deal.deal_analyses && deal.deal_analyses.length > 0,
+      hasAnalysis: Array.isArray(deal.deal_analyses) && deal.deal_analyses.length > 0,
       hasMemos: memos && memos.length > 0,
       recentActivities: activities?.length || 0,
       overallScore: deal.overall_score

@@ -252,7 +252,7 @@ export class StrategyUpdateService {
         .eq('fund_id', fundId);
 
       const totalDeals = deals?.length || 0;
-      const analyzedDeals = deals?.filter(d => d.deal_analyses.length > 0).length || 0;
+      const analyzedDeals = deals?.filter(d => Array.isArray(d.deal_analyses) && d.deal_analyses.length > 0).length || 0;
       
       // Check for deals that need re-analysis (where strategy updated after last analysis)
       const strategyUpdatedAt = strategy?.updated_at ? new Date(strategy.updated_at) : null;

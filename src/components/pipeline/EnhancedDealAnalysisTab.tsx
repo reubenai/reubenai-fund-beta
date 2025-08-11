@@ -239,36 +239,27 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
     );
   }
 
-  // Calculate overall analysis score - EMERGENCY FIX for missing data
+  // UNIFIED SCORING SYSTEM - Single source of truth from analysis_engines
   const getAnalysisScore = () => {
-    // CRITICAL: Check if we have ANY analysis data at all
-    console.log('🔍 Analysis data structure:', {
+    console.log('🔍 Unified scoring system - Analysis data:', {
       hasRubricBreakdown: !!(analysis.rubric_breakdown && analysis.rubric_breakdown.length > 0),
       hasAnalysisEngines: !!(analysis.analysis_engines && Object.keys(analysis.analysis_engines).length > 0),
-      dealOverallScore: deal.overall_score,
-      fullAnalysis: analysis
+      dealOverallScore: deal.overall_score
     });
 
-    // First try rubric_breakdown if available
+    // CORRECTED: Use rubric_breakdown as the single source of truth (populated by enhanced-analysis-data-mapper)
     if (analysis.rubric_breakdown && analysis.rubric_breakdown.length > 0) {
       const totalWeight = analysis.rubric_breakdown.reduce((sum, item) => sum + item.weight, 0);
       if (totalWeight === 0) return deal.overall_score || 0;
+      
       const weightedScore = analysis.rubric_breakdown.reduce(
-        (sum, item) => sum + (item.score * item.weight / totalWeight), 0
+        (sum, item) => sum + (item.score * item.weight / 100), 0
       );
+      console.log('📊 Unified scoring result:', Math.round(weightedScore));
       return Math.round(weightedScore);
     }
     
-    // Fallback to analysis_engines average if rubric_breakdown not available
-    if (analysis.analysis_engines && Object.keys(analysis.analysis_engines).length > 0) {
-      const engines = Object.values(analysis.analysis_engines) as any[];
-      const scores = engines.filter(e => e.score && e.score > 0).map(e => e.score);
-      if (scores.length > 0) {
-        return Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
-      }
-    }
-    
-    // Final fallback to deal overall_score
+    // Fallback to deal overall_score if rubric not available
     return deal.overall_score || 0;
   };
 
@@ -413,12 +404,15 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
            <div className="grid gap-4">
              {(analysis.rubric_breakdown && analysis.rubric_breakdown.length > 0) ? (
                analysis.rubric_breakdown.map((item, index) => {
-                 // Map category names to detailed_breakdown keys correctly
-                 const categoryKey = item.category.toLowerCase()
-                   .replace('market opportunity', 'market_opportunity')
-                   .replace('product & technology', 'product_technology')
-                   .replace('team & leadership', 'team_leadership')
-                   .replace('financial & traction', 'financial_traction');
+                  // Map category names to detailed_breakdown keys correctly for 6-category VC rubric
+                  const categoryKey = item.category.toLowerCase()
+                    .replace(/\s+/g, '_')
+                    .replace('market_opportunity', 'market_opportunity')
+                    .replace('product_&_technology', 'product_technology')
+                    .replace('team_&_leadership', 'team_leadership')
+                    .replace('financial_&_traction', 'financial_traction')
+                    .replace('trust_&_transparency', 'trust_transparency')
+                    .replace('strategic_timing', 'strategic_timing');
                  
                  return (
                    <CategoryDeepDiveSection
