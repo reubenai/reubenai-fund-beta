@@ -398,38 +398,6 @@ export function EnhancedDealDetailsModal({
           <DialogTitle className="flex items-center gap-3">
             <Building2 className="h-6 w-6" />
             {deal.company_name}
-{(() => {
-              // Calculate unified score from enhanced analysis if available
-              let finalScore = deal.overall_score;
-              
-              // Type guard for enhanced analysis
-              if (deal.enhanced_analysis && 
-                  typeof deal.enhanced_analysis === 'object' &&
-                  'rubric_breakdown' in deal.enhanced_analysis &&
-                  Array.isArray(deal.enhanced_analysis.rubric_breakdown)) {
-                const rubricBreakdown = deal.enhanced_analysis.rubric_breakdown as any[];
-                const totalWeight = rubricBreakdown.reduce((sum, item) => sum + (item.weight || 0), 0);
-                if (totalWeight > 0) {
-                  finalScore = Math.round(
-                    rubricBreakdown.reduce(
-                      (sum, item) => sum + ((item.score || 0) * (item.weight || 0) / totalWeight), 0
-                    )
-                  );
-                }
-              }
-              
-              const rag = getRAGCategory(finalScore);
-              return (
-                <>
-                  <Badge variant="outline" className={`${rag.color} shadow-sm`}>
-                    {rag.label}
-                  </Badge>
-                  <Badge variant="secondary" className="shadow-sm">
-                    Score: {finalScore}
-                  </Badge>
-                </>
-              );
-            })()}
           </DialogTitle>
         </DialogHeader>
 
@@ -466,260 +434,184 @@ export function EnhancedDealDetailsModal({
           
 
           <TabsContent value="overview" className="space-y-6">
-            {/* Executive Summary Card */}
-            <Card className="card-xero border-slate-200/60">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-hierarchy-3">
-                  <Zap className="h-5 w-5 text-muted-foreground" />
+            {/* Executive Summary */}
+            <Card className="border-2 border-primary/20 bg-gradient-to-r from-background to-muted/30">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <Building2 className="h-6 w-6 text-primary" />
                   Executive Summary
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={enrichCompanyData}
                     disabled={isEnriching}
-                    className="ml-auto border-border/60 hover:bg-muted/30"
+                    className="ml-auto"
                   >
                     <RefreshCw className={`h-4 w-4 mr-2 ${isEnriching ? 'animate-spin' : ''}`} />
                     Enrich Data
                   </Button>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                  <div className="text-center card-metric p-3">
-                    <p className="text-sm text-muted-foreground mb-1">Deal Size</p>
-                    <p className="font-semibold text-lg text-foreground">
-                      {formatAmount(deal.deal_size, deal.currency)}
-                    </p>
+              <CardContent className="space-y-6">
+                {/* Key Metrics Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="p-4 rounded-lg border bg-background">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-primary/10">
+                        <DollarSign className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Deal Size</p>
+                        <p className="font-semibold text-lg text-foreground">
+                          {formatAmount(deal.deal_size, deal.currency)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-center card-metric p-3">
-                    <p className="text-sm text-muted-foreground mb-1">Valuation</p>
-                    <p className="font-semibold text-lg text-foreground">
-                      {formatAmount(deal.valuation, deal.currency)}
-                    </p>
+                  
+                  <div className="p-4 rounded-lg border bg-background">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-primary/10">
+                        <TrendingUp className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Valuation</p>
+                        <p className="font-semibold text-lg text-foreground">
+                          {formatAmount(deal.valuation, deal.currency)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-center card-metric p-3">
-                    <p className="text-sm text-muted-foreground mb-1">AI Score</p>
-                    <div className="flex items-center justify-center gap-2">
-                      {(() => {
-                        // Calculate unified score from enhanced analysis if available
-                        let finalScore = deal.overall_score;
-                        
-                        // Type guard for enhanced analysis
-                        if (deal.enhanced_analysis && 
-                            typeof deal.enhanced_analysis === 'object' &&
-                            'rubric_breakdown' in deal.enhanced_analysis &&
-                            Array.isArray(deal.enhanced_analysis.rubric_breakdown)) {
-                          const rubricBreakdown = deal.enhanced_analysis.rubric_breakdown as any[];
-                          const totalWeight = rubricBreakdown.reduce((sum, item) => sum + (item.weight || 0), 0);
-                          if (totalWeight > 0) {
-                            finalScore = Math.round(
-                              rubricBreakdown.reduce(
-                                (sum, item) => sum + ((item.score || 0) * (item.weight || 0) / totalWeight), 0
-                              )
-                            );
+                  
+                  <div className="p-4 rounded-lg border bg-background">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-primary/10">
+                        <Target className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">AI Score</p>
+                        {(() => {
+                          // Calculate simple average: total scores divided by 5
+                          let finalScore = deal.overall_score;
+                          
+                          // If we have assessment components, calculate simple average
+                          if (deal.enhanced_analysis && 
+                              typeof deal.enhanced_analysis === 'object' &&
+                              'rubric_breakdown' in deal.enhanced_analysis &&
+                              Array.isArray(deal.enhanced_analysis.rubric_breakdown)) {
+                            const rubricBreakdown = deal.enhanced_analysis.rubric_breakdown as any[];
+                            if (rubricBreakdown.length > 0) {
+                              const totalScore = rubricBreakdown.reduce((sum, item) => sum + (item.score || 0), 0);
+                              finalScore = Math.round(totalScore / rubricBreakdown.length);
+                            }
                           }
-                        }
-                        
-                        const rag = getRAGCategory(finalScore);
-                        return (
-                          <>
+                          
+                          return (
                             <p className="font-semibold text-lg text-foreground">
                               {finalScore || 'Pending'}
                             </p>
-                            <Badge variant="outline" className={`${rag.color} shadow-sm`}>
-                              {rag.label}
-                            </Badge>
-                          </>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                  <div className="text-center card-metric p-3">
-                    <p className="text-sm text-muted-foreground mb-1">Stage</p>
-                    <Badge variant="secondary" className="shadow-sm">
-                      {deal.status || 'Sourced'}
-                    </Badge>
-                  </div>
-                  <div className="text-center card-metric p-3">
-                    <p className="text-sm text-muted-foreground mb-1">Location</p>
-                    <div className="flex items-center justify-center gap-1">
-                      <MapPin className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-sm text-foreground">
-                        {deal.location || 'Not specified'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-center card-metric p-3">
-                    <p className="text-sm text-muted-foreground mb-1">Last Updated</p>
-                    <p className="text-xs text-muted-foreground">
-                      {deal.updated_at ? format(new Date(deal.updated_at), 'MMM d, yyyy') : 'N/A'}
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Social URLs Row */}
-                {(deal.website || deal.linkedin_url) && (
-                  <div className="mt-4 flex items-center gap-4 justify-center">
-                    {deal.website && (
-                      <a 
-                        href={deal.website.startsWith('http') ? deal.website : `https://${deal.website}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
-                      >
-                        <Globe className="h-4 w-4" />
-                        Website
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                    {deal.linkedin_url && (
-                      <a 
-                        href={deal.linkedin_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
-                      >
-                        <Linkedin className="h-4 w-4" />
-                        LinkedIn
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                  </div>
-                )}
-                
-                {/* Founder and Employee Count */}
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                  {deal.founder && (
-                    <div className="text-center card-metric p-3">
-                      <p className="text-sm text-muted-foreground mb-1">Founder</p>
-                      <p className="font-medium text-foreground">{deal.founder}</p>
-                    </div>
-                  )}
-                  {(deal.employee_count || companyDetails?.team_size) && (
-                    <div className="text-center card-metric p-3">
-                      <p className="text-sm text-muted-foreground mb-1">Team Size</p>
-                      <div className="flex items-center justify-center gap-1">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium text-foreground">
-                          {companyDetails?.team_size || deal.employee_count}
-                        </span>
+                          );
+                        })()}
                       </div>
                     </div>
-                  )}
-                </div>
-                
-                {/* Analysis Completeness Progress */}
-                {deal.enhanced_analysis?.analysis_completeness && (
-                  <div className="mt-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-muted-foreground">Analysis Completeness</span>
-                      <span className="text-sm font-medium text-foreground">
-                        {deal.enhanced_analysis.analysis_completeness}%
-                      </span>
-                    </div>
-                    <Progress 
-                      value={deal.enhanced_analysis.analysis_completeness} 
-                      className="h-2"
-                    />
                   </div>
-                )}
+                </div>
+
+                {/* Company Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                      Company Details
+                    </h4>
+                    {deal.industry && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                        <Target className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-sm">Industry</p>
+                          <p className="text-sm text-muted-foreground">{deal.industry}</p>
+                        </div>
+                      </div>
+                    )}
+                    {deal.location && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-sm">Location</p>
+                          <p className="text-sm text-muted-foreground">{deal.location}</p>
+                        </div>
+                      </div>
+                    )}
+                    {deal.founder && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-sm">Founder</p>
+                          <p className="text-sm text-muted-foreground">{deal.founder}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                      Digital Presence
+                    </h4>
+                    {deal.website && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-sm">Website</p>
+                          <a 
+                            href={deal.website.startsWith('http') ? deal.website : `https://${deal.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline"
+                          >
+                            {deal.website.replace(/^https?:\/\//, '')}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                    {deal.linkedin_url && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                        <Linkedin className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-sm">LinkedIn</p>
+                          <a 
+                            href={deal.linkedin_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline"
+                          >
+                            Company Profile
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                    {(deal.employee_count || companyDetails?.team_size) && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-sm">Team Size</p>
+                          <p className="text-sm text-muted-foreground">
+                            {companyDetails?.team_size || deal.employee_count} employees
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Company & Digital Presence */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="card-xero">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-hierarchy-3">
-                    <Building2 className="h-5 w-5 text-muted-foreground" />
-                    Company Profile
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {deal.industry && (
-                    <div className="flex items-center gap-3">
-                      <Target className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium text-foreground">{deal.industry}</span>
-                    </div>
-                  )}
-                  {deal.location && (
-                    <div className="flex items-center gap-3">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">{deal.location}</span>
-                    </div>
-                  )}
-                  {deal.founder && (
-                    <div className="flex items-center gap-3">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">{deal.founder}</span>
-                    </div>
-                  )}
-                  {(deal.employee_count || companyDetails?.team_size) && (
-                    <div className="flex items-center gap-3">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        {companyDetails?.team_size || deal.employee_count} employees
-                      </span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="card-xero">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-hierarchy-3">
-                    <Globe className="h-5 w-5 text-muted-foreground" />
-                    Digital Footprint
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {deal.website && (
-                    <div className="flex items-center gap-3">
-                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                      <a 
-                        href={deal.website.startsWith('http') ? deal.website : `https://${deal.website}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-foreground hover:text-muted-foreground hover:underline transition-colors"
-                      >
-                        {deal.website.replace(/^https?:\/\//, '')}
-                      </a>
-                    </div>
-                  )}
-                  {deal.linkedin_url && (
-                    <div className="flex items-center gap-3">
-                      <Linkedin className="h-4 w-4 text-muted-foreground" />
-                      <a 
-                        href={deal.linkedin_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-foreground hover:text-muted-foreground hover:underline transition-colors"
-                      >
-                        LinkedIn Profile
-                      </a>
-                    </div>
-                  )}
-                  {deal.web_presence_confidence && (
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        Web Validation: {deal.web_presence_confidence}%
-                      </span>
-                    </div>
-                  )}
-                  {!deal.website && !deal.linkedin_url && (
-                    <p className="text-sm text-muted-foreground italic">No digital presence data available</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Description */}
+            {/* Company Description */}
             {(deal.description || companyDetails?.description) && (
-              <Card className="card-xero">
-                <CardHeader>
-                  <CardTitle className="text-hierarchy-3">Company Description</CardTitle>
+              <Card className="border-2 border-primary/20 bg-gradient-to-r from-background to-muted/30">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <FileText className="h-6 w-6 text-primary" />
+                    Company Description
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground leading-relaxed">
