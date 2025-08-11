@@ -137,11 +137,18 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
           onClick={() => onDealClick?.(deal)}
         >
           <CardContent className={getCardPadding()}>
-            {/* Company Name & Enhanced Score */}
+            {/* Company Name & Enhanced Score - DEBUG VERSION */}
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-foreground truncate text-sm">
-                  {deal.company_name || 'Unnamed Company'}
+                  {(() => {
+                    console.log('🔍 Deal Card Debug:', {
+                      dealId: deal.id,
+                      companyName: deal.company_name,
+                      dealObject: deal
+                    });
+                    return deal.company_name || 'Unnamed Company';
+                  })()}
                 </h4>
                 {deal.industry && (
                   <p className="text-xs text-muted-foreground truncate mt-0.5">
