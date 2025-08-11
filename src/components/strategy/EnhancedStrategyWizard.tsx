@@ -20,7 +20,8 @@ import {
 import { useUnifiedStrategy } from '@/hooks/useUnifiedStrategy';
 import { EnhancedWizardData, EnhancedStrategy } from '@/services/unifiedStrategyService';
 import { DEFAULT_INVESTMENT_CRITERIA, InvestmentCriteria, validateCriteriaWeights } from '@/types/investment-criteria';
-import { SECTOR_OPTIONS } from '@/types/enhanced-strategy';
+import { STANDARDIZED_SECTORS } from '@/constants/sectors';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { getStageOptionsByFundType } from '@/types/enhanced-fund-specialization';
 import { VC_CRITERIA_TEMPLATE, PE_CRITERIA_TEMPLATE, EnhancedCriteriaCategory, EnhancedSubcategory, getTemplateByFundType } from '@/types/vc-pe-criteria';
 import { Switch } from '@/components/ui/switch';
@@ -604,28 +605,13 @@ export function EnhancedStrategyWizard({
                   {/* Sectors */}
                   <div className="space-y-4">
                     <Label className="text-base font-medium">Target Sectors</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {SECTOR_OPTIONS.map(sector => {
-                        const isSelected = wizardData.sectors?.includes(sector);
-                        return (
-                          <Button
-                            key={sector}
-                            variant={isSelected ? "default" : "outline"}
-                            className="h-12 justify-start"
-                            onClick={() => {
-                              const current = wizardData.sectors || [];
-                              if (isSelected) {
-                                updateWizardData({ sectors: current.filter(s => s !== sector) });
-                              } else {
-                                updateWizardData({ sectors: [...current, sector] });
-                              }
-                            }}
-                          >
-                            {sector}
-                          </Button>
-                        );
-                      })}
-                    </div>
+                    <MultiSelect
+                      options={STANDARDIZED_SECTORS}
+                      value={wizardData.sectors || []}
+                      onValueChange={(values) => updateWizardData({ sectors: values })}
+                      placeholder="Select target sectors..."
+                      className="mt-2"
+                    />
                   </div>
 
                   {/* Stages */}

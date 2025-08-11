@@ -28,7 +28,9 @@ import {
 import { useUnifiedStrategy } from '@/hooks/useUnifiedStrategy';
 import { EnhancedWizardData, EnhancedStrategy } from '@/services/unifiedStrategyService';
 import { DEFAULT_INVESTMENT_CRITERIA, InvestmentCriteria, validateCriteriaWeights } from '@/types/investment-criteria';
-import { SECTOR_OPTIONS, STAGE_OPTIONS, GEOGRAPHY_OPTIONS } from '@/types/enhanced-strategy';
+import { STANDARDIZED_SECTORS } from '@/constants/sectors';
+import { STAGE_OPTIONS, GEOGRAPHY_OPTIONS } from '@/types/enhanced-strategy';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { toast } from 'sonner';
 
 interface StrategyQuickWizardProps {
@@ -389,35 +391,13 @@ export function StrategyQuickWizard({
               {/* Sectors */}
               <div>
                 <Label>Target Sectors</Label>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {SECTOR_OPTIONS.map(sector => (
-                    <Button
-                      key={sector}
-                      variant={wizardData.sectors?.includes(sector) ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => {
-                        if (wizardData.sectors?.includes(sector)) {
-                          removeItem('sectors', sector);
-                        } else {
-                          addItem('sectors', sector);
-                        }
-                      }}
-                    >
-                      {sector}
-                    </Button>
-                  ))}
-                </div>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {wizardData.sectors?.map(sector => (
-                    <Badge key={sector} variant="secondary" className="gap-1">
-                      {sector}
-                      <X 
-                        className="h-3 w-3 cursor-pointer" 
-                        onClick={() => removeItem('sectors', sector)}
-                      />
-                    </Badge>
-                  ))}
-                </div>
+                <MultiSelect
+                  options={STANDARDIZED_SECTORS}
+                  value={wizardData.sectors || []}
+                  onValueChange={(values) => updateWizardData({ sectors: values })}
+                  placeholder="Select target sectors..."
+                  className="mt-2"
+                />
               </div>
 
               {/* Stages */}

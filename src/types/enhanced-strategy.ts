@@ -185,12 +185,8 @@ export const VC_CRITERIA_TEMPLATE: Record<string, CategoryCustomization> = {
   }
 };
 
-// Predefined sector options
-export const SECTOR_OPTIONS = [
-  'Technology', 'Healthcare', 'FinTech', 'AI/ML', 'SaaS', 'E-commerce',
-  'Biotech', 'CleanTech', 'EdTech', 'Food & Beverage', 'Real Estate',
-  'Manufacturing', 'Consumer Goods', 'Energy', 'Transportation'
-];
+// Import standardized sectors from constants
+export { STANDARDIZED_SECTORS as SECTOR_OPTIONS } from '@/constants/sectors';
 
 // Fund-type specific stage options
 export const VC_STAGE_OPTIONS = [
