@@ -408,6 +408,13 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
                       </Button>
                     )}
                   </div>
+
+                  {/* Note for document uploads */}
+                  <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Note:</strong> once a deal is created, you can upload pitch decks and other Deal documents via the Deal card tabs
+                    </p>
+                  </div>
                 </form>
               </CardContent>
             </Card>
