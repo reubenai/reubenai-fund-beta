@@ -28,13 +28,13 @@ export function ScoringMethodologyCard({
 }: ScoringMethodologyCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Calculate weighted score breakdown - FIXED calculation
+  // Calculate weighted score breakdown - EMERGENCY FIX
   const totalWeight = rubricBreakdown.reduce((sum, item) => sum + item.weight, 0);
   const scoringDetails = rubricBreakdown.map(item => ({
     ...item,
     normalizedWeight: totalWeight > 0 ? (item.weight / totalWeight) * 100 : 0,
-    // CRITICAL FIX: weights are already percentages (25, 10, etc), so calculate properly
-    contribution: totalWeight > 0 ? (item.score * item.weight / totalWeight) : 0,
+    // CRITICAL FIX: weights are percentages, so calculate weighted score directly
+    contribution: (item.score * item.weight / 100),
     confidenceImpact: item.confidence / 100
   }));
 

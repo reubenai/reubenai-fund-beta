@@ -65,10 +65,15 @@ serve(async (req) => {
 
     if (coresignalApiKey) {
       console.log('Enriching with Coresignal API...');
-      enrichmentData = await enrichWithCoresignal(request);
+      try {
+        enrichmentData = await enrichWithCoresignal(request);
+      } catch (error) {
+        console.log('Coresignal failed, trying Google Custom Search...');
+        enrichmentData = await enrichWithGoogleSearch(request);
+      }
     } else {
-      console.log('No Coresignal API key - using AI estimation...');
-      enrichmentData = await enrichWithAI(request, deal);
+      console.log('No Coresignal API key - using Google Custom Search...');
+      enrichmentData = await enrichWithGoogleSearch(request);
     }
 
     // Store enrichment data
@@ -77,7 +82,7 @@ serve(async (req) => {
       company_enrichment: {
         ...enrichmentData,
         last_enriched: new Date().toISOString(),
-        source: coresignalApiKey ? 'coresignal_api' : 'ai_estimation'
+        source: enrichmentData.trustScore >= 70 ? 'coresignal_api' : 'google_custom_search'
       }
     };
 
@@ -138,6 +143,7 @@ async function enrichWithCoresignal(request: EnrichmentRequest): Promise<Company
     });
 
     if (!searchResponse.ok) {
+      console.log(`Coresignal search failed (${searchResponse.status}): ${searchResponse.statusText}`);
       throw new Error(`Coresignal search failed: ${searchResponse.statusText}`);
     }
 
@@ -215,70 +221,73 @@ async function enrichWithCoresignal(request: EnrichmentRequest): Promise<Company
   }
 }
 
-async function enrichWithAI(request: EnrichmentRequest, deal: any): Promise<CompanyEnrichmentData> {
+async function enrichWithGoogleSearch(request: EnrichmentRequest): Promise<CompanyEnrichmentData> {
+  const googleApiKey = Deno.env.get('GOOGLE_SEARCH_API_KEY');
+  const googleSearchEngineId = Deno.env.get('GOOGLE_SEARCH_ENGINE_ID');
+  
+  if (!googleApiKey || !googleSearchEngineId) {
+    console.log('No Google Custom Search API credentials - minimal data');
+    return { trustScore: 40, dataQuality: 20 };
+  }
+  
   try {
-    console.log(`AI-enriching ${request.companyName}...`);
+    console.log(`Google Custom Search enriching ${request.companyName}...`);
 
-    const prompt = `
-Based on the following company information, provide realistic estimates and insights:
+    // Search for company information
+    const searchQuery = `${request.companyName} company employees funding revenue`;
+    const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleSearchEngineId}&q=${encodeURIComponent(searchQuery)}`;
 
-Company: ${request.companyName}
-Industry: ${deal.industry || 'Unknown'}
-Website: ${request.website || 'Not provided'}
-Deal Size: ${deal.deal_size || 'Unknown'}
-Stage: ${deal.status || 'Unknown'}
-
-Provide a JSON response with:
-{
-  "employeeCount": estimated_number,
-  "growthRate": percentage,
-  "revenueEstimate": dollars,
-  "marketSize": dollars,
-  "trustScore": 1-100,
-  "dataQuality": 1-100,
-  "keyInsights": ["insight1", "insight2"]
-}
-
-Be conservative and realistic. Mark dataQuality lower if insufficient information.
-`;
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: 'You are a business intelligence analyst. Provide realistic, conservative estimates.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.3,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices[0].message.content;
+    const searchResponse = await fetch(searchUrl);
     
-    try {
-      const aiData = JSON.parse(content);
-      return {
-        ...aiData,
-        dataQuality: Math.min(aiData.dataQuality || 60, 70) // Cap AI estimates
-      };
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError);
-      return { trustScore: 60, dataQuality: 40 };
+    if (!searchResponse.ok) {
+      throw new Error(`Google Search API error: ${searchResponse.statusText}`);
     }
+
+    const searchData = await searchResponse.json();
+    
+    if (!searchData.items || searchData.items.length === 0) {
+      console.log('No results found via Google Custom Search');
+      return { trustScore: 30, dataQuality: 25 };
+    }
+
+    // Extract basic company data from search results
+    const results = searchData.items.slice(0, 5);
+    const snippets = results.map(item => item.snippet).join(' ');
+    
+    // Use pattern matching to extract employee count
+    let employeeCount = 0;
+    const employeePatterns = [
+      /(\d+)\s+employees?/i,
+      /team\s+of\s+(\d+)/i,
+      /(\d+)\s+people/i
+    ];
+    
+    for (const pattern of employeePatterns) {
+      const match = snippets.match(pattern);
+      if (match) {
+        employeeCount = parseInt(match[1]);
+        break;
+      }
+    }
+
+    // Extract potential funding information
+    const fundingKeywords = ['funding', 'raised', 'series', 'investment'];
+    const hasFundingMention = fundingKeywords.some(keyword => 
+      snippets.toLowerCase().includes(keyword)
+    );
+
+    return {
+      employeeCount: employeeCount || undefined,
+      trustScore: 70,
+      dataQuality: 65,
+      revenueEstimate: employeeCount ? estimateRevenue(employeeCount) : undefined,
+      keyPersonnel: [],
+      competitors: []
+    };
 
   } catch (error) {
-    console.error('AI enrichment error:', error);
-    return { trustScore: 50, dataQuality: 30 };
+    console.error('Google Custom Search enrichment error:', error);
+    return { trustScore: 30, dataQuality: 20 };
   }
 }
 

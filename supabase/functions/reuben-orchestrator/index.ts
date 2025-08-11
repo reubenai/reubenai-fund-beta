@@ -135,7 +135,7 @@ serve(async (req) => {
       callEngine('team-research-engine', engineContext)
     ];
     
-    console.log('🚀 Running web research and 5 AI engines in parallel...');
+    console.log('🚀 Running web research and 6 AI engines in parallel...');
     const [webResearchResult, ...engineResults] = await Promise.allSettled([webResearchPromise, ...enginePromises]);
     
     // Process and validate results including web research
@@ -177,6 +177,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       analysis: comprehensiveAnalysis,
+      ai_agents_engaged: 6, // 5 engines + web research
       timestamp: new Date().toISOString()
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

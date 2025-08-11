@@ -128,7 +128,7 @@ serve(async (req) => {
 
       // Deep dive sections structure for CategoryDeepDiveSection components
       detailed_breakdown: {
-        market_opportunity: engine_results.market_research_engine?.data || engine_results.market_intelligence_engine?.data ? {
+        'Market Attractiveness': engine_results.market_research_engine?.data || engine_results.market_intelligence_engine?.data ? {
           tam_sam_som: {
             tam: engine_results.market_research_engine?.data?.tam || engine_results.market_intelligence_engine?.data?.tam || '$1B+',
             sam: engine_results.market_research_engine?.data?.sam || engine_results.market_intelligence_engine?.data?.sam || '$100M+',
@@ -141,32 +141,32 @@ serve(async (req) => {
           geographic_opportunities: engine_results.market_research_engine?.data?.geographic_opportunities || engine_results.market_intelligence_engine?.data?.geographic_opportunities || []
         } : null,
 
-        team_leadership: engine_results.team_research_engine?.data ? {
+        'Founder Team Strength': engine_results.team_research_engine?.data ? {
           founder_profiles: engine_results.team_research_engine.data.founders || [],
           team_gaps: engine_results.team_research_engine.data.team_gaps || [],
           execution_track_record: engine_results.team_research_engine.data.track_record || [],
           advisory_board_strength: engine_results.team_research_engine.data.advisors || []
         } : null,
 
-        product_technology: engine_results.product_ip_engine?.data ? {
+        'Product Strength & IP': engine_results.product_ip_engine?.data ? {
           ip_portfolio: engine_results.product_ip_engine.data.ip_assets || [],
           competitive_moats: engine_results.product_ip_engine.data.competitive_moats || [],
           technical_advantages: engine_results.product_ip_engine.data.technical_advantages || [],
           development_roadmap: engine_results.product_ip_engine.data.roadmap || []
         } : null,
 
-        financial_health: engine_results.financial_engine?.data ? {
+        'Financial Feasibility': engine_results.financial_engine?.data ? {
           revenue_stream_analysis: engine_results.financial_engine.data.revenue_streams || [],
           unit_economics: engine_results.financial_engine.data.unit_economics || {},
           burn_rate_analysis: engine_results.financial_engine.data.burn_analysis || {},
           funding_scenarios: engine_results.financial_engine.data.funding_scenarios || []
         } : null,
 
-        business_traction: engine_results.market_intelligence_engine?.data ? {
-          customer_metrics: engine_results.market_intelligence_engine.data.customer_metrics || [],
-          partnership_pipeline: engine_results.market_intelligence_engine.data.partnerships || [],
-          market_penetration: engine_results.market_intelligence_engine.data.market_penetration || {},
-          growth_trajectory: engine_results.market_intelligence_engine.data.growth_trajectory || {}
+        'Strategic Timing': engine_results.thesis_alignment_engine?.data ? {
+          strategic_alignment: engine_results.thesis_alignment_engine.data.alignment || [],
+          timing_analysis: engine_results.thesis_alignment_engine.data.timing || {},
+          fund_fit: engine_results.thesis_alignment_engine.data.fund_fit || {},
+          strategic_value: engine_results.thesis_alignment_engine.data.strategic_value || []
         } : null
       },
 
