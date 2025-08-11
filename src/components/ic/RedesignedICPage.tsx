@@ -1,0 +1,394 @@
+import React, { useState, useEffect } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { 
+  ChevronDown, 
+  Users, 
+  Vote, 
+  Calendar, 
+  FileText, 
+  TrendingUp,
+  Bot,
+  Settings,
+  RefreshCw
+} from 'lucide-react';
+
+import { useFund } from '@/contexts/FundContext';
+import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useToast } from '@/hooks/use-toast';
+
+import { NextStepSummaryBar } from './NextStepSummaryBar';
+import { RoleBasedDealPipeline } from './RoleBasedDealPipeline';
+import { LoadControlGuards } from './LoadControlGuards';
+import { EnhancedReviewQueue } from './EnhancedReviewQueue';
+import { SpecialistAIAgents } from './SpecialistAIAgents';
+import { BulkAnalysisControls } from './BulkAnalysisControls';
+import { ICMemoModal } from './ICMemoModal';
+import { VotingModal } from './VotingModal';
+
+interface Deal {
+  id: string;
+  company_name: string;
+  industry?: string;
+  deal_size?: number;
+  valuation?: number;
+  overall_score?: number;
+  rag_status?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export default function RedesignedICPage() {
+  const { selectedFund } = useFund();
+  const { role, isSuperAdmin } = useUserRole();
+  const { 
+    canReviewMemos, 
+    canVoteOnDeals, 
+    canManageICMembers, 
+    canTriggerAnalysis,
+    canBatchOperations 
+  } = usePermissions();
+  const { toast } = useToast();
+
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedDeals, setSelectedDeals] = useState<string[]>([]);
+  const [showMemoModal, setShowMemoModal] = useState(false);
+  const [showVotingModal, setShowVotingModal] = useState(false);
+  const [selectedDealForMemo, setSelectedDealForMemo] = useState<string | null>(null);
+  const [isAIAgentsExpanded, setIsAIAgentsExpanded] = useState(false);
+  const [degradationMode, setDegradationMode] = useState(false);
+
+  // Auto-select appropriate tab based on role
+  useEffect(() => {
+    if (role === 'analyst') {
+      setActiveTab('pipeline');
+    } else if (canReviewMemos) {
+      setActiveTab('reviews');
+    } else if (canVoteOnDeals) {
+      setActiveTab('voting');
+    }
+  }, [role, canReviewMemos, canVoteOnDeals]);
+
+  const handleActionClick = (action: string) => {
+    switch (action) {
+      case 'reviews':
+        setActiveTab('reviews');
+        break;
+      case 'voting':
+        setActiveTab('voting');
+        break;
+      case 'meetings':
+        setActiveTab('committee');
+        break;
+      case 'pipeline':
+        setActiveTab('pipeline');
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleDealSelect = (dealId: string) => {
+    // Handle deal selection for detailed view
+    toast({
+      title: "Deal Selected",
+      description: `Opening details for deal ${dealId}`,
+    });
+  };
+
+  const handleCreateMemo = (dealId: string) => {
+    setSelectedDealForMemo(dealId);
+    setShowMemoModal(true);
+  };
+
+  const handleCostThresholdReached = () => {
+    toast({
+      title: "Cost Threshold Alert",
+      description: "Analysis costs are approaching limits. Consider reducing frequency.",
+      variant: "destructive"
+    });
+  };
+
+  const handleDegradationMode = (enabled: boolean) => {
+    setDegradationMode(enabled);
+    if (enabled) {
+      toast({
+        title: "Degradation Mode Activated",
+        description: "AI features are running in reduced capacity to control costs.",
+        variant: "default"
+      });
+    }
+  };
+
+  if (!selectedFund) {
+    return (
+      <div className="flex-1 space-y-8 p-8">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold text-foreground">Investment Committee</h1>
+          <p className="text-sm text-muted-foreground">Role-optimized IC workflow management</p>
+        </div>
+        
+        <Card className="border-0 shadow-sm">
+          <CardContent className="flex items-center justify-center py-16">
+            <p className="text-muted-foreground">Please select a fund to access Investment Committee features</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 space-y-6 p-6">
+      {/* Header with role context */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">Investment Committee</h1>
+            <p className="text-sm text-muted-foreground">
+              {selectedFund.name} • {role.replace('_', ' ').toUpperCase()} Dashboard
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {degradationMode && (
+              <Badge variant="destructive" className="text-xs">
+                Degraded Mode
+              </Badge>
+            )}
+            <Badge variant="outline" className="text-xs">
+              {role.replace('_', ' ').toUpperCase()}
+            </Badge>
+          </div>
+        </div>
+      </div>
+
+      {/* Next Step Summary Bar - Always visible for action-oriented workflow */}
+      <NextStepSummaryBar 
+        fundId={selectedFund.id}
+        onActionClick={handleActionClick}
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Main Content Area */}
+        <div className="lg:col-span-3 space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="h-12 w-auto bg-background border rounded-lg p-1">
+              <TabsTrigger value="overview" className="h-10 px-6 rounded-md">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Overview
+              </TabsTrigger>
+              
+              <TabsTrigger value="pipeline" className="h-10 px-6 rounded-md">
+                <FileText className="h-4 w-4 mr-2" />
+                Pipeline
+                <Badge variant="secondary" className="ml-2 text-xs">
+                  Role Filtered
+                </Badge>
+              </TabsTrigger>
+
+              {canReviewMemos && (
+                <TabsTrigger value="reviews" className="h-10 px-6 rounded-md">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Reviews
+                </TabsTrigger>
+              )}
+
+              <TabsTrigger value="voting" className="h-10 px-6 rounded-md">
+                <Vote className="h-4 w-4 mr-2" />
+                Voting & Decisions
+              </TabsTrigger>
+
+              <TabsTrigger value="committee" className="h-10 px-6 rounded-md">
+                <Users className="h-4 w-4 mr-2" />
+                Committee
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <RoleBasedDealPipeline
+                  fundId={selectedFund.id}
+                  onDealSelect={handleDealSelect}
+                  onCreateMemo={handleCreateMemo}
+                />
+                {canReviewMemos && (
+                  <EnhancedReviewQueue
+                    fundId={selectedFund.id}
+                    onViewMemo={handleDealSelect}
+                  />
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="pipeline" className="space-y-6">
+              <RoleBasedDealPipeline
+                fundId={selectedFund.id}
+                onDealSelect={handleDealSelect}
+                onCreateMemo={handleCreateMemo}
+              />
+            </TabsContent>
+
+            {canReviewMemos && (
+              <TabsContent value="reviews" className="space-y-6">
+                <EnhancedReviewQueue
+                  fundId={selectedFund.id}
+                  onViewMemo={handleDealSelect}
+                />
+              </TabsContent>
+            )}
+
+            <TabsContent value="voting" className="space-y-6">
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="text-center py-8">
+                    <Vote className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Voting & Decisions</h3>
+                    <p className="text-muted-foreground">
+                      Voting functionality will be displayed here based on active decisions
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="committee" className="space-y-6">
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="text-center py-8">
+                    <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">IC Committee</h3>
+                    <p className="text-muted-foreground">
+                      Committee member management and meeting scheduling
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          {/* Specialist AI Agents - Collapsible and only visible when deals are selected */}
+          {(canTriggerAnalysis && selectedDeals.length > 0) && (
+            <Collapsible open={isAIAgentsExpanded} onOpenChange={setIsAIAgentsExpanded}>
+              <CollapsibleTrigger asChild>
+                <Card className="border-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Bot className="h-5 w-5" />
+                        <span className="font-medium">Specialist AI Agents</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {selectedDeals.length} deal{selectedDeals.length !== 1 ? 's' : ''} selected
+                        </Badge>
+                      </div>
+                      <ChevronDown className={`h-4 w-4 transition-transform ${isAIAgentsExpanded ? 'rotate-180' : ''}`} />
+                    </div>
+                  </CardContent>
+                </Card>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <Card className="border-0 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="text-center py-4">
+                      <Bot className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        Specialist AI agents will analyze selected deals
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+        </div>
+
+        {/* Sidebar - Control Panel */}
+        <div className="space-y-6">
+          {/* Load Control Guards */}
+          <LoadControlGuards
+            onCostThresholdReached={handleCostThresholdReached}
+            onDegradationMode={handleDegradationMode}
+          />
+
+          {/* Bulk Analysis Controls - Only for Fund Managers */}
+          {canBatchOperations && (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Settings className="h-4 w-4" />
+                  <span className="font-medium text-sm">Bulk Operations</span>
+                </div>
+                <div className="text-center py-4">
+                  <Settings className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-xs text-muted-foreground">
+                    Bulk analysis controls available for fund managers
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Quick Actions */}
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2 mb-3">
+                <RefreshCw className="h-4 w-4" />
+                <span className="font-medium text-sm">Quick Actions</span>
+              </div>
+              
+              {canTriggerAnalysis && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2 text-xs"
+                  onClick={() => handleCreateMemo('new')}
+                >
+                  <FileText className="h-3 w-3" />
+                  Create IC Memo
+                </Button>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full gap-2 text-xs"
+                onClick={() => setActiveTab('committee')}
+              >
+                <Calendar className="h-3 w-3" />
+                Schedule Meeting
+              </Button>
+
+              {canVoteOnDeals && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2 text-xs"
+                  onClick={() => setShowVotingModal(true)}
+                >
+                  <Vote className="h-3 w-3" />
+                  Start Voting
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Modals */}
+      {showMemoModal && selectedDealForMemo && (
+        <ICMemoModal
+          isOpen={showMemoModal}
+          dealId={selectedDealForMemo}
+          fundId={selectedFund.id}
+          onClose={() => {
+            setShowMemoModal(false);
+            setSelectedDealForMemo(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}

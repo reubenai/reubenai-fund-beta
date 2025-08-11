@@ -1,6 +1,6 @@
 import React from 'react';
-import EnhancedICPage from '@/components/ic/EnhancedICPage';
+import RedesignedICPage from '@/components/ic/RedesignedICPage';
 
 export default function IC() {
-  return <EnhancedICPage />;
+  return <RedesignedICPage />;
 }
