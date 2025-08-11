@@ -19,14 +19,21 @@ export const RubricScoreRadar: React.FC<RubricScoreRadarProps> = ({
   const { getRAGCategory } = useStrategyThresholds();
   const getCategoryDisplayName = (category: string) => {
     const displayNames: Record<string, string> = {
+      // VC Categories
       'team_leadership': 'Team & Leadership',
       'market_opportunity': 'Market Opportunity', 
       'product_technology': 'Product & Technology',
       'business_traction': 'Business Traction',
       'financial_health': 'Financial Health',
-      'strategic_fit': 'Strategic Fit'
+      'strategic_fit': 'Strategic Fit',
+      'risks_challenges': 'Risks & Challenges',
+      // PE Categories
+      'financial_performance': 'Financial Performance',
+      'market_position': 'Market Position',
+      'operational_excellence': 'Operational Excellence',
+      'growth_potential': 'Growth Potential'
     };
-    return displayNames[category] || category;
+    return displayNames[category] || category.replace(/_/g, ' ');
   };
 
   const getScoreColor = (score: number) => {
@@ -51,8 +58,8 @@ export const RubricScoreRadar: React.FC<RubricScoreRadarProps> = ({
 
   // Sort by fund type priority
   const sortedBreakdown = [...rubricBreakdown].sort((a, b) => {
-    const vcPriority = ['market_opportunity', 'product_technology', 'team_leadership', 'business_traction', 'strategic_fit', 'financial_health'];
-    const pePriority = ['financial_health', 'business_traction', 'team_leadership', 'market_opportunity', 'strategic_fit', 'product_technology'];
+    const vcPriority = ['market_opportunity', 'product_technology', 'team_leadership', 'financial_health', 'business_traction', 'risks_challenges'];
+    const pePriority = ['financial_performance', 'market_position', 'operational_excellence', 'growth_potential'];
     
     const priority = fundType === 'vc' ? vcPriority : pePriority;
     const aIndex = priority.indexOf(a.category);

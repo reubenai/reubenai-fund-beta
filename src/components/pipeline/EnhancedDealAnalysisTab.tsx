@@ -35,6 +35,7 @@ import { useAIService } from '@/hooks/useAIService';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useEmergencyFix } from '@/hooks/useEmergencyFix';
+import { useFund } from '@/contexts/FundContext';
 
 interface EnhancedDealAnalysisTabProps {
   deal: Deal & { enhanced_analysis?: EnhancedDealAnalysis };
@@ -54,6 +55,10 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
   const { toast } = useToast();
   const { canTriggerAnalysis } = usePermissions();
   const { triggerEmergencyFix } = useEmergencyFix();
+  const { selectedFund } = useFund();
+
+  // Get fund type, defaulting to 'vc' for backward compatibility
+  const fundType = selectedFund?.fund_type === 'private_equity' ? 'pe' : 'vc';
 
   const handleRunComprehensiveAnalysis = async () => {
     console.log('🔄 Triggering comprehensive analysis for deal:', deal.id);
@@ -429,7 +434,7 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <RubricScoreRadar rubricBreakdown={analysis.rubric_breakdown || []} fundType="vc" />
+              <RubricScoreRadar rubricBreakdown={analysis.rubric_breakdown || []} fundType={fundType} />
             </CardContent>
           </Card>
 

@@ -38,8 +38,11 @@ const getCategoryIcon = (category: string) => {
   if (lowerCategory.includes('market')) return <TrendingUp className="h-5 w-5" />;
   if (lowerCategory.includes('team') || lowerCategory.includes('leadership')) return <Users className="h-5 w-5" />;
   if (lowerCategory.includes('product') || lowerCategory.includes('technology')) return <Lightbulb className="h-5 w-5" />;
-  if (lowerCategory.includes('financial') || lowerCategory.includes('health')) return <DollarSign className="h-5 w-5" />;
+  if (lowerCategory.includes('financial') || lowerCategory.includes('health') || lowerCategory.includes('performance')) return <DollarSign className="h-5 w-5" />;
   if (lowerCategory.includes('traction') || lowerCategory.includes('business')) return <Target className="h-5 w-5" />;
+  if (lowerCategory.includes('operational') || lowerCategory.includes('excellence')) return <Shield className="h-5 w-5" />;
+  if (lowerCategory.includes('growth') || lowerCategory.includes('potential')) return <TrendingUp className="h-5 w-5" />;
+  if (lowerCategory.includes('position')) return <Target className="h-5 w-5" />;
   return <Zap className="h-5 w-5" />;
 };
 
@@ -47,6 +50,7 @@ const getDeepDiveComponent = (category: string, detailedAnalysis?: CategoryDeepD
   if (!detailedAnalysis) return null;
   
   const lowerCategory = category.toLowerCase();
+  // VC Categories
   if (lowerCategory.includes('market') && detailedAnalysis.market_opportunity) {
     return <MarketOpportunityDeepDive data={detailedAnalysis.market_opportunity} />;
   }
@@ -60,6 +64,20 @@ const getDeepDiveComponent = (category: string, detailedAnalysis?: CategoryDeepD
     return <FinancialHealthDeepDive data={detailedAnalysis.financial_health} />;
   }
   if (lowerCategory.includes('traction') && detailedAnalysis.business_traction) {
+    return <BusinessTractionDeepDive data={detailedAnalysis.business_traction} />;
+  }
+  
+  // PE Categories - map to closest equivalent deep dive components
+  if (lowerCategory.includes('performance') && detailedAnalysis.financial_health) {
+    return <FinancialHealthDeepDive data={detailedAnalysis.financial_health} />;
+  }
+  if (lowerCategory.includes('position') && detailedAnalysis.market_opportunity) {
+    return <MarketOpportunityDeepDive data={detailedAnalysis.market_opportunity} />;
+  }
+  if (lowerCategory.includes('operational') && detailedAnalysis.team_leadership) {
+    return <TeamLeadershipDeepDive data={detailedAnalysis.team_leadership} />;
+  }
+  if (lowerCategory.includes('growth') && detailedAnalysis.business_traction) {
     return <BusinessTractionDeepDive data={detailedAnalysis.business_traction} />;
   }
   
