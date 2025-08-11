@@ -25,7 +25,10 @@ export const useOptimizedActivities = (limit: number = 10) => {
   const cacheKey = `activities_${selectedFund?.id}_${limit}`;
   
   const queryFn = useCallback(async () => {
-    if (!selectedFund?.id) return [];
+    if (!selectedFund?.id) {
+      console.log('No selected fund, returning empty array');
+      return [];
+    }
     
     const { data, error } = await supabase
       .from('activity_events')

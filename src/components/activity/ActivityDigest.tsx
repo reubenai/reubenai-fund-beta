@@ -66,6 +66,11 @@ export function ActivityDigest({
 
   // Filter and rank activities
   const processedActivities = React.useMemo(() => {
+    // Ensure activities is always an array
+    if (!activities || !Array.isArray(activities)) {
+      return [];
+    }
+    
     let filtered = activities;
 
     // Apply time range filter
