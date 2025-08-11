@@ -62,7 +62,7 @@ export const DealCardHeader: React.FC<DealCardHeaderProps> = ({
           <h3 className={`font-semibold text-gray-900 truncate ${
             viewDensity === 'compact' ? 'text-sm' : 'text-base'
           }`}>
-            {deal.company_name || 'Unnamed Company'}
+            {(deal.company_name && deal.company_name !== 'undefined' && deal.company_name.trim() !== '') ? deal.company_name : 'Unnamed Company'}
           </h3>
           
           {/* Analysis Status Icon */}

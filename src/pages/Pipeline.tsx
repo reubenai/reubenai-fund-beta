@@ -1,5 +1,5 @@
 import React from 'react';
-import { KanbanBoard } from '@/components/pipeline/KanbanBoard';
+import { EnhancedPipelineView } from '@/components/pipeline/EnhancedPipelineView';
 import { InvestmentStatusIndicator } from '@/components/pipeline/InvestmentStatusIndicator';
 import { useFund } from '@/contexts/FundContext';
 
@@ -68,10 +68,10 @@ export default function Pipeline() {
         </div>
       )}
       
-      {/* Controlled Analysis Status */}
-      <InvestmentStatusIndicator />
+      {/* Controlled Analysis Status - Temporarily disabled */}
+      {/* <InvestmentStatusIndicator /> */}
       
-      <KanbanBoard fundId={selectedFund.id} />
+      <EnhancedPipelineView fundId={selectedFund.id} />
     </div>
   );
 }

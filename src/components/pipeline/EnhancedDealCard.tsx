@@ -141,7 +141,7 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-foreground truncate text-sm">
-                  {(deal.company_name && deal.company_name !== 'undefined') ? deal.company_name : 'Unnamed Company'}
+                  {(deal.company_name && deal.company_name !== 'undefined' && deal.company_name.trim() !== '') ? deal.company_name : 'Unnamed Company'}
                 </h4>
                 {deal.industry && (
                   <p className="text-xs text-muted-foreground truncate mt-0.5">

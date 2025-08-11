@@ -1,191 +1,285 @@
-import React from 'react';
-import { DragDropContext, DropResult } from '@hello-pangea/dnd';
-import { Deal, PipelineStage } from '@/hooks/usePipelineDeals';
-import { EnhancedKanbanColumn } from './EnhancedKanbanColumn';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  Users, 
-  Calendar,
-  BarChart3
-} from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { DropResult } from '@hello-pangea/dnd';
+import { usePipelineDeals, Deal } from '@/hooks/usePipelineDeals';
+import { PipelineHeader } from './PipelineHeader';
+import { CleanKanbanView } from './CleanKanbanView';
+import { EnhancedDealTableView } from './EnhancedDealTableView';
+import { AddDealModal } from './AddDealModal';
+import { BatchUploadModal } from './BatchUploadModal';
+import { DealDetailsModal } from './DealDetailsModal';
+import { DealSourcingModal } from './DealSourcingModal';
+import { PipelineFilters } from './PipelineFilters';
+import { useToast } from '@/hooks/use-toast';
+import { useFund } from '@/contexts/FundContext';
+import { usePermissions } from '@/hooks/usePermissions';
 
-interface EnhancedPipelineViewProps {
-  deals: Record<string, Deal[]>;
-  stages: PipelineStage[];
-  onDragEnd: (result: DropResult) => void;
-  onDealClick?: (deal: Deal) => void;
-  onStageEdit?: (stageId: string, newTitle: string) => void;
-  onAddDeal?: (stageId?: string) => void;
-  onAddStage?: () => void;
+interface PipelineViewState {
+  currentView: 'kanban' | 'table' | 'list' | 'funnel';
   viewDensity: 'compact' | 'comfortable' | 'detailed';
+  showFilters: boolean;
+  filters: {
+    status?: string;
+    ragStatus?: string;
+    industry?: string;
+    dealSizeMin?: number;
+    dealSizeMax?: number;
+    scoreMin?: number;
+    scoreMax?: number;
+  };
+  selectedDeal: Deal | null;
+  showAddDeal: boolean;
+  showBatchUpload: boolean;
+  showSourceDeals: boolean;
 }
 
-export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({
-  deals,
-  stages,
-  onDragEnd,
-  onDealClick,
-  onStageEdit,
-  onAddDeal,
-  onAddStage,
-  viewDensity
-}) => {
-  // Calculate pipeline metrics
-  const pipelineMetrics = React.useMemo(() => {
-    const allDeals = Object.values(deals).flat();
-    const totalValue = allDeals.reduce((sum, deal) => sum + (deal.deal_size || 0), 0);
-    const totalDeals = allDeals.length;
-    const avgDealSize = totalDeals > 0 ? totalValue / totalDeals : 0;
+interface EnhancedPipelineViewProps {
+  fundId: string;
+}
+
+export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fundId }) => {
+  const {
+    deals,
+    stages,
+    loading,
+    searchQuery,
+    setSearchQuery,
+    moveDeal,
+    addDeal,
+    refreshDeals
+  } = usePipelineDeals(fundId);
+
+  const { selectedFund } = useFund();
+  const permissions = usePermissions();
+  const { toast } = useToast();
+
+  const [state, setState] = useState<PipelineViewState>({
+    currentView: 'table', // Default to table view (AffinityCRM style)
+    viewDensity: 'comfortable',
+    showFilters: false,
+    filters: {},
+    selectedDeal: null,
+    showAddDeal: false,
+    showBatchUpload: false,
+    showSourceDeals: false,
+  });
+
+  const updateState = useCallback((updates: Partial<PipelineViewState>) => {
+    setState(prev => ({ ...prev, ...updates }));
+  }, []);
+
+  const handleDragEnd = useCallback(async (result: DropResult) => {
+    if (!permissions.canMoveDealsBetweenStages) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to move deals between stages",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const { destination, source, draggableId } = result;
     
-    // Calculate conversion rates between stages
-    const stageConversion = stages.map((stage, index) => {
-      const stageDeals = deals[stage.name.toLowerCase().replace(/\s+/g, '_')] || [];
-      const nextStage = stages[index + 1];
-      const nextStageDeals = nextStage ? deals[nextStage.name.toLowerCase().replace(/\s+/g, '_')] || [] : [];
-      
-      const conversionRate = stageDeals.length > 0 && nextStageDeals.length > 0 
-        ? (nextStageDeals.length / stageDeals.length) * 100 
-        : 0;
-      
-      return {
-        stage: stage.name,
-        count: stageDeals.length,
-        value: stageDeals.reduce((sum, deal) => sum + (deal.deal_size || 0), 0),
-        conversionRate: Math.round(conversionRate)
-      };
+    if (!destination || 
+        (destination.droppableId === source.droppableId && 
+         destination.index === source.index)) {
+      return;
+    }
+
+    await moveDeal(draggableId, source.droppableId, destination.droppableId);
+  }, [moveDeal, permissions.canMoveDealsBetweenStages, toast]);
+
+  const handleAddDeal = useCallback(() => {
+    if (!permissions.canCreateDeals) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to create deals",
+        variant: "destructive"
+      });
+      return;
+    }
+    updateState({ showAddDeal: true });
+  }, [updateState, permissions.canCreateDeals, toast]);
+
+  const handleDealClick = useCallback((deal: Deal) => {
+    updateState({ selectedDeal: deal });
+  }, [updateState]);
+
+  const getTotalDeals = useCallback(() => {
+    return Object.values(deals).reduce((total, stageDeals) => total + stageDeals.length, 0);
+  }, [deals]);
+
+  // Filter deals based on current filters
+  const filteredDeals = useMemo(() => {
+    if (!state.filters || Object.keys(state.filters).length === 0) {
+      return deals;
+    }
+
+    const { filters } = state;
+    const filtered: Record<string, Deal[]> = {};
+
+    Object.entries(deals).forEach(([stageKey, stageDeals]) => {
+      filtered[stageKey] = stageDeals.filter((deal) => {
+        // Status filter
+        if (filters.status && deal.status !== filters.status) {
+          return false;
+        }
+
+        // Investment readiness filter (RAG status)
+        if (filters.ragStatus) {
+          const dealRAGStatus = deal.rag_status?.toLowerCase();
+          const filterMapping: Record<string, string[]> = {
+            'exciting': ['green', 'exciting'],
+            'promising': ['amber', 'promising'], 
+            'needs_development': ['red', 'needs_development']
+          };
+          const allowedStatuses = filterMapping[filters.ragStatus] || [];
+          if (!dealRAGStatus || !allowedStatuses.includes(dealRAGStatus)) {
+            return false;
+          }
+        }
+
+        // Industry filter
+        if (filters.industry && deal.industry && !deal.industry.toLowerCase().includes(filters.industry.toLowerCase())) {
+          return false;
+        }
+
+        // Deal size range filter
+        if (filters.dealSizeMin && (!deal.deal_size || deal.deal_size < filters.dealSizeMin)) {
+          return false;
+        }
+        if (filters.dealSizeMax && (!deal.deal_size || deal.deal_size > filters.dealSizeMax)) {
+          return false;
+        }
+
+        // Score range filter
+        if (filters.scoreMin && (!deal.overall_score || deal.overall_score < filters.scoreMin)) {
+          return false;
+        }
+        if (filters.scoreMax && (!deal.overall_score || deal.overall_score > filters.scoreMax)) {
+          return false;
+        }
+
+        return true;
+      });
     });
 
-    return {
-      totalValue,
-      totalDeals,
-      avgDealSize,
-      stageConversion
-    };
-  }, [deals, stages]);
+    return filtered;
+  }, [deals, state.filters]);
 
-  const getGridClass = () => {
-    const columnCount = stages.length;
-    
-    if (columnCount <= 3) {
-      return 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
-    } else if (columnCount === 4) {
-      return 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6';
-    } else if (columnCount <= 6) {
-      return 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6';
-    } else {
-      return 'flex gap-6 overflow-x-auto pb-6';
-    }
-  };
-
-  const formatCurrency = (amount: number) => {
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1)}M`;
-    } else if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(0)}K`;
-    }
-    return `$${amount.toLocaleString()}`;
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Pipeline Metrics Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="transition-all duration-200 hover:scale-105 hover:shadow-md bg-gradient-to-r from-green-50 to-green-100">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Deals</p>
-                <p className="text-2xl font-bold text-green-600">{pipelineMetrics.totalDeals}</p>
-              </div>
-              <Users className="w-8 h-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="transition-all duration-200 hover:scale-105 hover:shadow-md bg-gradient-to-r from-purple-50 to-purple-100">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Avg Deal Size</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {formatCurrency(pipelineMetrics.avgDealSize)}
-                </p>
-              </div>
-              <BarChart3 className="w-8 h-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="transition-all duration-200 hover:scale-105 hover:shadow-md bg-gradient-to-r from-orange-50 to-orange-100">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">This Month</p>
-                <p className="text-2xl font-bold text-orange-600">+{Math.round(Math.random() * 20)}%</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Stage Conversion Flow */}
-      <Card className="bg-gradient-to-r from-muted/30 to-muted/10">
-        <CardContent className="p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
-            Pipeline Conversion Flow
-          </h3>
-          <div className="space-y-3">
-            {pipelineMetrics.stageConversion.map((stage, index) => (
-              <div key={stage.stage} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="min-w-[80px] justify-center">
-                    {stage.stage}
-                  </Badge>
-                  <div className="text-sm">
-                    <span className="font-medium">{stage.count} deals</span>
-                    <span className="text-muted-foreground ml-2">
-                      • {formatCurrency(stage.value)}
-                    </span>
-                  </div>
-                </div>
-                {index < pipelineMetrics.stageConversion.length - 1 && (
-                  <div className="flex items-center gap-2">
-                    <Progress value={stage.conversionRate} className="w-20 h-2" />
-                    <span className="text-sm text-muted-foreground min-w-[40px]">
-                      {stage.conversionRate}%
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Enhanced Kanban Board */}
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className={`${getGridClass()} transition-all duration-300`}>
-          {stages.map(stage => (
-            <div key={stage.id} className="animate-in fade-in-50 duration-300">
-              <EnhancedKanbanColumn
-                stage={stage}
-                deals={deals[stage.name.toLowerCase().replace(/\s+/g, '_')] || []}
-                onDealClick={onDealClick}
-                onStageEdit={onStageEdit}
-                onAddDeal={onAddDeal}
-                viewDensity={viewDensity}
-              />
-            </div>
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-muted rounded w-1/3 mb-2"></div>
+          <div className="h-4 bg-muted rounded w-1/2"></div>
+        </div>
+        <div className="flex gap-6 overflow-x-auto">
+          {[1, 2, 3, 4, 5].map(i => (
+            <div key={i} className="flex-shrink-0 w-80 h-96 bg-muted rounded-lg animate-pulse"></div>
           ))}
         </div>
-      </DragDropContext>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full bg-background">
+      <div className="border-b border-border bg-card">
+        <div className="px-8 py-6 space-y-4">
+          <PipelineHeader
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onAddDeal={handleAddDeal}
+            onBatchUpload={permissions.canBatchUpload ? () => updateState({ showBatchUpload: true }) : () => {}}
+            onDealSourcing={undefined}
+            currentView={state.currentView}
+            onViewChange={(view) => updateState({ currentView: view })}
+            viewDensity={state.viewDensity}
+            onDensityChange={(density) => updateState({ viewDensity: density })}
+            totalDeals={getTotalDeals()}
+            showFilters={state.showFilters}
+            onToggleFilters={() => updateState({ showFilters: !state.showFilters })}
+          />
+          
+          <PipelineFilters
+            filters={state.filters}
+            onFiltersChange={(filters) => updateState({ filters })}
+            onClearFilters={() => updateState({ filters: {} })}
+            isVisible={state.showFilters}
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 bg-background overflow-hidden">
+        {state.currentView === 'table' && (
+          <div className="h-full p-8">
+            <EnhancedDealTableView
+              deals={filteredDeals}
+              stages={stages}
+              onDealClick={handleDealClick}
+              onStageChange={permissions.canMoveDealsBetweenStages ? moveDeal : undefined}
+              loading={loading}
+            />
+          </div>
+        )}
+
+        {state.currentView === 'kanban' && (
+          <div className="h-full p-8">
+            <CleanKanbanView
+              deals={filteredDeals}
+              stages={stages}
+              onDragEnd={permissions.canMoveDealsBetweenStages ? handleDragEnd : undefined}
+              onDealClick={handleDealClick}
+              onStageEdit={undefined}
+              onStageDelete={undefined}
+              onAddDeal={permissions.canCreateDeals ? handleAddDeal : undefined}
+              onBatchUpload={permissions.canBatchUpload ? () => updateState({ showBatchUpload: true }) : undefined}
+              fundName={selectedFund?.name}
+            />
+          </div>
+        )}
+
+        {(state.currentView === 'list' || state.currentView === 'funnel') && (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center py-12 bg-card rounded-lg border border-border">
+              <p className="text-muted-foreground">
+                {state.currentView === 'list' ? 'List' : 'Funnel'} view coming soon...
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <AddDealModal
+        open={state.showAddDeal}
+        onClose={() => updateState({ showAddDeal: false })}
+        onAddDeal={addDeal}
+      />
+
+      <BatchUploadModal
+        open={state.showBatchUpload}
+        onClose={() => updateState({ showBatchUpload: false })}
+        fundId={fundId}
+        onUploadComplete={refreshDeals}
+      />
+
+      <DealDetailsModal
+        deal={state.selectedDeal}
+        open={!!state.selectedDeal}
+        onOpenChange={(open) => !open && updateState({ selectedDeal: null })}
+        onDealUpdated={refreshDeals}
+        onDealDeleted={() => {
+          refreshDeals();
+          updateState({ selectedDeal: null });
+        }}
+      />
+
+      <DealSourcingModal
+        open={state.showSourceDeals}
+        onClose={() => updateState({ showSourceDeals: false })}
+        fundId={fundId}
+        fundName={selectedFund?.name || "Selected Fund"}
+      />
     </div>
   );
 };
