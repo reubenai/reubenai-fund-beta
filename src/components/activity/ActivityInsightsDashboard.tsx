@@ -185,17 +185,7 @@ export function ActivityInsightsDashboard({
           </div>
         )}
 
-        {/* Quick Actions */}
-        <div className="flex gap-2 pt-4 border-t">
-          <Button variant="outline" size="sm" className="flex-1">
-            <Target className="h-4 w-4 mr-1" />
-            Focus Mode
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1">
-            <Calendar className="h-4 w-4 mr-1" />
-            Schedule Report
-          </Button>
-        </div>
+        {/* Quick Actions removed per user request */}
       </CardContent>
     </Card>
   );
