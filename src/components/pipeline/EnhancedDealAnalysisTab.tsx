@@ -33,6 +33,7 @@ import { EnhancedDealAnalysis, RubricBreakdown, AnalysisEngine, NotesIntelligenc
 import { CategoryDeepDiveSection } from '@/components/analysis/CategoryDeepDiveSection';
 import { useAIService } from '@/hooks/useAIService';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface EnhancedDealAnalysisTabProps {
   deal: Deal & { enhanced_analysis?: EnhancedDealAnalysis };
@@ -50,6 +51,7 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
     currentStage 
   } = useAIService();
   const { toast } = useToast();
+  const { canTriggerAnalysis } = usePermissions();
 
   const handleRunComprehensiveAnalysis = async () => {
     console.log('🔄 Triggering comprehensive analysis for deal:', deal.id);
@@ -124,89 +126,115 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
     }
   };
 
-  // Analysis In Progress fallback
-  if (!deal.enhanced_analysis) {
+  // Check if analysis is incomplete (has partial data but missing core components)
+  const isAnalysisIncomplete = analysis && (!analysis.rubric_breakdown || !analysis.analysis_engines || Object.keys(analysis.analysis_engines || {}).length === 0);
+
+  // Show control panel for null analysis OR incomplete analysis (for authorized users only)
+  if (!analysis || (isAnalysisIncomplete && canTriggerAnalysis)) {
     return (
       <div className="space-y-6">
-        {/* Enhanced Analysis Control Panel */}
-        <Card className="border-l-4 border-l-primary">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5" />
-              AI Analysis Control Center
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button 
-                onClick={handleRunComprehensiveAnalysis}
-                disabled={isLoading}
-                className="h-auto p-4 flex flex-col items-start gap-2"
-              >
-                <div className="flex items-center gap-2">
-                  <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                  <span className="font-medium">Full Analysis</span>
-                </div>
-                <span className="text-xs opacity-80">
-                  Run all 5 specialized engines
-                </span>
-              </Button>
+        {canTriggerAnalysis ? (
+          <>
+            {/* Enhanced Analysis Control Panel */}
+            <Card className="border-l-4 border-l-primary">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="h-5 w-5" />
+                  AI Analysis Control Center
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button 
+                    onClick={handleRunComprehensiveAnalysis}
+                    disabled={isLoading}
+                    className="h-auto p-4 flex flex-col items-start gap-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                      <span className="font-medium">Full Analysis</span>
+                    </div>
+                    <span className="text-xs opacity-80">
+                      Run all 5 specialized engines
+                    </span>
+                  </Button>
 
-              <Button 
-                onClick={handleEnrichCompany}
-                disabled={isLoading}
-                variant="outline"
-                className="h-auto p-4 flex flex-col items-start gap-2"
-              >
-                <div className="flex items-center gap-2">
-                  <Database className="h-4 w-4" />
-                  <span className="font-medium">Enrich Data</span>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  Add Coresignal company data
-                </span>
-              </Button>
+                  <Button 
+                    onClick={handleEnrichCompany}
+                    disabled={isLoading}
+                    variant="outline"
+                    className="h-auto p-4 flex flex-col items-start gap-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Database className="h-4 w-4" />
+                      <span className="font-medium">Enrich Data</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      Add Coresignal company data
+                    </span>
+                  </Button>
 
-              <Button 
-                onClick={handleWebResearch}
-                disabled={isLoading}
-                variant="outline"
-                className="h-auto p-4 flex flex-col items-start gap-2"
-              >
-                <div className="flex items-center gap-2">
-                  <ExternalLink className="h-4 w-4" />
-                  <span className="font-medium">Web Research</span>
+                  <Button 
+                    onClick={handleWebResearch}
+                    disabled={isLoading}
+                    variant="outline"
+                    className="h-auto p-4 flex flex-col items-start gap-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ExternalLink className="h-4 w-4" />
+                      <span className="font-medium">Web Research</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      Gather latest market intel
+                    </span>
+                  </Button>
                 </div>
-                <span className="text-xs text-muted-foreground">
-                  Gather latest market intel
-                </span>
-              </Button>
-            </div>
 
-            {isLoading && currentStage && (
-              <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  <span>{currentStage}</span>
+                {isLoading && currentStage && (
+                  <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      <span>{currentStage}</span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="card-xero border-warning/20">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-8 w-8 text-warning" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {isAnalysisIncomplete ? 'Analysis Incomplete' : 'Analysis Ready to Start'}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {isAnalysisIncomplete 
+                        ? 'This deal has partial analysis data. Click "Full Analysis" to complete the comprehensive analysis with all 5 specialized engines.'
+                        : 'Click "Full Analysis" above to run comprehensive AI analysis with 5 specialized engines and data enrichment.'
+                      }
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <Card className="card-xero border-muted/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <Clock className="h-8 w-8 text-muted-foreground" />
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Analysis Pending</h3>
+                  <p className="text-muted-foreground">
+                    Analysis has not been completed for this deal yet. Contact your fund manager or analyst to request analysis.
+                  </p>
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="card-xero border-warning/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="h-8 w-8 text-warning" />
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Analysis Ready to Start</h3>
-                <p className="text-muted-foreground">
-                  Click "Full Analysis" above to run comprehensive AI analysis with 5 specialized engines and data enrichment.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   }
@@ -235,6 +263,22 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
 
   return (
     <div className="space-y-6">
+      {/* Re-run Analysis Button for Authorized Users */}
+      {canTriggerAnalysis && (
+        <div className="flex justify-end">
+          <Button 
+            onClick={handleRunComprehensiveAnalysis}
+            disabled={isLoading}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Re-run Analysis
+          </Button>
+        </div>
+      )}
+
       {/* Executive Summary Dashboard */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <Card className="card-xero">
