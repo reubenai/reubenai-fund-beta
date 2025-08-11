@@ -53,20 +53,6 @@ export default function Pipeline() {
         </p>
       </div>
 
-      {/* Debug info for super admin users */}
-      {isSuperAdmin && (
-        <div className="p-4 bg-muted rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <Badge variant="secondary">Super Admin Access</Badge>
-            <span className="text-sm text-muted-foreground">
-              Role: {role} | Org ID: {organizationId} | Total Funds: {funds.length}
-            </span>
-          </div>
-          <div className="text-xs text-muted-foreground">
-            You can see funds across all organizations: {funds.map(f => f.name).join(', ')}
-          </div>
-        </div>
-      )}
       
       {/* Controlled Analysis Status - Temporarily disabled */}
       {/* <InvestmentStatusIndicator /> */}
