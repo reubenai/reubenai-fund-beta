@@ -3827,6 +3827,10 @@ export type Database = {
         }
         Returns: string
       }
+      reclaim_zombie_analysis_jobs: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       restore_archived_activities: {
         Args: {
           activity_ids?: string[]

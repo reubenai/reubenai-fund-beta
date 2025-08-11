@@ -39,6 +39,7 @@ import { ForceAnalysisProcessor } from '@/components/admin/ForceAnalysisProcesso
 import { ComprehensiveFixVerifier } from '@/components/admin/ComprehensiveFixVerifier';
 import { APIConfigurationPanel } from '@/components/admin/APIConfigurationPanel';
 import { DealDataRepairTool } from '@/components/admin/DealDataRepairTool';
+import { AnalysisQueueDashboard } from '@/components/admin/AnalysisQueueDashboard';
 
 import { useFund } from '@/contexts/FundContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -852,6 +853,10 @@ export default function Admin() {
               <TabsTrigger value="users" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Users</TabsTrigger>
               <TabsTrigger value="funds" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Funds</TabsTrigger>
               <TabsTrigger value="deals" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Deals</TabsTrigger>
+              <TabsTrigger value="queue" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Analysis Queue
+              </TabsTrigger>
               <TabsTrigger value="support" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Support Tickets
@@ -942,12 +947,13 @@ export default function Admin() {
               />
             </TabsContent>
 
+            <TabsContent value="queue" className="space-y-6">
+              <AnalysisQueueDashboard />
+            </TabsContent>
+
             <TabsContent value="support" className="space-y-6">
               <AdminSupportTickets />
             </TabsContent>
-
-
-
 
           </Tabs>
         </div>

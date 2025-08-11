@@ -75,19 +75,68 @@ serve(async (req) => {
       try {
         console.log(`🧠 Processing analysis for deal: ${item.deal_id} (reason: ${item.trigger_reason})`);
         
-        // Call the enhanced deal analysis function
-        const { data: analysisResult, error: analysisError } = await supabase.functions.invoke(
-          'enhanced-deal-analysis',
-          {
-            body: {
-              dealId: item.deal_id,
-              analysisType: 'comprehensive',
-              queueId: item.id,
-              triggerReason: item.trigger_reason,
-              priority: item.priority
-            }
+        const traceId = crypto.randomUUID();
+        console.log(`🧠 [${traceId}] Processing analysis for deal: ${item.deal_id} (reason: ${item.trigger_reason})`);
+        
+        // Add heartbeat mechanism
+        const heartbeatInterval = setInterval(async () => {
+          try {
+            await supabase
+              .from('analysis_queue')
+              .update({ updated_at: new Date().toISOString() })
+              .eq('id', item.id);
+            console.log(`💓 [${traceId}] Heartbeat for queue item: ${item.id}`);
+          } catch (heartbeatError) {
+            console.warn(`⚠️ [${traceId}] Heartbeat failed:`, heartbeatError);
           }
-        );
+        }, 30000); // Every 30 seconds
+
+        let analysisResult: any;
+        let analysisError: any;
+
+        try {
+          // Try enhanced analysis first, fallback to safe mode
+          console.log(`🔄 [${traceId}] Attempting enhanced analysis...`);
+          const enhancedResponse = await supabase.functions.invoke(
+            'enhanced-deal-analysis',
+            {
+              body: {
+                dealId: item.deal_id,
+                analysisType: 'comprehensive',
+                queueId: item.id,
+                triggerReason: item.trigger_reason,
+                priority: item.priority,
+                traceId
+              }
+            }
+          );
+
+          analysisResult = enhancedResponse.data;
+          analysisError = enhancedResponse.error;
+
+          // If enhanced analysis fails, use safe mode
+          if (analysisError || !analysisResult?.success) {
+            console.log(`🛡️ [${traceId}] Enhanced analysis failed, switching to safe mode...`);
+            
+            const safeResponse = await supabase.functions.invoke(
+              'safe-mode-analysis',
+              {
+                body: {
+                  dealId: item.deal_id,
+                  queueId: item.id,
+                  triggerReason: item.trigger_reason,
+                  traceId
+                }
+              }
+            );
+
+            analysisResult = safeResponse.data;
+            analysisError = safeResponse.error;
+          }
+        } finally {
+          // Clear heartbeat
+          clearInterval(heartbeatInterval);
+        }
 
         if (analysisError) {
           console.error(`❌ Analysis failed for deal ${item.deal_id}:`, analysisError);
