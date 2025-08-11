@@ -34,7 +34,7 @@ const coreFunctions = [
 // Secondary Functions - Grid Cards  
 const secondaryFunctions = [
   { title: "Analytics", url: "/analytics", icon: BarChart3, description: "LP-ready metrics", badge: "Soon", disabled: true },
-  { title: "Fund Memory", url: "/fund-memory", icon: Brain, description: "Institutional intelligence", badge: "Sneak peek", disabled: false },
+  { title: "Fund Memory", url: "/fund-memory", icon: Brain, description: "Institutional intelligence", badge: "Soon", disabled: true },
   { title: "Due Diligence Hub", url: "/dd", icon: Briefcase, description: "DD workflows", badge: "Soon", disabled: true },
   { title: "Founder Workflows", url: "/founder-workflows", icon: Users, description: "Founder tools", badge: "Soon", disabled: true },
 ];

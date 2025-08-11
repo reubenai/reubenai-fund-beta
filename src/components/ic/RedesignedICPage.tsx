@@ -57,7 +57,7 @@ export default function RedesignedICPage() {
   } = usePermissions();
   const { toast } = useToast();
 
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('pipeline');
   const [selectedDeals, setSelectedDeals] = useState<string[]>([]);
   const [showMemoModal, setShowMemoModal] = useState(false);
   const [showVotingModal, setShowVotingModal] = useState(false);
@@ -73,6 +73,8 @@ export default function RedesignedICPage() {
       setActiveTab('reviews');
     } else if (canVoteOnDeals) {
       setActiveTab('voting');
+    } else {
+      setActiveTab('pipeline');
     }
   }, [role, canReviewMemos, canVoteOnDeals]);
 
@@ -179,11 +181,6 @@ export default function RedesignedICPage() {
         <div className="lg:col-span-3 space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="h-12 w-auto bg-background border rounded-lg p-1">
-              <TabsTrigger value="overview" className="h-10 px-6 rounded-md">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Overview
-              </TabsTrigger>
-              
               <TabsTrigger value="pipeline" className="h-10 px-6 rounded-md">
                 <FileText className="h-4 w-4 mr-2" />
                 Pipeline
@@ -195,9 +192,14 @@ export default function RedesignedICPage() {
               {canReviewMemos && (
                 <TabsTrigger value="reviews" className="h-10 px-6 rounded-md">
                   <FileText className="h-4 w-4 mr-2" />
-                  Reviews
+                  Review Queue
                 </TabsTrigger>
               )}
+
+              <TabsTrigger value="schedule" className="h-10 px-6 rounded-md">
+                <Calendar className="h-4 w-4 mr-2" />
+                Schedule IC
+              </TabsTrigger>
 
               <TabsTrigger value="voting" className="h-10 px-6 rounded-md">
                 <Vote className="h-4 w-4 mr-2" />
@@ -209,22 +211,6 @@ export default function RedesignedICPage() {
                 Committee
               </TabsTrigger>
             </TabsList>
-
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <RoleBasedDealPipeline
-                  fundId={selectedFund.id}
-                  onDealSelect={handleDealSelect}
-                  onCreateMemo={handleCreateMemo}
-                />
-                {canReviewMemos && (
-                  <EnhancedReviewQueue
-                    fundId={selectedFund.id}
-                    onViewMemo={handleDealSelect}
-                  />
-                )}
-              </div>
-            </TabsContent>
 
             <TabsContent value="pipeline" className="space-y-6">
               <RoleBasedDealPipeline
@@ -253,6 +239,20 @@ export default function RedesignedICPage() {
                 </div>
               </TabsContent>
             )}
+
+            <TabsContent value="schedule" className="space-y-6">
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="text-center py-8">
+                    <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Schedule IC Session</h3>
+                    <p className="text-muted-foreground">
+                      Schedule and manage investment committee meetings
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             <TabsContent value="voting" className="space-y-6">
               <ICVotingAndDecisions fundId={selectedFund.id} userRole={role} />
