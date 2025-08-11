@@ -53,6 +53,7 @@ import { MarketOpportunityAssessment } from '@/components/analysis/MarketOpportu
 import { FounderTeamStrengthAssessment } from '@/components/analysis/FounderTeamStrengthAssessment';
 import { ProductIPMoatAssessment } from '@/components/analysis/ProductIPMoatAssessment';
 import { TractionFinancialFeasibilityAssessment } from '@/components/analysis/TractionFinancialFeasibilityAssessment';
+import { ReubenAISummaryScore } from '@/components/analysis/ReubenAISummaryScore';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 // Extend the Deal type to include enhanced_analysis
@@ -732,11 +733,14 @@ export function EnhancedDealDetailsModal({
 
           {canViewAnalysis && (
             <TabsContent value="analysis" className="space-y-6">
+              {/* ReubenAI Summary Score */}
+              <ReubenAISummaryScore deal={deal} />
+              
               {/* Assessment Sections with Accordion */}
               <Accordion type="multiple" className="w-full space-y-4" defaultValue={["thesis", "market", "team", "product", "traction"]}>
                 <AccordionItem value="thesis" className="border rounded-lg">
                   <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
-                    Thesis Alignment Assessment
+                    Thesis Alignment
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
                     <ThesisAlignmentSection deal={deal} />
@@ -745,7 +749,7 @@ export function EnhancedDealDetailsModal({
                 
                 <AccordionItem value="market" className="border rounded-lg">
                   <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
-                    Market Opportunity Assessment
+                    Market Opportunity
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
                     <MarketOpportunityAssessment deal={deal} />
@@ -754,7 +758,7 @@ export function EnhancedDealDetailsModal({
                 
                 <AccordionItem value="team" className="border rounded-lg">
                   <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
-                    Founder & Team Strength Assessment
+                    Founder & Team Strength
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
                     <FounderTeamStrengthAssessment deal={deal} />
@@ -763,7 +767,7 @@ export function EnhancedDealDetailsModal({
                 
                 <AccordionItem value="product" className="border rounded-lg">
                   <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
-                    Product & IP Moat Assessment
+                    Product & IP Moat
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
                     <ProductIPMoatAssessment deal={deal} />
@@ -772,23 +776,13 @@ export function EnhancedDealDetailsModal({
                 
                 <AccordionItem value="traction" className="border rounded-lg">
                   <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
-                    Traction & Financial Feasibility Assessment
+                    Traction & Financial Feasibility
                   </AccordionTrigger>
                   <AccordionContent className="px-4 pb-4">
                     <TractionFinancialFeasibilityAssessment deal={deal} />
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
-              
-              {/* AI Analysis Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold">AI Analysis</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <EnhancedDealAnalysisTab deal={deal} />
-                </CardContent>
-              </Card>
             </TabsContent>
           )}
 
