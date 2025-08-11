@@ -57,6 +57,7 @@ import { format } from 'date-fns';
 interface EnhancedDealTableViewProps {
   deals: Record<string, Deal[]>;
   onDealClick: (deal: Deal) => void;
+  onDealEdit?: (deal: Deal) => void;
   onStageChange?: (dealId: string, fromStage: string, toStage: string) => void;
   stages: Array<{ id: string; name: string; color: string }>;
   loading?: boolean;
@@ -91,14 +92,68 @@ const formatCurrency = (amount?: number, currency = 'USD') => {
   }).format(amount);
 };
 
-const formatScore = (score?: number) => {
+  const formatScore = (score?: number) => {
   if (typeof score !== 'number') return '—';
   return `${Math.round(score)}/100`;
 };
 
+// Export functionality
+const exportDeals = (deals: (Deal & { stage: string })[], format: 'csv' | 'json' = 'csv') => {
+  const headers = [
+    'Company Name',
+    'Industry', 
+    'Stage',
+    'Deal Size',
+    'Valuation',
+    'Currency',
+    'ReubenAI Score',
+    'RAG Status',
+    'Location',
+    'Website',
+    'Founder',
+    'Description',
+    'Created Date',
+    'Updated Date'
+  ];
+
+  if (format === 'csv') {
+    const csvContent = [
+      headers.join(','),
+      ...deals.map(deal => [
+        `"${(deal.company_name || 'Unnamed Company').replace(/"/g, '""')}"`,
+        `"${(deal.industry || '').replace(/"/g, '""')}"`,
+        `"${deal.stage.replace(/"/g, '""')}"`,
+        deal.deal_size || '',
+        deal.valuation || '',
+        deal.currency || 'USD',
+        deal.overall_score || '',
+        deal.rag_status || '',
+        `"${(deal.location || '').replace(/"/g, '""')}"`,
+        `"${(deal.website || '').replace(/"/g, '""')}"`,
+        `"${(deal.founder || '').replace(/"/g, '""')}"`,
+        `"${(deal.description || '').replace(/"/g, '""')}"`,
+        new Date(deal.created_at).toLocaleDateString(),
+        new Date(deal.updated_at).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `deals-export-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+};
+
+
 export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
   deals,
   onDealClick,
+  onDealEdit,
   onStageChange,
   stages,
   loading = false
@@ -213,6 +268,26 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
         </div>
         
         <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => exportDeals(sortedDeals)}
+            disabled={sortedDeals.length === 0}
+          >
+            Export All ({sortedDeals.length})
+          </Button>
+          {selectedDeals.size > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                const selectedDealsList = sortedDeals.filter(deal => selectedDeals.has(deal.id));
+                exportDeals(selectedDealsList);
+              }}
+            >
+              Export Selected ({selectedDeals.size})
+            </Button>
+          )}
           <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(Number(value))}>
             <SelectTrigger className="w-[70px]">
               <SelectValue />
@@ -487,10 +562,12 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                         <Eye className="mr-2 h-4 w-4" />
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit Deal
-                      </DropdownMenuItem>
+                      {onDealEdit && (
+                        <DropdownMenuItem onClick={() => onDealEdit(deal)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Deal
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem>
                         <Zap className="mr-2 h-4 w-4" />
                         Trigger Analysis

@@ -7,6 +7,7 @@ import { EnhancedDealTableView } from './EnhancedDealTableView';
 import { AddDealModal } from './AddDealModal';
 import { BatchUploadModal } from './BatchUploadModal';
 import { DealDetailsModal } from './DealDetailsModal';
+import { EditDealModal } from './EditDealModal';
 import { DealSourcingModal } from './DealSourcingModal';
 import { PipelineFilters } from './PipelineFilters';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +28,7 @@ interface PipelineViewState {
     scoreMax?: number;
   };
   selectedDeal: Deal | null;
+  editDeal: Deal | null;
   showAddDeal: boolean;
   showBatchUpload: boolean;
   showSourceDeals: boolean;
@@ -58,6 +60,7 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fund
     showFilters: false,
     filters: {},
     selectedDeal: null,
+    editDeal: null,
     showAddDeal: false,
     showBatchUpload: false,
     showSourceDeals: false,
@@ -102,6 +105,10 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fund
 
   const handleDealClick = useCallback((deal: Deal) => {
     updateState({ selectedDeal: deal });
+  }, [updateState]);
+
+  const handleDealEdit = useCallback((deal: Deal) => {
+    updateState({ editDeal: deal });
   }, [updateState]);
 
   const getTotalDeals = useCallback(() => {
@@ -217,6 +224,7 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fund
             deals={filteredDeals}
             stages={stages}
             onDealClick={handleDealClick}
+            onDealEdit={handleDealEdit}
             onStageChange={permissions.canMoveDealsBetweenStages ? moveDeal : undefined}
             loading={loading}
           />
@@ -244,6 +252,16 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fund
         onDealDeleted={() => {
           refreshDeals();
           updateState({ selectedDeal: null });
+        }}
+      />
+
+      <EditDealModal
+        deal={state.editDeal}
+        open={!!state.editDeal}
+        onClose={() => updateState({ editDeal: null })}
+        onUpdateComplete={() => {
+          refreshDeals();
+          updateState({ editDeal: null });
         }}
       />
 
