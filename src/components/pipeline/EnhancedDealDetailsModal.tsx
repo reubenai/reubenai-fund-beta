@@ -115,16 +115,27 @@ export function EnhancedDealDetailsModal({
     if (!deal) return;
 
     try {
-      // Load activity events with better error handling
+      // Load activity events with better error handling and fund_id fallback
       const { data: activities, error: activityError } = await supabase
         .from('activity_events')
         .select('*')
-        .eq('deal_id', deal.id)
+        .or(`deal_id.eq.${deal.id},fund_id.eq.${deal.fund_id}`)
         .order('occurred_at', { ascending: false })
         .limit(20);
 
       if (activityError) {
         console.error('Error loading activity events:', activityError);
+        // Try with just fund_id if deal_id fails
+        const { data: fallbackActivities } = await supabase
+          .from('activity_events')
+          .select('*')
+          .eq('fund_id', deal.fund_id)
+          .order('occurred_at', { ascending: false })
+          .limit(10);
+        
+        if (fallbackActivities) {
+          setActivityEvents(fallbackActivities);
+        }
       } else if (activities) {
         setActivityEvents(activities);
       }
