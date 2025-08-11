@@ -18,6 +18,22 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
@@ -31,7 +47,9 @@ import {
   DollarSign,
   TrendingUp,
   Users,
-  ExternalLink
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -88,6 +106,8 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
   const [sortField, setSortField] = useState<SortField>('updated_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [selectedDeals, setSelectedDeals] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   // Flatten deals from all stages
   const allDeals = useMemo(() => {
@@ -127,6 +147,22 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
     });
   }, [allDeals, sortField, sortDirection]);
 
+  // Pagination
+  const totalPages = Math.ceil(sortedDeals.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedDeals = sortedDeals.slice(startIndex, endIndex);
+
+  // Reset to first page when deals change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [sortedDeals.length]);
+
+  // Reset selected deals when page changes
+  React.useEffect(() => {
+    setSelectedDeals(new Set());
+  }, [currentPage]);
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -163,22 +199,55 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
 
   return (
     <div className="space-y-4 h-full flex flex-col">
-      {/* Table Container with Scroll */}
-      <div className="flex-1 border border-border rounded-lg bg-card overflow-auto">
-        <Table>
-          <TableHeader className="sticky top-0 bg-card z-10">
-            <TableRow className="hover:bg-transparent border-b border-border">
+      {/* Table Controls */}
+      <div className="flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center space-x-4">
+          <span className="text-sm text-muted-foreground">
+            Showing {startIndex + 1}-{Math.min(endIndex, sortedDeals.length)} of {sortedDeals.length} deals
+          </span>
+          {selectedDeals.size > 0 && (
+            <Badge variant="secondary">
+              {selectedDeals.size} selected
+            </Badge>
+          )}
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(Number(value))}>
+            <SelectTrigger className="w-[70px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">per page</span>
+        </div>
+      </div>
+
+      {/* Table Container with Fixed Height and Scroll */}
+      <div className="flex-1 border border-border rounded-lg bg-card overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+          <Table>
+            <TableHeader className="sticky top-0 bg-card z-10 border-b border-border">
+              <TableRow className="hover:bg-transparent">
               <TableHead className="w-12 sticky left-0 bg-card z-20">
                 <input
                   type="checkbox"
-                  className="rounded border-border"
                   onChange={(e) => {
                     if (e.target.checked) {
-                      setSelectedDeals(new Set(sortedDeals.map(d => d.id)));
+                      const currentPageDeals = paginatedDeals.map(d => d.id);
+                      setSelectedDeals(new Set([...selectedDeals, ...currentPageDeals]));
                     } else {
-                      setSelectedDeals(new Set());
+                      const currentPageDeals = new Set(paginatedDeals.map(d => d.id));
+                      setSelectedDeals(new Set([...selectedDeals].filter(id => !currentPageDeals.has(id))));
                     }
                   }}
+                  checked={paginatedDeals.length > 0 && paginatedDeals.every(deal => selectedDeals.has(deal.id))}
+                  className="rounded border-border"
                 />
               </TableHead>
               
@@ -249,7 +318,7 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
           </TableHeader>
           
           <TableBody>
-            {sortedDeals.map((deal) => (
+            {paginatedDeals.map((deal) => (
               <TableRow 
                 key={deal.id}
                 className="cursor-pointer hover:bg-muted/50 transition-colors border-b border-border"
@@ -434,7 +503,7 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
           </TableBody>
         </Table>
         
-        {sortedDeals.length === 0 && (
+        {paginatedDeals.length === 0 && (
           <div className="p-8 text-center text-muted-foreground">
             <Building2 className="mx-auto h-12 w-12 mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">No deals found</h3>
@@ -442,6 +511,65 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
           </div>
         )}
       </div>
+      </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between flex-shrink-0 pt-4 border-t border-border">
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+            
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className="w-8 h-8 p-0"
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+          
+          <div className="text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
