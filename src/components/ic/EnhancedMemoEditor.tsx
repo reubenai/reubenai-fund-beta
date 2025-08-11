@@ -9,6 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
   Brain, 
   Save, 
   Download, 
@@ -23,7 +31,8 @@ import {
   DollarSign,
   Shield,
   FileText,
-  Loader2
+  Loader2,
+  Mail
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -240,42 +249,44 @@ export const EnhancedMemoEditor: React.FC<EnhancedMemoEditorProps> = ({
             </div>
             
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsPreviewMode(!isPreviewMode)}
-                className="transition-all duration-200 hover:scale-105 hover:shadow-md"
-              >
-                {isPreviewMode ? <Edit3 className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-                {isPreviewMode ? 'Edit' : 'Preview'}
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportPDF}
-                disabled={isExportingPDF}
-                className="transition-all duration-200 hover:scale-105 hover:shadow-md"
-              >
-                {isExportingPDF ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Download className="w-4 h-4 mr-2" />
-                )}
-                Export PDF
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    disabled={true}
+                    className="transition-all duration-200 hover:scale-105 hover:shadow-md"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Share Memo
+                    <Badge variant="secondary" className="ml-2 text-xs">Soon</Badge>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>Share Options</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled>
+                    <Mail className="w-4 h-4 mr-2" />
+                    Email Memo
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               
               {canEditICMemos && (
                 <>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleGenerateWithAI}
-                    disabled={isGenerating}
+                    disabled={true}
                     className="transition-all duration-200 hover:scale-105 hover:shadow-md bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100"
                   >
-                    <Brain className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-pulse' : ''}`} />
-                    {isGenerating ? 'Enhancing...' : 'Regenerate with AI'}
+                    <Brain className="w-4 h-4 mr-2" />
+                    AI-assisted memo mode
+                    <Badge variant="secondary" className="ml-2 text-xs">Soon</Badge>
                   </Button>
                   
                   <Button

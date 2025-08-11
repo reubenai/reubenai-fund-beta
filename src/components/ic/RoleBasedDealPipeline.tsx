@@ -177,20 +177,6 @@ export const RoleBasedDealPipeline: React.FC<RoleBasedDealPipelineProps> = ({
   const getRoleActionButtons = (deal: Deal) => {
     const buttons = [];
 
-    // View Deal (all roles)
-    buttons.push(
-      <Button
-        key="view"
-        variant="ghost"
-        size="sm"
-        onClick={() => onDealSelect(deal.id)}
-        className="gap-2"
-      >
-        <Eye className="h-4 w-4" />
-        View
-      </Button>
-    );
-
     // Create IC Memo (Analysts and Fund Managers)
     if (canCreateICMemos && deal.status === 'investment_committee') {
       buttons.push(
