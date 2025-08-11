@@ -97,6 +97,13 @@ export default function Strategy() {
   // Main strategy view
   return (
     <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+      {/* Beta v1 Notice */}
+      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+        <h3 className="font-semibold text-primary mb-2">Beta v1 Notice</h3>
+        <p className="text-sm text-muted-foreground">
+          Thanks for joining the ReubenAI private beta! Over the coming weeks, your feedback and platform activities will help us shape Reuben into a fit-for-purpose product for investment teams globally. The main objective of v1 Thesis Configurator is to enable Fund Mangers to define and activate a Mandate per Fund, and serves as the single source of truth for Deal Analysis, Deal Scoring (coming soon), and Investment Committee preparation.
+        </p>
+      </div>
       
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Investment Strategy</h1>
