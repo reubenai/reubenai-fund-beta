@@ -7,6 +7,7 @@ import { Building2, TrendingUp, FileText, Users, Zap, Target, BarChart3, Plus, B
 import { useAuth } from '@/hooks/useAuth';
 import { useFund } from '@/contexts/FundContext';
 import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { FundCreationWizard } from '@/components/funds/FundCreationWizard';
@@ -16,6 +17,7 @@ const Index = () => {
   const { user } = useAuth();
   const { funds } = useFund();
   const { isSuperAdmin, role } = useUserRole();
+  const { canCreateFunds } = usePermissions();
   const [profile, setProfile] = useState<any>(null);
   const [showFundWizard, setShowFundWizard] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -217,14 +219,16 @@ const Index = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-medium text-slate-900">Your Funds ({funds.length})</h2>
-          <Button 
-            onClick={() => setShowFundWizard(true)}
-            size="sm"
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Create Fund
-          </Button>
+          {canCreateFunds && (
+            <Button 
+              onClick={() => setShowFundWizard(true)}
+              size="sm"
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Create Fund
+            </Button>
+          )}
         </div>
 
         {/* Fund Filters for Super Admins */}
@@ -438,14 +442,16 @@ const Index = () => {
             ))}
             
             {/* Create New Fund Card */}
-            <div className="bg-white border-2 border-dashed border-slate-300 rounded-lg p-6 flex flex-col items-center justify-center hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors cursor-pointer" 
-                 onClick={() => setShowFundWizard(true)}>
-              <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mb-3">
-                <Plus className="h-6 w-6 text-slate-400" />
+            {canCreateFunds && (
+              <div className="bg-white border-2 border-dashed border-slate-300 rounded-lg p-6 flex flex-col items-center justify-center hover:border-emerald-300 hover:bg-emerald-50/30 transition-colors cursor-pointer" 
+                   onClick={() => setShowFundWizard(true)}>
+                <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mb-3">
+                  <Plus className="h-6 w-6 text-slate-400" />
+                </div>
+                <h3 className="font-medium text-slate-900 mb-1">Create New Fund</h3>
+                <p className="text-sm text-slate-600 text-center">Set up a new investment fund with AI-powered criteria</p>
               </div>
-              <h3 className="font-medium text-slate-900 mb-1">Create New Fund</h3>
-              <p className="text-sm text-slate-600 text-center">Set up a new investment fund with AI-powered criteria</p>
-            </div>
+            )}
           </div>
         )}
       </div>
