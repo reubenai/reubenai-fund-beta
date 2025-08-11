@@ -47,6 +47,30 @@ serve(async (req) => {
       throw new Error('No engine results found in orchestrator analysis');
     }
 
+    // Query deal and fund information to determine fund type
+    const { data: dealData, error: dealError } = await supabase
+      .from('deals')
+      .select(`
+        id,
+        fund_id,
+        funds!inner (
+          id,
+          fund_type
+        )
+      `)
+      .eq('id', dealId)
+      .single();
+
+    if (dealError || !dealData) {
+      console.error('❌ Failed to fetch deal/fund data:', dealError);
+      throw new Error('Could not determine fund type for dynamic criteria');
+    }
+
+    const fundType = dealData.funds.fund_type;
+    const isPEFund = fundType === 'private_equity';
+    
+    console.log(`📋 Fund type detected: ${fundType}, using ${isPEFund ? 'PE' : 'VC'} criteria`);
+
     const { engine_results } = orchestratorAnalysis;
 
     // CRITICAL FIX: Extract real scores with fallbacks based on actual engine data
@@ -65,6 +89,220 @@ serve(async (req) => {
       return engine?.analysis || fallback;
     };
 
+    // Generate dynamic rubric based on fund type
+    const generateRubricForFundType = (isPE: boolean) => {
+      if (isPE) {
+        // PE Fund - 6 categories with Strategic Fit first
+        return [
+          {
+            category: 'Strategic Fit',
+            score: getEngineScore('thesis-alignment-engine', 70),
+            confidence: getEngineData('thesis-alignment-engine') ? 85 : 50,
+            weight: 20,
+            insights: [getEngineAnalysis('thesis-alignment-engine', 'Strategic fit analysis pending')],
+            recommendations: ['Portfolio alignment assessment', 'Strategic value creation', 'Investment thesis validation'],
+            strengths: getEngineData('thesis-alignment-engine') 
+              ? ['Strategic alignment validated', 'Investment thesis confirmed'] 
+              : ['Strategic analysis in progress'],
+            concerns: getEngineScore('thesis-alignment-engine', 70) < 50 ? ['Strategic alignment concerns'] : [],
+            detailed_breakdown: getEngineData('thesis-alignment-engine') || {}
+          },
+          {
+            category: 'Financial Performance',
+            score: getEngineScore('financial-engine', 50),
+            confidence: getEngineData('financial-engine') ? 90 : 50,
+            weight: 30,
+            insights: [getEngineAnalysis('financial-engine', 'Financial performance analysis pending')],
+            recommendations: ['EBITDA optimization', 'Cash flow enhancement', 'Working capital management'],
+            strengths: getEngineData('financial-engine') 
+              ? ['Financial metrics validated', 'Performance data available'] 
+              : ['Financial analysis in progress'],
+            concerns: getEngineScore('financial-engine', 50) < 50 ? ['Financial performance concerns'] : [],
+            detailed_breakdown: getEngineData('financial-engine') || {}
+          },
+          {
+            category: 'Market Position',
+            score: getEngineScore('market-research-engine') || getEngineScore('market-intelligence-engine') || 50,
+            confidence: getEngineData('market-research-engine') || getEngineData('market-intelligence-engine') ? 85 : 50,
+            weight: 25,
+            insights: [getEngineAnalysis('market-research-engine', 'Market position analysis pending')],
+            recommendations: ['Market share analysis', 'Competitive positioning', 'Market expansion opportunities'],
+            strengths: getEngineData('market-research-engine') || getEngineData('market-intelligence-engine') 
+              ? ['Market position validated', 'Competitive analysis available'] 
+              : ['Market analysis in progress'],
+            concerns: (getEngineScore('market-research-engine') || getEngineScore('market-intelligence-engine') || 50) < 50 
+              ? ['Market position concerns'] : [],
+            detailed_breakdown: getEngineData('market-research-engine') || getEngineData('market-intelligence-engine') || {}
+          },
+          {
+            category: 'Operational Excellence',
+            score: Math.round((getEngineScore('team-research-engine', 65) * 0.6) + (getEngineScore('product-ip-engine', 65) * 0.4)),
+            confidence: (getEngineData('team-research-engine') && getEngineData('product-ip-engine')) ? 85 : 60,
+            weight: 25,
+            insights: ['Operational excellence assessment combining management and systems analysis'],
+            recommendations: ['Management effectiveness review', 'Operational efficiency optimization', 'Process improvement'],
+            strengths: getEngineData('team-research-engine') || getEngineData('product-ip-engine') 
+              ? ['Management assessment available', 'Operational data analyzed'] 
+              : ['Operational analysis in progress'],
+            concerns: Math.round((getEngineScore('team-research-engine', 65) * 0.6) + (getEngineScore('product-ip-engine', 65) * 0.4)) < 50 
+              ? ['Operational concerns identified'] : [],
+            detailed_breakdown: {
+              management_score: getEngineScore('team-research-engine', 65),
+              systems_score: getEngineScore('product-ip-engine', 65),
+              combined_assessment: getEngineData('team-research-engine') || getEngineData('product-ip-engine') || {}
+            }
+          },
+          {
+            category: 'Trust & Transparency',
+            score: getEngineScore('thesis-alignment-engine', 70),
+            confidence: getEngineData('thesis-alignment-engine') ? 80 : 50,
+            weight: 15,
+            insights: [getEngineAnalysis('thesis-alignment-engine', 'Governance analysis pending')],
+            recommendations: ['Board governance review', 'Financial reporting standards', 'Stakeholder relations'],
+            strengths: getEngineData('thesis-alignment-engine') 
+              ? ['Governance assessment available', 'Transparency validated'] 
+              : ['Governance analysis in progress'],
+            concerns: getEngineScore('thesis-alignment-engine', 70) < 50 ? ['Governance concerns'] : [],
+            detailed_breakdown: getEngineData('thesis-alignment-engine') || {}
+          },
+          {
+            category: 'Strategic Timing',
+            score: Math.round((
+              (getEngineScore('market-research-engine', 50)) * 0.4 +
+              (getEngineScore('financial-engine', 50)) * 0.3 +
+              (getEngineScore('thesis-alignment-engine', 70)) * 0.3
+            )),
+            confidence: Object.keys(engine_results).length > 2 ? 75 : 50,
+            weight: 15,
+            insights: ['Market cycle timing and value creation window assessment'],
+            recommendations: ['Exit market conditions', 'Value creation timing', 'Market cycle optimization'],
+            strengths: Object.keys(engine_results).length > 2 ? ['Multi-factor timing analysis'] : ['Basic timing assessment'],
+            concerns: Object.keys(engine_results).length < 3 ? ['Limited timing data'] : [],
+            detailed_breakdown: {
+              market_cycle_score: getEngineScore('market-research-engine', 50),
+              value_creation_score: getEngineScore('financial-engine', 50),
+              exit_timing_score: getEngineScore('thesis-alignment-engine', 70)
+            }
+          }
+        ];
+      } else {
+        // VC Fund - 8 categories (existing VC structure)
+        return [
+          {
+            category: 'Market Opportunity',
+            score: getEngineScore('market-research-engine') || getEngineScore('market-intelligence-engine') || 50,
+            confidence: getEngineData('market-research-engine') || getEngineData('market-intelligence-engine') ? 90 : 50,
+            weight: 12.5,
+            insights: [getEngineAnalysis('market-research-engine', 'Market research analysis pending')],
+            recommendations: ['Market timing assessment', 'Deal dynamics evaluation', 'Competitive landscape review'],
+            strengths: getEngineData('market-research-engine') || getEngineData('market-intelligence-engine') 
+              ? ['Market intelligence available', 'Data-driven analysis'] 
+              : ['Market analysis in progress'],
+            concerns: (getEngineScore('market-research-engine') || getEngineScore('market-intelligence-engine') || 50) < 50 
+              ? ['Poor market alignment - requires attention'] : [],
+            detailed_breakdown: getEngineData('market-research-engine') || getEngineData('market-intelligence-engine') || {}
+          },
+          {
+            category: 'Product & Technology',
+            score: getEngineScore('product-ip-engine', 65),
+            confidence: getEngineData('product-ip-engine') ? 85 : 50,
+            weight: 12.5,
+            insights: [getEngineAnalysis('product-ip-engine', 'Product analysis pending')],
+            recommendations: ['IP strategy review', 'Technical execution assessment', 'Innovation differentiation'],
+            strengths: getEngineData('product-ip-engine') 
+              ? ['Product analysis available', 'Technical assessment'] 
+              : ['Product analysis in progress'],
+            concerns: getEngineScore('product-ip-engine', 65) < 50 ? ['Product concerns identified'] : [],
+            detailed_breakdown: getEngineData('product-ip-engine') || {}
+          },
+          {
+            category: 'Team & Leadership',
+            score: getEngineScore('team-research-engine', 65),
+            confidence: getEngineData('team-research-engine') ? 80 : 50,
+            weight: 12.5,
+            insights: [getEngineAnalysis('team-research-engine', 'Team analysis pending')],
+            recommendations: ['Founder quality assessment', 'Team composition review', 'Execution capability evaluation'],
+            strengths: getEngineData('team-research-engine') 
+              ? ['Team analysis available', 'Leadership assessment'] 
+              : ['Team analysis in progress'],
+            concerns: getEngineScore('team-research-engine', 65) < 50 ? ['Team concerns identified'] : [],
+            detailed_breakdown: getEngineData('team-research-engine') || {}
+          },
+          {
+            category: 'Financial & Traction',
+            score: getEngineScore('financial-engine', 50),
+            confidence: getEngineData('financial-engine') ? 85 : 50,
+            weight: 12.5,
+            insights: [getEngineAnalysis('financial-engine', 'Financial analysis pending')],
+            recommendations: ['Unit economics review', 'Revenue growth assessment', 'Funding requirements evaluation'],
+            strengths: getEngineData('financial-engine') 
+              ? ['Financial analysis available', 'Traction metrics'] 
+              : ['Financial analysis in progress'],
+            concerns: getEngineScore('financial-engine', 50) < 50 ? ['Financial concerns identified'] : [],
+            detailed_breakdown: getEngineData('financial-engine') || {}
+          },
+          {
+            category: 'Business Traction',
+            score: getEngineScore('market-intelligence-engine', 60),
+            confidence: getEngineData('market-intelligence-engine') ? 80 : 50,
+            weight: 12.5,
+            insights: [getEngineAnalysis('market-intelligence-engine', 'Traction analysis pending')],
+            recommendations: ['Customer acquisition analysis', 'Growth metrics review', 'Market validation'],
+            strengths: getEngineData('market-intelligence-engine') 
+              ? ['Traction data available', 'Market validation confirmed'] 
+              : ['Traction analysis in progress'],
+            concerns: getEngineScore('market-intelligence-engine', 60) < 50 ? ['Traction concerns identified'] : [],
+            detailed_breakdown: getEngineData('market-intelligence-engine') || {}
+          },
+          {
+            category: 'Strategic Fit',
+            score: getEngineScore('thesis-alignment-engine', 70),
+            confidence: getEngineData('thesis-alignment-engine') ? 85 : 50,
+            weight: 12.5,
+            insights: [getEngineAnalysis('thesis-alignment-engine', 'Strategic fit analysis pending')],
+            recommendations: ['Investment thesis alignment', 'Portfolio synergy assessment', 'Strategic value creation'],
+            strengths: getEngineData('thesis-alignment-engine') 
+              ? ['Strategic alignment validated', 'Investment thesis confirmed'] 
+              : ['Strategic analysis in progress'],
+            concerns: getEngineScore('thesis-alignment-engine', 70) < 50 ? ['Strategic alignment concerns'] : [],
+            detailed_breakdown: getEngineData('thesis-alignment-engine') || {}
+          },
+          {
+            category: 'Trust & Transparency',
+            score: getEngineScore('thesis-alignment-engine', 70),
+            confidence: getEngineData('thesis-alignment-engine') ? 80 : 50,
+            weight: 12.5,
+            insights: [getEngineAnalysis('thesis-alignment-engine', 'Governance analysis pending')],
+            recommendations: ['Governance assessment', 'Transparency review', 'Compliance evaluation'],
+            strengths: getEngineData('thesis-alignment-engine') 
+              ? ['Governance assessment available', 'Transparency validated'] 
+              : ['Governance analysis in progress'],
+            concerns: getEngineScore('thesis-alignment-engine', 70) < 50 ? ['Governance concerns'] : [],
+            detailed_breakdown: getEngineData('thesis-alignment-engine') || {}
+          },
+          {
+            category: 'Strategic Timing',
+            score: Math.round((
+              (getEngineScore('market-research-engine', 50)) * 0.4 +
+              (getEngineScore('financial-engine', 50)) * 0.3 +
+              (getEngineScore('thesis-alignment-engine', 70)) * 0.3
+            )),
+            confidence: Object.keys(engine_results).length > 2 ? 75 : 50,
+            weight: 12.5,
+            insights: ['Strategic timing assessment based on market, financial, and alignment factors'],
+            recommendations: ['Market timing optimization', 'Investment timing strategy'],
+            strengths: Object.keys(engine_results).length > 2 ? ['Multi-factor timing analysis'] : ['Basic timing assessment'],
+            concerns: Object.keys(engine_results).length < 3 ? ['Limited timing data'] : [],
+            detailed_breakdown: {
+              market_timing_score: getEngineScore('market-research-engine', 50),
+              financial_timing_score: getEngineScore('financial-engine', 50),
+              strategic_alignment_score: getEngineScore('thesis-alignment-engine', 70)
+            }
+          }
+        ];
+      }
+    };
+
     // Map orchestrator results to enhanced_analysis structure
     const enhancedAnalysis = {
       // Executive summary
@@ -74,94 +312,8 @@ serve(async (req) => {
       overall_score: orchestratorAnalysis.overall_score || 0,
       overall_recommendation: orchestratorAnalysis.overall_recommendation || 'See detailed analysis',
       
-      // FIXED: Complete 6-Category VC Rubric with REAL scores from engines
-      rubric_breakdown: [
-        {
-          category: 'Market Opportunity',
-          score: getEngineScore('market-research-engine') || getEngineScore('market-intelligence-engine') || 50,
-          confidence: getEngineData('market-research-engine') || getEngineData('market-intelligence-engine') ? 90 : 50,
-          weight: 16.67,
-          insights: [getEngineAnalysis('market-research-engine', 'Market research analysis pending')],
-          recommendations: ['Market timing assessment', 'Deal dynamics evaluation', 'Competitive landscape review'],
-          strengths: getEngineData('market-research-engine') || getEngineData('market-intelligence-engine') 
-            ? ['Market intelligence available', 'Data-driven analysis'] 
-            : ['Market analysis in progress'],
-          concerns: (getEngineScore('market-research-engine') || getEngineScore('market-intelligence-engine') || 50) < 50 
-            ? ['Poor market alignment - requires attention'] : [],
-          detailed_breakdown: getEngineData('market-research-engine') || getEngineData('market-intelligence-engine') || {}
-        },
-        {
-          category: 'Product & Technology',
-          score: getEngineScore('product-ip-engine', 65),
-          confidence: getEngineData('product-ip-engine') ? 85 : 50,
-          weight: 16.67,
-          insights: [getEngineAnalysis('product-ip-engine', 'Product analysis pending')],
-          recommendations: ['IP strategy review', 'Technical execution assessment', 'Innovation differentiation'],
-          strengths: getEngineData('product-ip-engine') 
-            ? ['Product analysis available', 'Technical assessment'] 
-            : ['Product analysis in progress'],
-          concerns: getEngineScore('product-ip-engine', 65) < 50 ? ['Product concerns identified'] : [],
-          detailed_breakdown: getEngineData('product-ip-engine') || {}
-        },
-        {
-          category: 'Team & Leadership',
-          score: getEngineScore('team-research-engine', 65),
-          confidence: getEngineData('team-research-engine') ? 80 : 50,
-          weight: 16.67,
-          insights: [getEngineAnalysis('team-research-engine', 'Team analysis pending')],
-          recommendations: ['Founder quality assessment', 'Team composition review', 'Execution capability evaluation'],
-          strengths: getEngineData('team-research-engine') 
-            ? ['Team analysis available', 'Leadership assessment'] 
-            : ['Team analysis in progress'],
-          concerns: getEngineScore('team-research-engine', 65) < 50 ? ['Team concerns identified'] : [],
-          detailed_breakdown: getEngineData('team-research-engine') || {}
-        },
-        {
-          category: 'Financial & Traction',
-          score: getEngineScore('financial-engine', 50),
-          confidence: getEngineData('financial-engine') ? 85 : 50,
-          weight: 16.67,
-          insights: [getEngineAnalysis('financial-engine', 'Financial analysis pending')],
-          recommendations: ['Unit economics review', 'Revenue growth assessment', 'Funding requirements evaluation'],
-          strengths: getEngineData('financial-engine') 
-            ? ['Financial analysis available', 'Traction metrics'] 
-            : ['Financial analysis in progress'],
-          concerns: getEngineScore('financial-engine', 50) < 50 ? ['Financial concerns identified'] : [],
-          detailed_breakdown: getEngineData('financial-engine') || {}
-        },
-        {
-          category: 'Trust & Transparency',
-          score: getEngineScore('thesis-alignment-engine', 70),
-          confidence: getEngineData('thesis-alignment-engine') ? 85 : 50,
-          weight: 16.67,
-          insights: [getEngineAnalysis('thesis-alignment-engine', 'Thesis alignment analysis pending')],
-          recommendations: ['Governance assessment', 'Transparency review', 'Compliance evaluation'],
-          strengths: getEngineData('thesis-alignment-engine') 
-            ? ['Thesis alignment available', 'Strategic assessment'] 
-            : ['Thesis analysis in progress'],
-          concerns: getEngineScore('thesis-alignment-engine', 70) < 50 ? ['Alignment concerns identified'] : [],
-          detailed_breakdown: getEngineData('thesis-alignment-engine') || {}
-        },
-        {
-          category: 'Strategic Timing',
-          score: Math.round((
-            (getEngineScore('market-research-engine', 50)) * 0.4 +
-            (getEngineScore('financial-engine', 50)) * 0.3 +
-            (getEngineScore('thesis-alignment-engine', 70)) * 0.3
-          )),
-          confidence: Object.keys(engine_results).length > 2 ? 75 : 50,
-          weight: 16.66,
-          insights: ['Strategic timing assessment based on market, financial, and alignment factors'],
-          recommendations: ['Market timing optimization', 'Investment timing strategy'],
-          strengths: Object.keys(engine_results).length > 2 ? ['Multi-factor timing analysis'] : ['Basic timing assessment'],
-          concerns: Object.keys(engine_results).length < 3 ? ['Limited timing data'] : [],
-          detailed_breakdown: {
-            market_timing_score: getEngineScore('market-research-engine', 50),
-            financial_timing_score: getEngineScore('financial-engine', 50),
-            strategic_alignment_score: getEngineScore('thesis-alignment-engine', 70)
-          }
-        }
-      ],
+      // Dynamic rubric breakdown based on fund type
+      rubric_breakdown: generateRubricForFundType(isPEFund),
 
       // FIXED: Deep dive sections with proper VC category names and real data
       detailed_breakdown: {

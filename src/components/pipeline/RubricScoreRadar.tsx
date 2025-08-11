@@ -19,19 +19,37 @@ export const RubricScoreRadar: React.FC<RubricScoreRadarProps> = ({
   const { getRAGCategory } = useStrategyThresholds();
   const getCategoryDisplayName = (category: string) => {
     const displayNames: Record<string, string> = {
-      // VC Categories
-      'team_leadership': 'Team & Leadership',
-      'market_opportunity': 'Market Opportunity', 
+      // VC Categories (both exact match and snake_case)
+      'Market Opportunity': 'Market Opportunity',
+      'Product & Technology': 'Product & Technology', 
+      'Team & Leadership': 'Team & Leadership',
+      'Financial & Traction': 'Financial & Traction',
+      'Business Traction': 'Business Traction',
+      'Strategic Fit': 'Strategic Fit',
+      'Trust & Transparency': 'Trust & Transparency',
+      'Strategic Timing': 'Strategic Timing',
+      
+      // PE Categories (both exact match and snake_case)
+      'Financial Performance': 'Financial Performance',
+      'Market Position': 'Market Position',
+      'Operational Excellence': 'Operational Excellence',
+      'Growth Potential': 'Growth Potential',
+      
+      // Legacy snake_case support
+      'market_opportunity': 'Market Opportunity',
       'product_technology': 'Product & Technology',
+      'team_leadership': 'Team & Leadership',
+      'financial_traction': 'Financial & Traction',
       'business_traction': 'Business Traction',
-      'financial_health': 'Financial Health',
       'strategic_fit': 'Strategic Fit',
-      'risks_challenges': 'Risks & Challenges',
-      // PE Categories
+      'trust_transparency': 'Trust & Transparency',
+      'strategic_timing': 'Strategic Timing',
       'financial_performance': 'Financial Performance',
       'market_position': 'Market Position',
       'operational_excellence': 'Operational Excellence',
-      'growth_potential': 'Growth Potential'
+      'growth_potential': 'Growth Potential',
+      'financial_health': 'Financial Health',
+      'risks_challenges': 'Risks & Challenges'
     };
     return displayNames[category] || category.replace(/_/g, ' ');
   };
@@ -58,8 +76,15 @@ export const RubricScoreRadar: React.FC<RubricScoreRadarProps> = ({
 
   // Sort by fund type priority
   const sortedBreakdown = [...rubricBreakdown].sort((a, b) => {
-    const vcPriority = ['market_opportunity', 'product_technology', 'team_leadership', 'financial_health', 'business_traction', 'risks_challenges'];
-    const pePriority = ['financial_performance', 'market_position', 'operational_excellence', 'growth_potential'];
+    const vcPriority = [
+      'Market Opportunity', 'Product & Technology', 'Team & Leadership', 
+      'Financial & Traction', 'Business Traction', 'Strategic Fit',
+      'Trust & Transparency', 'Strategic Timing'
+    ];
+    const pePriority = [
+      'Strategic Fit', 'Financial Performance', 'Market Position', 
+      'Operational Excellence', 'Trust & Transparency', 'Strategic Timing'
+    ];
     
     const priority = fundType === 'vc' ? vcPriority : pePriority;
     const aIndex = priority.indexOf(a.category);

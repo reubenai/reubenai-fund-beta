@@ -13,7 +13,11 @@ import {
   Target,
   ExternalLink,
   Shield,
-  Zap
+  Zap,
+  Clock,
+  Activity,
+  Cpu,
+  BarChart3
 } from 'lucide-react';
 import { CategoryDeepDive } from '@/types/enhanced-deal-analysis';
 import { MarketOpportunityDeepDive } from './deep-dive/MarketOpportunityDeepDive';
@@ -39,11 +43,14 @@ const getCategoryIcon = (category: string) => {
   if (lowerCategory.includes('team') || lowerCategory.includes('leadership')) return <Users className="h-5 w-5" />;
   if (lowerCategory.includes('product') || lowerCategory.includes('technology')) return <Lightbulb className="h-5 w-5" />;
   if (lowerCategory.includes('financial') || lowerCategory.includes('health') || lowerCategory.includes('performance')) return <DollarSign className="h-5 w-5" />;
-  if (lowerCategory.includes('traction') || lowerCategory.includes('business')) return <Target className="h-5 w-5" />;
+  if (lowerCategory.includes('traction') || lowerCategory.includes('business')) return <BarChart3 className="h-5 w-5" />;
   if (lowerCategory.includes('operational') || lowerCategory.includes('excellence')) return <Shield className="h-5 w-5" />;
   if (lowerCategory.includes('growth') || lowerCategory.includes('potential')) return <TrendingUp className="h-5 w-5" />;
   if (lowerCategory.includes('position')) return <Target className="h-5 w-5" />;
-  return <Zap className="h-5 w-5" />;
+  if (lowerCategory.includes('trust') || lowerCategory.includes('transparency')) return <Shield className="h-5 w-5" />;
+  if (lowerCategory.includes('timing') || lowerCategory.includes('strategic timing')) return <Clock className="h-5 w-5" />;
+  if (lowerCategory.includes('strategic') && lowerCategory.includes('fit')) return <Target className="h-5 w-5" />;
+  return <Activity className="h-5 w-5" />;
 };
 
 const getDeepDiveComponent = (category: string, detailedAnalysis?: CategoryDeepDive) => {
