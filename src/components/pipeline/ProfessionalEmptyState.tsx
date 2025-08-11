@@ -54,20 +54,24 @@ export function ProfessionalEmptyState({
           {/* Call to Actions */}
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button 
-                onClick={onAddDeal}
-                className="px-6 py-2.5 font-medium"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Your First Deal
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={onBatchUpload}
-                className="px-6 py-2.5"
-              >
-                Batch Upload Deals
-              </Button>
+              {onAddDeal && (
+                <Button 
+                  onClick={onAddDeal}
+                  className="px-6 py-2.5 font-medium"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Deal
+                </Button>
+              )}
+              {onBatchUpload && (
+                <Button 
+                  variant="outline" 
+                  onClick={onBatchUpload}
+                  className="px-6 py-2.5"
+                >
+                  Batch Upload Deals
+                </Button>
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
               Start building your investment pipeline today

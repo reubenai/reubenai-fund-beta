@@ -49,15 +49,19 @@ export function EnhancedPipelineHeader({
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={onBatchUpload} className="gap-2">
-            <Upload className="h-4 w-4" />
-            Batch Upload
-          </Button>
+          {onBatchUpload && (
+            <Button variant="outline" onClick={onBatchUpload} className="gap-2">
+              <Upload className="h-4 w-4" />
+              Batch Upload
+            </Button>
+          )}
           
-          <Button variant="outline" onClick={onAddDeal} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Deal
-          </Button>
+          {onAddDeal && (
+            <Button variant="outline" onClick={onAddDeal} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Add Deal
+            </Button>
+          )}
           
           <Button 
             disabled
