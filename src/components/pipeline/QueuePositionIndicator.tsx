@@ -35,7 +35,8 @@ export function QueuePositionIndicator({ dealId, compact = false }: QueuePositio
     }
   }, [dealId, getQueueStatus]);
 
-  if (!queueStatus || !dealId) return null;
+  // Hide completed and failed statuses to clean up the UI
+  if (!queueStatus || !dealId || queueStatus.status === 'completed' || queueStatus.status === 'failed') return null;
 
   const getStatusDisplay = () => {
     switch (queueStatus.status) {
