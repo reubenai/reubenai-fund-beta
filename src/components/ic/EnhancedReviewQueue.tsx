@@ -77,11 +77,6 @@ export const EnhancedReviewQueue: React.FC<EnhancedReviewQueueProps> = ({
             company_name,
             industry,
             deal_size
-          ),
-          creator:profiles!created_by (
-            first_name,
-            last_name,
-            email
           )
         `)
         .eq('fund_id', fundId)
@@ -147,11 +142,9 @@ export const EnhancedReviewQueue: React.FC<EnhancedReviewQueueProps> = ({
   };
 
   const getCreatorName = (memo: ReviewQueueItem) => {
-    const creator = (memo as any).creator;
-    if (creator?.first_name && creator?.last_name) {
-      return `${creator.first_name} ${creator.last_name}`;
-    }
-    return creator?.email || 'Unknown User';
+    // For now, show the user ID since we don't have profile data
+    // In a production app, you might want to fetch this separately or use a different approach
+    return `User ${memo.created_by.slice(0, 8)}...`;
   };
 
   if (loading) {
