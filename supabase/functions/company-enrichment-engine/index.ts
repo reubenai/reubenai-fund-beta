@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
@@ -19,6 +20,7 @@ interface EnrichmentRequest {
   companyName: string;
   website?: string;
   linkedinUrl?: string;
+  crunchbaseUrl?: string;
   triggerReanalysis?: boolean;
 }
 
@@ -32,6 +34,8 @@ interface CompanyEnrichmentData {
   revenueEstimate?: number;
   trustScore?: number;
   dataQuality?: number;
+  source?: string;
+  companyId?: string;
 }
 
 serve(async (req) => {
@@ -68,7 +72,7 @@ serve(async (req) => {
       try {
         enrichmentData = await enrichWithCoresignal(request);
       } catch (error) {
-        console.log('Coresignal failed, trying Google Custom Search...');
+        console.log('Coresignal failed, trying Google Custom Search...', error.message);
         enrichmentData = await enrichWithGoogleSearch(request);
       }
     } else {
@@ -82,7 +86,7 @@ serve(async (req) => {
       company_enrichment: {
         ...enrichmentData,
         last_enriched: new Date().toISOString(),
-        source: enrichmentData.trustScore >= 70 ? 'coresignal_api' : 'google_custom_search'
+        source: enrichmentData.source || (enrichmentData.trustScore >= 70 ? 'coresignal_api' : 'google_custom_search')
       }
     };
 
@@ -128,96 +132,172 @@ serve(async (req) => {
 async function enrichWithCoresignal(request: EnrichmentRequest): Promise<CompanyEnrichmentData> {
   try {
     console.log(`Enriching ${request.companyName} with Coresignal...`);
+    
+    let searchPayload: any;
+    let searchUrl: string;
+    
+    // Priority 1: Use LinkedIn URL if available (your preferred method)
+    if (request.linkedinUrl) {
+      console.log('Searching by LinkedIn URL:', request.linkedinUrl);
+      searchUrl = 'https://api.coresignal.com/cdapi/v1/linkedin/company/search';
+      searchPayload = {
+        query: {
+          bool: {
+            should: [
+              {
+                match: {
+                  "websites_linkedin": request.linkedinUrl
+                }
+              },
+              {
+                match: {
+                  "websites_linkedin_canonical": request.linkedinUrl
+                }
+              }
+            ]
+          }
+        }
+      };
+    } else {
+      // Fallback: Search by company name
+      console.log('Searching by company name:', request.companyName);
+      searchUrl = 'https://api.coresignal.com/cdapi/v1/linkedin/company/search';
+      searchPayload = {
+        query: {
+          bool: {
+            must: [
+              {
+                match: {
+                  "name": request.companyName
+                }
+              }
+            ]
+          }
+        }
+      };
+    }
 
-    // Search for company
-    const searchResponse = await fetch(`https://api.coresignal.com/cdapi/v1/linkedin/company/search/filter`, {
+    const searchResponse = await fetch(searchUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${coresignalApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        title: request.companyName,
-        limit: 5
-      })
+      body: JSON.stringify(searchPayload)
     });
 
     if (!searchResponse.ok) {
-      console.log(`Coresignal search failed (${searchResponse.status}): ${searchResponse.statusText}`);
-      throw new Error(`Coresignal search failed: ${searchResponse.statusText}`);
+      const errorText = await searchResponse.text();
+      console.log(`Coresignal search failed (${searchResponse.status}): ${errorText}`);
+      throw new Error(`Coresignal search failed: ${searchResponse.status} - ${errorText}`);
     }
 
     const searchData = await searchResponse.json();
+    console.log('Coresignal search response:', JSON.stringify(searchData, null, 2));
     
-    if (!searchData || searchData.length === 0) {
+    if (!searchData.hits || searchData.hits.hits.length === 0) {
       console.log('No company found in Coresignal');
-      return { trustScore: 60, dataQuality: 40 };
+      return { 
+        trustScore: 60, 
+        dataQuality: 40, 
+        source: 'coresignal_api_no_results' 
+      };
     }
 
-    const company = searchData[0];
-    console.log('Found company:', company.title);
+    const company = searchData.hits.hits[0]._source;
+    console.log('Found company:', company.name || company.title);
 
-    // Get detailed company data
-    const detailResponse = await fetch(`https://api.coresignal.com/cdapi/v1/linkedin/company/collect/${company.id}`, {
-      headers: {
-        'Authorization': `Bearer ${coresignalApiKey}`,
+    // Get detailed company data if we have an ID
+    let companyDetails = company;
+    if (company.id) {
+      try {
+        const detailResponse = await fetch(`https://api.coresignal.com/cdapi/v1/linkedin/company/collect/${company.id}`, {
+          headers: {
+            'Authorization': `Bearer ${coresignalApiKey}`,
+          }
+        });
+
+        if (detailResponse.ok) {
+          const detailData = await detailResponse.json();
+          companyDetails = { ...company, ...detailData };
+        }
+      } catch (error) {
+        console.log('Failed to get company details, using search data:', error.message);
       }
-    });
-
-    if (!detailResponse.ok) {
-      throw new Error(`Coresignal detail fetch failed: ${detailResponse.statusText}`);
     }
 
-    const companyDetails = await detailResponse.json();
-
-    // Get employee data
-    const employeeResponse = await fetch(`https://api.coresignal.com/cdapi/v1/linkedin/member/search/filter`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${coresignalApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        company_id: company.id,
-        limit: 100
-      })
-    });
-
+    // Get employee data if we have company ID
     let employeeCount = 0;
     let keyPersonnel: any[] = [];
 
-    if (employeeResponse.ok) {
-      const employees = await employeeResponse.json();
-      employeeCount = employees.length;
-      
-      // Extract key personnel (leadership roles)
-      keyPersonnel = employees
-        .filter((emp: any) => 
-          emp.title?.toLowerCase().includes('ceo') ||
-          emp.title?.toLowerCase().includes('founder') ||
-          emp.title?.toLowerCase().includes('cto') ||
-          emp.title?.toLowerCase().includes('cfo')
-        )
-        .slice(0, 5)
-        .map((emp: any) => ({
-          name: emp.name,
-          title: emp.title,
-          linkedin_url: emp.linkedin_url
-        }));
+    if (company.id) {
+      try {
+        const employeeResponse = await fetch('https://api.coresignal.com/cdapi/v1/linkedin/member/search', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${coresignalApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: {
+              bool: {
+                must: [
+                  {
+                    term: {
+                      "company_id": company.id
+                    }
+                  }
+                ]
+              }
+            },
+            size: 100
+          })
+        });
+
+        if (employeeResponse.ok) {
+          const employees = await employeeResponse.json();
+          employeeCount = employees.hits?.total?.value || employees.hits?.hits?.length || 0;
+          
+          // Extract key personnel (leadership roles)
+          if (employees.hits?.hits) {
+            keyPersonnel = employees.hits.hits
+              .filter((emp: any) => {
+                const title = emp._source?.title?.toLowerCase() || '';
+                return title.includes('ceo') ||
+                       title.includes('founder') ||
+                       title.includes('cto') ||
+                       title.includes('cfo') ||
+                       title.includes('president') ||
+                       title.includes('director');
+              })
+              .slice(0, 5)
+              .map((emp: any) => ({
+                name: emp._source?.name,
+                title: emp._source?.title,
+                linkedin_url: emp._source?.linkedin_url
+              }));
+          }
+        }
+      } catch (error) {
+        console.log('Failed to get employee data:', error.message);
+      }
     }
 
     return {
-      employeeCount,
+      employeeCount: employeeCount || companyDetails.employee_count || undefined,
       keyPersonnel,
       trustScore: 95,
       dataQuality: 90,
-      revenueEstimate: estimateRevenue(employeeCount, companyDetails.industry),
-      competitors: extractCompetitors(companyDetails.description || '')
+      source: 'coresignal_api',
+      companyId: company.id,
+      revenueEstimate: employeeCount ? estimateRevenue(employeeCount, companyDetails.industry) : undefined,
+      competitors: extractCompetitors(companyDetails.description || companyDetails.summary || ''),
+      fundingHistory: companyDetails.funding_rounds || []
     };
 
   } catch (error) {
     console.error('Coresignal enrichment error:', error);
-    return { trustScore: 50, dataQuality: 30 };
+    throw error; // Re-throw to trigger fallback
   }
 }
 
@@ -227,7 +307,11 @@ async function enrichWithGoogleSearch(request: EnrichmentRequest): Promise<Compa
   
   if (!googleApiKey || !googleSearchEngineId) {
     console.log('No Google Custom Search API credentials - minimal data');
-    return { trustScore: 40, dataQuality: 20 };
+    return { 
+      trustScore: 40, 
+      dataQuality: 20, 
+      source: 'google_fallback_no_credentials' 
+    };
   }
   
   try {
@@ -247,7 +331,11 @@ async function enrichWithGoogleSearch(request: EnrichmentRequest): Promise<Compa
     
     if (!searchData.items || searchData.items.length === 0) {
       console.log('No results found via Google Custom Search');
-      return { trustScore: 30, dataQuality: 25 };
+      return { 
+        trustScore: 30, 
+        dataQuality: 25, 
+        source: 'google_custom_search_no_results' 
+      };
     }
 
     // Extract basic company data from search results
@@ -270,16 +358,11 @@ async function enrichWithGoogleSearch(request: EnrichmentRequest): Promise<Compa
       }
     }
 
-    // Extract potential funding information
-    const fundingKeywords = ['funding', 'raised', 'series', 'investment'];
-    const hasFundingMention = fundingKeywords.some(keyword => 
-      snippets.toLowerCase().includes(keyword)
-    );
-
     return {
       employeeCount: employeeCount || undefined,
       trustScore: 70,
       dataQuality: 65,
+      source: 'google_custom_search',
       revenueEstimate: employeeCount ? estimateRevenue(employeeCount) : undefined,
       keyPersonnel: [],
       competitors: []
@@ -287,7 +370,11 @@ async function enrichWithGoogleSearch(request: EnrichmentRequest): Promise<Compa
 
   } catch (error) {
     console.error('Google Custom Search enrichment error:', error);
-    return { trustScore: 30, dataQuality: 20 };
+    return { 
+      trustScore: 30, 
+      dataQuality: 20, 
+      source: 'google_custom_search_error' 
+    };
   }
 }
 

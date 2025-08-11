@@ -99,15 +99,17 @@ serve(async (req) => {
         result.fieldsCompleted = completionResult.fieldsCompleted
         result.confidence = completionResult.confidence
 
-        // Company enrichment via Coresignal/AI
-        if (deal.company_name && (deal.website || !deal.location || !deal.employee_count)) {
-          console.log('💼 Calling company enrichment engine...')
+        // Company enrichment via Coresignal/AI with LinkedIn and Crunchbase URLs
+        if (deal.company_name) {
+          console.log('💼 Calling company enrichment engine with enhanced data...')
           
           const enrichmentResponse = await supabase.functions.invoke('company-enrichment-engine', {
             body: {
               dealId: targetDealId,
               companyName: deal.company_name,
               website: deal.website,
+              linkedinUrl: deal.linkedin_url, // Pass LinkedIn URL for better matching
+              crunchbaseUrl: deal.crunchbase_url, // Pass Crunchbase URL for additional context
               triggerReanalysis: false // We'll handle analysis separately
             }
           })
@@ -116,7 +118,7 @@ serve(async (req) => {
             console.error('Company enrichment failed:', enrichmentResponse.error)
             result.enrichmentStatus = 'failed'
           } else {
-            console.log('✅ Company enrichment completed')
+            console.log('✅ Company enrichment completed with enhanced data sources')
             result.enrichmentStatus = 'completed'
           }
         }
