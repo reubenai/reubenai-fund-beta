@@ -413,7 +413,7 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
                 insights={item.insights}
                 strengths={item.strengths}
                 concerns={item.concerns}
-                detailedAnalysis={item.detailed_analysis}
+                detailedAnalysis={(analysis as any).detailed_breakdown}
               />
             ))}
           </div>
