@@ -2,6 +2,7 @@ import React from 'react';
 import { DragDropContext, DropResult } from '@hello-pangea/dnd';
 import { Deal, PipelineStage } from '@/hooks/usePipelineDeals';
 import { EnhancedKanbanColumn } from './EnhancedKanbanColumn';
+import { stageNameToStatus } from '@/utils/pipelineMapping';
 
 interface EnhancedKanbanViewProps {
   deals: Record<string, Deal[]>;
@@ -41,17 +42,25 @@ export const EnhancedKanbanView: React.FC<EnhancedKanbanViewProps> = ({
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className={getGridClass()}>
-        {stages.map(stage => (
-          <EnhancedKanbanColumn
-            key={stage.id}
-            stage={stage}
-            deals={deals[stage.name] || []}
-            onDealClick={onDealClick}
-            onStageEdit={onStageEdit}
-            onAddDeal={onAddDeal}
-            viewDensity={viewDensity}
-          />
-        ))}
+        {stages.map(stage => {
+          // CRITICAL FIX: Map stage name to database status for deal grouping
+          const stageStatus = stageNameToStatus(stage.name);
+          const stageDeals = deals[stageStatus] || [];
+          
+          console.log(`🔍 [KanbanView] Stage: "${stage.name}" -> Status: "${stageStatus}" -> Deals: ${stageDeals.length}`);
+          
+          return (
+            <EnhancedKanbanColumn
+              key={stage.id}
+              stage={stage}
+              deals={stageDeals}
+              onDealClick={onDealClick}
+              onStageEdit={onStageEdit}
+              onAddDeal={onAddDeal}
+              viewDensity={viewDensity}
+            />
+          );
+        })}
       </div>
     </DragDropContext>
   );

@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { EnhancedCsvParsingService as CsvParsingService } from '@/services/EnhancedCsvParsingService';
 import { DealPreviewTable } from './DealPreviewTable';
 import { BatchAnalysisProgress } from './BatchAnalysisProgress';
+import { ProcessingTimeEstimate } from './ProcessingTimeEstimate';
 import { supabase } from '@/integrations/supabase/client';
 
 interface EnhancedBatchUploadModalProps {
@@ -189,14 +190,19 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
         const deal = dealsWithPitchDecks[i];
         setUploadProgress({ 
           step: 'processing', 
-          progress: (i / dealsWithPitchDecks.length) * 60, 
+          progress: Math.round((i / dealsWithPitchDecks.length) * 60), 
           message: `Uploading pitch deck for ${deal.data.company}...` 
         });
         
         await uploadPitchDeck(deal.dealId!, deal.pitchDeckFile!, deal.data.company);
       }
 
-      setUploadProgress({ step: 'analyzing', progress: 60, message: 'Starting comprehensive analysis...' });
+      const estimatedMinutes = Math.ceil(validDeals.length * 3.5); // 3.5 minutes average per deal
+      setUploadProgress({ 
+        step: 'analyzing', 
+        progress: 60, 
+        message: `Starting comprehensive analysis (estimated ${estimatedMinutes} minutes total - ${validDeals.length} deals)...` 
+      });
       setCurrentStep('analysis');
 
       // Step 2: Trigger comprehensive analysis (60-100%)
@@ -251,7 +257,7 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
 
         // Update progress
         const completedAnalyses = index + 1;
-        const progressPercent = 60 + (completedAnalyses / dealIds.length) * 40;
+              const progressPercent = Math.round(60 + (completedAnalyses / dealIds.length) * 40);
         setUploadProgress({ 
           step: 'analyzing', 
           progress: progressPercent, 
@@ -267,9 +273,16 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
       toast({
         title: "Upload Complete",
         description: `${validDeals.length} deals uploaded and analyzed successfully`,
+        duration: 3000,
       });
 
       onUploadComplete();
+
+      // Auto-redirect to pipeline after 2 seconds
+      setTimeout(() => {
+        onClose();
+        window.location.href = '/deals';
+      }, 2000);
       
     } catch (error) {
       console.error('Process error:', error);
@@ -473,14 +486,20 @@ CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,
             </div>
           )}
 
-          {/* Step 3: Deal Preview */}
-          {currentStep === 'preview' && (
-            <DealPreviewTable
-              deals={parseResults}
-              onDealRemove={handleDealRemove}
-              onPitchDeckUpload={handlePitchDeckUpload}
-            />
-          )}
+           {/* Step 3: Deal Preview */}
+           {currentStep === 'preview' && (
+             <>
+               <ProcessingTimeEstimate 
+                 dealCount={success + processable}
+                 currentStep="preview"
+               />
+               <DealPreviewTable
+                 deals={parseResults}
+                 onDealRemove={handleDealRemove}
+                 onPitchDeckUpload={handlePitchDeckUpload}
+               />
+             </>
+           )}
 
           {/* Step 3 & 4: Processing and Analysis */}
           {(currentStep === 'processing' || currentStep === 'analysis') && (

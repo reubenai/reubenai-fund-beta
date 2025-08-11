@@ -34,15 +34,23 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Only fetch funds when user is available and role loading is complete
-    // For non-super admins, also ensure organizationId is available
+    // CRITICAL SECURITY FIX: Prevent data leakage during login
+    // Only fetch funds when all authentication and role data is complete
     if (user && !roleLoading) {
       if (isSuperAdmin || organizationId) {
         fetchFunds();
       } else {
         console.log('⏳ [FundContext] Waiting for organizationId to be available for non-super admin user');
-        setLoading(false); // Stop loading since we're waiting for organizationId
+        // For non-super admins without organizationId, set empty state (don't load anything)
+        setFunds([]);
+        setSelectedFund(null);
+        setLoading(false);
       }
+    } else {
+      // SECURITY: While authentication is loading, ensure no funds are visible
+      setFunds([]);
+      setSelectedFund(null);
+      setLoading(true);
     }
   }, [user, roleLoading, isSuperAdmin, organizationId]);
 
