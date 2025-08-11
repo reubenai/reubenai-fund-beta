@@ -19,6 +19,8 @@ export interface PermissionMatrix {
   canCreateNotes: boolean;
   canEditOwnNotes: boolean;
   canEditAllNotes: boolean;
+  canDeleteOwnNotes: boolean;
+  canDeleteAllNotes: boolean;
   
   // Fund Management
   canViewFunds: boolean;
@@ -88,6 +90,8 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
       canCreateNotes: true,
       canEditOwnNotes: true,
       canEditAllNotes: true,
+      canDeleteOwnNotes: true,
+      canDeleteAllNotes: true,
       canViewFunds: true,
       canCreateFunds: true,
       canEditFunds: true,
@@ -140,6 +144,8 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
         canCreateNotes: true,
         canEditOwnNotes: true,
         canEditAllNotes: true,
+        canDeleteOwnNotes: true,
+        canDeleteAllNotes: true,
         canViewFunds: true,
         canCreateFunds: true,
         canEditFunds: true,
@@ -189,6 +195,8 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
         canCreateNotes: true,
         canEditOwnNotes: true,
         canEditAllNotes: false,
+        canDeleteOwnNotes: true,
+        canDeleteAllNotes: false,
         canViewFunds: true,
         canCreateFunds: true,
         canEditFunds: true,
@@ -238,6 +246,8 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
         canCreateNotes: true,
         canEditOwnNotes: true,
         canEditAllNotes: false,
+        canDeleteOwnNotes: false,
+        canDeleteAllNotes: false,
         canViewFunds: true,
         canCreateFunds: false, // FIXED: Analysts cannot create funds
         canEditFunds: false,
@@ -288,6 +298,8 @@ const getRolePermissions = (role: UserRole, isSuperAdmin: boolean): PermissionMa
         canCreateNotes: false, // FIXED: Viewers cannot create notes
         canEditOwnNotes: false,
         canEditAllNotes: false,
+        canDeleteOwnNotes: false,
+        canDeleteAllNotes: false,
         canViewFunds: true,
         canCreateFunds: false,
         canEditFunds: false,

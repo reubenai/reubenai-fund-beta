@@ -27,7 +27,11 @@ import {
   TrendingUp,
   AlertTriangle,
   CheckCircle,
-  Clock
+  Clock,
+  Edit,
+  Trash2,
+  Save,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -44,6 +48,9 @@ interface DealNote {
   tags?: string[];
   category?: string;
   sentiment?: 'positive' | 'negative' | 'neutral';
+  profiles?: {
+    display_name?: string;
+  };
 }
 
 interface DealNotesManagerProps {
@@ -63,9 +70,9 @@ const NOTE_CATEGORIES = [
 ];
 
 const SENTIMENT_OPTIONS = [
-  { value: 'positive', label: 'Positive', color: 'bg-green-100 text-green-800' },
-  { value: 'negative', label: 'Negative', color: 'bg-red-100 text-red-800' },
-  { value: 'neutral', label: 'Neutral', color: 'bg-gray-100 text-gray-800' }
+  { value: 'positive', label: 'Positive', className: 'bg-green-100 text-green-800', icon: CheckCircle },
+  { value: 'negative', label: 'Negative', className: 'bg-red-100 text-red-800', icon: AlertTriangle },
+  { value: 'neutral', label: 'Neutral', className: 'bg-gray-100 text-gray-800', icon: null }
 ];
 
 export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps) {
@@ -79,6 +86,12 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sentimentFilter, setSentimentFilter] = useState('all');
+  const [editingNote, setEditingNote] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState<string>('');
+  const [editCategory, setEditCategory] = useState<string>('');
+  const [editSentiment, setEditSentiment] = useState<string>('');
+  const [editTags, setEditTags] = useState<string>('');
+  const [deletingNote, setDeletingNote] = useState<string | null>(null);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -93,7 +106,10 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
       setLoading(true);
       const { data, error } = await supabase
         .from('deal_notes')
-        .select('*')
+        .select(`
+          *,
+          profiles:created_by(display_name)
+        `)
         .eq('deal_id', dealId)
         .order('created_at', { ascending: false });
 
@@ -170,11 +186,121 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
       console.error('Error adding note:', error);
       toast({
         title: "Error",
-        description: "Failed to add note",
+        description: "Failed to add note. Please try again.",
         variant: "destructive"
       });
     } finally {
       setIsAdding(false);
+    }
+  };
+
+  const canEditNote = (note: DealNote) => {
+    if (!user) return false;
+    if (permissions.canEditAllNotes) return true;
+    if (permissions.canEditOwnNotes && note.created_by === user.id) return true;
+    return false;
+  };
+
+  const canDeleteNote = (note: DealNote) => {
+    if (!user) return false;
+    if (permissions.canDeleteAllNotes) return true;
+    if (permissions.canDeleteOwnNotes && note.created_by === user.id) return true;
+    return false;
+  };
+
+  const startEditing = (note: DealNote) => {
+    setEditingNote(note.id);
+    setEditContent(note.content);
+    setEditCategory(note.category || 'other');
+    setEditSentiment(note.sentiment || 'neutral');
+    setEditTags(note.tags?.join(', ') || '');
+  };
+
+  const cancelEditing = () => {
+    setEditingNote(null);
+    setEditContent('');
+    setEditCategory('');
+    setEditSentiment('');
+    setEditTags('');
+  };
+
+  const saveEdit = async (noteId: string) => {
+    if (!user || !editContent.trim()) return;
+
+    try {
+      const tagsArray = editTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+      
+      const { error } = await supabase
+        .from('deal_notes')
+        .update({
+          content: editContent.trim(),
+          category: editCategory,
+          sentiment: editSentiment,
+          tags: tagsArray,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', noteId);
+
+      if (error) throw error;
+
+      // Update local state
+      setNotes(prevNotes => 
+        prevNotes.map(note => 
+          note.id === noteId 
+            ? { 
+                ...note, 
+                content: editContent.trim(),
+                category: editCategory,
+                sentiment: editSentiment as 'positive' | 'negative' | 'neutral',
+                tags: tagsArray,
+                updated_at: new Date().toISOString()
+              }
+            : note
+        )
+      );
+
+      cancelEditing();
+      
+      toast({
+        title: "Note Updated",
+        description: "Your note has been updated successfully."
+      });
+    } catch (error) {
+      console.error('Error updating note:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update note. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deleteNote = async (noteId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('deal_notes')
+        .delete()
+        .eq('id', noteId);
+
+      if (error) throw error;
+
+      // Update local state
+      setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
+      setDeletingNote(null);
+      
+      toast({
+        title: "Note Deleted",
+        description: "The note has been deleted successfully."
+      });
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete note. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -189,11 +315,11 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
     return matchesSearch && matchesCategory && matchesSentiment;
   });
 
-  const getCategoryInfo = (category: string) => {
+  const getCategoryInfo = (category?: string) => {
     return NOTE_CATEGORIES.find(cat => cat.value === category) || NOTE_CATEGORIES[NOTE_CATEGORIES.length - 1];
   };
 
-  const getSentimentInfo = (sentiment: string) => {
+  const getSentimentInfo = (sentiment?: string) => {
     return SENTIMENT_OPTIONS.find(opt => opt.value === sentiment) || SENTIMENT_OPTIONS[2];
   };
 
@@ -216,79 +342,80 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
               Add New Note
             </CardTitle>
           </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="note-content">Note Content</Label>
-            <Textarea
-              id="note-content"
-              placeholder="Share your observations, insights, or feedback about this deal..."
-              value={newNote}
-              onChange={(e) => setNewNote(e.target.value)}
-              rows={4}
-            />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="note-category">Category</Label>
-              <Select value={newCategory} onValueChange={setNewCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {NOTE_CATEGORIES.map((category) => {
-                    const Icon = category.icon;
-                    return (
-                      <SelectItem key={category.value} value={category.value}>
-                        <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4" />
-                          {category.label}
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="note-sentiment">Sentiment</Label>
-              <Select value={newSentiment} onValueChange={setNewSentiment}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select sentiment" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SENTIMENT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <Badge className={option.color} variant="secondary">
-                        {option.label}
-                      </Badge>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="note-tags">Tags (comma-separated)</Label>
-              <Input
-                id="note-tags"
-                placeholder="e.g. founder, product-market-fit, concerns"
-                value={newTags}
-                onChange={(e) => setNewTags(e.target.value)}
+              <Label htmlFor="note-content">Note Content</Label>
+              <Textarea
+                id="note-content"
+                placeholder="Share your observations, insights, or feedback about this deal..."
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                rows={4}
               />
             </div>
-          </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="note-category">Category</Label>
+                <Select value={newCategory} onValueChange={setNewCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {NOTE_CATEGORIES.map((category) => {
+                      const Icon = category.icon;
+                      return (
+                        <SelectItem key={category.value} value={category.value}>
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-4 w-4" />
+                            {category.label}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <Button 
-            onClick={addNote} 
-            disabled={!newNote.trim() || isAdding}
-            className="w-full"
-          >
-            {isAdding ? 'Adding...' : 'Add Note'}
-          </Button>
-        </CardContent>
-      </Card>
+              <div>
+                <Label htmlFor="note-sentiment">Sentiment</Label>
+                <Select value={newSentiment} onValueChange={setNewSentiment}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select sentiment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SENTIMENT_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        <div className="flex items-center gap-2">
+                          {option.icon && <option.icon className="h-4 w-4" />}
+                          {option.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="note-tags">Tags (comma-separated)</Label>
+                <Input
+                  id="note-tags"
+                  placeholder="e.g. founder, product-market-fit, concerns"
+                  value={newTags}
+                  onChange={(e) => setNewTags(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <Button 
+              onClick={addNote} 
+              disabled={!newNote.trim() || isAdding}
+              className="w-full"
+            >
+              {isAdding ? 'Adding...' : 'Add Note'}
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* Filters */}
@@ -342,51 +469,152 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
       <div className="space-y-4">
         {filteredNotes.length > 0 ? (
           filteredNotes.map((note) => {
-            const categoryInfo = getCategoryInfo(note.category || 'other');
-            const sentimentInfo = getSentimentInfo(note.sentiment || 'neutral');
-            const CategoryIcon = categoryInfo.icon;
+            const categoryInfo = getCategoryInfo(note.category);
+            const sentimentInfo = getSentimentInfo(note.sentiment);
+            const isEditing = editingNote === note.id;
+            const isOwner = user?.id === note.created_by;
             
             return (
-              <Card key={note.id}>
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                      <CategoryIcon className="h-5 w-5 text-primary" />
-                    </div>
-                    
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">{categoryInfo.label}</Badge>
-                          <Badge className={sentimentInfo.color} variant="secondary">
-                            {sentimentInfo.label}
-                          </Badge>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {format(new Date(note.created_at), 'MMM d, yyyy at h:mm a')}
-                        </div>
+              <Card key={note.id} className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2 mb-2">
+                    {!isEditing ? (
+                      <>
+                        <categoryInfo.icon className="h-4 w-4 text-muted-foreground" />
+                        <Badge variant="outline">{categoryInfo.label}</Badge>
+                        <Badge className={sentimentInfo.className}>
+                          {sentimentInfo.icon && <sentimentInfo.icon className="h-3 w-3 mr-1" />}
+                          {sentimentInfo.label}
+                        </Badge>
+                      </>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Select value={editCategory} onValueChange={setEditCategory}>
+                          <SelectTrigger className="w-40">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {NOTE_CATEGORIES.map((category) => (
+                              <SelectItem key={category.value} value={category.value}>
+                                <div className="flex items-center gap-2">
+                                  <category.icon className="h-4 w-4" />
+                                  {category.label}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select value={editSentiment} onValueChange={setEditSentiment}>
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SENTIMENT_OPTIONS.map((sentiment) => (
+                              <SelectItem key={sentiment.value} value={sentiment.value}>
+                                <div className="flex items-center gap-2">
+                                  {sentiment.icon && <sentiment.icon className="h-4 w-4" />}
+                                  {sentiment.label}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                      
-                      <p className="text-sm leading-relaxed">{note.content}</p>
-                      
-                      {note.tags && note.tags.length > 0 && (
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Tag className="h-4 w-4 text-muted-foreground" />
-                          {note.tags.map((tag, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                      
-                       <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
-                         <User className="h-3 w-3" />
-                         <span>Added by {note.created_by === user?.id ? 'you' : 'team member'}</span>
-                       </div>
-                    </div>
+                    )}
                   </div>
-                </CardContent>
+                  <div className="flex items-center gap-2">
+                    {!isEditing ? (
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(note.created_at), 'MMM d, yyyy h:mm a')}
+                      </span>
+                    ) : null}
+                    {!isEditing && canEditNote(note) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => startEditing(note)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {!isEditing && canDeleteNote(note) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeletingNote(note.id)}
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {isEditing && (
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => saveEdit(note.id)}
+                          className="h-8 w-8 p-0 text-green-600 hover:text-green-700"
+                        >
+                          <Save className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={cancelEditing}
+                          className="h-8 w-8 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {isEditing ? (
+                  <div className="space-y-3">
+                    <Textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      placeholder="Edit your note..."
+                      className="min-h-[100px]"
+                    />
+                    <Input
+                      value={editTags}
+                      onChange={(e) => setEditTags(e.target.value)}
+                      placeholder="Tags (comma-separated)"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-sm mb-3 whitespace-pre-wrap">{note.content}</p>
+                )}
+                
+                {!isEditing && note.tags && note.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {note.tags.map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        <Tag className="h-3 w-3 mr-1" />
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                
+                {!isEditing && (
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      <span>{note.profiles?.display_name || 'Unknown User'}</span>
+                      {isOwner && <Badge variant="outline" className="text-xs ml-2">You</Badge>}
+                    </div>
+                    {note.updated_at !== note.created_at && (
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>Edited {format(new Date(note.updated_at), 'MMM d')}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </Card>
             );
           })
@@ -418,6 +646,35 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
           </Card>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {deletingNote && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertTriangle className="h-6 w-6 text-destructive" />
+              <h3 className="text-lg font-semibold">Delete Note</h3>
+            </div>
+            <p className="text-muted-foreground mb-6">
+              Are you sure you want to delete this note? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setDeletingNote(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => deleteNote(deletingNote)}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
