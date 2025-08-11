@@ -50,6 +50,7 @@ import { MemoWorkflowControls } from './MemoWorkflowControls';
 import { supabase } from '@/integrations/supabase/client';
 import { exportMemoToPDF, openMemoPrintPreview } from '@/utils/pdfClient';
 import { usePermissions } from '@/hooks/usePermissions';
+import { MemoPreviewRenderer } from './MemoPreviewRenderer';
 
 interface Deal {
   id: string;
@@ -93,8 +94,23 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   deal,
   fundId
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(true); // Start in edit mode immediately
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Handle close with confirmation
+  const handleClose = () => {
+    if (hasUnsavedChanges && isEditing) {
+      if (confirm('You have unsaved changes. Do you want to save before closing?')) {
+        handleSaveMemo().then(() => onClose());
+      } else {
+        onClose();
+      }
+    } else {
+      onClose();
+    }
+  };
   const [isExporting, setIsExporting] = useState(false); // Server (Pro PDF)
   const [isClientDownloading, setIsClientDownloading] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
@@ -116,6 +132,12 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   } = useEnhancedToast();
   const { validateMemoContent } = useContentValidation();
   const { canEditICMemos, canSubmitForReview, canReviewMemos } = usePermissions();
+
+  // Track changes to show unsaved confirmation
+  useEffect(() => {
+    const hasChanges = Object.keys(memoState.content || {}).length > 0;
+    setHasUnsavedChanges(hasChanges);
+  }, [memoState.content, customSections]);
 
   // Validate memo content for quality and fabrication prevention
   const currentContent = (memoState.content as any)?.sections || memoState.content || {};
@@ -468,7 +490,8 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <>
+      <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-[95vw] h-[95vh] flex flex-col overflow-hidden">
         <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-primary/5 to-primary/10 flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -552,11 +575,11 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setIsEditing(!isEditing)}
+                    onClick={() => setShowPreview(true)}
                     disabled={memoState.isGenerating}
                   >
-                    {isEditing ? <Eye className="w-4 h-4 mr-2" /> : <Edit3 className="w-4 h-4 mr-2" />}
-                    {isEditing ? 'Preview' : 'Edit'}
+                    <Eye className="w-4 h-4 mr-2" />
+                    Preview
                   </Button>
                   
                   <Button
@@ -796,6 +819,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                             } else {
                               updateContent(section.key, e.target.value);
                             }
+                            setHasUnsavedChanges(true);
                           }}
                           className="min-h-[500px] font-mono text-sm"
                           placeholder={`Enter ${section.title.toLowerCase()} content...`}
@@ -842,6 +866,14 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
           onRestoreVersion={restoreVersion}
           dealName={deal.company_name}
         />
+
+      <MemoPreviewRenderer 
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        deal={deal}
+        sections={getSections()}
+      />
     </Dialog>
+    </>
   );
 };
