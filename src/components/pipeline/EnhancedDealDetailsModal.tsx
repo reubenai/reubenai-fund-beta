@@ -51,6 +51,7 @@ import { EnhancedActivityTable } from '@/components/activities/EnhancedActivityT
 import { ThesisAlignmentSection } from '@/components/analysis/ThesisAlignmentSection';
 import { MarketOpportunityAssessment } from '@/components/analysis/MarketOpportunityAssessment';
 import { FounderTeamStrengthAssessment } from '@/components/analysis/FounderTeamStrengthAssessment';
+import { ProductIPMoatAssessment } from '@/components/analysis/ProductIPMoatAssessment';
 
 // Extend the Deal type to include enhanced_analysis
 type Deal = BaseDeal & {
@@ -737,6 +738,9 @@ export function EnhancedDealDetailsModal({
               
               {/* Founder & Team Strength Assessment */}
               <FounderTeamStrengthAssessment deal={deal} />
+              
+              {/* Product & IP Moat Assessment */}
+              <ProductIPMoatAssessment deal={deal} />
               
               {/* AI Analysis Section */}
               <EnhancedDealAnalysisTab deal={deal} />
