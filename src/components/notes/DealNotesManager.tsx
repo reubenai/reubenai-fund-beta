@@ -49,7 +49,8 @@ interface DealNote {
   category?: string;
   sentiment?: 'positive' | 'negative' | 'neutral';
   profiles?: {
-    display_name?: string;
+    first_name?: string;
+    last_name?: string;
   };
 }
 
@@ -104,27 +105,60 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
   const loadNotes = async () => {
     try {
       setLoading(true);
+      
+      // First try to load notes without the profiles join to isolate the issue
       const { data, error } = await supabase
         .from('deal_notes')
-        .select(`
-          *,
-          profiles:created_by(display_name)
-        `)
+        .select('*')
         .eq('deal_id', dealId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setNotes((data as any[])?.map((note: any) => ({
-        ...note,
-        sentiment: note.sentiment as 'positive' | 'negative' | 'neutral' || 'neutral',
-        tags: note.tags || [],
-        category: note.category || 'other'
-      })) || []);
+      if (error) {
+        console.error('Database error loading notes:', error);
+        throw error;
+      }
+
+      console.log('Notes loaded successfully:', data?.length, 'notes found');
+      
+      // Then try to get profile information separately
+      const notesWithProfiles = await Promise.all(
+        (data || []).map(async (note) => {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('first_name, last_name')
+              .eq('user_id', note.created_by)
+              .single();
+              
+            return {
+              ...note,
+              sentiment: note.sentiment as 'positive' | 'negative' | 'neutral' || 'neutral',
+              tags: note.tags || [],
+              category: note.category || 'other',
+              profiles: profile ? { 
+                first_name: profile.first_name, 
+                last_name: profile.last_name 
+              } : null
+            };
+          } catch (profileError) {
+            console.warn('Could not load profile for note:', note.id, profileError);
+            return {
+              ...note,
+              sentiment: note.sentiment as 'positive' | 'negative' | 'neutral' || 'neutral',
+              tags: note.tags || [],
+              category: note.category || 'other',
+              profiles: null
+            };
+          }
+        })
+      );
+      
+      setNotes(notesWithProfiles);
     } catch (error) {
       console.error('Error loading notes:', error);
       toast({
         title: "Error",
-        description: "Failed to load notes",
+        description: `Failed to load notes: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
     } finally {
@@ -321,6 +355,13 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
 
   const getSentimentInfo = (sentiment?: string) => {
     return SENTIMENT_OPTIONS.find(opt => opt.value === sentiment) || SENTIMENT_OPTIONS[2];
+  };
+
+  const getDisplayName = (profiles?: { first_name?: string; last_name?: string } | null) => {
+    if (!profiles) return 'Unknown User';
+    const firstName = profiles.first_name || '';
+    const lastName = profiles.last_name || '';
+    return `${firstName} ${lastName}`.trim() || 'Unknown User';
   };
 
   if (loading) {
@@ -602,11 +643,11 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
                 
                 {!isEditing && (
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <User className="h-3 w-3" />
-                      <span>{note.profiles?.display_name || 'Unknown User'}</span>
-                      {isOwner && <Badge variant="outline" className="text-xs ml-2">You</Badge>}
-                    </div>
+                  <div className="flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    <span>{getDisplayName(note.profiles)}</span>
+                    {isOwner && <Badge variant="outline" className="text-xs ml-2">You</Badge>}
+                  </div>
                     {note.updated_at !== note.created_at && (
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
