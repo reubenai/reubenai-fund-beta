@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { autoSelectVCDealAndRunSafeModeTest, getAccurateAdminStats } from '@/utils/safeModeUtils';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -129,6 +130,14 @@ export default function Admin() {
   useEffect(() => {
     if (user) {
       fetchData();
+      // Auto-run safe mode test on load
+      autoSelectVCDealAndRunSafeModeTest().then(result => {
+        if (result.success) {
+          console.log('✅ Auto safe mode test completed:', result);
+        } else {
+          console.warn('⚠️ Auto safe mode test failed:', result.error);
+        }
+      });
     }
   }, [user]);
 
@@ -256,28 +265,8 @@ export default function Admin() {
         pendingIssues++;
       }
 
-      // Use the new dashboard_stats view for consistent counts
-      const { data: dashboardData, error: dashboardError } = await supabase
-        .from('dashboard_stats')
-        .select('*')
-        .single();
-      
-      if (dashboardError) {
-        console.warn('Dashboard stats fetch failed:', dashboardError);
-      }
-
-      // Get recent activities using the safe function
-      const { data: recentActivities, error: activitiesError } = await supabase
-        .rpc('list_platform_activities', { p_limit: 100 });
-      
-      if (activitiesError) {
-        console.warn('Activities fetch failed:', activitiesError);
-      }
-
-      const activitiesArray = Array.isArray(recentActivities) ? recentActivities : [];
-      const last24hActivities = activitiesArray.filter((activity: any) => 
-        new Date(activity.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)
-      );
+      // Get accurate stats
+      const accurateStats = await getAccurateAdminStats();
 
       setOrganizations(orgsData || []);
       setProfiles(profilesData || []);
@@ -287,18 +276,7 @@ export default function Admin() {
         fund_type: fund.fund_type === 'venture_capital' ? 'vc' : 'pe'
       }));
       setFunds(transformedFunds);
-      setStats({
-        totalOrgs: dashboardData?.orgs_active || orgsData?.length || 0,
-        totalUsers: dashboardData?.users_total || profilesData?.filter(p => !p.is_deleted).length || 0,
-        totalFunds: fundsData?.length || 0, // Show total funds instead of just active
-        activeDeals: dashboardData?.deals_pipeline || 0,
-        recentActivity: last24hActivities.length,
-        pendingIssues,
-        systemStatus,
-        dailyCost,
-        activeAgents,
-        totalAgents
-      });
+      setStats(accurateStats);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load admin data');
@@ -855,14 +833,6 @@ export default function Admin() {
               <TabsTrigger value="users" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Users</TabsTrigger>
               <TabsTrigger value="funds" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Funds</TabsTrigger>
               <TabsTrigger value="deals" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">Deals</TabsTrigger>
-              <TabsTrigger value="queue" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <Settings className="h-4 w-4 mr-2" />
-                Analysis Queue
-              </TabsTrigger>
-              <TabsTrigger value="safemode" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <Shield className="h-4 w-4 mr-2" />
-                Safe Mode Test
-              </TabsTrigger>
               <TabsTrigger value="support" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Support Tickets
@@ -951,17 +921,6 @@ export default function Admin() {
                 onBulkDelete={bulkDeleteDeals}
                 isSuperAdmin={hasAccess}
               />
-            </TabsContent>
-
-            <TabsContent value="queue" className="space-y-6">
-              <AnalysisQueueDashboard />
-            </TabsContent>
-
-            <TabsContent value="safemode" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <DealAllowlistManager />
-                <SafeModeTestPanel />
-              </div>
             </TabsContent>
 
             <TabsContent value="support" className="space-y-6">
