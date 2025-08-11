@@ -6,17 +6,21 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Settings, Save, RefreshCw, Target } from 'lucide-react';
+import { Settings, Save, RefreshCw, Target, Eye } from 'lucide-react';
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 import { useFund } from '@/contexts/FundContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { unifiedStrategyService } from '@/services/unifiedStrategyService';
 
 export const RAGThresholdManager: React.FC = () => {
   const { selectedFund } = useFund();
   const { thresholds, loading, getRAGCategory } = useStrategyThresholds();
+  const { hasPermission } = usePermissions();
   const { toast } = useToast();
   const [localThresholds, setLocalThresholds] = useState(thresholds);
   const [saving, setSaving] = useState(false);
+  
+  const canConfigureStrategy = hasPermission('canConfigureStrategy');
 
   React.useEffect(() => {
     setLocalThresholds(thresholds);
@@ -72,9 +76,17 @@ export const RAGThresholdManager: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Target className="w-5 h-5" />
-          RAG Threshold Configuration
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Target className="w-5 h-5" />
+            RAG Threshold Configuration
+          </div>
+          {!canConfigureStrategy && (
+            <Badge variant="outline" className="flex items-center gap-1">
+              <Eye className="w-3 h-3" />
+              View Only
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -83,7 +95,7 @@ export const RAGThresholdManager: React.FC = () => {
           <div className="space-y-2">
             <Label htmlFor="exciting">Exciting Threshold</Label>
             <div className="flex items-center gap-3">
-              <Input
+               <Input
                 id="exciting"
                 type="number"
                 min="1"
@@ -94,6 +106,8 @@ export const RAGThresholdManager: React.FC = () => {
                   exciting: parseInt(e.target.value) || 0
                 })}
                 className="w-20"
+                readOnly={!canConfigureStrategy}
+                disabled={!canConfigureStrategy}
               />
               <span className="text-sm text-muted-foreground">
                 and above
@@ -108,7 +122,7 @@ export const RAGThresholdManager: React.FC = () => {
           <div className="space-y-2">
             <Label htmlFor="promising">Promising Threshold</Label>
             <div className="flex items-center gap-3">
-              <Input
+               <Input
                 id="promising"
                 type="number"
                 min="1"
@@ -119,6 +133,8 @@ export const RAGThresholdManager: React.FC = () => {
                   promising: parseInt(e.target.value) || 0
                 })}
                 className="w-20"
+                readOnly={!canConfigureStrategy}
+                disabled={!canConfigureStrategy}
               />
               <span className="text-sm text-muted-foreground">
                 to {localThresholds.exciting - 1}
@@ -133,7 +149,7 @@ export const RAGThresholdManager: React.FC = () => {
           <div className="space-y-2">
             <Label htmlFor="needs_development">Needs Development Threshold</Label>
             <div className="flex items-center gap-3">
-              <Input
+               <Input
                 id="needs_development"
                 type="number"
                 min="1"
@@ -144,6 +160,8 @@ export const RAGThresholdManager: React.FC = () => {
                   needs_development: parseInt(e.target.value) || 0
                 })}
                 className="w-20"
+                readOnly={!canConfigureStrategy}
+                disabled={!canConfigureStrategy}
               />
               <span className="text-sm text-muted-foreground">
                 to {localThresholds.promising - 1}
@@ -188,20 +206,22 @@ export const RAGThresholdManager: React.FC = () => {
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-2">
-          <Button 
-            onClick={handleSave} 
-            disabled={saving || loading}
-            className="flex items-center gap-2"
-          >
-            {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Save Changes
-          </Button>
-          <Button variant="outline" onClick={handleReset}>
-            Reset
-          </Button>
-        </div>
+         {/* Actions */}
+         {canConfigureStrategy && (
+           <div className="flex gap-2">
+             <Button 
+               onClick={handleSave} 
+               disabled={saving || loading}
+               className="flex items-center gap-2"
+             >
+               {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+               Save Changes
+             </Button>
+             <Button variant="outline" onClick={handleReset}>
+               Reset
+             </Button>
+           </div>
+         )}
       </CardContent>
     </Card>
   );
