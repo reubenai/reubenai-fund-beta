@@ -78,6 +78,11 @@ export function CategoryDeepDiveSection({
 }: CategoryDeepDiveSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   
+  // Emergency fix: ensure insights is always an array
+  const safeInsights = Array.isArray(insights) ? insights : [insights || 'Analysis completed'];
+  const safeStrengths = Array.isArray(strengths) ? strengths : [strengths || 'Detailed analysis available'];
+  const safeConcerns = Array.isArray(concerns) ? concerns : [];
+  
   const hasDeepDive = detailedAnalysis && Object.keys(detailedAnalysis).length > 0;
   const deepDiveComponent = getDeepDiveComponent(category, detailedAnalysis);
 
@@ -113,14 +118,14 @@ export function CategoryDeepDiveSection({
         {/* Basic Analysis (existing functionality) */}
         <div className="space-y-4">
           {/* Key Insights */}
-          {insights && insights.length > 0 && (
+          {safeInsights && safeInsights.length > 0 && (
             <div>
               <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
                 <Zap className="h-4 w-4 text-muted-foreground" />
                 Key Insights
               </h4>
               <ul className="space-y-1">
-                {insights.map((insight, i) => (
+                {safeInsights.map((insight, i) => (
                   <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
                     <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
                     {insight}
@@ -132,14 +137,14 @@ export function CategoryDeepDiveSection({
 
           {/* Strengths and Concerns */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {strengths && strengths.length > 0 && (
+            {safeStrengths && safeStrengths.length > 0 && (
               <div>
                 <h4 className="font-semibold text-success mb-2 flex items-center gap-2">
                   <Shield className="h-4 w-4" />
                   Strengths
                 </h4>
                 <ul className="space-y-1">
-                  {strengths.map((strength, i) => (
+                  {safeStrengths.map((strength, i) => (
                     <li key={i} className="text-sm text-success flex items-start gap-2">
                       <span className="w-1.5 h-1.5 bg-success rounded-full mt-2 flex-shrink-0" />
                       {strength}
@@ -149,14 +154,14 @@ export function CategoryDeepDiveSection({
               </div>
             )}
 
-            {concerns && concerns.length > 0 && (
+            {safeConcerns && safeConcerns.length > 0 && (
               <div>
                 <h4 className="font-semibold text-warning mb-2 flex items-center gap-2">
                   <ExternalLink className="h-4 w-4" />
                   Concerns
                 </h4>
                 <ul className="space-y-1">
-                  {concerns.map((concern, i) => (
+                  {safeConcerns.map((concern, i) => (
                     <li key={i} className="text-sm text-warning flex items-start gap-2">
                       <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
                       {concern}
