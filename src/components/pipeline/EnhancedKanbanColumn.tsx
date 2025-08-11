@@ -150,7 +150,7 @@ export const EnhancedKanbanColumn: React.FC<EnhancedKanbanColumnProps> = ({
 
       <CardContent className="pt-0 flex-1 overflow-hidden">
         <ScrollArea className="h-full">
-          <Droppable droppableId={stage.id}>
+          <Droppable droppableId={stage.name}>
             {(provided, snapshot) => (
               <div
                 ref={provided.innerRef}
