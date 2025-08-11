@@ -329,6 +329,27 @@ export type Database = {
           },
         ]
       }
+      analysis_allowlist: {
+        Row: {
+          created_at: string | null
+          deal_id: string
+          notes: string | null
+          test_phase: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deal_id: string
+          notes?: string | null
+          test_phase?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deal_id?: string
+          notes?: string | null
+          test_phase?: string | null
+        }
+        Relationships: []
+      }
       analysis_cost_tracking: {
         Row: {
           cost_per_deal: number | null
@@ -388,6 +409,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      analysis_environment_config: {
+        Row: {
+          config_key: string
+          config_value: string
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          config_key: string
+          config_value: string
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          config_key?: string
+          config_value?: string
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       analysis_execution_log: {
         Row: {
@@ -3815,6 +3863,10 @@ export type Database = {
         Returns: Json
       }
       process_analysis_queue: {
+        Args: { batch_size?: number; max_concurrent?: number }
+        Returns: Json
+      }
+      process_analysis_queue_safe: {
         Args: { batch_size?: number; max_concurrent?: number }
         Returns: Json
       }

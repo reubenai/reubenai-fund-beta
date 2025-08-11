@@ -40,6 +40,8 @@ import { ComprehensiveFixVerifier } from '@/components/admin/ComprehensiveFixVer
 import { APIConfigurationPanel } from '@/components/admin/APIConfigurationPanel';
 import { DealDataRepairTool } from '@/components/admin/DealDataRepairTool';
 import { AnalysisQueueDashboard } from '@/components/admin/AnalysisQueueDashboard';
+import { SafeModeTestPanel } from '@/components/admin/SafeModeTestPanel';
+import { DealAllowlistManager } from '@/components/admin/DealAllowlistManager';
 
 import { useFund } from '@/contexts/FundContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -857,6 +859,10 @@ export default function Admin() {
                 <Settings className="h-4 w-4 mr-2" />
                 Analysis Queue
               </TabsTrigger>
+              <TabsTrigger value="safemode" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Shield className="h-4 w-4 mr-2" />
+                Safe Mode Test
+              </TabsTrigger>
               <TabsTrigger value="support" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Support Tickets
@@ -949,6 +955,13 @@ export default function Admin() {
 
             <TabsContent value="queue" className="space-y-6">
               <AnalysisQueueDashboard />
+            </TabsContent>
+
+            <TabsContent value="safemode" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <DealAllowlistManager />
+                <SafeModeTestPanel />
+              </div>
             </TabsContent>
 
             <TabsContent value="support" className="space-y-6">
