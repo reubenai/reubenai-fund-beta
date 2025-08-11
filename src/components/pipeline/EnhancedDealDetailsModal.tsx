@@ -473,74 +473,88 @@ export function EnhancedDealDetailsModal({
                     </div>
                   </div>
                   
-                  <div className="p-4 rounded-lg border bg-background">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-full bg-primary/10">
-                        <Target className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">AI Score</p>
-                        {(() => {
-                          // Simple mock calculation for demo purposes
-                          // In production, this would aggregate scores from actual assessment components
-                          const mockScores = [79, 61, 85, 50, 87]; // Sample scores for the 5 categories
-                          const finalScore = Math.round(mockScores.reduce((sum, score) => sum + score, 0) / mockScores.length);
-                          
-                          return (
-                            <p className="font-semibold text-lg text-foreground">
-                              {finalScore}
-                            </p>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </div>
                 </div>
 
-                {/* Company Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Company Info - Comprehensive AffinityCRM-style layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Company Details */}
                   <div className="space-y-3">
                     <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
                       Company Details
                     </h4>
-                    {deal.industry && (
-                      <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
-                        <Target className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium text-sm">Industry</p>
-                          <p className="text-sm text-muted-foreground">{deal.industry}</p>
-                        </div>
+                    
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <Target className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Industry</p>
+                        <p className="text-sm text-muted-foreground">
+                          {deal.industry || 'Not specified'}
+                        </p>
                       </div>
-                    )}
-                    {deal.location && (
-                      <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium text-sm">Location</p>
-                          <p className="text-sm text-muted-foreground">{deal.location}</p>
-                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Company Stage</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(deal as any).company_stage || 'Not specified'}
+                        </p>
                       </div>
-                    )}
-                    {deal.founder && (
-                      <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium text-sm">Founder</p>
-                          <p className="text-sm text-muted-foreground">{deal.founder}</p>
-                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Founded</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(deal as any).founding_year || 'Not specified'}
+                        </p>
                       </div>
-                    )}
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Team Size</p>
+                        <p className="text-sm text-muted-foreground">
+                          {deal.employee_count ? `${deal.employee_count} employees` : 'Not specified'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Headquarters</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(deal as any).headquarters || deal.location || 'Not specified'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Markets</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(deal as any).countries_of_operation?.join(', ') || 'Not specified'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
+                  {/* Digital Presence */}
                   <div className="space-y-3">
                     <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
                       Digital Presence
                     </h4>
-                    {deal.website && (
-                      <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
-                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium text-sm">Website</p>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Website</p>
+                        {deal.website ? (
                           <a 
                             href={deal.website.startsWith('http') ? deal.website : `https://${deal.website}`}
                             target="_blank"
@@ -549,14 +563,17 @@ export function EnhancedDealDetailsModal({
                           >
                             {deal.website.replace(/^https?:\/\//, '')}
                           </a>
-                        </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Not specified</p>
+                        )}
                       </div>
-                    )}
-                    {deal.linkedin_url && (
-                      <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
-                        <Linkedin className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium text-sm">LinkedIn</p>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <Linkedin className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">LinkedIn</p>
+                        {deal.linkedin_url ? (
                           <a 
                             href={deal.linkedin_url}
                             target="_blank"
@@ -565,20 +582,120 @@ export function EnhancedDealDetailsModal({
                           >
                             Company Profile
                           </a>
-                        </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Not specified</p>
+                        )}
                       </div>
-                    )}
-                    {(deal.employee_count || companyDetails?.team_size) && (
-                      <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium text-sm">Team Size</p>
-                          <p className="text-sm text-muted-foreground">
-                            {companyDetails?.team_size || deal.employee_count} employees
-                          </p>
-                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Crunchbase</p>
+                        {deal.crunchbase_url ? (
+                          <a 
+                            href={deal.crunchbase_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary hover:underline"
+                          >
+                            Company Profile
+                          </a>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Not specified</p>
+                        )}
                       </div>
-                    )}
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <Target className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Business Model</p>
+                        <p className="text-sm text-muted-foreground">
+                          {deal.business_model || 'Not specified'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Target Market</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(deal as any).target_market || 'Not specified'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Leadership & Funding */}
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                      Leadership & Funding
+                    </h4>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Founder</p>
+                        <p className="text-sm text-muted-foreground">
+                          {deal.founder || 'Not specified'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Founder Email</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(deal as any).founder_email || 'Not specified'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Co-Founders</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(deal as any).co_founders?.join(', ') || 'Not specified'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Funding Stage</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(deal as any).funding_stage || 'Not specified'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Previous Funding</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(deal as any).previous_funding_amount ? 
+                            `$${((deal as any).previous_funding_amount / 1000000).toFixed(1)}M` : 
+                            'Not specified'
+                          }
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20">
+                      <Target className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">Revenue Model</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(deal as any).revenue_model || 'Not specified'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>

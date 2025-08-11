@@ -1106,8 +1106,12 @@ export type Database = {
           analysis_queue_status: string | null
           auto_analysis_enabled: boolean | null
           business_model: string | null
+          co_founders: string[] | null
           company_name: string
+          company_stage: string | null
           company_validation_status: string | null
+          competitors: string[] | null
+          countries_of_operation: string[] | null
           created_at: string
           created_by: string
           crunchbase_url: string | null
@@ -1118,9 +1122,14 @@ export type Database = {
           enhanced_analysis: Json | null
           first_analysis_completed: boolean | null
           founder: string | null
+          founder_email: string | null
+          founding_year: number | null
           fund_id: string
+          funding_stage: string | null
+          headquarters: string | null
           id: string
           industry: string | null
+          key_customers: string[] | null
           last_analysis_trigger: string | null
           last_analysis_trigger_reason: string | null
           linkedin_url: string | null
@@ -1128,15 +1137,19 @@ export type Database = {
           next_action: string | null
           organization_id: string | null
           overall_score: number | null
+          previous_funding_amount: number | null
           primary_source: string | null
           priority: string | null
           rag_confidence: number | null
           rag_reasoning: Json | null
           rag_status: string | null
+          revenue_model: string | null
           score_level: Database["public"]["Enums"]["deal_score_level"] | null
           source_confidence_score: number | null
           source_method: string | null
           status: Database["public"]["Enums"]["deal_status"] | null
+          target_market: string | null
+          technology_stack: string[] | null
           updated_at: string
           valuation: number | null
           web_presence_confidence: number | null
@@ -1148,8 +1161,12 @@ export type Database = {
           analysis_queue_status?: string | null
           auto_analysis_enabled?: boolean | null
           business_model?: string | null
+          co_founders?: string[] | null
           company_name: string
+          company_stage?: string | null
           company_validation_status?: string | null
+          competitors?: string[] | null
+          countries_of_operation?: string[] | null
           created_at?: string
           created_by: string
           crunchbase_url?: string | null
@@ -1160,9 +1177,14 @@ export type Database = {
           enhanced_analysis?: Json | null
           first_analysis_completed?: boolean | null
           founder?: string | null
+          founder_email?: string | null
+          founding_year?: number | null
           fund_id: string
+          funding_stage?: string | null
+          headquarters?: string | null
           id?: string
           industry?: string | null
+          key_customers?: string[] | null
           last_analysis_trigger?: string | null
           last_analysis_trigger_reason?: string | null
           linkedin_url?: string | null
@@ -1170,15 +1192,19 @@ export type Database = {
           next_action?: string | null
           organization_id?: string | null
           overall_score?: number | null
+          previous_funding_amount?: number | null
           primary_source?: string | null
           priority?: string | null
           rag_confidence?: number | null
           rag_reasoning?: Json | null
           rag_status?: string | null
+          revenue_model?: string | null
           score_level?: Database["public"]["Enums"]["deal_score_level"] | null
           source_confidence_score?: number | null
           source_method?: string | null
           status?: Database["public"]["Enums"]["deal_status"] | null
+          target_market?: string | null
+          technology_stack?: string[] | null
           updated_at?: string
           valuation?: number | null
           web_presence_confidence?: number | null
@@ -1190,8 +1216,12 @@ export type Database = {
           analysis_queue_status?: string | null
           auto_analysis_enabled?: boolean | null
           business_model?: string | null
+          co_founders?: string[] | null
           company_name?: string
+          company_stage?: string | null
           company_validation_status?: string | null
+          competitors?: string[] | null
+          countries_of_operation?: string[] | null
           created_at?: string
           created_by?: string
           crunchbase_url?: string | null
@@ -1202,9 +1232,14 @@ export type Database = {
           enhanced_analysis?: Json | null
           first_analysis_completed?: boolean | null
           founder?: string | null
+          founder_email?: string | null
+          founding_year?: number | null
           fund_id?: string
+          funding_stage?: string | null
+          headquarters?: string | null
           id?: string
           industry?: string | null
+          key_customers?: string[] | null
           last_analysis_trigger?: string | null
           last_analysis_trigger_reason?: string | null
           linkedin_url?: string | null
@@ -1212,15 +1247,19 @@ export type Database = {
           next_action?: string | null
           organization_id?: string | null
           overall_score?: number | null
+          previous_funding_amount?: number | null
           primary_source?: string | null
           priority?: string | null
           rag_confidence?: number | null
           rag_reasoning?: Json | null
           rag_status?: string | null
+          revenue_model?: string | null
           score_level?: Database["public"]["Enums"]["deal_score_level"] | null
           source_confidence_score?: number | null
           source_method?: string | null
           status?: Database["public"]["Enums"]["deal_status"] | null
+          target_market?: string | null
+          technology_stack?: string[] | null
           updated_at?: string
           valuation?: number | null
           web_presence_confidence?: number | null
