@@ -162,7 +162,7 @@ export default function Auth() {
             </div>
             <div className="bg-background/50 rounded-md p-3 sm:p-4 text-xs sm:text-sm text-muted-foreground leading-relaxed">
               <p><strong>Please note:</strong> Beta software is imperfect by design, and AI analysis depth is currently limited by large language model API quotas; full, higher-depth analysis will be available with paid access.</p>
-              <p className="mt-2 sm:mt-3">Accounts are personal — no password sharing, public posting, or disclosure of proprietary features. By using the platform, you agree to maintain strict confidentiality of all proprietary AI capabilities and platform features.</p>
+              <p className="mt-2 sm:mt-3"><strong>Accounts are personal</strong> — no password sharing, public posting, or disclosure of proprietary features. By using the platform, you agree to <strong>maintain strict confidentiality</strong> of all proprietary AI capabilities and platform features.</p>
             </div>
           </div>
         </div>
