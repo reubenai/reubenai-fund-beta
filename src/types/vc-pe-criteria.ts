@@ -33,7 +33,7 @@ export const VC_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
   categories: [
     {
       name: 'Team & Leadership',
-      weight: 25,
+      weight: 20,
       enabled: true,
       icon: 'Users',
       description: 'Evaluate the founding team and leadership capabilities',
@@ -69,7 +69,7 @@ export const VC_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
     },
     {
       name: 'Market Opportunity',
-      weight: 25,
+      weight: 20,
       enabled: true,
       icon: 'Building2',
       description: 'Assess the market size, timing, and competitive landscape',
@@ -114,7 +114,7 @@ export const VC_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
     },
     {
       name: 'Product & Technology',
-      weight: 20,
+      weight: 15,
       enabled: true,
       icon: 'Cpu',
       description: 'Evaluate product innovation, technology advantage, and market fit',
@@ -150,7 +150,7 @@ export const VC_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
     },
     {
       name: 'Business Traction',
-      weight: 15,
+      weight: 12,
       enabled: true,
       icon: 'BarChart3',
       description: 'Assess revenue growth, customer metrics, and market validation',
@@ -186,7 +186,7 @@ export const VC_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
     },
     {
       name: 'Financial Health',
-      weight: 10,
+      weight: 8,
       enabled: true,
       icon: 'CreditCard',
       description: 'Evaluate unit economics, burn rate, and funding history',
@@ -417,7 +417,7 @@ export const PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
         },
         {
           name: 'Operational Efficiency',
-          weight: 30,
+      weight: 25,
           enabled: true,
           requirements: 'Operational metrics and process optimization',
           aiSearchKeywords: ['operational efficiency', 'processes', 'productivity', 'optimization'],

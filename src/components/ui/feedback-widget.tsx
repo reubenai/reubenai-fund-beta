@@ -1,15 +1,23 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { MessageSquare, Star, Send, Bug, Lightbulb, Heart } from 'lucide-react';
+import { MessageSquare, Star, Send, Bug, Lightbulb, Heart, Upload, X, Image } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useDropzone } from 'react-dropzone';
 
 type FeedbackType = 'bug' | 'feature' | 'general' | 'love';
 type Rating = 1 | 2 | 3 | 4 | 5;
+
+interface UploadedImage {
+  file: File;
+  preview: string;
+  uploading?: boolean;
+  url?: string;
+}
 
 const feedbackTypes = [
   { id: 'bug' as FeedbackType, label: 'Bug Report', icon: Bug, color: 'destructive' },
@@ -24,7 +32,70 @@ export function FeedbackWidget() {
   const [rating, setRating] = useState<Rating | null>(null);
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const { toast } = useToast();
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const newImages: UploadedImage[] = acceptedFiles
+      .filter(file => file.type.startsWith('image/'))
+      .slice(0, 3 - uploadedImages.length) // Max 3 images
+      .map(file => ({
+        file,
+        preview: URL.createObjectURL(file),
+        uploading: false
+      }));
+    
+    setUploadedImages(prev => [...prev, ...newImages]);
+  }, [uploadedImages.length]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.webp']
+    },
+    maxFiles: 3,
+    disabled: uploadedImages.length >= 3
+  });
+
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => {
+      const newImages = [...prev];
+      URL.revokeObjectURL(newImages[index].preview);
+      newImages.splice(index, 1);
+      return newImages;
+    });
+  };
+
+  const uploadImages = async (userId: string): Promise<string[]> => {
+    if (uploadedImages.length === 0) return [];
+    
+    const uploadPromises = uploadedImages.map(async (image, index) => {
+      const timestamp = Date.now();
+      const fileName = `${userId}/${timestamp}-${index}-${image.file.name}`;
+      
+      const { data, error } = await supabase.storage
+        .from('feedback-screenshots')
+        .upload(fileName, image.file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Failed to upload image:', error);
+        return null;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('feedback-screenshots')
+        .getPublicUrl(fileName);
+
+      return urlData.publicUrl;
+    });
+
+    const urls = await Promise.all(uploadPromises);
+    return urls.filter(url => url !== null) as string[];
+  };
 
   const handleSubmit = async () => {
     if (!message.trim()) {
@@ -44,14 +115,17 @@ export function FeedbackWidget() {
         .from('funds')
         .select('id, name')
         .limit(1)
-        .single();
+        .maybeSingle();
 
       // Get user profile for additional info
       const { data: profile } = await supabase
         .from('profiles')
         .select('first_name, last_name')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
+
+      // Upload screenshots first
+      const imageUrls = await uploadImages(user?.id || 'anonymous');
 
       const feedbackData = {
         user_id: user?.id,
@@ -64,7 +138,8 @@ export function FeedbackWidget() {
         metadata: {
           timestamp: new Date().toISOString(),
           pathname: window.location.pathname,
-          referrer: document.referrer
+          referrer: document.referrer,
+          screenshots: imageUrls
         }
       };
 
@@ -121,7 +196,8 @@ export function FeedbackWidget() {
             metadata: {
               timestamp: new Date().toISOString(),
               pathname: window.location.pathname,
-              referrer: document.referrer
+              referrer: document.referrer,
+              screenshots: imageUrls
             }
           }
         }).catch(error => {
@@ -139,6 +215,9 @@ export function FeedbackWidget() {
       setType('general');
       setRating(null);
       setMessage('');
+      setUploadedImages([]);
+      // Clean up image previews
+      uploadedImages.forEach(img => URL.revokeObjectURL(img.preview));
       setIsOpen(false);
     } catch (error) {
       console.error('Error submitting feedback:', error);
@@ -229,6 +308,50 @@ export function FeedbackWidget() {
               rows={4}
               className="resize-none"
             />
+          </div>
+          
+          {/* Screenshot Upload */}
+          <div className="space-y-3">
+            <label className="text-sm font-medium">Attach Screenshots (Optional)</label>
+            <div
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
+                isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
+              } ${uploadedImages.length >= 3 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              <input {...getInputProps()} />
+              <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                {isDragActive ? 'Drop images here...' : 'Drag & drop images or click to select'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                PNG, JPG, WEBP up to 10MB ({uploadedImages.length}/3)
+              </p>
+            </div>
+            
+            {/* Image Previews */}
+            {uploadedImages.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {uploadedImages.map((image, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={image.preview}
+                      alt={`Screenshot ${index + 1}`}
+                      className="w-full h-20 object-cover rounded border"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => removeImage(index)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
           {/* Submit */}
