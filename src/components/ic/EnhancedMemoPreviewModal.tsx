@@ -173,6 +173,16 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   const currentContent = (memoState.content as any)?.sections || memoState.content || {};
   const hasContent = Object.keys(currentContent).length > 0;
   
+  // Debug logging for content detection
+  console.log('🔍 Content detection:', { 
+    hasContent, 
+    currentContentKeys: Object.keys(currentContent),
+    memoStateContent: memoState.content,
+    existsInDb: memoState.existsInDb,
+    fundType,
+    dealId: deal.id
+  });
+  
   const contentValidation = hasContent ? validateMemoContent(
     Object.entries(currentContent).map(([key, content]) => ({
       key,
@@ -831,7 +841,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                   </div>
                 </div>
               </div>
-            ) : !memoState.existsInDb && !hasContent ? (
+            ) : !hasContent && !memoState.existsInDb ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center max-w-md mx-auto">
                   <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-6" />

@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface MemoContent {
+  // VC sections
   executive_summary?: string;
   company_overview?: string;
   market_opportunity?: string;
@@ -14,6 +15,19 @@ interface MemoContent {
   risks_mitigants?: string;
   exit_strategy?: string;
   investment_recommendation?: string;
+  
+  // PE sections
+  financial_performance?: string;
+  market_position?: string;
+  operational_excellence?: string;
+  management_leadership?: string;
+  growth_value_creation?: string;
+  risk_assessment?: string;
+  strategic_timing?: string;
+  exit_value_realization?: string;
+  
+  // Allow any additional string keys for dynamic sections
+  [key: string]: string | undefined;
 }
 
 interface CachedMemo {
@@ -133,6 +147,8 @@ export function useMemoCache(dealId: string, fundId: string) {
 
       if (existingMemo?.memo_content) {
         const memoContent = existingMemo.memo_content as any;
+        console.log('📄 Loading existing memo content:', { memoContent, dealId, fundId });
+        
         // Extract content correctly - check for nested sections or use direct content
         const content = memoContent?.sections || memoContent;
         
@@ -217,6 +233,13 @@ export function useMemoCache(dealId: string, fundId: string) {
 
       // Extract content properly - support nested sections or flat
       const content = (data?.memo?.memo_content?.sections as any) || (data?.memo?.memo_content as any) || {};
+      console.log('🔄 Generated memo content:', { 
+        content, 
+        contentKeys: Object.keys(content),
+        hasContent: Object.keys(content).length > 0,
+        dealId, 
+        fundId 
+      });
       
       const now = new Date().toISOString();
       const { dealLastUpdated, analysisVersion } = await checkAnalysisFreshness(dealId);
