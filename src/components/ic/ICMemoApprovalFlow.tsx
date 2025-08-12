@@ -14,6 +14,7 @@ interface ICMemo {
   title: string;
   memo_content: any;
   status: string;
+  workflow_state: string;
   created_by: string;
   reviewed_by?: string;
   approved_by?: string;
@@ -85,7 +86,7 @@ export function ICMemoApprovalFlow({ memoId, fundId, onStatusChange }: ICMemoApp
       const { error } = await supabase
         .from('ic_memos')
         .update({
-          status: 'submitted',
+          workflow_state: 'submitted',
           submitted_at: new Date().toISOString()
         })
         .eq('id', memo.id);
@@ -138,7 +139,7 @@ export function ICMemoApprovalFlow({ memoId, fundId, onStatusChange }: ICMemoApp
       const { error } = await supabase
         .from('ic_memos')
         .update({
-          status: approved ? 'approved' : 'rejected',
+          workflow_state: approved ? 'approved' : 'rejected',
           reviewed_by: userId,
           reviewed_at: new Date().toISOString(),
           review_notes: reviewNotes,
@@ -200,7 +201,7 @@ export function ICMemoApprovalFlow({ memoId, fundId, onStatusChange }: ICMemoApp
       const { error } = await supabase
         .from('ic_memos')
         .update({
-          status: 'approved',
+          workflow_state: 'approved',
           reviewed_by: userId,
           approved_by: userId,
           reviewed_at: new Date().toISOString(),
@@ -261,8 +262,8 @@ export function ICMemoApprovalFlow({ memoId, fundId, onStatusChange }: ICMemoApp
     );
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
+  const getStatusIcon = (workflowState: string) => {
+    switch (workflowState) {
       case 'approved':
         return <CheckCircle className="h-4 w-4 text-green-600" />;
       case 'rejected':
@@ -274,8 +275,8 @@ export function ICMemoApprovalFlow({ memoId, fundId, onStatusChange }: ICMemoApp
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const getStatusColor = (workflowState: string) => {
+    switch (workflowState) {
       case 'approved':
         return 'bg-green-100 text-green-800 border-green-200';
       case 'rejected':
@@ -294,11 +295,11 @@ export function ICMemoApprovalFlow({ memoId, fundId, onStatusChange }: ICMemoApp
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              {getStatusIcon(memo.status)}
+              {getStatusIcon(memo.workflow_state || memo.status)}
               IC Memo Approval Flow
             </CardTitle>
-            <Badge className={getStatusColor(memo.status)}>
-              {memo.status.toUpperCase().replace('_', ' ')}
+            <Badge className={getStatusColor(memo.workflow_state || memo.status)}>
+              {(memo.workflow_state || memo.status).toUpperCase().replace('_', ' ')}
             </Badge>
           </div>
         </CardHeader>
@@ -346,7 +347,7 @@ export function ICMemoApprovalFlow({ memoId, fundId, onStatusChange }: ICMemoApp
       </Card>
 
       {/* Action Cards */}
-      {memo.status === 'draft' && (
+      {(memo.workflow_state === 'draft' || (!memo.workflow_state && memo.status === 'draft')) && (
         <Card>
           <CardHeader>
             <CardTitle>Submit for Review</CardTitle>
@@ -366,7 +367,7 @@ export function ICMemoApprovalFlow({ memoId, fundId, onStatusChange }: ICMemoApp
         </Card>
       )}
 
-      {memo.status === 'submitted' && canReview && (
+      {memo.workflow_state === 'submitted' && canReview && (
         <Card>
           <CardHeader>
             <CardTitle>Review Memo</CardTitle>
@@ -415,7 +416,7 @@ export function ICMemoApprovalFlow({ memoId, fundId, onStatusChange }: ICMemoApp
         </Card>
       )}
 
-      {canBypass && memo.status !== 'approved' && (
+      {canBypass && memo.workflow_state !== 'approved' && (
         <Card className="border-yellow-200 bg-yellow-50">
           <CardHeader>
             <CardTitle className="text-yellow-800">Super Admin Bypass</CardTitle>
