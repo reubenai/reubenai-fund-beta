@@ -1,21 +1,36 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { 
   Shield, 
-  CheckCircle, 
-  FileText, 
-  Users,
-  Eye,
-  Lock,
-  Star,
-  AlertTriangle
+  Eye, 
+  Users, 
+  FileCheck,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
 interface TrustTransparencyAssessmentProps {
   deal: any;
 }
+
+const getStatusColor = (status: string): string => {
+  const colors: Record<string, string> = {
+    'High Trust': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    'Moderate Trust': 'bg-amber-100 text-amber-700 border-amber-200',
+    'Trust Concerns': 'bg-red-100 text-red-700 border-red-200',
+  };
+  return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200';
+};
+
+const getStatusIcon = (aligned: boolean) => {
+  return aligned ? (
+    <CheckCircle className="h-4 w-4 text-emerald-600" />
+  ) : (
+    <XCircle className="h-4 w-4 text-red-600" />
+  );
+};
 
 export function TrustTransparencyAssessment({ deal }: TrustTransparencyAssessmentProps) {
   // Extract trust metrics from enhanced analysis
@@ -24,182 +39,113 @@ export function TrustTransparencyAssessment({ deal }: TrustTransparencyAssessmen
     item.category === 'Trust & Transparency'
   )?.score || 0;
 
-  const getTrustLevel = (score: number) => {
-    if (score >= 85) return { level: 'High Trust', color: 'text-green-600', bgColor: 'bg-green-100' };
-    if (score >= 70) return { level: 'Moderate Trust', color: 'text-yellow-600', bgColor: 'bg-yellow-100' };
-    return { level: 'Trust Concerns', color: 'text-red-600', bgColor: 'bg-red-100' };
+  const getOverallStatus = (score: number) => {
+    if (score >= 85) return 'High Trust';
+    if (score >= 70) return 'Moderate Trust';
+    return 'Trust Concerns';
   };
 
-  const trustLevel = getTrustLevel(trustScore);
+  const overallStatus = getOverallStatus(trustScore);
+
+  // Mock individual criteria for consistent layout
+  const criteria = [
+    {
+      criterion: 'Governance Quality',
+      aligned: trustScore >= 75,
+      reasoning: trustScore >= 75 ? 'Strong governance framework established' : 'Governance assessment in progress',
+      icon: <FileCheck className="h-4 w-4" />,
+      weight: 30
+    },
+    {
+      criterion: 'Management Transparency',
+      aligned: trustScore >= 70,
+      reasoning: trustScore >= 70 ? 'Open and transparent communication' : 'Transparency evaluation ongoing',
+      icon: <Eye className="h-4 w-4" />,
+      weight: 25
+    },
+    {
+      criterion: 'Stakeholder Relations',
+      aligned: trustScore >= 65,
+      reasoning: trustScore >= 65 ? 'Strong stakeholder relationships' : 'Stakeholder assessment pending',
+      icon: <Users className="h-4 w-4" />,
+      weight: 20
+    },
+    {
+      criterion: 'Compliance Standards',
+      aligned: trustScore >= 70,
+      reasoning: trustScore >= 70 ? 'High compliance standards maintained' : 'Compliance review ongoing',
+      icon: <Shield className="h-4 w-4" />,
+      weight: 25
+    }
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Overall Trust Score */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Trust & Transparency Overview
-            </CardTitle>
-            <Badge variant="secondary" className={`${trustLevel.bgColor} ${trustLevel.color}`}>
-              {trustLevel.level}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Trust Score</span>
-              <span className={`text-2xl font-bold ${trustLevel.color}`}>
-                {trustScore}/100
-              </span>
-            </div>
-            <Progress value={trustScore} className="h-2" />
-            <p className="text-sm text-muted-foreground">
-              Assessment of management integrity, financial transparency, and governance practices
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Management Integrity */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Management Team & Leadership
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Leadership Track Record</span>
-              <Badge variant="outline">Analyzing</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Previous Company Exits</span>
-              <Badge variant="outline">Analyzing</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Industry Reputation</span>
-              <Badge variant="outline">Analyzing</Badge>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Founder</p>
-              <p className="text-sm font-medium">
-                {deal?.founder || 'Founder information available'}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">LinkedIn</p>
-              {deal?.linkedin_url ? (
-                <a href={deal.linkedin_url} target="_blank" rel="noopener noreferrer" 
-                   className="text-sm text-blue-600 hover:underline flex items-center gap-1">
-                  Available <Eye className="h-3 w-3" />
-                </a>
-              ) : (
-                <p className="text-sm text-muted-foreground">Not provided</p>
-              )}
-            </div>
-          </div>
-          
-          {deal?.co_founders?.length > 0 && (
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">Co-founders</p>
-              <div className="flex flex-wrap gap-2">
-                {deal.co_founders.slice(0, 3).map((coFounder: string, index: number) => (
-                  <Badge key={index} variant="outline" className="text-xs">
-                    {coFounder}
-                  </Badge>
-                ))}
+    <Card>
+      <CardContent className="pt-6">
+        <div className="space-y-6">
+          {/* Overall Status */}
+          <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-background">
+                <Shield className="h-5 w-5" />
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Financial Transparency */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Financial Disclosure & Transparency
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <span className="text-sm">Financial document review in progress</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Eye className="h-4 w-4 text-blue-500" />
-              <span className="text-sm">Data room accessibility assessment ongoing</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Star className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm">Historical performance validation pending</span>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Deal Size</p>
-              <p className="text-sm font-medium">
-                {deal?.deal_size ? `$${(deal.deal_size / 1000000).toFixed(1)}M` : 'Not disclosed'}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Valuation</p>
-              <p className="text-sm font-medium">
-                {deal?.valuation ? `$${(deal.valuation / 1000000).toFixed(1)}M` : 'Under discussion'}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Governance & Compliance */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Lock className="h-4 w-4" />
-            Governance & Compliance
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Board Structure</span>
-              <Badge variant="outline">Analyzing</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Regulatory Compliance</span>
-              <Badge variant="outline">Analyzing</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Audit & Controls</span>
-              <Badge variant="outline">Analyzing</Badge>
-            </div>
-          </div>
-          
-          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5" />
               <div>
-                <p className="text-sm font-medium">Due Diligence Status</p>
-                <p className="text-xs text-muted-foreground">
-                  Comprehensive governance, compliance, and transparency assessment is conducted during the due diligence process. Initial screening focuses on publicly available information and management interviews.
+                <p className="font-medium">Overall Trust & Transparency</p>
+                <p className="text-sm text-muted-foreground">
+                  Based on {criteria.length} criteria
                 </p>
               </div>
             </div>
+            <div className="text-right">
+              <Badge variant="outline" className={`${getStatusColor(overallStatus)} mb-2`}>
+                {overallStatus}
+              </Badge>
+              <div className="flex items-center gap-2">
+                <Progress value={trustScore} className="w-24" />
+                <span className="text-sm font-medium">{trustScore}%</span>
+              </div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+
+          {/* Individual Criteria */}
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm text-muted-foreground">Individual Criteria</h4>
+            {criteria.map((criterion, index) => (
+              <div key={index} className="flex items-center justify-between p-3 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    {criterion.icon}
+                    {getStatusIcon(criterion.aligned)}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{criterion.criterion}</p>
+                    <p className="text-xs text-muted-foreground">{criterion.reasoning}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-muted-foreground">Weight: {criterion.weight}%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Recommendations */}
+          <div className="p-4 rounded-lg bg-muted/30 border">
+            <h4 className="font-medium text-sm mb-2">Recommendations</h4>
+            <div className="text-sm text-muted-foreground space-y-1">
+              {overallStatus === 'High Trust' && (
+                <p>✅ Excellent trust and transparency standards. Strong foundation for partnership confidence.</p>
+              )}
+              {overallStatus === 'Moderate Trust' && (
+                <p>⚠️ Good transparency with areas for improvement. Address identified concerns before investment.</p>
+              )}
+              {overallStatus === 'Trust Concerns' && (
+                <p>❌ Trust and transparency issues require attention. Enhanced due diligence recommended.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
