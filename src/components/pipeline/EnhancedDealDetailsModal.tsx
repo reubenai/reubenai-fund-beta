@@ -751,9 +751,14 @@ export function EnhancedDealDetailsModal({
               {/* Beta Notice */}
               <Card className="border-l-4 border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20">
                 <CardContent className="p-4">
-                  <p className="text-sm text-foreground">
-                    <strong>Beta v1 Notice:</strong> The Deal Analysis Modal currently applies basic rubric scoring, with new data channels and deeper insights to be added progressively. Request datasets via the Feedback widget.
-                  </p>
+                  <div className="text-sm text-foreground space-y-2">
+                    <p>
+                      <strong>Beta v1 Notice:</strong> The Deal Analysis Modal currently applies basic rubric scoring, with new data channels and deeper insights to be added progressively. Request datasets via the Feedback widget.
+                    </p>
+                    <p>
+                      Adding notes and documents (such as pitch decks and financial models) to deals will auto-trigger re-analysis and scoring accuracy. Market movements and external signals are also considered in deal scoring.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
               
