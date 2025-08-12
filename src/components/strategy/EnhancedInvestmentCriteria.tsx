@@ -204,8 +204,8 @@ export function EnhancedInvestmentCriteria({
     const isExpanded = expandedCategories.has(category.id);
     const IconComponent = getIconComponent(category.icon);
     const enabledSubcategories = category.subcategories.filter(s => s.enabled);
-    const subcategoryTotal = enabledSubcategories.reduce((sum, s) => sum + s.weight, 0);
-    const subcategoryValid = enabledSubcategories.length === 0 || subcategoryTotal === 100;
+    const subcategoryTotal = Math.round(enabledSubcategories.reduce((sum, s) => sum + s.weight, 0) * 10) / 10;
+    const subcategoryValid = enabledSubcategories.length === 0 || Math.abs(subcategoryTotal - 100) < 0.01;
 
     return (
       <Card key={category.id} className={`border transition-colors ${
@@ -236,7 +236,7 @@ export function EnhancedInvestmentCriteria({
                       {subcategoryValid ? (
                         <span className="text-green-600 ml-1">Valid</span>
                       ) : (
-                        <span className="text-destructive ml-1">Invalid ({subcategoryTotal}%)</span>
+                        <span className="text-destructive ml-1">Invalid ({formatPercentage(subcategoryTotal, 1)})</span>
                       )}
                     </p>
                   </div>
@@ -366,7 +366,7 @@ export function EnhancedInvestmentCriteria({
                         </div>
                         {subcategory.enabled && (
                           <Badge variant="outline" className="text-xs">
-                            {formatPercentage(subcategory.weight, 0)}
+                            {formatPercentage(subcategory.weight, 1)}
                           </Badge>
                         )}
                       </div>
@@ -411,8 +411,8 @@ export function EnhancedInvestmentCriteria({
 
     const renderParameterGroup = (params: TargetParameter[], title: string, type: string) => {
       const enabledParams = params.filter(p => p.enabled);
-      const totalWeight = enabledParams.reduce((sum, p) => sum + p.weight, 0);
-      const isValid = enabledParams.length === 0 || totalWeight === 100;
+      const totalWeight = Math.round(enabledParams.reduce((sum, p) => sum + p.weight, 0) * 10) / 10;
+      const isValid = enabledParams.length === 0 || Math.abs(totalWeight - 100) < 0.01;
 
       return (
         <Card>
@@ -426,7 +426,7 @@ export function EnhancedInvestmentCriteria({
                   <AlertTriangle className="h-4 w-4 text-destructive" />
                 )}
                 <Badge variant={isValid ? "default" : "destructive"}>
-                  {formatPercentage(Math.round(totalWeight * 10) / 10, 0)}
+                  {formatPercentage(totalWeight, 1)}
                 </Badge>
               </div>
             </CardTitle>
@@ -458,7 +458,7 @@ export function EnhancedInvestmentCriteria({
                       />
                     )}
                     <Badge variant="outline" className="text-xs min-w-[40px]">
-                      {param.weight}%
+                      {formatPercentage(param.weight, 1)}
                     </Badge>
                   </div>
                 )}
@@ -497,7 +497,7 @@ export function EnhancedInvestmentCriteria({
             {/* Weight Validation Badge */}
             <div className="flex items-center gap-2">
               <Badge variant={criteriaValidation.isValid ? "default" : "destructive"}>
-                Total: {totalWeight}%
+                Total: {formatPercentage(totalWeight, 1)}
               </Badge>
               {criteriaValidation.isValid ? (
                 <CheckCircle className="h-4 w-4 text-green-600" />
@@ -534,8 +534,8 @@ export function EnhancedInvestmentCriteria({
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span>Category Weight Distribution</span>
-            <span className={totalWeight === 100 ? 'text-green-600' : 'text-destructive'}>
-              {totalWeight}/100%
+            <span className={Math.abs(totalWeight - 100) < 0.01 ? 'text-green-600' : 'text-destructive'}>
+              {formatPercentage(totalWeight, 1)}/100%
             </span>
           </div>
           <Progress value={totalWeight} className="h-2" />
