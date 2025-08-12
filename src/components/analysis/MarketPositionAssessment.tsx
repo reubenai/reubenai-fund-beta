@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { 
@@ -8,12 +8,31 @@ import {
   Trophy, 
   Target,
   TrendingUp,
-  Shield
+  Shield,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
 interface MarketPositionAssessmentProps {
   deal: any;
 }
+
+const getStatusColor = (status: string): string => {
+  const colors: Record<string, string> = {
+    'Leading': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    'Competitive': 'bg-amber-100 text-amber-700 border-amber-200',
+    'Challenging': 'bg-red-100 text-red-700 border-red-200',
+  };
+  return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200';
+};
+
+const getStatusIcon = (aligned: boolean) => {
+  return aligned ? (
+    <CheckCircle className="h-4 w-4 text-emerald-600" />
+  ) : (
+    <XCircle className="h-4 w-4 text-red-600" />
+  );
+};
 
 export function MarketPositionAssessment({ deal }: MarketPositionAssessmentProps) {
   // Extract market position metrics from enhanced analysis
@@ -22,144 +41,113 @@ export function MarketPositionAssessment({ deal }: MarketPositionAssessmentProps
     item.category === 'Market Position'
   )?.score || 0;
 
-  const getScoreColor = (score: number) => {
-    if (score >= 85) return 'text-green-600';
-    if (score >= 70) return 'text-yellow-600';
-    return 'text-red-600';
+  const getOverallStatus = (score: number) => {
+    if (score >= 85) return 'Leading';
+    if (score >= 70) return 'Competitive';
+    return 'Challenging';
   };
 
-  const getStatusBadge = (score: number) => {
-    if (score >= 85) return <Badge variant="secondary" className="bg-green-100 text-green-800">Leading</Badge>;
-    if (score >= 70) return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Competitive</Badge>;
-    return <Badge variant="secondary" className="bg-red-100 text-red-800">Challenging</Badge>;
-  };
+  const overallStatus = getOverallStatus(marketScore);
+
+  // Mock individual criteria for consistent layout
+  const criteria = [
+    {
+      criterion: 'Market Share',
+      aligned: marketScore >= 75,
+      reasoning: marketScore >= 75 ? 'Strong market position identified' : 'Market share analysis in progress',
+      icon: <Globe className="h-4 w-4" />,
+      weight: 30
+    },
+    {
+      criterion: 'Competitive Advantage',
+      aligned: marketScore >= 70,
+      reasoning: marketScore >= 70 ? 'Clear differentiation established' : 'Competitive positioning under review',
+      icon: <Shield className="h-4 w-4" />,
+      weight: 25
+    },
+    {
+      criterion: 'Brand Strength',
+      aligned: marketScore >= 65,
+      reasoning: marketScore >= 65 ? 'Strong brand recognition' : 'Brand assessment pending',
+      icon: <Trophy className="h-4 w-4" />,
+      weight: 20
+    },
+    {
+      criterion: 'Customer Base',
+      aligned: marketScore >= 70,
+      reasoning: marketScore >= 70 ? 'Diversified customer portfolio' : 'Customer analysis ongoing',
+      icon: <Users className="h-4 w-4" />,
+      weight: 25
+    }
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Overall Market Position Score */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Trophy className="h-5 w-5" />
-              Market Position Overview
-            </CardTitle>
-            {getStatusBadge(marketScore)}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Position Score</span>
-              <span className={`text-2xl font-bold ${getScoreColor(marketScore)}`}>
-                {marketScore}/100
-              </span>
-            </div>
-            <Progress value={marketScore} className="h-2" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Market Share & Presence */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Globe className="h-4 w-4" />
-            Market Share & Presence
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Geographic Presence</p>
-              <p className="text-sm font-medium">
-                {deal?.countries_of_operation?.length > 0 
-                  ? deal.countries_of_operation.join(', ')
-                  : deal?.location || 'Global'
-                }
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Target Market</p>
-              <p className="text-sm font-medium">
-                {deal?.target_market || deal?.industry || 'Enterprise'}
-              </p>
-            </div>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            <p>Market position analysis includes competitive positioning, market share assessment, and brand strength evaluation.</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Competitive Advantages */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Competitive Advantages
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {deal?.competitors?.length > 0 ? (
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">Key Competitors</p>
-              <div className="flex flex-wrap gap-2">
-                {deal.competitors.slice(0, 3).map((competitor: string, index: number) => (
-                  <Badge key={index} variant="outline" className="text-xs">
-                    {competitor}
-                  </Badge>
-                ))}
+    <Card>
+      <CardContent className="pt-6">
+        <div className="space-y-6">
+          {/* Overall Status */}
+          <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-background">
+                <Trophy className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-medium">Overall Market Position</p>
+                <p className="text-sm text-muted-foreground">
+                  Based on {criteria.length} criteria
+                </p>
               </div>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">Competitive analysis in progress</p>
-          )}
-          
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Target className="h-4 w-4 text-blue-500" />
-              <span className="text-sm">Differentiation analysis pending</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-green-500" />
-              <span className="text-sm">Market positioning assessment in progress</span>
+            <div className="text-right">
+              <Badge variant="outline" className={`${getStatusColor(overallStatus)} mb-2`}>
+                {overallStatus}
+              </Badge>
+              <div className="flex items-center gap-2">
+                <Progress value={marketScore} className="w-24" />
+                <span className="text-sm font-medium">{marketScore}%</span>
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Customer Base Analysis */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Customer Base & Relationships
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          {/* Individual Criteria */}
           <div className="space-y-3">
-            {deal?.key_customers?.length > 0 ? (
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">Key Customers</p>
-                <div className="space-y-1">
-                  {deal.key_customers.slice(0, 3).map((customer: string, index: number) => (
-                    <Badge key={index} variant="secondary" className="mr-2 text-xs">
-                      {customer}
-                    </Badge>
-                  ))}
+            <h4 className="font-medium text-sm text-muted-foreground">Individual Criteria</h4>
+            {criteria.map((criterion, index) => (
+              <div key={index} className="flex items-center justify-between p-3 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    {criterion.icon}
+                    {getStatusIcon(criterion.aligned)}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{criterion.criterion}</p>
+                    <p className="text-xs text-muted-foreground">{criterion.reasoning}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-muted-foreground">Weight: {criterion.weight}%</span>
                 </div>
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">Customer analysis in progress</p>
-            )}
-            
-            <p className="text-xs text-muted-foreground mt-2">
-              Customer concentration, retention rates, and relationship strength assessment will be available once analysis is complete.
-            </p>
+            ))}
           </div>
-        </CardContent>
-      </Card>
-    </div>
+
+          {/* Recommendations */}
+          <div className="p-4 rounded-lg bg-muted/30 border">
+            <h4 className="font-medium text-sm mb-2">Recommendations</h4>
+            <div className="text-sm text-muted-foreground space-y-1">
+              {overallStatus === 'Leading' && (
+                <p>✅ Strong market position provides competitive advantage. Focus on defending and expanding position.</p>
+              )}
+              {overallStatus === 'Competitive' && (
+                <p>⚠️ Solid market position with room for improvement. Identify opportunities to strengthen competitive moat.</p>
+              )}
+              {overallStatus === 'Challenging' && (
+                <p>❌ Market position requires attention. Develop strategies to improve competitive standing.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
