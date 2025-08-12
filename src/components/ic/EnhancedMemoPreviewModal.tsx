@@ -444,7 +444,14 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   };
 
   const getStatusBadge = () => {
-    if (deal.overall_score && deal.overall_score >= 85) {
+    // Use RAG status first, then fall back to score-based badges
+    if (deal.rag_status === 'exciting') {
+      return <Badge className="bg-green-50 text-green-700 border-green-200">Exciting</Badge>;
+    } else if (deal.rag_status === 'promising') {
+      return <Badge className="bg-blue-50 text-blue-700 border-blue-200">Promising</Badge>;
+    } else if (deal.rag_status === 'needs_development') {
+      return <Badge className="bg-amber-50 text-amber-700 border-amber-200">Needs Development</Badge>;
+    } else if (deal.overall_score && deal.overall_score >= 85) {
       return <Badge className="bg-green-50 text-green-700 border-green-200">Exciting</Badge>;
     } else if (deal.overall_score && deal.overall_score >= 70) {
       return <Badge className="bg-blue-50 text-blue-700 border-blue-200">Promising</Badge>;
@@ -491,7 +498,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={handleClose}>
+      <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[95vw] h-[95vh] flex flex-col overflow-hidden">
         <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-primary/5 to-primary/10 flex-shrink-0">
           <div className="flex items-center justify-between">

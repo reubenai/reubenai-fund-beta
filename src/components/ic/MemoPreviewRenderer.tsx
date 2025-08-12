@@ -110,9 +110,9 @@ export const MemoPreviewRenderer: React.FC<MemoPreviewRendererProps> = ({
                   {deal.location}
                 </Badge>
               )}
-              {deal.overall_score && (
+              {(deal.rag_status || deal.overall_score) && (
                 <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                  Score: {deal.overall_score}/100
+                  {deal.rag_status ? deal.rag_status.replace('_', ' ').toUpperCase() : `Score: ${deal.overall_score}/100`}
                 </Badge>
               )}
             </div>

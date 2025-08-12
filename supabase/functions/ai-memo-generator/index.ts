@@ -109,7 +109,7 @@ serve(async (req) => {
     }
 
     // 3. Fetch investment strategy separately  
-    const { data: strategyData, error: strategyError } = await supabase
+    const { data: strategyDataSeparate, error: strategyError } = await supabase
       .from('investment_strategies')
       .select('*')
       .eq('fund_id', dealData.fund_id)
