@@ -221,6 +221,69 @@ export const VC_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
       ]
     },
     {
+      name: 'Strategic Timing',
+      weight: 10,
+      enabled: true,
+      icon: 'Clock',
+      description: 'Evaluate market timing and strategic entry points',
+      subcategories: [
+        {
+          name: 'Market Entry Timing',
+          weight: 60,
+          enabled: true,
+          requirements: 'Optimal timing for market entry and disruption',
+          aiSearchKeywords: ['timing', 'market entry', 'disruption', 'early', 'first mover'],
+          positiveSignals: ['Perfect timing for market disruption', 'Early mover advantage', 'Technology adoption inflection point'],
+          negativeSignals: ['Too early for market adoption', 'Missed timing window', 'Late market entry']
+        },
+        {
+          name: 'Competitive Timing',
+          weight: 40,
+          enabled: true,
+          requirements: 'Timing relative to competitive landscape',
+          aiSearchKeywords: ['competitive timing', 'first mover', 'fast follower', 'market dynamics'],
+          positiveSignals: ['Strategic timing advantage', 'Competitive window opportunity', 'Market timing alignment'],
+          negativeSignals: ['Poor competitive timing', 'Saturated market entry', 'Timing disadvantage']
+        }
+      ]
+    },
+    {
+      name: 'Trust & Transparency',
+      weight: 10,
+      enabled: true,
+      icon: 'Shield',
+      description: 'Assess governance, transparency, and stakeholder trust',
+      subcategories: [
+        {
+          name: 'Corporate Governance',
+          weight: 50,
+          enabled: true,
+          requirements: 'Board structure and governance practices',
+          aiSearchKeywords: ['governance', 'board', 'transparency', 'ethics', 'compliance'],
+          positiveSignals: ['Strong board composition', 'Clear governance structure', 'High transparency standards'],
+          negativeSignals: ['Weak governance practices', 'Board composition issues', 'Transparency concerns']
+        },
+        {
+          name: 'Stakeholder Relations',
+          weight: 30,
+          enabled: true,
+          requirements: 'Relationships with investors, customers, and employees',
+          aiSearchKeywords: ['stakeholder', 'investor relations', 'customer trust', 'employee satisfaction'],
+          positiveSignals: ['Strong stakeholder trust', 'Positive investor relations', 'High employee satisfaction'],
+          negativeSignals: ['Stakeholder conflicts', 'Trust issues', 'Poor stakeholder management']
+        },
+        {
+          name: 'ESG Compliance',
+          weight: 20,
+          enabled: true,
+          requirements: 'Environmental, social, and governance standards',
+          aiSearchKeywords: ['ESG', 'sustainability', 'social responsibility', 'environmental'],
+          positiveSignals: ['Strong ESG practices', 'Sustainability leadership', 'Social responsibility focus'],
+          negativeSignals: ['ESG compliance issues', 'Environmental concerns', 'Social responsibility gaps']
+        }
+      ]
+    },
+    {
       name: 'Strategic Fit',
       weight: 5,
       enabled: true,
@@ -441,6 +504,69 @@ export const PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
           aiSearchKeywords: ['execution risk', 'operational risk', 'key man', 'dependencies'],
           positiveSignals: ['Low execution risk', 'Proven management', 'Diversified operations'],
           negativeSignals: ['High execution risk', 'Key person dependencies', 'Operational vulnerabilities']
+        }
+      ]
+    },
+    {
+      name: 'Strategic Timing',
+      weight: 5,
+      enabled: true,
+      icon: 'Clock',
+      description: 'Evaluate acquisition timing and market positioning',
+      subcategories: [
+        {
+          name: 'Market Cycle Timing',
+          weight: 60,
+          enabled: true,
+          requirements: 'Timing relative to market and economic cycles',
+          aiSearchKeywords: ['market cycle', 'economic timing', 'acquisition timing', 'market conditions'],
+          positiveSignals: ['Optimal market cycle timing', 'Favorable economic conditions', 'Strategic acquisition window'],
+          negativeSignals: ['Poor market timing', 'Economic headwinds', 'Unfavorable acquisition conditions']
+        },
+        {
+          name: 'Exit Timing Potential',
+          weight: 40,
+          enabled: true,
+          requirements: 'Potential for strategic exit timing',
+          aiSearchKeywords: ['exit timing', 'strategic exit', 'market conditions', 'valuation timing'],
+          positiveSignals: ['Clear exit timing strategy', 'Favorable exit market conditions', 'Multiple exit pathways'],
+          negativeSignals: ['Unclear exit timing', 'Limited exit opportunities', 'Poor exit market conditions']
+        }
+      ]
+    },
+    {
+      name: 'Trust & Transparency',
+      weight: 5,
+      enabled: true,
+      icon: 'Shield',
+      description: 'Assess governance quality and stakeholder trust',
+      subcategories: [
+        {
+          name: 'Corporate Governance',
+          weight: 50,
+          enabled: true,
+          requirements: 'Board effectiveness and governance quality',
+          aiSearchKeywords: ['governance', 'board effectiveness', 'transparency', 'ethics', 'compliance'],
+          positiveSignals: ['Strong governance framework', 'Effective board oversight', 'High transparency standards'],
+          negativeSignals: ['Governance weaknesses', 'Board effectiveness issues', 'Transparency concerns']
+        },
+        {
+          name: 'Stakeholder Trust',
+          weight: 30,
+          enabled: true,
+          requirements: 'Trust levels with key stakeholders',
+          aiSearchKeywords: ['stakeholder trust', 'management credibility', 'investor relations', 'reputation'],
+          positiveSignals: ['High stakeholder trust', 'Strong management credibility', 'Positive reputation'],
+          negativeSignals: ['Trust issues', 'Management credibility concerns', 'Reputation problems']
+        },
+        {
+          name: 'ESG Standards',
+          weight: 20,
+          enabled: true,
+          requirements: 'Environmental, social, and governance practices',
+          aiSearchKeywords: ['ESG', 'sustainability', 'social responsibility', 'environmental practices'],
+          positiveSignals: ['Strong ESG performance', 'Sustainability leadership', 'Social responsibility focus'],
+          negativeSignals: ['ESG compliance issues', 'Environmental concerns', 'Social responsibility gaps']
         }
       ]
     }
