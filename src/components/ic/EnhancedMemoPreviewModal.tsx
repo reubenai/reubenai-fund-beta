@@ -35,7 +35,8 @@ import {
   MoreHorizontal,
   Mail,
   Calendar,
-  Plus
+  Plus,
+  Clock
 } from 'lucide-react';
 import { useMemoCache } from '@/hooks/useMemoCache';
 import { useEnhancedToast } from '@/hooks/useEnhancedToast';
@@ -74,7 +75,8 @@ interface EnhancedMemoPreviewModalProps {
   fundId: string;
 }
 
-const MEMO_SECTIONS = [
+// VC-focused memo sections
+const VC_MEMO_SECTIONS = [
   { key: 'executive_summary', title: 'Executive Summary', icon: FileText, description: 'High-level overview and investment recommendation' },
   { key: 'company_overview', title: 'Company Overview', icon: Target, description: 'Company background, mission, and core business' },
   { key: 'market_opportunity', title: 'Market Opportunity', icon: TrendingUp, description: 'Market size, dynamics, and growth potential' },
@@ -89,6 +91,27 @@ const MEMO_SECTIONS = [
   { key: 'investment_recommendation', title: 'Investment Recommendation', icon: Target, description: 'Final investment recommendation and rationale' }
 ];
 
+// PE-focused memo sections
+const PE_MEMO_SECTIONS = [
+  { key: 'executive_summary', title: 'Executive Summary', icon: FileText, description: 'High-level overview and investment recommendation' },
+  { key: 'company_overview', title: 'Company Overview', icon: Target, description: 'Company background, mission, and core business' },
+  { key: 'financial_performance', title: 'Financial Performance Assessment', icon: DollarSign, description: 'Financial health, performance metrics, and projections' },
+  { key: 'market_position', title: 'Market Position Analysis', icon: TrendingUp, description: 'Market positioning, competitive advantages, and dynamics' },
+  { key: 'operational_excellence', title: 'Operational Excellence Review', icon: Target, description: 'Operational efficiency, processes, and capabilities' },
+  { key: 'management_leadership', title: 'Management & Leadership Evaluation', icon: Users, description: 'Leadership assessment, track record, and capabilities' },
+  { key: 'growth_value_creation', title: 'Growth & Value Creation Strategy', icon: TrendingUp, description: 'Growth initiatives and value creation opportunities' },
+  { key: 'risk_assessment', title: 'Risk Assessment & Mitigation', icon: Shield, description: 'Comprehensive risk analysis and mitigation strategies' },
+  { key: 'strategic_timing', title: 'Strategic Timing Analysis', icon: Clock, description: 'Investment timing and market conditions assessment' },
+  { key: 'investment_terms', title: 'Investment Terms & Structure', icon: FileText, description: 'Deal structure, terms, and governance' },
+  { key: 'exit_value_realization', title: 'Exit Strategy & Value Realization', icon: TrendingUp, description: 'Exit strategy and value realization potential' },
+  { key: 'investment_recommendation', title: 'Investment Recommendation', icon: Target, description: 'Final investment recommendation and rationale' }
+];
+
+// Function to get memo sections based on fund type
+const getMemoSections = (fundType?: string) => {
+  return fundType === 'private_equity' ? PE_MEMO_SECTIONS : VC_MEMO_SECTIONS;
+};
+
 export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> = ({
   isOpen,
   onClose,
@@ -99,6 +122,10 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [fundType, setFundType] = useState<string>('');
+  
+  // Get dynamic memo sections based on fund type
+  const MEMO_SECTIONS = getMemoSections(fundType);
 
   // Handle close with confirmation
   const handleClose = () => {
@@ -171,8 +198,25 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
       loadMemo(false); // Don't auto-generate
       loadVersions();
       loadCustomSections();
+      loadFundType();
     }
   }, [isOpen, deal.id, loadMemo, loadVersions]);
+
+  const loadFundType = async () => {
+    try {
+      const { data: fund, error } = await supabase
+        .from('funds')
+        .select('fund_type')
+        .eq('id', fundId)
+        .single();
+
+      if (error) throw error;
+      setFundType(fund?.fund_type || '');
+    } catch (error) {
+      console.error('Error loading fund type:', error);
+      setFundType(''); // Default to VC sections
+    }
+  };
 
   const loadCustomSections = async () => {
     try {
