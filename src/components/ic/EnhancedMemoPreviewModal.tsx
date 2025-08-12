@@ -168,7 +168,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
 
   useEffect(() => {
     if (isOpen && deal.id) {
-      loadMemo();
+      loadMemo(false); // Don't auto-generate
       loadVersions();
       loadCustomSections();
     }
@@ -785,6 +785,32 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                     <Loader2 className="w-4 h-4 animate-spin" />
                     This may take a few moments
                   </div>
+                </div>
+              </div>
+            ) : !memoState.existsInDb && !hasContent ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center max-w-md mx-auto">
+                  <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-6" />
+                  <h3 className="text-xl font-semibold mb-3">No Investment Committee Memo</h3>
+                  <p className="text-muted-foreground mb-6 leading-relaxed">
+                    Generate a comprehensive IC memo for {deal.company_name} using our AI-powered 
+                    Reuben Orchestrator to analyze deal data, market intelligence, and strategic alignment.
+                  </p>
+                  
+                  <Button 
+                    onClick={handleGenerateMemo}
+                    size="lg"
+                    className="mb-4"
+                    disabled={!canEditICMemos}
+                  >
+                    <Brain className="w-5 h-5 mr-2" />
+                    Generate IC Memo
+                  </Button>
+                  
+                  <p className="text-xs text-muted-foreground">
+                    This will analyze the deal using multiple AI engines including market intelligence, 
+                    financial analysis, and thesis alignment to create a professional investment memo.
+                  </p>
                 </div>
               </div>
             ) : (

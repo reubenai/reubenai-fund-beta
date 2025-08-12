@@ -100,27 +100,25 @@ export function useMemoCache(dealId: string, fundId: string) {
     }
   }, [getCacheKey, fundId]);
 
-  const loadMemo = useCallback(async (forceRegenerate = false): Promise<void> => {
+  const loadMemo = useCallback(async (autoGenerate = false): Promise<void> => {
     const cacheKey = getCacheKey(dealId, fundId);
     setMemoState(prev => ({ ...prev, isLoading: true, canCancel: false }));
 
     try {
       // Check if we should use cached content
-      if (!forceRegenerate) {
-        const cached = cacheRef.current.get(cacheKey);
-        if (cached) {
-          const { needsRefresh, dealLastUpdated, analysisVersion } = await checkAnalysisFreshness(dealId);
-          
-          setMemoState(prev => ({
-            ...prev,
-            content: cached.content,
-            existsInDb: true,
-            needsRefresh,
-            lastGenerated: cached.lastGenerated,
-            isLoading: false
-          }));
-          return;
-        }
+      const cached = cacheRef.current.get(cacheKey);
+      if (cached) {
+        const { needsRefresh, dealLastUpdated, analysisVersion } = await checkAnalysisFreshness(dealId);
+        
+        setMemoState(prev => ({
+          ...prev,
+          content: cached.content,
+          existsInDb: true,
+          needsRefresh,
+          lastGenerated: cached.lastGenerated,
+          isLoading: false
+        }));
+        return;
       }
 
       const { data: existingMemos } = await supabase
@@ -133,7 +131,7 @@ export function useMemoCache(dealId: string, fundId: string) {
 
       const existingMemo = existingMemos?.[0];
 
-      if (existingMemo?.memo_content && !forceRegenerate) {
+      if (existingMemo?.memo_content) {
         const memoContent = existingMemo.memo_content as any;
         // Extract content correctly - check for nested sections or use direct content
         const content = memoContent?.sections || memoContent;
@@ -162,13 +160,29 @@ export function useMemoCache(dealId: string, fundId: string) {
         return;
       }
 
-      // If no existing memo or force regenerate, generate new one
-      await generateMemo();
+      // If no existing memo and auto-generate is requested
+      if (autoGenerate) {
+        await generateMemo();
+      } else {
+        // No memo exists, set state to indicate this
+        setMemoState(prev => ({
+          ...prev,
+          content: {},
+          existsInDb: false,
+          needsRefresh: false,
+          isLoading: false
+        }));
+      }
       
     } catch (error) {
       console.error('Error loading memo:', error);
-      // Try to generate new memo on load failure
-      await generateMemo();
+      setMemoState(prev => ({
+        ...prev,
+        content: {},
+        existsInDb: false,
+        needsRefresh: false,
+        isLoading: false
+      }));
     }
   }, [dealId, fundId, getCacheKey, checkAnalysisFreshness]);
 
