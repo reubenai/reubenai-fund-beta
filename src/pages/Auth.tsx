@@ -157,11 +157,11 @@ export default function Auth() {
                 </Badge>
               </div>
               <p className="text-sm sm:text-base font-medium text-foreground">
-                <strong className="text-accent-orange">Beta Testing Notice:</strong> ReubenAI is currently in private beta for functionality testing and feedback.
+                <strong className="text-accent-orange">Private Beta Notice:</strong> ReubenAI is in private beta to test workflows, capture feedback, and roll out new features ahead of public launch later this year.
               </p>
             </div>
             <div className="bg-background/50 rounded-md p-3 sm:p-4 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              <p><strong>Please Note:</strong> Beta software will be imperfect by design. Our goal is to test core functionality and capture feedback to shape our product roadmap.</p>
+              <p><strong>Please Note:</strong> Beta software is imperfect by design; AI depth is currently limited by API quotas, with full analysis available on paid access. Accounts are personal — no password sharing, public posting, or disclosure of proprietary features. By using the platform, you agree to maintain strict confidentiality.</p>
               <p className="mt-2 sm:mt-3"><strong>API Limitations:</strong> During beta, AI analysis depth is limited by large language model API quotas. Full sophisticated analysis available with paid API access.</p>
               <p className="mt-2 sm:mt-3"><strong>Confidentiality:</strong> By using this platform, you agree to maintain strict confidentiality of all proprietary AI capabilities and platform features.</p>
             </div>

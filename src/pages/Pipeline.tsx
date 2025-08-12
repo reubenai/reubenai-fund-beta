@@ -49,7 +49,7 @@ export default function Pipeline() {
       <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
         <h3 className="font-semibold text-primary mb-2">Beta v1 Notice</h3>
         <p className="text-sm text-muted-foreground">
-          The objective of the Deal Pipeline in v1 is to enable Investment Teams to upload Deals, move Deals between investment stages, upload relevant documents (such as Pitch Decks and Financial Models) to engage our intelligent parsing and deal analysis engines. These engines require training to improve accuracy and depth. In the first instance, rubrics applied will be basic, but this will refine and iterate as Reuben is able to facilitate more deal activities.
+          The v1 Deal Pipeline enables teams to upload and stage deals, attach key documents for AI parsing, and begin basic analysis—rubrics will refine as deal activity increases. Moving a Deal to Investment Committee stage will trigger IC workflows.
         </p>
       </div>
 

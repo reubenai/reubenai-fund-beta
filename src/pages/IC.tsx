@@ -9,7 +9,7 @@ export default function IC() {
         <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
           <h3 className="font-semibold text-primary mb-2">Beta v1 Notice</h3>
           <p className="text-sm text-muted-foreground">
-            In v1 of the Investment Committee workflows, simple deal memo can be generated along with basic IC sub-stages. As our analysis and scoring capabilities deepen, IC memo generation will improve, and time saved across IC preparation will become clearer.
+            The v1 IC workflow generates simple deal memos and manages basic sub-stages; richer memos and greater time savings will come as analysis and scoring mature. Collaboration features are launching soon.
           </p>
         </div>
       </div>

@@ -738,7 +738,7 @@ export function EnhancedDealDetailsModal({
               <Card className="border-l-4 border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20">
                 <CardContent className="p-4">
                   <p className="text-sm text-foreground">
-                    <strong>Beta v1 Notice:</strong> New data channels will be progressively made available to deepen individual criteria and category assessments. To request a specific dataset or data type, please submit a ticket via the Feedback widget.
+                    <strong>Beta v1 Notice:</strong> The Deal Analysis Modal currently applies basic rubric scoring, with new data channels and deeper insights to be added progressively. Request datasets via the Feedback widget.
                   </p>
                 </CardContent>
               </Card>
