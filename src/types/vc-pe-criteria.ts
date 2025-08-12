@@ -329,7 +329,7 @@ export const PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
   categories: [
     {
       name: 'Financial Performance',
-      weight: 30,
+      weight: 15,
       enabled: true,
       icon: 'BarChart3',
       description: 'Evaluate revenue growth, profitability, and cash flow generation',
@@ -365,7 +365,7 @@ export const PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
     },
     {
       name: 'Market Position',
-      weight: 25,
+      weight: 15,
       enabled: true,
       icon: 'Building2',
       description: 'Assess market share, competitive advantages, and brand strength',
@@ -401,7 +401,7 @@ export const PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
     },
     {
       name: 'Operational Excellence',
-      weight: 20,
+      weight: 14,
       enabled: true,
       icon: 'Users',
       description: 'Evaluate management quality, operational efficiency, and systems',
@@ -437,7 +437,7 @@ export const PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
     },
     {
       name: 'Growth Potential',
-      weight: 15,
+      weight: 14,
       enabled: true,
       icon: 'Cpu',
       description: 'Assess organic growth opportunities and expansion potential',
@@ -473,7 +473,7 @@ export const PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
     },
     {
       name: 'Risk Assessment',
-      weight: 10,
+      weight: 14,
       enabled: true,
       icon: 'CreditCard',
       description: 'Evaluate industry, regulatory, and execution risks',
@@ -509,7 +509,7 @@ export const PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
     },
     {
       name: 'Strategic Timing',
-      weight: 5,
+      weight: 14,
       enabled: true,
       icon: 'Clock',
       description: 'Evaluate acquisition timing and market positioning',
@@ -536,7 +536,7 @@ export const PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
     },
     {
       name: 'Trust & Transparency',
-      weight: 5,
+      weight: 14,
       enabled: true,
       icon: 'Shield',
       description: 'Assess governance quality and stakeholder trust',
