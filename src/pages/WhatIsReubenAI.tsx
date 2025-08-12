@@ -345,28 +345,32 @@ const WhatIsReubenAI = () => {
                 <div className="space-y-6">
                   <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
                     <Target className="h-5 w-5 text-primary" />
-                    Criteria & Weights
+                    6-Category Scoring Framework
                   </h4>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                      <span className="text-sm font-medium">Market Attractiveness</span>
-                      <Badge variant="outline">25%</Badge>
-                    </div>
                     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                       <span className="text-sm font-medium">Team & Leadership</span>
                       <Badge variant="outline">20%</Badge>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                      <span className="text-sm font-medium">Financial Health</span>
-                      <Badge variant="outline">20%</Badge>
+                      <span className="text-sm font-medium">Market Opportunity</span>
+                      <Badge variant="outline">18%</Badge>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                       <span className="text-sm font-medium">Product & Technology</span>
+                      <Badge variant="outline">17%</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <span className="text-sm font-medium">Business Traction</span>
+                      <Badge variant="outline">16%</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <span className="text-sm font-medium">Financial Health</span>
                       <Badge variant="outline">15%</Badge>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                       <span className="text-sm font-medium">Strategic Fit</span>
-                      <Badge variant="outline">20%</Badge>
+                      <Badge variant="outline">14%</Badge>
                     </div>
                   </div>
                 </div>
@@ -406,6 +410,12 @@ const WhatIsReubenAI = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-8">
+              <div className="flex items-center gap-2 mb-6">
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                  Beta Feature
+                </Badge>
+                <p className="text-sm text-muted-foreground">Analysis depth currently limited during beta</p>
+              </div>
               <p className="text-muted-foreground leading-relaxed">
                 Our scoring engine analyzes deals across six core dimensions, applying your fund's custom weights 
                 and criteria to generate objective, comparable scores with confidence indicators.
@@ -490,32 +500,6 @@ const WhatIsReubenAI = () => {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Market Attractiveness</span>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">55%</Badge>
-                          <div className="w-16 h-2 bg-muted rounded-full">
-                            <div className="w-[55%] h-2 bg-yellow-500 rounded-full"></div>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Strong renewable energy market, validated demand</p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Financial Feasibility</span>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">55%</Badge>
-                          <div className="w-16 h-2 bg-muted rounded-full">
-                            <div className="w-[55%] h-2 bg-yellow-500 rounded-full"></div>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Revenue traction but limited financial data</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">Team & Leadership</span>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">40%</Badge>
@@ -529,34 +513,73 @@ const WhatIsReubenAI = () => {
                       </div>
                       <p className="text-xs text-muted-foreground">Missing key founder background data</p>
                     </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Market Opportunity</span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">72%</Badge>
+                          <div className="w-16 h-2 bg-muted rounded-full">
+                            <div className="w-[72%] h-2 bg-yellow-500 rounded-full"></div>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Strong renewable energy market, growing demand</p>
+                    </div>
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">Product & Technology</span>
                         <div className="flex items-center gap-2">
-                          <Badge className="bg-green-500/20 text-green-700 border-green-200">100%</Badge>
+                          <Badge className="bg-green-500/20 text-green-700 border-green-200">88%</Badge>
                           <div className="w-16 h-2 bg-muted rounded-full">
-                            <div className="w-full h-2 bg-green-500 rounded-full"></div>
+                            <div className="w-[88%] h-2 bg-green-500 rounded-full"></div>
                           </div>
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground">Strong IP portfolio, validated technology</p>
+                      <p className="text-xs text-muted-foreground">Strong IP portfolio, validated technology moat</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Business Traction</span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">58%</Badge>
+                          <div className="w-16 h-2 bg-muted rounded-full">
+                            <div className="w-[58%] h-2 bg-yellow-500 rounded-full"></div>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Early revenue traction, needs more validation</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Financial Health</span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">45%</Badge>
+                          <div className="w-16 h-2 bg-muted rounded-full">
+                            <div className="w-[45%] h-2 bg-red-500 rounded-full"></div>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Limited financial data and transparency</p>
                     </div>
 
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">Strategic Fit</span>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline">25%</Badge>
+                          <Badge variant="outline">38%</Badge>
                           <div title="Deal size below threshold">
                             <AlertTriangle className="h-3 w-3 text-yellow-600" />
                           </div>
                           <div className="w-16 h-2 bg-muted rounded-full">
-                            <div className="w-[25%] h-2 bg-red-500 rounded-full"></div>
+                            <div className="w-[38%] h-2 bg-red-500 rounded-full"></div>
                           </div>
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground">Deal size below fund's $500K-$5M range</p>
+                      <p className="text-xs text-muted-foreground">Sector alignment good, but deal size concerns</p>
                     </div>
                   </div>
 
@@ -566,7 +589,7 @@ const WhatIsReubenAI = () => {
                       <span className="text-lg font-semibold">Overall Score</span>
                       <div className="flex items-center gap-3">
                         <Badge className="bg-red-500/20 text-red-700 border-red-200 px-3 py-1 text-base">
-                          53 - Needs Development
+                          56 - Needs Development
                         </Badge>
                       </div>
                     </div>
@@ -610,6 +633,12 @@ const WhatIsReubenAI = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="flex items-center gap-2 mb-6">
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                  Enhanced in Production
+                </Badge>
+                <p className="text-sm text-muted-foreground">Full transparency features available with paid access</p>
+              </div>
               <p className="text-muted-foreground leading-relaxed">
                 Every score comes with full transparency into data sources, confidence levels, and reasoning, 
                 building trust in AI recommendations while highlighting areas that need human validation.
