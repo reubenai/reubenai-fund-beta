@@ -158,8 +158,8 @@ export const validateCriteriaWeights = (criteria: InvestmentCriteria[]): { isVal
   
   // Check total weight
   const totalWeight = enabledCriteria.reduce((sum, c) => sum + c.weight, 0);
-  if (totalWeight !== 100) {
-    errors.push(`Total criteria weight must equal 100% (currently ${totalWeight}%)`);
+  if (Math.abs(totalWeight - 100) > 0.01) { // Use tolerance for floating point comparison
+    errors.push(`Total criteria weight must equal 100% (currently ${Math.round(totalWeight * 10) / 10}%)`);
   }
   
   // Check individual category weights
@@ -172,8 +172,8 @@ export const validateCriteriaWeights = (criteria: InvestmentCriteria[]): { isVal
     const enabledSubcategories = category.subcategories.filter(s => s.enabled);
     if (enabledSubcategories.length > 0) {
       const subcategoryTotal = enabledSubcategories.reduce((sum, s) => sum + s.weight, 0);
-      if (subcategoryTotal !== 100) {
-        errors.push(`${category.name} subcategory weights must equal 100% (currently ${subcategoryTotal}%)`);
+      if (Math.abs(subcategoryTotal - 100) > 0.01) { // Use tolerance for floating point comparison
+        errors.push(`${category.name} subcategory weights must equal 100% (currently ${Math.round(subcategoryTotal * 10) / 10}%)`);
       }
       
       enabledSubcategories.forEach(sub => {
@@ -195,8 +195,8 @@ export const validateTargetParameters = (parameters: TargetParameter[]): { isVal
     const typeParams = parameters.filter(p => p.type === type && p.enabled);
     if (typeParams.length > 0) {
       const totalWeight = typeParams.reduce((sum, p) => sum + p.weight, 0);
-      if (totalWeight !== 100) {
-        errors.push(`${type} parameters must total 100% (currently ${totalWeight}%)`);
+      if (Math.abs(totalWeight - 100) > 0.01) { // Use tolerance for floating point comparison
+        errors.push(`${type} parameters must total 100% (currently ${Math.round(totalWeight * 10) / 10}%)`);
       }
       
       typeParams.forEach(param => {

@@ -28,6 +28,7 @@ import {
   validateCriteriaWeights
 } from '@/types/vc-pe-criteria';
 import { toast } from 'sonner';
+import { formatPercentage } from '@/lib/utils';
 
 const ICON_MAP = {
   Users,
@@ -60,10 +61,10 @@ export function EnhancedCriteriaEditor({
 
   // Validation
   const validation = useMemo(() => validateCriteriaWeights(criteria), [criteria]);
-  const totalWeight = useMemo(() => 
-    criteria.categories.filter(c => c.enabled).reduce((sum, c) => sum + c.weight, 0), 
-    [criteria.categories]
-  );
+  const totalWeight = useMemo(() => {
+    const total = criteria.categories.filter(c => c.enabled).reduce((sum, c) => sum + c.weight, 0);
+    return Math.round(total * 10) / 10; // Round to 1 decimal place
+  }, [criteria.categories]);
 
   const handleCategoryWeightChange = (categoryName: string, weight: number) => {
     setCriteria(prev => ({
@@ -165,7 +166,7 @@ export function EnhancedCriteriaEditor({
                       {category.name}
                       {category.enabled && (
                         <Badge variant="outline" className="text-xs">
-                          {category.weight}%
+                          {formatPercentage(category.weight, 0)}
                         </Badge>
                       )}
                       {!subcategoryValid && category.enabled && (
@@ -202,7 +203,7 @@ export function EnhancedCriteriaEditor({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-medium">Category Weight</Label>
-                    <Badge variant="outline">{category.weight}%</Badge>
+                    <Badge variant="outline">{formatPercentage(category.weight, 0)}</Badge>
                   </div>
                   <Slider
                     value={[category.weight]}
@@ -252,7 +253,7 @@ export function EnhancedCriteriaEditor({
                         </div>
                         {subcategory.enabled && (
                           <Badge variant="outline" className="text-xs">
-                            {subcategory.weight}%
+                            {formatPercentage(subcategory.weight, 0)}
                           </Badge>
                         )}
                       </div>
@@ -340,7 +341,7 @@ export function EnhancedCriteriaEditor({
             <AlertTriangle className="h-4 w-4 text-destructive" />
           )}
           <span className="text-sm font-medium">
-            Total Weight: {totalWeight}%
+            Total Weight: {formatPercentage(totalWeight, 0)}
           </span>
         </div>
         <Progress value={totalWeight} className="w-32" />

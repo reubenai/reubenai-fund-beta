@@ -41,6 +41,7 @@ import {
   DEFAULT_TARGET_PARAMETERS
 } from '@/types/investment-criteria';
 import { toast } from 'sonner';
+import { formatPercentage } from '@/lib/utils';
 
 const ICON_MAP = {
   Users,
@@ -78,10 +79,10 @@ export function EnhancedInvestmentCriteria({
   // Validation
   const criteriaValidation = useMemo(() => validateCriteriaWeights(criteria), [criteria]);
   const targetValidation = useMemo(() => validateTargetParameters(targetParameters), [targetParameters]);
-  const totalWeight = useMemo(() => 
-    criteria.filter(c => c.enabled).reduce((sum, c) => sum + c.weight, 0), 
-    [criteria]
-  );
+  const totalWeight = useMemo(() => {
+    const total = criteria.filter(c => c.enabled).reduce((sum, c) => sum + c.weight, 0);
+    return Math.round(total * 10) / 10; // Round to 1 decimal place
+  }, [criteria]);
 
   const handleCategoryWeightChange = (categoryId: string, weight: number) => {
     setCriteria(prev => prev.map(cat => 
@@ -223,7 +224,7 @@ export function EnhancedInvestmentCriteria({
                       {category.name}
                       {category.enabled && (
                         <Badge variant="outline" className="text-xs">
-                          {category.weight}%
+                          {formatPercentage(category.weight, 0)}
                         </Badge>
                       )}
                       {!subcategoryValid && category.enabled && (
@@ -260,7 +261,7 @@ export function EnhancedInvestmentCriteria({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-medium">Category Weight</Label>
-                    <Badge variant="outline">{category.weight}%</Badge>
+                    <Badge variant="outline">{formatPercentage(category.weight, 0)}</Badge>
                   </div>
                   <Slider
                     value={[category.weight]}
@@ -365,7 +366,7 @@ export function EnhancedInvestmentCriteria({
                         </div>
                         {subcategory.enabled && (
                           <Badge variant="outline" className="text-xs">
-                            {subcategory.weight}%
+                            {formatPercentage(subcategory.weight, 0)}
                           </Badge>
                         )}
                       </div>
@@ -425,7 +426,7 @@ export function EnhancedInvestmentCriteria({
                   <AlertTriangle className="h-4 w-4 text-destructive" />
                 )}
                 <Badge variant={isValid ? "default" : "destructive"}>
-                  {totalWeight}%
+                  {formatPercentage(Math.round(totalWeight * 10) / 10, 0)}
                 </Badge>
               </div>
             </CardTitle>
