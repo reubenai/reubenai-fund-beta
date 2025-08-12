@@ -2242,6 +2242,7 @@ export type Database = {
       }
       ic_memos: {
         Row: {
+          approval_notes: string | null
           approved_at: string | null
           approved_by: string | null
           content_quality_score: number | null
@@ -2283,6 +2284,7 @@ export type Database = {
           workflow_state: string | null
         }
         Insert: {
+          approval_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
           content_quality_score?: number | null
@@ -2324,6 +2326,7 @@ export type Database = {
           workflow_state?: string | null
         }
         Update: {
+          approval_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
           content_quality_score?: number | null
