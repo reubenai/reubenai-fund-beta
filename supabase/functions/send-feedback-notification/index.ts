@@ -28,6 +28,7 @@ interface FeedbackNotificationRequest {
     timestamp: string;
     pathname: string;
     referrer: string;
+    screenshots?: string[];
   };
 }
 
@@ -137,6 +138,27 @@ const formatEmailHtml = (data: FeedbackNotificationRequest): string => {
           ${data.message.replace(/\n/g, '<br>')}
         </div>
       </div>
+
+      ${data.metadata.screenshots && data.metadata.screenshots.length > 0 ? `
+      <!-- Attached Screenshots -->
+      <div style="background: #fff; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+        <h3 style="margin: 0 0 15px 0; color: #495057; border-bottom: 2px solid #e9ecef; padding-bottom: 8px;">📎 Attached Screenshots (${data.metadata.screenshots.length})</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+          ${data.metadata.screenshots.map((url, index) => `
+            <div style="border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              <img src="${url}" alt="Screenshot ${index + 1}" style="width: 100%; height: 150px; object-fit: cover; display: block;" />
+              <div style="padding: 10px; background: #f8f9fa;">
+                <p style="margin: 0; font-size: 12px; color: #495057; font-weight: bold;">Screenshot ${index + 1}</p>
+                <a href="${url}" target="_blank" style="color: #007bff; text-decoration: none; font-size: 12px;">View full size →</a>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <p style="margin: 15px 0 0 0; padding: 10px; background: #e7f3ff; border-radius: 4px; font-size: 12px; color: #0856a3;">
+          💡 <strong>Tip:</strong> Click on any image above to view it in full size. These screenshots help provide visual context for the feedback.
+        </p>
+      </div>
+      ` : ''}
 
       <!-- Technical Details -->
       <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
