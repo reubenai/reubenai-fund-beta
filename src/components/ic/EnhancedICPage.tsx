@@ -14,6 +14,7 @@ import { ICMemoModal } from '@/components/ic/ICMemoModal';
 import { VotingModal } from '@/components/ic/VotingModal';
 import { SessionDetailModal } from '@/components/ic/SessionDetailModal';
 import { EnhancedReviewQueue } from '@/components/ic/EnhancedReviewQueue';
+import { AnalysisQueueResilience } from '@/components/pipeline/AnalysisQueueResilience';
 
 import { icMemoService, ICSession, ICVotingDecision } from '@/services/ICMemoService';
 import { ICCommitteeMember } from '@/types/memo';
@@ -636,7 +637,7 @@ export default function EnhancedICPage() {
         </TabsContent>
 
         {canReviewMemos && (
-          <TabsContent value="review" className="space-y-6">
+        <TabsContent value="review" className="space-y-6">
             <EnhancedReviewQueue
               fundId={selectedFund.id}
               onViewMemo={(dealId) => {
@@ -647,6 +648,9 @@ export default function EnhancedICPage() {
                 }
               }}
             />
+            
+            {/* Analysis Queue Resilience Monitoring */}
+            <AnalysisQueueResilience fundId={selectedFund.id} />
           </TabsContent>
         )}
 

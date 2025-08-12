@@ -55,6 +55,15 @@ export function useEnhancedToast() {
     });
   }, [showToast]);
 
+  const showMemoSaveToast = useCallback((dealName: string) => {
+    return showToast({
+      title: "Memo Saved Successfully",
+      description: `Changes to ${dealName} memo have been saved`,
+      variant: "default",
+      duration: 4000
+    });
+  }, [showToast]);
+
   const showAnalysisOutdatedToast = useCallback((dealName: string, onRefresh: () => void) => {
     return showToast({
       title: "Analysis Outdated",
@@ -91,6 +100,7 @@ export function useEnhancedToast() {
   return {
     showToast,
     showMemoGenerationToast,
+    showMemoSaveToast,
     showAnalysisOutdatedToast,
     showMemoErrorToast,
     showLoadingToast,

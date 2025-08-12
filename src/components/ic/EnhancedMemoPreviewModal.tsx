@@ -51,6 +51,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { exportMemoToPDF, openMemoPrintPreview } from '@/utils/pdfClient';
 import { usePermissions } from '@/hooks/usePermissions';
 import { MemoPreviewRenderer } from './MemoPreviewRenderer';
+import { ICReviewWorkflow } from './ICReviewWorkflow';
 
 interface Deal {
   id: string;
@@ -122,9 +123,11 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   
   const { memoState, loadMemo, generateMemo, cancelGeneration, updateContent } = useMemoCache(deal.id, fundId);
   const { versionState, loadVersions, saveVersion, restoreVersion } = useMemoVersions(deal.id, fundId);
+  const [localMemoState, setLocalMemoState] = useState(memoState);
   const { 
     showToast,
-    showMemoGenerationToast, 
+    showMemoGenerationToast,
+    showMemoSaveToast,
     showAnalysisOutdatedToast, 
     showMemoErrorToast, 
     showLoadingToast,
@@ -239,7 +242,8 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
         console.warn('Failed to save version:', versionError);
       }
 
-      showMemoGenerationToast(deal.company_name, () => {});
+      showMemoSaveToast(deal.company_name);
+      setHasUnsavedChanges(false);
     } catch (error) {
       showMemoErrorToast(
         'Failed to save memo. Please try again.',
@@ -534,20 +538,18 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                   </Badge>
                  )}
                  
-                  {/* Memo Workflow Controls */}
-                  {memoState.existsInDb && (
-                    <MemoWorkflowControls
-                      memoId={memoState.id || ''}
-                      status={memoState.status || 'draft'}
-                      dealName={deal.company_name}
-                      fundId={fundId}
-                      createdBy={(memoState as any).createdBy}
-                      reviewedBy={(memoState as any).reviewedBy}
-                      onStatusUpdate={() => {
-                        loadMemo();
-                      }}
-                    />
-                  )}
+                    {/* IC Review Workflow */}
+                    {memoState.existsInDb && (
+                      <ICReviewWorkflow
+                        memoId={memoState.id || ''}
+                        dealName={deal.company_name}
+                        currentStatus={memoState.status || 'draft'}
+                        onStatusChange={(status) => {
+                          setLocalMemoState(prev => ({ ...prev, status }));
+                        }}
+                        onViewMemo={() => setShowPreview(true)}
+                      />
+                    )}
                   
                   {/* Memo Publishing Controls */}
                   {memoState.existsInDb && memoState.status === 'approved' && (
