@@ -189,7 +189,7 @@ export const ICReviewWorkflow: React.FC<ReviewWorkflowProps> = ({
         )}
 
         {/* Review Status */}
-        {currentStatus === 'review' && (
+        {currentStatus === 'submitted' && (
           <div className="space-y-3">
             <div className="p-4 bg-amber-50 rounded-lg">
               <div className="flex items-center gap-2 mb-2">

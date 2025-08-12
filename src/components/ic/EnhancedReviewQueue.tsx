@@ -19,7 +19,7 @@ import { formatDistanceToNow } from 'date-fns';
 interface ReviewQueueItem {
   id: string;
   title: string;
-  status: string;
+  workflow_state: string;
   deal_id: string;
   created_by: string;
   reviewed_by?: string;
@@ -65,7 +65,7 @@ export const EnhancedReviewQueue: React.FC<EnhancedReviewQueueProps> = ({
         .select(`
           id,
           title,
-          status,
+          workflow_state,
           deal_id,
           created_by,
           reviewed_by,
@@ -80,7 +80,7 @@ export const EnhancedReviewQueue: React.FC<EnhancedReviewQueueProps> = ({
           )
         `)
         .eq('fund_id', fundId)
-        .eq('status', 'review')
+        .eq('workflow_state', 'submitted')
         .order('submitted_for_review_at', { ascending: true });
 
       if (error) throw error;

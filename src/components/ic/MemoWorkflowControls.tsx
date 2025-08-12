@@ -237,7 +237,7 @@ export const MemoWorkflowControls: React.FC<MemoWorkflowControlsProps> = ({
       )}
 
       {/* Withdraw from Review - Authors can withdraw */}
-      {status === 'review' && canSubmitForReview && (
+      {status === 'submitted' && canSubmitForReview && (
         <Button
           variant="outline"
           size="sm"
@@ -251,7 +251,7 @@ export const MemoWorkflowControls: React.FC<MemoWorkflowControlsProps> = ({
       )}
 
       {/* Review Actions - Fund Managers can approve/reject */}
-      {status === 'review' && canReviewMemos && (
+      {status === 'submitted' && canReviewMemos && (
         <>
           <Button
             variant="outline"

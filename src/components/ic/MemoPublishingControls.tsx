@@ -75,7 +75,7 @@ export function MemoPublishingControls({
       const { error } = await supabase
         .from('ic_memos')
         .update({ 
-          status: 'review',
+          workflow_state: 'submitted',
           review_priority: priority,
           review_notes: reviewerNotes || null,
           submitted_for_review_at: new Date().toISOString()
@@ -140,7 +140,7 @@ export function MemoPublishingControls({
     switch (currentStatus) {
       case 'draft':
         return <Badge variant="outline" className="gap-1"><Lock className="h-3 w-3" />Draft</Badge>;
-      case 'review':
+      case 'submitted':
         return <Badge variant="outline" className="gap-1 bg-amber-50 text-amber-700 border-amber-200"><Clock className="h-3 w-3" />Under Review</Badge>;
       case 'published':
         return <Badge variant="outline" className="gap-1 bg-green-50 text-green-700 border-green-200"><Globe className="h-3 w-3" />Published</Badge>;
@@ -213,7 +213,7 @@ export function MemoPublishingControls({
         </>
       )}
 
-      {currentStatus === 'review' && (
+      {currentStatus === 'submitted' && (
           <Dialog>
             <DialogTrigger asChild>
               <Button size="sm" className="gap-2">
