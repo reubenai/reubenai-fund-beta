@@ -55,6 +55,7 @@ import { ProductIPMoatAssessment } from '@/components/analysis/ProductIPMoatAsse
 import { TractionFinancialFeasibilityAssessment } from '@/components/analysis/TractionFinancialFeasibilityAssessment';
 import { ReubenAISummaryScore } from '@/components/analysis/ReubenAISummaryScore';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useFund } from '@/contexts/FundContext';
 
 // Extend the Deal type to include enhanced_analysis
 type Deal = BaseDeal & {
@@ -103,6 +104,7 @@ export function EnhancedDealDetailsModal({
   const { toast } = useToast();
   const { getRAGCategory } = useStrategyThresholds();
   const { canViewActivities, canViewAnalysis, role, loading } = usePermissions();
+  const { selectedFund } = useFund();
   
   // Enhanced activity hook with user data and 30-day filter
   const { 
@@ -179,7 +181,7 @@ export function EnhancedDealDetailsModal({
         body: { 
           dealId: deal.id,
           strategyContext: {
-            fundType: 'vc', // This should come from fund data
+            fundType: selectedFund?.fund_type === 'private_equity' ? 'pe' : 'vc',
             enhancedCriteria: true,
             thresholds: { exciting: 85, promising: 70, needs_development: 50 }
           },
@@ -317,8 +319,10 @@ export function EnhancedDealDetailsModal({
           last_analyzed: new Date().toISOString()
         },
         fund_type_analysis: {
-          fund_type: 'vc',
-          focus_areas: ['Technology', 'Growth potential', 'Market opportunity'],
+          fund_type: selectedFund?.fund_type === 'private_equity' ? 'pe' : 'vc',
+          focus_areas: selectedFund?.fund_type === 'private_equity' 
+            ? ['Financial Performance', 'Operational Excellence', 'Market Position'] 
+            : ['Technology', 'Growth potential', 'Market opportunity'],
           strengths: orchestratorData?.analysis?.strengths || ['Analysis completed'],
           concerns: orchestratorData?.analysis?.concerns || [],
           alignment_score: engines['thesis-alignment-engine']?.score || analysis.overall_score || 70,

@@ -30,10 +30,12 @@ export const RubricScoreRadar: React.FC<RubricScoreRadarProps> = ({
       'Strategic Timing': 'Strategic Timing',
       
       // PE Categories (both exact match and snake_case)
+      'Thesis Alignment': 'Thesis Alignment',
       'Financial Performance': 'Financial Performance',
       'Market Position': 'Market Position',
       'Operational Excellence': 'Operational Excellence',
       'Growth Potential': 'Growth Potential',
+      'Risk Assessment': 'Risk Assessment',
       
       // Legacy snake_case support
       'market_opportunity': 'Market Opportunity',
@@ -44,10 +46,12 @@ export const RubricScoreRadar: React.FC<RubricScoreRadarProps> = ({
       'strategic_fit': 'Strategic Fit',
       'trust_transparency': 'Trust & Transparency',
       'strategic_timing': 'Strategic Timing',
+      'thesis_alignment': 'Thesis Alignment',
       'financial_performance': 'Financial Performance',
       'market_position': 'Market Position',
       'operational_excellence': 'Operational Excellence',
       'growth_potential': 'Growth Potential',
+      'risk_assessment': 'Risk Assessment',
       'financial_health': 'Financial Health',
       'risks_challenges': 'Risks & Challenges'
     };
@@ -82,8 +86,9 @@ export const RubricScoreRadar: React.FC<RubricScoreRadarProps> = ({
       'Trust & Transparency', 'Strategic Timing'
     ];
     const pePriority = [
-      'Strategic Fit', 'Financial Performance', 'Market Position', 
-      'Operational Excellence', 'Trust & Transparency', 'Strategic Timing'
+      'Thesis Alignment', 'Financial Performance', 'Market Position', 
+      'Operational Excellence', 'Growth Potential', 'Risk Assessment',
+      'Strategic Timing', 'Trust & Transparency'
     ];
     
     const priority = fundType === 'vc' ? vcPriority : pePriority;
