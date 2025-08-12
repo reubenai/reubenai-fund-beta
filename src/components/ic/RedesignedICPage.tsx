@@ -31,6 +31,8 @@ import { ICMemoModal } from './ICMemoModal';
 import { VotingModal } from './VotingModal';
 import { ICMemoApprovalFlow } from './ICMemoApprovalFlow';
 import { ICVotingAndDecisions } from './ICVotingAndDecisions';
+import { EnhancedMemoPreviewModal } from './EnhancedMemoPreviewModal';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Deal {
   id: string;
@@ -64,11 +66,37 @@ export default function RedesignedICPage() {
   const [selectedDealForMemo, setSelectedDealForMemo] = useState<string | null>(null);
   const [isAIAgentsExpanded, setIsAIAgentsExpanded] = useState(false);
   const [degradationMode, setDegradationMode] = useState(false);
+  
+  // Memo preview modal state
+  const [showMemoPreviewModal, setShowMemoPreviewModal] = useState(false);
+  const [selectedDealForPreview, setSelectedDealForPreview] = useState<Deal | null>(null);
+  const [loadingDealData, setLoadingDealData] = useState(false);
 
   // Always default to pipeline tab
   useEffect(() => {
     setActiveTab('pipeline');
   }, []);
+
+  const fetchDealData = async (dealId: string): Promise<Deal | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('deals')
+        .select('*')
+        .eq('id', dealId)
+        .single();
+
+      if (error) throw error;
+      return data as Deal;
+    } catch (error) {
+      console.error('Error fetching deal data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch deal data",
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
 
   const handleActionClick = (action: string) => {
     switch (action) {
@@ -89,12 +117,21 @@ export default function RedesignedICPage() {
     }
   };
 
-  const handleDealSelect = (dealId: string) => {
-    // Handle deal selection for detailed view
-    toast({
-      title: "Deal Selected",
-      description: `Opening details for deal ${dealId}`,
-    });
+  const handleDealSelect = async (dealId: string) => {
+    if (!dealId) return;
+    
+    setLoadingDealData(true);
+    try {
+      const dealData = await fetchDealData(dealId);
+      if (dealData) {
+        setSelectedDealForPreview(dealData);
+        setShowMemoPreviewModal(true);
+      }
+    } catch (error) {
+      console.error('Error handling deal selection:', error);
+    } finally {
+      setLoadingDealData(false);
+    }
   };
 
   const handleCreateMemo = (dealId: string) => {
@@ -311,6 +348,19 @@ export default function RedesignedICPage() {
             setShowMemoModal(false);
             setSelectedDealForMemo(null);
           }}
+        />
+      )}
+
+      {/* Memo Preview Modal */}
+      {showMemoPreviewModal && selectedDealForPreview && (
+        <EnhancedMemoPreviewModal
+          isOpen={showMemoPreviewModal}
+          onClose={() => {
+            setShowMemoPreviewModal(false);
+            setSelectedDealForPreview(null);
+          }}
+          deal={selectedDealForPreview}
+          fundId={selectedFund.id}
         />
       )}
     </div>
