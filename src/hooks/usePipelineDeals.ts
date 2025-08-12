@@ -225,6 +225,8 @@ export const usePipelineDeals = (fundId?: string) => {
         industry: dealData.industry || null,
         location: dealData.location || null,
         website: dealData.website || null,
+        linkedin_url: dealData.linkedin_url || null,
+        crunchbase_url: dealData.crunchbase_url || null,
         deal_size: dealData.deal_size || null,
         valuation: dealData.valuation || null,
         currency: dealData.currency || null
