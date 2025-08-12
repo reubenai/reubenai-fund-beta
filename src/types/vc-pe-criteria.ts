@@ -417,7 +417,7 @@ export const PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
         },
         {
           name: 'Operational Efficiency',
-      weight: 25,
+          weight: 30,
           enabled: true,
           requirements: 'Operational metrics and process optimization',
           aiSearchKeywords: ['operational efficiency', 'processes', 'productivity', 'optimization'],
