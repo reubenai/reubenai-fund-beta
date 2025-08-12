@@ -8,7 +8,8 @@ export function generateEnhancedFallbackMemo(
   thesisData: any, 
   specialistEngines: any,
   orchestratorData: any,
-  enhancedInsights?: any
+  enhancedInsights?: any,
+  dealNotes?: any[]
 ): any {
   console.log('🚀 Generating ENHANCED fallback memo with rich specialist data...');
   
@@ -22,6 +23,11 @@ export function generateEnhancedFallbackMemo(
   const investmentTermsData = safeSpecialistEngines.investmentTerms?.data || {};
   const riskData = safeSpecialistEngines.riskMitigation?.data || {};
   const exitData = safeSpecialistEngines.exitStrategy?.data || {};
+  
+  // Process deal notes for integration into memo sections
+  const recentNotes = (dealNotes || []).slice(0, 5);
+  const notesText = recentNotes.length > 0 ? recentNotes.map(note => note.content).join(' | ') : '';
+  console.log('📝 Deal notes integration:', { notesCount: recentNotes.length, hasNotes: !!notesText });
   
   // Add validation logging
   console.log('📊 Specialist engine data validation:', {
@@ -37,7 +43,7 @@ export function generateEnhancedFallbackMemo(
     try {
       switch (section.key) {
         case 'executive_summary':
-          memoSections[section.key] = generateExecutiveSummary(dealData, analysisData, ragData, thesisData, orchestratorData);
+          memoSections[section.key] = generateExecutiveSummary(dealData, analysisData, ragData, thesisData, orchestratorData, notesText);
           break;
       
       case 'company_overview':
@@ -80,9 +86,9 @@ export function generateEnhancedFallbackMemo(
         memoSections[section.key] = generateCompetitiveLandscape(dealData, marketData, analysisData);
         break;
       
-      case 'investment_recommendation':
-        memoSections[section.key] = generateInvestmentRecommendation(dealData, ragData, thesisData, orchestratorData);
-        break;
+        case 'investment_recommendation':
+          memoSections[section.key] = generateInvestmentRecommendation(dealData, ragData, thesisData, orchestratorData, notesText);
+          break;
       
         default:
           memoSections[section.key] = `${section.title} analysis for ${dealData.company_name}: Comprehensive evaluation pending. This section will be populated with detailed analysis based on specialist engine assessments and validated market data.`;
@@ -110,12 +116,12 @@ export function generateEnhancedFallbackMemo(
         exit_strategy: !!exitData
       }
     },
-    executive_summary: generateExecutiveSummary(dealData, analysisData, ragData, thesisData, orchestratorData),
-    investment_recommendation: generateInvestmentRecommendation(dealData, ragData, thesisData, orchestratorData)
+    executive_summary: generateExecutiveSummary(dealData, analysisData, ragData, thesisData, orchestratorData, notesText),
+    investment_recommendation: generateInvestmentRecommendation(dealData, ragData, thesisData, orchestratorData, notesText)
   };
 }
 
-function generateExecutiveSummary(dealData: any, analysisData: any, ragData: any, thesisData: any, orchestratorData: any): string {
+function generateExecutiveSummary(dealData: any, analysisData: any, ragData: any, thesisData: any, orchestratorData: any, notesText?: string): string {
   const dealSize = dealData.deal_size ? `$${(dealData.deal_size / 1000000).toFixed(1)}M` : 'TBD';
   const valuation = dealData.valuation ? `$${(dealData.valuation / 1000000).toFixed(1)}M` : 'TBD';
   const overallScore = dealData.overall_score || 'Pending';
@@ -135,6 +141,10 @@ function generateExecutiveSummary(dealData: any, analysisData: any, ragData: any
   
   if (keyRisks.length > 0) {
     summary += `Primary Risks: ${keyRisks.join(', ')}. `;
+  }
+  
+  if (notesText && notesText.trim().length > 0) {
+    summary += `Team Notes: ${notesText.substring(0, 200)}${notesText.length > 200 ? '...' : ''}. `;
   }
   
   summary += `Recommendation: ${parseInt(overallScore) >= 70 ? 'Proceed with detailed due diligence' : 'Requires enhanced evaluation before proceeding'}.`;
@@ -508,7 +518,7 @@ function generateCompetitiveLandscape(dealData: any, marketData: any, analysisDa
   return competitive;
 }
 
-function generateInvestmentRecommendation(dealData: any, ragData: any, thesisData: any, orchestratorData: any): string {
+function generateInvestmentRecommendation(dealData: any, ragData: any, thesisData: any, orchestratorData: any, notesText?: string): string {
   const overallScore = dealData.overall_score || 0;
   const ragStatus = ragData?.ragStatus || dealData.rag_status || 'needs_review';
   const thesisScore = thesisData?.alignment_score || 0;
@@ -538,6 +548,10 @@ function generateInvestmentRecommendation(dealData: any, ragData: any, thesisDat
   }
   
   recommendation += `Next Steps: ${overallScore >= 70 ? '1) Proceed to detailed due diligence, 2) Schedule management presentations, 3) Conduct financial and technical review' : '1) Address key evaluation gaps, 2) Enhanced market validation, 3) Management team assessment'}. `;
+  
+  if (notesText && notesText.trim().length > 0) {
+    recommendation += `Team Insights: ${notesText.substring(0, 150)}${notesText.length > 150 ? '...' : ''}. `;
+  }
   
   recommendation += `Investment Rationale: ${dealData.industry} sector opportunity with ${dealData.valuation ? `$${(dealData.valuation / 1000000).toFixed(1)}M valuation entry point` : 'competitive valuation'} and ${overallScore >= 70 ? 'strong' : 'developing'} execution potential for target returns.`;
   

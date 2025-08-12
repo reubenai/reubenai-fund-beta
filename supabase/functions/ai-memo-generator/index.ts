@@ -85,7 +85,7 @@ serve(async (req) => {
 
     // Extract complete strategy context for fund-type-specific memo generation
     const strategyData = fundData?.investment_strategies?.[0];
-    const enhancedCriteria = strategyData?.enhanced_criteria;
+    const criteriaData = strategyData?.enhanced_criteria;
     const fundType = strategyData?.fund_type || fundData?.fund_type || 'vc';
     const thresholds = {
       exciting: strategyData?.exciting_threshold || 85,
@@ -93,7 +93,7 @@ serve(async (req) => {
       needs_development: strategyData?.needs_development_threshold || 50
     };
 
-    console.log('🎯 AI Memo Generator: Fund type:', fundType, '| Strategy context:', !!enhancedCriteria);
+    console.log('🎯 AI Memo Generator: Fund type:', fundType, '| Strategy context:', !!criteriaData);
 
     // Fetch notes intelligence for memo context
     let notesIntelligence = null;
@@ -120,7 +120,7 @@ serve(async (req) => {
     }
 
     const strategy = strategyData;
-    const enhancedCriteria = strategy?.enhanced_criteria || {};
+    const enhancedCriteria = strategy?.enhanced_criteria || criteriaData || {};
     
     // 3. Get memo template sections
     const { data: templateData } = await supabase
@@ -357,7 +357,8 @@ serve(async (req) => {
           thesisData, 
           specialistEngines,
           orchestratorData,
-          enhancedInsights
+          enhancedInsights,
+          dealData.deal_notes || []
         );
       } catch (fallbackError) {
         console.error('❌ Enhanced fallback also failed:', fallbackError.message);
