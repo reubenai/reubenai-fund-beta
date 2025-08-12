@@ -240,7 +240,7 @@ export default function EnhancedICPage() {
       const { error } = await supabase
         .from('ic_memos')
         .update({ 
-          status: 'approved',
+          workflow_state: 'approved',
           approved_at: new Date().toISOString(),
           approved_by: (await supabase.auth.getUser()).data.user?.id
         })
@@ -270,7 +270,7 @@ export default function EnhancedICPage() {
       const { error } = await supabase
         .from('ic_memos')
         .update({ 
-          status: 'rejected',
+          workflow_state: 'rejected',
           rejected_at: new Date().toISOString(),
           rejected_by: (await supabase.auth.getUser()).data.user?.id,
           rejection_reason: reason

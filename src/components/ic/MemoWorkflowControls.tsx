@@ -52,7 +52,7 @@ export const MemoWorkflowControls: React.FC<MemoWorkflowControlsProps> = ({
       const { error } = await supabase
         .from('ic_memos')
         .update({
-          status: 'review',
+          workflow_state: 'submitted',
           submitted_for_review_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -97,7 +97,7 @@ export const MemoWorkflowControls: React.FC<MemoWorkflowControlsProps> = ({
       const { error } = await supabase
         .from('ic_memos')
         .update({
-          status: reviewAction === 'approve' ? 'approved' : 'rejected',
+          workflow_state: reviewAction === 'approve' ? 'approved' : 'rejected',
           reviewed_by: userId,
           reviewed_at: new Date().toISOString(),
           review_notes: reviewNotes,
@@ -146,7 +146,7 @@ export const MemoWorkflowControls: React.FC<MemoWorkflowControlsProps> = ({
       const { error } = await supabase
         .from('ic_memos')
         .update({
-          status: 'draft',
+          workflow_state: 'draft',
           submitted_for_review_at: null,
           updated_at: new Date().toISOString()
         })

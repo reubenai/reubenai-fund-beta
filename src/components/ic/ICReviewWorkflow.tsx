@@ -46,7 +46,7 @@ export const ICReviewWorkflow: React.FC<ReviewWorkflowProps> = ({
       const { error } = await supabase
         .from('ic_memos')
         .update({
-          status: 'review',
+          workflow_state: 'submitted',
           submitted_for_review_at: new Date().toISOString(),
           review_priority: 'medium'
         })
@@ -54,7 +54,7 @@ export const ICReviewWorkflow: React.FC<ReviewWorkflowProps> = ({
 
       if (error) throw error;
 
-      onStatusChange('review');
+      onStatusChange('submitted');
       toast({
         title: "Memo Submitted for Review",
         description: `${dealName} memo has been submitted to the review queue`,
@@ -76,7 +76,7 @@ export const ICReviewWorkflow: React.FC<ReviewWorkflowProps> = ({
       const { error } = await supabase
         .from('ic_memos')
         .update({
-          status: 'approved',
+          workflow_state: 'approved',
           approved_at: new Date().toISOString(),
           approved_by: (await supabase.auth.getUser()).data.user?.id
         })
@@ -106,7 +106,7 @@ export const ICReviewWorkflow: React.FC<ReviewWorkflowProps> = ({
       const { error } = await supabase
         .from('ic_memos')
         .update({
-          status: 'rejected',
+          workflow_state: 'rejected',
           rejected_at: new Date().toISOString(),
           rejected_by: (await supabase.auth.getUser()).data.user?.id,
           rejection_reason: rejectionReason
