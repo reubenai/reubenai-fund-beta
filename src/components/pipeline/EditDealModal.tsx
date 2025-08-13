@@ -458,11 +458,12 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="GBP">GBP</SelectItem>
-                  </SelectContent>
+                   <SelectContent>
+                     <SelectItem value="USD">USD</SelectItem>
+                     <SelectItem value="EUR">EUR</SelectItem>
+                     <SelectItem value="GBP">GBP</SelectItem>
+                     <SelectItem value="AUD">AUD</SelectItem>
+                   </SelectContent>
                 </Select>
               </div>
             </div>

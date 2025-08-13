@@ -301,6 +301,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
                       <SelectItem value="USD">USD</SelectItem>
                       <SelectItem value="EUR">EUR</SelectItem>
                       <SelectItem value="GBP">GBP</SelectItem>
+                      <SelectItem value="AUD">AUD</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
