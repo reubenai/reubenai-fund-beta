@@ -328,10 +328,10 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
       {/* Table Container with Fixed Height and Scroll */}
       <div className="flex-1 border border-border rounded-lg bg-card overflow-hidden flex flex-col">
         <div className="flex-1 overflow-auto scroll-smooth" style={{ maxHeight: 'calc(100vh - 400px)' }}>
-          <Table>
-            <TableHeader className="sticky top-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 z-30 border-b border-border shadow-sm">
-              <TableRow className="hover:bg-transparent">
-              <TableHead className="w-12 sticky left-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 z-40 border-r border-border">
+          <table className="w-full caption-bottom text-sm border-separate border-spacing-0">
+            <thead className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 border-b border-border shadow-sm">
+              <tr className="border-b transition-colors hover:bg-transparent [&>th]:border-b">
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground w-12 sticky left-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 border-r border-border">
                 <input
                   type="checkbox"
                   onChange={(e) => {
@@ -346,82 +346,82 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                   checked={paginatedDeals.length > 0 && paginatedDeals.every(deal => selectedDeals.has(deal.id))}
                   className="rounded border-border"
                 />
-              </TableHead>
+              </th>
               
-              <TableHead 
-                className="sticky left-12 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 z-40 cursor-pointer select-none hover:bg-muted/50 transition-colors min-w-[200px] border-r border-border"
+              <th 
+                className="h-12 px-4 text-left align-middle font-medium text-muted-foreground sticky left-12 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 cursor-pointer select-none hover:bg-muted/50 transition-colors min-w-[200px] border-r border-border"
                 onClick={() => handleSort('company_name')}
               >
                 <div className="flex items-center">
                   Company
                   {getSortIcon('company_name')}
                 </div>
-              </TableHead>
+              </th>
               
-              <TableHead 
-                className="cursor-pointer select-none hover:bg-muted/50 transition-colors min-w-[100px]"
+              <th 
+                className="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer select-none hover:bg-muted/50 transition-colors min-w-[100px]"
                 onClick={() => handleSort('industry')}
               >
                 <div className="flex items-center">
                   Industry
                   {getSortIcon('industry')}
                 </div>
-              </TableHead>
+              </th>
               
-              <TableHead 
-                className="cursor-pointer select-none hover:bg-muted/50 transition-colors min-w-[100px]"
+              <th 
+                className="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer select-none hover:bg-muted/50 transition-colors min-w-[100px]"
                 onClick={() => handleSort('status')}
               >
                 <div className="flex items-center">
                   Stage
                   {getSortIcon('status')}
                 </div>
-              </TableHead>
+              </th>
               
-              <TableHead 
-                className="cursor-pointer select-none hover:bg-muted/50 transition-colors text-right min-w-[120px]"
+              <th 
+                className="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer select-none hover:bg-muted/50 transition-colors text-right min-w-[120px]"
                 onClick={() => handleSort('deal_size')}
               >
                 <div className="flex items-center justify-end">
                   Deal Size
                   {getSortIcon('deal_size')}
                 </div>
-              </TableHead>
+              </th>
               
-              <TableHead 
-                className="cursor-pointer select-none hover:bg-muted/50 transition-colors text-center min-w-[120px]"
+              <th 
+                className="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer select-none hover:bg-muted/50 transition-colors text-center min-w-[120px]"
                 onClick={() => handleSort('overall_score')}
               >
                 <div className="flex items-center justify-center">
                   ReubenAI Score
                   {getSortIcon('overall_score')}
                 </div>
-              </TableHead>
+              </th>
               
-              <TableHead className="min-w-[120px]">Location</TableHead>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground min-w-[120px]">Location</th>
               
-              <TableHead 
-                className="cursor-pointer select-none hover:bg-muted/50 transition-colors min-w-[140px]"
+              <th 
+                className="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer select-none hover:bg-muted/50 transition-colors min-w-[140px]"
                 onClick={() => handleSort('updated_at')}
               >
                 <div className="flex items-center">
                   Last Activity
                   {getSortIcon('updated_at')}
                 </div>
-              </TableHead>
+              </th>
               
-              <TableHead className="w-12">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground w-12">Actions</th>
+            </tr>
+            </thead>
           
-          <TableBody>
+          <tbody className="[&_tr:last-child]:border-0">
             {paginatedDeals.map((deal) => (
-              <TableRow 
+              <tr 
                 key={deal.id}
-                className="cursor-pointer hover:bg-muted/50 transition-colors border-b border-border"
+                className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer border-b border-border"
                 onClick={() => onDealClick(deal)}
               >
-                <TableCell className="sticky left-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 z-30 border-r border-border" onClick={(e) => e.stopPropagation()}>
+                <td className="p-4 align-middle sticky left-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-40 border-r border-border" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
                     className="rounded border-border"
@@ -436,9 +436,9 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                       setSelectedDeals(newSelected);
                     }}
                   />
-                </TableCell>
+                </td>
                 
-                <TableCell className="sticky left-12 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 z-30 min-w-[200px] border-r border-border">
+                <td className="p-4 align-middle sticky left-12 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-40 min-w-[200px] border-r border-border">
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2">
                       <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -466,9 +466,9 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                       </div>
                     )}
                   </div>
-                </TableCell>
+                </td>
                 
-                <TableCell>
+                <td className="p-4 align-middle">
                   {deal.industry ? (
                     <Badge variant="outline" className="text-xs">
                       {deal.industry}
@@ -476,9 +476,9 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
-                </TableCell>
+                </td>
                 
-                <TableCell>
+                <td className="p-4 align-middle">
                   <DropdownMenu>
                     <DropdownMenuTrigger 
                       asChild 
@@ -516,9 +516,9 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </TableCell>
+                </td>
                 
-                <TableCell className="text-right">
+                <td className="p-4 align-middle text-right">
                   <div className="space-y-1">
                     <div className="flex items-center justify-end space-x-1">
                       <DollarSign className="h-3 w-3 text-muted-foreground" />
@@ -532,17 +532,17 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                       </div>
                     )}
                   </div>
-                </TableCell>
+                </td>
                 
-                <TableCell className="text-center">
+                <td className="p-4 align-middle text-center">
                   <div className="flex items-center justify-center space-x-2">
                     <Badge variant="outline" className="text-muted-foreground">
                       Coming Soon
                     </Badge>
                   </div>
-                </TableCell>
+                </td>
                 
-                <TableCell>
+                <td className="p-4 align-middle">
                   {deal.location ? (
                     <div className="flex items-center space-x-1">
                       <MapPin className="h-3 w-3 text-muted-foreground" />
@@ -551,9 +551,9 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
-                </TableCell>
+                </td>
                 
-                <TableCell>
+                <td className="p-4 align-middle">
                   <div className="space-y-1">
                     <div className="flex items-center space-x-1 text-sm">
                       <Calendar className="h-3 w-3 text-muted-foreground" />
@@ -565,9 +565,9 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                       {format(new Date(deal.updated_at), 'h:mm a')}
                     </div>
                   </div>
-                </TableCell>
+                </td>
                 
-                <TableCell onClick={(e) => e.stopPropagation()}>
+                <td className="p-4 align-middle" onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -587,11 +587,11 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </TableCell>
-              </TableRow>
+                </td>
+              </tr>
             ))}
-          </TableBody>
-        </Table>
+            </tbody>
+          </table>
         
         {paginatedDeals.length === 0 && (
           <div className="p-8 text-center text-muted-foreground">
