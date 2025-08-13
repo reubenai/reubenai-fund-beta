@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -169,35 +170,29 @@ export function CleanThesisConfiguration({
                   <Label htmlFor="min-investment" className="text-sm font-medium">
                     Minimum Investment
                   </Label>
-                  <div className="relative mt-2">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                    <Input
-                      id="min-investment"
-                      type="number"
-                      value={editedStrategy.min_investment_amount || 0}
-                      onChange={(e) => updateField('min_investment_amount', parseInt(e.target.value))}
-                      placeholder="500,000"
-                      className="pl-8 border-0 bg-muted/30"
-                      readOnly={!canConfigureStrategy}
-                    />
-                  </div>
+                  <NumberInput
+                    value={editedStrategy.min_investment_amount || undefined}
+                    onChange={(value) => updateField('min_investment_amount', value)}
+                    placeholder="500,000"
+                    className="mt-2 border-0 bg-muted/30"
+                    showCurrency
+                    currency="USD"
+                    readOnly={!canConfigureStrategy}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="max-investment" className="text-sm font-medium">
                     Maximum Investment
                   </Label>
-                  <div className="relative mt-2">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                    <Input
-                      id="max-investment"
-                      type="number"
-                      value={editedStrategy.max_investment_amount || 0}
-                      onChange={(e) => updateField('max_investment_amount', parseInt(e.target.value))}
-                      placeholder="5,000,000"
-                      className="pl-8 border-0 bg-muted/30"
-                      readOnly={!canConfigureStrategy}
-                    />
-                  </div>
+                  <NumberInput
+                    value={editedStrategy.max_investment_amount || undefined}
+                    onChange={(value) => updateField('max_investment_amount', value)}
+                    placeholder="5,000,000"
+                    className="mt-2 border-0 bg-muted/30"
+                    showCurrency
+                    currency="USD"
+                    readOnly={!canConfigureStrategy}
+                  />
                 </div>
               </div>
             </CardContent>

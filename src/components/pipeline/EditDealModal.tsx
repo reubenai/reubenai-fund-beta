@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -444,12 +445,10 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-2">
                 <Label htmlFor="deal_size">Deal Size</Label>
-                <Input
-                  id="deal_size"
-                  type="number"
-                  value={formData.deal_size}
-                  onChange={(e) => handleInputChange('deal_size', e.target.value)}
-                  placeholder="1000000"
+                <NumberInput
+                  value={formData.deal_size ? parseInt(formData.deal_size) : undefined}
+                  onChange={(value) => handleInputChange('deal_size', value?.toString() || '')}
+                  placeholder="1,000,000"
                 />
               </div>
               <div>
@@ -472,12 +471,10 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="valuation">Valuation</Label>
-                <Input
-                  id="valuation"
-                  type="number"
-                  value={formData.valuation}
-                  onChange={(e) => handleInputChange('valuation', e.target.value)}
-                  placeholder="10000000"
+                <NumberInput
+                  value={formData.valuation ? parseInt(formData.valuation) : undefined}
+                  onChange={(value) => handleInputChange('valuation', value?.toString() || '')}
+                  placeholder="10,000,000"
                 />
               </div>
               <div>
@@ -502,32 +499,26 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="current_round_size">Current Round Size</Label>
-                <Input
-                  id="current_round_size"
-                  type="number"
-                  value={formData.current_round_size}
-                  onChange={(e) => handleInputChange('current_round_size', e.target.value)}
-                  placeholder="5000000"
+                <NumberInput
+                  value={formData.current_round_size ? parseInt(formData.current_round_size) : undefined}
+                  onChange={(value) => handleInputChange('current_round_size', value?.toString() || '')}
+                  placeholder="5,000,000"
                 />
               </div>
               <div>
                 <Label htmlFor="capital_raised_to_date">Capital Raised to Date</Label>
-                <Input
-                  id="capital_raised_to_date"
-                  type="number"
-                  value={formData.capital_raised_to_date}
-                  onChange={(e) => handleInputChange('capital_raised_to_date', e.target.value)}
-                  placeholder="2000000"
+                <NumberInput
+                  value={formData.capital_raised_to_date ? parseInt(formData.capital_raised_to_date) : undefined}
+                  onChange={(value) => handleInputChange('capital_raised_to_date', value?.toString() || '')}
+                  placeholder="2,000,000"
                 />
               </div>
               <div>
                 <Label htmlFor="previous_funding_amount">Previous Funding Amount</Label>
-                <Input
-                  id="previous_funding_amount"
-                  type="number"
-                  value={formData.previous_funding_amount}
-                  onChange={(e) => handleInputChange('previous_funding_amount', e.target.value)}
-                  placeholder="1000000"
+                <NumberInput
+                  value={formData.previous_funding_amount ? parseInt(formData.previous_funding_amount) : undefined}
+                  onChange={(value) => handleInputChange('previous_funding_amount', value?.toString() || '')}
+                  placeholder="1,000,000"
                 />
               </div>
             </div>

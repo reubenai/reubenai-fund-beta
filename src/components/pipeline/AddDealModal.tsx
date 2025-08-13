@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -283,12 +284,10 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
               <div className="grid grid-cols-3 gap-4">
                 <div className="col-span-2">
                   <Label htmlFor="deal_size">Deal Size</Label>
-                  <Input
-                    id="deal_size"
-                    type="number"
-                    value={formData.deal_size}
-                    onChange={(e) => handleInputChange('deal_size', e.target.value)}
-                    placeholder="1000000"
+                  <NumberInput
+                    value={formData.deal_size ? parseInt(formData.deal_size) : undefined}
+                    onChange={(value) => handleInputChange('deal_size', value?.toString() || '')}
+                    placeholder="1,000,000"
                   />
                 </div>
                 <div>
@@ -310,12 +309,10 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
               {/* Valuation */}
               <div>
                 <Label htmlFor="valuation">Valuation</Label>
-                <Input
-                  id="valuation"
-                  type="number"
-                  value={formData.valuation}
-                  onChange={(e) => handleInputChange('valuation', e.target.value)}
-                  placeholder="10000000"
+                <NumberInput
+                  value={formData.valuation ? parseInt(formData.valuation) : undefined}
+                  onChange={(value) => handleInputChange('valuation', value?.toString() || '')}
+                  placeholder="10,000,000"
                 />
               </div>
 

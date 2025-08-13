@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -558,42 +559,38 @@ export function EnhancedStrategyWizard({
                    </div>
                    
                    <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-base font-medium">Minimum Investment</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
-                        <Input
-                          type="number"
-                          value={wizardData.checkSizeRange?.min || 0}
-                          onChange={(e) => updateWizardData({ 
+                     <div className="space-y-2">
+                       <Label className="text-base font-medium">Minimum Investment</Label>
+                       <NumberInput
+                         value={wizardData.checkSizeRange?.min || undefined}
+                         onChange={(value) => updateWizardData({ 
+                           checkSizeRange: { 
+                             ...wizardData.checkSizeRange, 
+                             min: value || 0 
+                           } 
+                          })}
+                          placeholder="500,000"
+                          className="h-12 text-base"
+                          showCurrency
+                          currency="USD"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-base font-medium">Maximum Investment</Label>
+                        <NumberInput
+                          value={wizardData.checkSizeRange?.max || undefined}
+                          onChange={(value) => updateWizardData({ 
                             checkSizeRange: { 
                               ...wizardData.checkSizeRange, 
-                              min: parseInt(e.target.value) || 0 
-                            } 
-                           })}
-                           placeholder="500,000"
-                           className="pl-8 h-12 text-base"
-                         />
-                       </div>
-                     </div>
-                     <div className="space-y-2">
-                       <Label className="text-base font-medium">Maximum Investment</Label>
-                       <div className="relative">
-                         <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
-                         <Input
-                           type="number"
-                           value={wizardData.checkSizeRange?.max || 0}
-                           onChange={(e) => updateWizardData({ 
-                             checkSizeRange: { 
-                               ...wizardData.checkSizeRange, 
-                               max: parseInt(e.target.value) || 0 
-                             } 
-                           })}
-                           placeholder="5,000,000"
-                           className="pl-8 h-12 text-base"
-                         />
-                         <p className="text-xs text-muted-foreground mt-1">Typical range: $500K - $5M for seed/Series A</p>
-                       </div>
+                              max: value || 0
+                              } 
+                            })}
+                            placeholder="5,000,000"
+                            className="h-12 text-base"
+                            showCurrency
+                            currency="USD"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">Typical range: $500K - $5M for seed/Series A</p>
                      </div>
                    </div>
                  </div>
