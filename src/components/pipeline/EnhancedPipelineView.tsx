@@ -47,7 +47,8 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fund
     setSearchQuery,
     moveDeal,
     addDeal,
-    refreshDeals
+    refreshDeals,
+    forceRefresh
   } = usePipelineDeals(fundId);
 
   const { selectedFund } = useFund();
@@ -206,6 +207,7 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fund
             totalDeals={getTotalDeals()}
             showFilters={state.showFilters}
             onToggleFilters={() => updateState({ showFilters: !state.showFilters })}
+            onRefresh={forceRefresh}
           />
           
           <PipelineFilters

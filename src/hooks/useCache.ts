@@ -165,7 +165,7 @@ export function useCache<T>(key: string, config: CacheConfig = {}) {
 // Specialized hooks for common data types
 export function useDealsCache(fundId: string) {
   return useCache(`deals_${fundId}`, {
-    ttl: 2 * 60 * 1000, // 2 minutes for deals
+    ttl: 30 * 1000, // 30 seconds for more frequent updates
     persistToSessionStorage: true
   });
 }

@@ -20,7 +20,8 @@ import {
   Settings,
   Upload,
   Zap,
-  ChevronDown
+  ChevronDown,
+  RefreshCw
 } from 'lucide-react';
 
 interface PipelineHeaderProps {
@@ -36,6 +37,7 @@ interface PipelineHeaderProps {
   showFilters?: boolean;
   onToggleFilters?: () => void;
   totalDeals: number;
+  onRefresh?: () => void;
 }
 
 const viewIcons = {
@@ -57,7 +59,8 @@ export const PipelineHeader: React.FC<PipelineHeaderProps> = ({
   onDensityChange,
   showFilters = false,
   onToggleFilters,
-  totalDeals
+  totalDeals,
+  onRefresh
 }) => {
   return (
     <div className="space-y-4">
@@ -144,6 +147,18 @@ export const PipelineHeader: React.FC<PipelineHeaderProps> = ({
             <Filter className="w-4 h-4 mr-2" />
             Filters
           </Button>
+
+          {onRefresh && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={onRefresh}
+              title="Refresh deals data"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+          )}
         </div>
       </div>
     </div>

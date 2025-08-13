@@ -31,11 +31,15 @@ export const usePipelineDeals = (fundId?: string) => {
   
   const { stages } = usePipelineStages(fundId);
 
-  const fetchDeals = useCallback(async () => {
+  const fetchDeals = useCallback(async (forceRefresh = false) => {
     if (!fundId) return;
 
     try {
       setLoading(true);
+      
+      if (forceRefresh) {
+        console.log('🔄 Force refreshing deals, bypassing cache');
+      }
       
       // First get deals with notes count
       const { data: dealsWithNotes, error: dealsError } = await supabase
@@ -299,9 +303,11 @@ export const usePipelineDeals = (fundId?: string) => {
     }
   }, [fundId, stages.length]); // Remove fetchDeals from deps to avoid infinite loop
 
-  // Set up real-time subscription
+  // Set up real-time subscription with debug logging
   useEffect(() => {
     if (!fundId) return;
+
+    console.log('🔄 Setting up real-time subscription for fund:', fundId);
 
     const subscription = supabase
       .channel('deals_channel')
@@ -310,15 +316,29 @@ export const usePipelineDeals = (fundId?: string) => {
         schema: 'public',
         table: 'deals',
         filter: `fund_id=eq.${fundId}`
-      }, () => {
+      }, (payload) => {
+        console.log('📡 Real-time update received:', {
+          event: payload.eventType,
+          table: payload.table,
+          new: payload.new,
+          old: payload.old
+        });
         fetchDeals();
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 Subscription status:', status);
+      });
 
     return () => {
+      console.log('🔄 Unsubscribing from real-time updates');
       subscription.unsubscribe();
     };
   }, [fundId, fetchDeals]);
+
+  const forceRefresh = useCallback(() => {
+    console.log('🔄 Force refresh triggered by user');
+    return fetchDeals(true);
+  }, [fetchDeals]);
 
   return {
     deals: filteredDeals(),
@@ -328,6 +348,7 @@ export const usePipelineDeals = (fundId?: string) => {
     setSearchQuery,
     moveDeal,
     addDeal,
-    refreshDeals: fetchDeals
+    refreshDeals: fetchDeals,
+    forceRefresh
   };
 };
