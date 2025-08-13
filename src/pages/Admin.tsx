@@ -43,6 +43,7 @@ import { DealDataRepairTool } from '@/components/admin/DealDataRepairTool';
 import { AnalysisQueueDashboard } from '@/components/admin/AnalysisQueueDashboard';
 import { SafeModeTestPanel } from '@/components/admin/SafeModeTestPanel';
 import { DealAllowlistManager } from '@/components/admin/DealAllowlistManager';
+import { StuckDocumentRecovery } from '@/components/admin/StuckDocumentRecovery';
 
 import { useFund } from '@/contexts/FundContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -837,6 +838,10 @@ export default function Admin() {
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Support Tickets
               </TabsTrigger>
+              <TabsTrigger value="recovery" className="h-10 px-6 rounded-md text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Document Recovery
+              </TabsTrigger>
             </TabsList>
 
         <TabsContent value="organizations" className="space-y-6">
@@ -925,6 +930,10 @@ export default function Admin() {
 
             <TabsContent value="support" className="space-y-6">
               <AdminSupportTickets />
+            </TabsContent>
+
+            <TabsContent value="recovery" className="space-y-6">
+              <StuckDocumentRecovery onRecoveryComplete={fetchData} />
             </TabsContent>
 
           </Tabs>

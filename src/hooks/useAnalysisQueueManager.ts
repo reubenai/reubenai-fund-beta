@@ -153,6 +153,47 @@ export function useAnalysisQueueManager() {
     }
   }, [processQueue, toast]);
 
+  const forceProcessQueueItem = useCallback(async (queueId: string, documentId?: string) => {
+    try {
+      setIsProcessing(true);
+      console.log(`🔧 Force processing specific queue item: ${queueId}`);
+
+      const { data, error } = await supabase.functions.invoke('force-queue-item-processor', {
+        body: { queueId, documentId }
+      });
+
+      if (error) {
+        console.error('❌ Force queue item processing failed:', error);
+        toast({
+          title: "Force Processing Failed",
+          description: error.message || "Could not force process queue item",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      console.log('✅ Force queue item processing completed:', data);
+      toast({
+        title: "Queue Item Processed",
+        description: "The stuck queue item has been successfully processed",
+      });
+
+      // Refresh queue stats
+      await getQueueStatus();
+      return true;
+    } catch (error) {
+      console.error('❌ Force queue item processing error:', error);
+      toast({
+        title: "Processing Error",
+        description: "An unexpected error occurred during force processing",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [toast, getQueueStatus]);
+
   const clearFailedJobs = useCallback(async () => {
     try {
       const { error } = await supabase
@@ -188,6 +229,7 @@ export function useAnalysisQueueManager() {
     processQueue,
     reclaimZombieJobs,
     forceProcessSingle,
+    forceProcessQueueItem,
     clearFailedJobs
   };
 }
