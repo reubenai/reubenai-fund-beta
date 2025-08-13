@@ -117,6 +117,9 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
              currency === "EUR" ? "€" : 
              currency === "GBP" ? "£" : 
              currency === "AUD" ? "A$" : 
+             currency === "CAD" ? "C$" :
+             currency === "SGD" ? "S$" :
+             currency === "HKD" ? "HK$" :
              currency}
           </span>
         )}

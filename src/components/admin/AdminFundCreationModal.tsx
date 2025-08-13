@@ -208,6 +208,9 @@ export default function AdminFundCreationModal({
                   <SelectItem value="EUR">EUR</SelectItem>
                   <SelectItem value="GBP">GBP</SelectItem>
                   <SelectItem value="CAD">CAD</SelectItem>
+                  <SelectItem value="AUD">AUD</SelectItem>
+                  <SelectItem value="SGD">SGD</SelectItem>
+                  <SelectItem value="HKD">HKD</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -105,6 +105,8 @@ function getCurrencySymbol(currency: string): string {
     GBP: '£',
     AUD: 'A$',
     CAD: 'C$',
+    SGD: 'S$',
+    HKD: 'HK$',
   };
   return symbols[currency] || currency;
 }

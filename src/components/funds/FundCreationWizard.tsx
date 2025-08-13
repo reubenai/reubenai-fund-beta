@@ -31,7 +31,7 @@ const FUND_TYPES = [
   { value: 'private_equity', label: 'Private Equity', description: 'Growth capital and buyout investments' }
 ];
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD'];
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'SGD', 'HKD'];
 
 export function FundCreationWizard({ isOpen, onClose }: FundCreationWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
