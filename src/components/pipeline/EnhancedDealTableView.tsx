@@ -327,11 +327,11 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
 
       {/* Table Container with Fixed Height and Scroll */}
       <div className="flex-1 border border-border rounded-lg bg-card overflow-hidden flex flex-col">
-        <div className="flex-1 overflow-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+        <div className="flex-1 overflow-auto scroll-smooth" style={{ maxHeight: 'calc(100vh - 400px)' }}>
           <Table>
-            <TableHeader className="sticky top-0 bg-card z-10 border-b border-border">
+            <TableHeader className="sticky top-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 z-30 border-b border-border shadow-sm">
               <TableRow className="hover:bg-transparent">
-              <TableHead className="w-12 sticky left-0 bg-card z-20">
+              <TableHead className="w-12 sticky left-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 z-40 border-r border-border">
                 <input
                   type="checkbox"
                   onChange={(e) => {
@@ -349,7 +349,7 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
               </TableHead>
               
               <TableHead 
-                className="sticky left-12 bg-card z-20 cursor-pointer select-none hover:bg-muted/50 transition-colors min-w-[200px]"
+                className="sticky left-12 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 z-40 cursor-pointer select-none hover:bg-muted/50 transition-colors min-w-[200px] border-r border-border"
                 onClick={() => handleSort('company_name')}
               >
                 <div className="flex items-center">
@@ -421,7 +421,7 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                 className="cursor-pointer hover:bg-muted/50 transition-colors border-b border-border"
                 onClick={() => onDealClick(deal)}
               >
-                <TableCell className="sticky left-0 bg-card z-20" onClick={(e) => e.stopPropagation()}>
+                <TableCell className="sticky left-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 z-30 border-r border-border" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
                     className="rounded border-border"
@@ -438,7 +438,7 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                   />
                 </TableCell>
                 
-                <TableCell className="sticky left-12 bg-card z-20 min-w-[200px]">
+                <TableCell className="sticky left-12 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 z-30 min-w-[200px] border-r border-border">
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2">
                       <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
