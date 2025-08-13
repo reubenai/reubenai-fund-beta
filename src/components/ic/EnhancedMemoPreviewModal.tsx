@@ -248,26 +248,10 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     }
   };
 
+  // Disabled AI memo generation
   const handleGenerateMemo = async () => {
-    const loadingToast = showLoadingToast(
-      "Generating IC Memo",
-      `Creating professional memo for ${deal.company_name}...`,
-      cancelGeneration
-    );
-
-    try {
-      await generateMemo();
-      loadingToast.dismiss();
-      showMemoGenerationToast(deal.company_name, () => {
-        // Toast is already showing the memo, no navigation needed
-      });
-    } catch (error) {
-      loadingToast.dismiss();
-      showMemoErrorToast(
-        error instanceof Error ? error.message : 'Failed to generate memo. Please try again.',
-        () => handleGenerateMemo()
-      );
-    }
+    // AI generation disabled - users should manually create memos
+    return;
   };
 
   const handleSaveMemo = async () => {
@@ -667,18 +651,6 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 </div>
               )}
               
-              {canEditMemo() && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={true}
-                  className="bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100"
-                >
-                  <Brain className="w-4 h-4 mr-2" />
-                  AI-Assisted Memo
-                  <Badge variant="secondary" className="ml-2 text-xs">Soon</Badge>
-                </Button>
-              )}
               
 
               <Button
@@ -841,32 +813,6 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                   </div>
                 </div>
               </div>
-            ) : !hasContent && !memoState.existsInDb ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center max-w-md mx-auto">
-                  <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-6" />
-                  <h3 className="text-xl font-semibold mb-3">No Investment Committee Memo</h3>
-                  <p className="text-muted-foreground mb-6 leading-relaxed">
-                    Generate a comprehensive IC memo for {deal.company_name} using our AI-powered 
-                    Reuben Orchestrator to analyze deal data, market intelligence, and strategic alignment.
-                  </p>
-                  
-                  <Button 
-                    onClick={handleGenerateMemo}
-                    size="lg"
-                    className="mb-4"
-                    disabled={!canEditICMemos}
-                  >
-                    <Brain className="w-5 h-5 mr-2" />
-                    Generate IC Memo
-                  </Button>
-                  
-                  <p className="text-xs text-muted-foreground">
-                    This will analyze the deal using multiple AI engines including market intelligence, 
-                    financial analysis, and thesis alignment to create a professional investment memo.
-                  </p>
-                </div>
-              </div>
             ) : (
               <div className="p-6 overflow-y-auto flex-1 min-h-0">
                 {[...MEMO_SECTIONS, ...customSections].map((section) => {
@@ -926,12 +872,9 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                               <div className="text-center py-12 text-muted-foreground">
                                 <FileText className="h-12 w-12 mx-auto mb-4" />
                                 <p>No content available for this section</p>
-                                <p className="text-xs mt-2">
-                                  {isCustom 
-                                    ? 'Click Edit to add content to this custom section'
-                                    : 'Generate a memo to populate this section with AI analysis'
-                                  }
-                                </p>
+                                 <p className="text-xs mt-2">
+                                   Enter content for this section
+                                 </p>
                               </div>
                             )}
                           </CardContent>
