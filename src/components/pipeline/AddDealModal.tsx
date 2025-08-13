@@ -285,9 +285,9 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
                 <div className="col-span-2">
                   <Label htmlFor="deal_size">Deal Size</Label>
                   <NumberInput
-                    value={formData.deal_size ? parseInt(formData.deal_size) : undefined}
+                    value={formData.deal_size && formData.deal_size.trim() !== '' ? parseInt(formData.deal_size) : undefined}
                     onChange={(value) => handleInputChange('deal_size', value?.toString() || '')}
-                    placeholder="1,000,000"
+                    placeholder="Enter deal size"
                   />
                 </div>
                 <div>
@@ -310,9 +310,9 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
               <div>
                 <Label htmlFor="valuation">Valuation</Label>
                 <NumberInput
-                  value={formData.valuation ? parseInt(formData.valuation) : undefined}
+                  value={formData.valuation && formData.valuation.trim() !== '' ? parseInt(formData.valuation) : undefined}
                   onChange={(value) => handleInputChange('valuation', value?.toString() || '')}
-                  placeholder="10,000,000"
+                  placeholder="Enter valuation"
                 />
               </div>
 

@@ -30,12 +30,14 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
 
     // Update display value when external value changes
     React.useEffect(() => {
-      if (value === undefined || value === null || value === "") {
+      if (value === undefined || value === null || value === "" || value === 0) {
         setDisplayValue("")
       } else {
         const numValue = typeof value === "string" ? parseNumber(value) : value
-        if (numValue !== undefined && !isFocused) {
+        if (numValue !== undefined && numValue !== 0 && !isFocused) {
           setDisplayValue(formatNumber(numValue))
+        } else if (!isFocused) {
+          setDisplayValue("")
         }
       }
     }, [value, isFocused])
