@@ -145,7 +145,7 @@ export function EnhancedAdminFundTable({
 
   const formatCurrency = (amount: number | null, currency: string) => {
     if (!amount) return 'N/A';
-    return `${currency} ${amount.toLocaleString()}`;
+    return `${currency} ${amount.toLocaleString('en-US')}`;
   };
 
   const formatDate = (dateString: string) => {

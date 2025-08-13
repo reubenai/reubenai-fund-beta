@@ -182,7 +182,7 @@ export const DealPreviewTable: React.FC<DealPreviewTableProps> = ({
                         {deal.data.stage || '-'}
                       </TableCell>
                       <TableCell>
-                        {deal.data.amount ? `$${deal.data.amount.toLocaleString()}` : '-'}
+                        {deal.data.amount ? `$${deal.data.amount.toLocaleString('en-US')}` : '-'}
                       </TableCell>
                       <TableCell>
                         <PitchDeckUploadCell deal={deal} />

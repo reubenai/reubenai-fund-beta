@@ -88,7 +88,7 @@ export function AdminStats({ stats }: AdminStatsProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {typeof item.value === 'number' ? item.value.toLocaleString() : item.value}
+              {typeof item.value === 'number' ? item.value.toLocaleString('en-US') : item.value}
             </div>
             <p className="text-xs text-muted-foreground">{item.description}</p>
           </CardContent>

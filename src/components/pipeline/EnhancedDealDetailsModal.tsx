@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { DetailedAnalysisSection } from '@/components/analysis/DetailedAnalysisSection';
 import { EnhancedCompanyDetails } from '@/components/company/EnhancedCompanyDetails';
@@ -395,12 +396,7 @@ export function EnhancedDealDetailsModal({
 
   const formatAmount = (amount?: number, currency: string = 'USD') => {
     if (!amount) return 'Not specified';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      notation: amount >= 1000000 ? 'compact' : 'standard',
-      maximumFractionDigits: 0,
-    }).format(amount);
+    return formatCurrency(amount, currency);
   };
 
   const rag = getRAGCategory(deal.overall_score);

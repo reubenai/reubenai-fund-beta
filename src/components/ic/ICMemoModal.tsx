@@ -197,8 +197,8 @@ export const ICMemoModal: React.FC<ICMemoModalProps> = ({
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                        <div><span className="font-medium">Deal Size:</span> ${deal.deal_size?.toLocaleString() || 'TBD'}</div>
-                        <div><span className="font-medium">Valuation:</span> ${deal.valuation?.toLocaleString() || 'TBD'}</div>
+                         <div><span className="font-medium">Deal Size:</span> ${deal.deal_size?.toLocaleString('en-US') || 'TBD'}</div>
+                         <div><span className="font-medium">Valuation:</span> ${deal.valuation?.toLocaleString('en-US') || 'TBD'}</div>
                         <div><span className="font-medium">Industry:</span> {deal.industry}</div>
                         <div><span className="font-medium">Location:</span> {deal.location}</div>
                       </div>

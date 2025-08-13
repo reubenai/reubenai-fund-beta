@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatCurrency } from '@/lib/utils';
 import { Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -83,11 +84,8 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
   const permissions = usePermissions();
   const [isLoading, setIsLoading] = useState(false);
   
-  const formatAmount = (amount?: number) => {
-    if (!amount) return 'N/A';
-    if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
-    if (amount >= 1000) return `$${(amount / 1000).toFixed(0)}K`;
-    return `$${amount.toLocaleString()}`;
+  const formatAmount = (amount?: number, currency = 'USD') => {
+    return formatCurrency(amount, currency, { compact: true });
   };
 
   const formatDate = (dateString: string) => {
@@ -225,7 +223,7 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
               {deal.deal_size && (
                 <div className="flex items-center gap-1">
                   <DollarSign className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-xs font-medium">{formatAmount(deal.deal_size)}</span>
+                  <span className="text-xs font-medium">{formatAmount(deal.deal_size, deal.currency)}</span>
                 </div>
               )}
             </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { formatCurrency } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -441,13 +442,7 @@ export default function EnhancedICPage() {
   };
 
   const formatAmount = (amount?: number, currency = 'USD') => {
-    if (!amount) return 'N/A';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      notation: amount >= 1000000 ? 'compact' : 'standard',
-      maximumFractionDigits: 0,
-    }).format(amount);
+    return formatCurrency(amount, currency, { compact: true });
   };
 
 

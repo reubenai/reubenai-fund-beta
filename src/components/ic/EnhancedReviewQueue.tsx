@@ -240,7 +240,7 @@ export const EnhancedReviewQueue: React.FC<EnhancedReviewQueueProps> = ({
                     </div>
                     {memo.deals.deal_size && (
                       <div>
-                        <span className="font-medium">Deal Size:</span> ${memo.deals.deal_size.toLocaleString()}
+                        <span className="font-medium">Deal Size:</span> ${memo.deals.deal_size.toLocaleString('en-US')}
                       </div>
                     )}
                   </div>
