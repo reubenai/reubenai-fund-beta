@@ -4203,13 +4203,21 @@ export type Database = {
         Returns: string
       }
       vector_similarity_search: {
-        Args: {
-          content_type_filter?: string
-          fund_id_filter?: string
-          max_results?: number
-          query_embedding: string
-          similarity_threshold?: number
-        }
+        Args:
+          | {
+              content_type_filter?: string
+              fund_id_filter?: string
+              max_results?: number
+              query_embedding: string
+              similarity_threshold?: number
+            }
+          | {
+              content_type_filter?: string
+              fund_id_filter?: string
+              max_results?: number
+              query_embedding: string
+              similarity_threshold?: number
+            }
         Returns: {
           content_id: string
           content_text: string
