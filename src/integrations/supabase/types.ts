@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -543,6 +543,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      analysis_queue_metrics: {
+        Row: {
+          deal_id: string | null
+          fund_id: string | null
+          id: string
+          metadata: Json | null
+          metric_type: string
+          metric_value: number
+          recorded_at: string
+          time_bucket: string | null
+        }
+        Insert: {
+          deal_id?: string | null
+          fund_id?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_type: string
+          metric_value: number
+          recorded_at?: string
+          time_bucket?: string | null
+        }
+        Update: {
+          deal_id?: string | null
+          fund_id?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_type?: string
+          metric_value?: number
+          recorded_at?: string
+          time_bucket?: string | null
+        }
+        Relationships: []
       }
       archived_activity_events: {
         Row: {
@@ -3588,6 +3621,84 @@ export type Database = {
           },
         ]
       }
+      vector_embeddings: {
+        Row: {
+          confidence_score: number | null
+          content_id: string
+          content_text: string
+          content_type: string
+          created_at: string
+          embedding: string | null
+          fund_id: string
+          id: string
+          metadata: Json | null
+          updated_at: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          content_id: string
+          content_text: string
+          content_type: string
+          created_at?: string
+          embedding?: string | null
+          fund_id: string
+          id?: string
+          metadata?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          confidence_score?: number | null
+          content_id?: string
+          content_text?: string
+          content_type?: string
+          created_at?: string
+          embedding?: string | null
+          fund_id?: string
+          id?: string
+          metadata?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vector_search_cache: {
+        Row: {
+          confidence_threshold: number | null
+          created_at: string
+          expires_at: string
+          fund_id: string
+          id: string
+          query_hash: string
+          query_text: string
+          result_count: number
+          results: Json
+          search_type: string
+        }
+        Insert: {
+          confidence_threshold?: number | null
+          created_at?: string
+          expires_at?: string
+          fund_id: string
+          id?: string
+          query_hash: string
+          query_text: string
+          result_count: number
+          results: Json
+          search_type: string
+        }
+        Update: {
+          confidence_threshold?: number | null
+          created_at?: string
+          expires_at?: string
+          fund_id?: string
+          id?: string
+          query_hash?: string
+          query_text?: string
+          result_count?: number
+          results?: Json
+          search_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       dashboard_stats: {
@@ -3619,56 +3730,56 @@ export type Database = {
       admin_get_all_funds: {
         Args: Record<PropertyKey, never>
         Returns: {
+          created_at: string
+          currency: string
+          fund_type: Database["public"]["Enums"]["fund_type"]
           id: string
+          is_active: boolean
           name: string
           organization_id: string
-          fund_type: Database["public"]["Enums"]["fund_type"]
           target_size: number
-          currency: string
-          is_active: boolean
-          created_at: string
           updated_at: string
         }[]
       }
       admin_get_all_funds_with_orgs: {
         Args: Record<PropertyKey, never>
         Returns: {
+          created_at: string
+          currency: string
+          description: string
+          fund_type: Database["public"]["Enums"]["fund_type"]
           id: string
+          is_active: boolean
           name: string
           organization_id: string
-          fund_type: Database["public"]["Enums"]["fund_type"]
-          description: string
-          target_size: number
-          currency: string
-          is_active: boolean
-          created_at: string
-          updated_at: string
           organization_name: string
+          target_size: number
+          updated_at: string
         }[]
       }
       admin_get_all_organizations: {
         Args: Record<PropertyKey, never>
         Returns: {
+          created_at: string
+          domain: string
           id: string
           name: string
-          domain: string
-          created_at: string
           updated_at: string
         }[]
       }
       admin_get_all_profiles: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
-          user_id: string
+          created_at: string
           email: string
           first_name: string
-          last_name: string
-          role: Database["public"]["Enums"]["user_role"]
-          organization_id: string
+          id: string
           is_deleted: boolean
-          created_at: string
+          last_name: string
+          organization_id: string
+          role: Database["public"]["Enums"]["user_role"]
           updated_at: string
+          user_id: string
         }[]
       }
       admin_list_all_orgs: {
@@ -3683,9 +3794,9 @@ export type Database = {
       }
       admin_set_user_role: {
         Args: {
-          p_user_email: string
-          p_role: Database["public"]["Enums"]["user_role"]
           p_org_id?: string
+          p_role: Database["public"]["Enums"]["user_role"]
+          p_user_email: string
         }
         Returns: boolean
       }
@@ -3698,8 +3809,8 @@ export type Database = {
       }
       admin_update_user_role: {
         Args: {
-          p_user_id: string
           p_role: Database["public"]["Enums"]["user_role"]
+          p_user_id: string
         }
         Returns: boolean
       }
@@ -3714,14 +3825,14 @@ export type Database = {
       audit_tenant_isolation: {
         Args: Record<PropertyKey, never>
         Returns: {
+          invalid_org_id_count: number
+          issues_found: boolean
+          null_org_id_count: number
+          organization_list: string[]
+          severity: string
           table_name: string
           total_rows: number
-          null_org_id_count: number
-          invalid_org_id_count: number
           valid_org_id_count: number
-          organization_list: string[]
-          issues_found: boolean
-          severity: string
         }[]
       }
       auth_email: {
@@ -3748,13 +3859,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      binary_quantize: {
+        Args: { "": string } | { "": unknown }
+        Returns: unknown
+      }
       calculate_overall_score: {
         Args: {
-          thesis_score?: number
+          financial_score?: number
           leadership_score?: number
           market_score?: number
           product_score?: number
-          financial_score?: number
+          thesis_score?: number
           traction_score?: number
         }
         Returns: number
@@ -3771,22 +3886,26 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      cleanup_vector_search_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       complete_analysis_queue_item: {
         Args: {
+          error_message_param?: string
           queue_id_param: string
           success?: boolean
-          error_message_param?: string
         }
         Returns: boolean
       }
       create_activity_with_context: {
         Args: {
-          p_fund_id: string
           p_activity_type: string
-          p_title: string
+          p_context_data?: Json
           p_deal_id?: string
           p_description?: string
-          p_context_data?: Json
+          p_fund_id: string
+          p_title: string
         }
         Returns: string
       }
@@ -3803,16 +3922,16 @@ export type Database = {
       }
       create_organization_with_admin: {
         Args: {
-          org_name: string
-          org_domain: string
           admin_email: string
           admin_role?: Database["public"]["Enums"]["user_role"]
+          org_domain: string
+          org_name: string
         }
         Returns: {
-          organization_id: string
-          user_id: string
-          success: boolean
           message: string
+          organization_id: string
+          success: boolean
+          user_id: string
         }[]
       }
       current_user_email: {
@@ -3838,33 +3957,69 @@ export type Database = {
       get_cross_org_analytics: {
         Args: Record<PropertyKey, never>
         Returns: {
-          organization_id: string
-          organization_name: string
-          fund_count: number
-          total_deals: number
           active_deals: number
           completed_analyses: number
           failed_analyses: number
-          queue_success_rate: number
-          last_activity: string
+          fund_count: number
           health_status: string
+          last_activity: string
+          organization_id: string
+          organization_name: string
+          queue_success_rate: number
+          total_deals: number
         }[]
       }
       get_deals_analysis_readiness: {
         Args: { fund_id_param: string }
         Returns: {
-          deal_id: string
           company_name: string
-          validation_score: number
+          completeness_score: number
+          deal_id: string
           is_ready: boolean
           issue_count: number
+          validation_score: number
           warning_count: number
-          completeness_score: number
         }[]
       }
       get_jwt_org_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_queue_health_status: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      halfvec_avg: {
+        Args: { "": number[] }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      hnsw_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: { "": unknown }
+        Returns: unknown
       }
       is_admin_by_email: {
         Args: Record<PropertyKey, never>
@@ -3882,6 +4037,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      ivfflat_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
       jwt_is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -3890,16 +4057,24 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      l2_norm: {
+        Args: { "": unknown } | { "": unknown }
+        Returns: number
+      }
+      l2_normalize: {
+        Args: { "": string } | { "": unknown } | { "": unknown }
+        Returns: string
+      }
       list_platform_activities: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: {
-          id: string
-          title: string
           activity_type: string
-          priority: string
-          user_id: string
-          fund_id: string
           created_at: string
+          fund_id: string
+          id: string
+          priority: string
+          title: string
+          user_id: string
         }[]
       }
       populate_enhanced_analysis: {
@@ -3921,9 +4096,9 @@ export type Database = {
       queue_deal_analysis: {
         Args: {
           deal_id_param: string
-          trigger_reason_param?: string
-          priority_param?: string
           delay_minutes?: number
+          priority_param?: string
+          trigger_reason_param?: string
         }
         Returns: string
       }
@@ -3934,25 +4109,37 @@ export type Database = {
       restore_archived_activities: {
         Args: {
           activity_ids?: string[]
-          start_date?: string
           end_date?: string
+          start_date?: string
         }
         Returns: number
       }
       set_user_role: {
         Args: {
-          user_email: string
           new_role: Database["public"]["Enums"]["user_role"]
           org_id?: string
+          user_email: string
         }
         Returns: boolean
       }
       should_queue_analysis: {
-        Args: { p_deal_id: string; p_catalyst_type: string; p_user_id: string }
+        Args: { p_catalyst_type: string; p_deal_id: string; p_user_id: string }
         Returns: Json
       }
+      sparsevec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
       user_can_access_activity: {
-        Args: { activity_fund_id: string; activity_deal_id: string }
+        Args: { activity_deal_id: string; activity_fund_id: string }
         Returns: boolean
       }
       user_can_access_fund: {
@@ -3960,7 +4147,7 @@ export type Database = {
         Returns: boolean
       }
       user_can_manage_activity: {
-        Args: { activity_fund_id: string; activity_deal_id: string }
+        Args: { activity_deal_id: string; activity_fund_id: string }
         Returns: boolean
       }
       user_can_manage_fund: {
@@ -3978,32 +4165,73 @@ export type Database = {
       validate_jwt_claims: {
         Args: Record<PropertyKey, never>
         Returns: {
-          user_id: string
-          email: string
-          role: string
-          org_id: string
-          is_super_admin: boolean
           claims_valid: boolean
+          email: string
+          is_super_admin: boolean
           missing_claims: string[]
+          org_id: string
+          role: string
+          user_id: string
         }[]
       }
       validate_memo_workflow_transition: {
         Args: {
           current_state: string
-          new_state: string
           is_super_admin?: boolean
+          new_state: string
         }
         Returns: boolean
+      }
+      vector_avg: {
+        Args: { "": number[] }
+        Returns: string
+      }
+      vector_dims: {
+        Args: { "": string } | { "": unknown }
+        Returns: number
+      }
+      vector_norm: {
+        Args: { "": string }
+        Returns: number
+      }
+      vector_out: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: { "": string }
+        Returns: string
+      }
+      vector_similarity_search: {
+        Args: {
+          content_type_filter?: string
+          fund_id_filter?: string
+          max_results?: number
+          query_embedding: string
+          similarity_threshold?: number
+        }
+        Returns: {
+          content_id: string
+          content_text: string
+          content_type: string
+          fund_id: string
+          metadata: Json
+          similarity_score: number
+        }[]
+      }
+      vector_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
       }
       verify_rls_policies_for_org: {
         Args: { test_org_id: string }
         Returns: {
-          table_name: string
-          policy_test: string
-          expected_behavior: string
           actual_result: string
-          test_passed: boolean
+          expected_behavior: string
+          policy_test: string
           security_risk: string
+          table_name: string
+          test_passed: boolean
         }[]
       }
     }
