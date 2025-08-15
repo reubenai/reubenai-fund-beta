@@ -37,7 +37,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
     website: '',
     linkedin_url: '',
     crunchbase_url: '',
-    deal_size: '',
+    current_round_size: '',
     valuation: '',
     currency: 'USD'
   });
@@ -94,7 +94,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
         website: formData.website || undefined,
         linkedin_url: formData.linkedin_url || undefined,
         crunchbase_url: formData.crunchbase_url || undefined,
-        deal_size: formData.deal_size ? parseInt(formData.deal_size) : undefined,
+        current_round_size: formData.current_round_size ? parseInt(formData.current_round_size) : undefined,
         valuation: formData.valuation ? parseInt(formData.valuation) : undefined,
         currency: formData.currency || undefined
       };
@@ -161,7 +161,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
       website: '',
       linkedin_url: '',
       crunchbase_url: '',
-      deal_size: '',
+      current_round_size: '',
       valuation: '',
       currency: 'USD'
     });
@@ -283,11 +283,11 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
               {/* Financial Info */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="col-span-2">
-                  <Label htmlFor="deal_size">Deal Size</Label>
+                  <Label htmlFor="current_round_size">Current Round Size</Label>
                   <NumberInput
-                    value={formData.deal_size && formData.deal_size.trim() !== '' ? parseInt(formData.deal_size) : undefined}
-                    onChange={(value) => handleInputChange('deal_size', value?.toString() || '')}
-                    placeholder="Enter deal size"
+                    value={formData.current_round_size && formData.current_round_size.trim() !== '' ? parseInt(formData.current_round_size) : undefined}
+                    onChange={(value) => handleInputChange('current_round_size', value?.toString() || '')}
+                    placeholder="Enter current round size"
                   />
                 </div>
                 <div>
