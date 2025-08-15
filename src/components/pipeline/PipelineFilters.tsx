@@ -11,8 +11,8 @@ interface Filters {
   status?: string;
   ragStatus?: string;
   industry?: string;
-  dealSizeMin?: number;
-  dealSizeMax?: number;
+  currentRoundSizeMin?: number;
+  currentRoundSizeMax?: number;
   scoreMin?: number;
   scoreMax?: number;
 }
@@ -146,23 +146,23 @@ export const PipelineFilters: React.FC<PipelineFiltersProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Deal Size Range */}
+          {/* Current Round Size Range */}
           <div className="space-y-2">
-            <Label className="text-xs font-medium">Deal Size Range (USD)</Label>
+            <Label className="text-xs font-medium">Current Round Size Range (USD)</Label>
             <div className="flex gap-1">
               <Input
                 type="number"
                 placeholder="Min amount"
-                value={filters.dealSizeMin || ''}
-                onChange={(e) => updateFilter('dealSizeMin', e.target.value ? parseInt(e.target.value) : undefined)}
+                value={filters.currentRoundSizeMin || ''}
+                onChange={(e) => updateFilter('currentRoundSizeMin', e.target.value ? parseInt(e.target.value) : undefined)}
                 className="h-8 text-xs"
                 min="0"
               />
               <Input
                 type="number"
                 placeholder="Max amount"
-                value={filters.dealSizeMax || ''}
-                onChange={(e) => updateFilter('dealSizeMax', e.target.value ? parseInt(e.target.value) : undefined)}
+                value={filters.currentRoundSizeMax || ''}
+                onChange={(e) => updateFilter('currentRoundSizeMax', e.target.value ? parseInt(e.target.value) : undefined)}
                 className="h-8 text-xs"
                 min="0"
               />
@@ -221,13 +221,13 @@ export const PipelineFilters: React.FC<PipelineFiltersProps> = ({
                   </button>
                 </Badge>
               )}
-              {(filters.dealSizeMin || filters.dealSizeMax) && (
+              {(filters.currentRoundSizeMin || filters.currentRoundSizeMax) && (
                 <Badge variant="outline" className="text-xs">
-                  Deal Size: ${filters.dealSizeMin || 0}M-${filters.dealSizeMax || '∞'}M
+                  Round Size: ${filters.currentRoundSizeMin || 0}M-${filters.currentRoundSizeMax || '∞'}M
                   <button
                     onClick={() => {
-                      updateFilter('dealSizeMin', undefined);
-                      updateFilter('dealSizeMax', undefined);
+                      updateFilter('currentRoundSizeMin', undefined);
+                      updateFilter('currentRoundSizeMax', undefined);
                     }}
                     className="ml-1 hover:bg-muted rounded-full"
                   >

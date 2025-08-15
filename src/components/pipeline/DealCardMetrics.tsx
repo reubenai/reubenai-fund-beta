@@ -20,12 +20,12 @@ export const DealCardMetrics: React.FC<DealCardMetricsProps> = ({
 
   return (
     <div className={`space-y-1 mb-3 ${viewDensity === 'compact' ? 'space-y-1' : 'space-y-2'}`}>
-      {/* Deal Size */}
-      {deal.deal_size && (
+      {/* Current Round Size */}
+      {deal.current_round_size && (
         <div className={`flex items-center gap-2 ${textSize}`}>
           <DollarSign className={`${iconSize} text-gray-400 flex-shrink-0`} />
           <span className="text-gray-700 font-medium">
-            {formatAmount(deal.deal_size, deal.currency)}
+            {formatAmount(deal.current_round_size, deal.currency)}
           </span>
           {/* Data confidence indicator */}
           {deal.source_confidence_score && deal.source_confidence_score < 70 && (
@@ -34,6 +34,18 @@ export const DealCardMetrics: React.FC<DealCardMetricsProps> = ({
           {!deal.source_confidence_score && (
             <span className="text-gray-400 text-xs ml-1" title="Unvalidated data">?</span>
           )}
+        </div>
+      )}
+      
+      {/* Valuation */}
+      {deal.valuation && (
+        <div className={`flex items-center gap-2 ${textSize}`}>
+          <span className={`${iconSize === 'w-3 h-3' ? 'text-xs' : 'text-sm'} text-gray-500 font-medium flex-shrink-0`}>
+            Val:
+          </span>
+          <span className="text-gray-700 font-medium">
+            {formatAmount(deal.valuation, deal.currency)}
+          </span>
         </div>
       )}
       

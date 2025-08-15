@@ -64,7 +64,7 @@ interface EnhancedDealTableViewProps {
   loading?: boolean;
 }
 
-type SortField = 'company_name' | 'industry' | 'deal_size' | 'overall_score' | 'updated_at' | 'status';
+type SortField = 'company_name' | 'industry' | 'current_round_size' | 'overall_score' | 'updated_at' | 'status';
 type SortDirection = 'asc' | 'desc';
 
 const getRAGBadgeVariant = (ragStatus?: string) => {
@@ -104,7 +104,7 @@ const exportDeals = (deals: (Deal & { stage: string })[], format: 'csv' | 'json'
     'Company Name',
     'Industry', 
     'Stage',
-    'Deal Size',
+    'Current Round Size',
     'Valuation',
     'Currency',
     'ReubenAI Score',
@@ -124,7 +124,7 @@ const exportDeals = (deals: (Deal & { stage: string })[], format: 'csv' | 'json'
         `"${(deal.company_name || 'Unnamed Company').replace(/"/g, '""')}"`,
         `"${(deal.industry || '').replace(/"/g, '""')}"`,
         `"${deal.stage.replace(/"/g, '""')}"`,
-        deal.deal_size || '',
+        deal.current_round_size || '',
         deal.valuation || '',
         deal.currency || 'USD',
         deal.overall_score || '',
@@ -192,7 +192,7 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
       } else if (sortField === 'updated_at') {
         aValue = new Date(aValue || 0);
         bValue = new Date(bValue || 0);
-      } else if (['deal_size', 'overall_score'].includes(sortField)) {
+      } else if (['current_round_size', 'overall_score'].includes(sortField)) {
         aValue = aValue || 0;
         bValue = bValue || 0;
       } else if (sortField === 'status') {
@@ -380,11 +380,17 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
               
               <th 
                 className="h-12 px-4 text-left align-middle font-medium text-muted-foreground cursor-pointer select-none hover:bg-muted/50 transition-colors text-right min-w-[120px]"
-                onClick={() => handleSort('deal_size')}
+                onClick={() => handleSort('current_round_size')}
               >
                 <div className="flex items-center justify-end">
-                  Deal Size
-                  {getSortIcon('deal_size')}
+                  Current Round Size
+                  {getSortIcon('current_round_size')}
+                </div>
+              </th>
+              
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground text-right min-w-[120px]">
+                <div className="flex items-center justify-end">
+                  Valuation
                 </div>
               </th>
               
@@ -519,18 +525,20 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                 </td>
                 
                 <td className="p-4 align-middle text-right">
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-end space-x-1">
-                      <DollarSign className="h-3 w-3 text-muted-foreground" />
-                      <span className="font-medium">
-                        {formatCurrency(deal.deal_size, deal.currency)}
-                      </span>
-                    </div>
-                    {deal.valuation && (
-                      <div className="text-xs text-muted-foreground">
-                        Val: {formatCurrency(deal.valuation, deal.currency)}
-                      </div>
-                    )}
+                  <div className="flex items-center justify-end space-x-1">
+                    <DollarSign className="h-3 w-3 text-muted-foreground" />
+                    <span className="font-medium">
+                      {formatCurrency(deal.current_round_size, deal.currency)}
+                    </span>
+                  </div>
+                </td>
+                
+                <td className="p-4 align-middle text-right">
+                  <div className="flex items-center justify-end space-x-1">
+                    <TrendingUp className="h-3 w-3 text-muted-foreground" />
+                    <span className="font-medium">
+                      {formatCurrency(deal.valuation, deal.currency)}
+                    </span>
                   </div>
                 </td>
                 

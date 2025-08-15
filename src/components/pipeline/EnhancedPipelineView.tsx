@@ -22,8 +22,8 @@ interface PipelineViewState {
     status?: string;
     ragStatus?: string;
     industry?: string;
-    dealSizeMin?: number;
-    dealSizeMax?: number;
+    currentRoundSizeMin?: number;
+    currentRoundSizeMax?: number;
     scoreMin?: number;
     scoreMax?: number;
   };
@@ -151,11 +151,11 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fund
           return false;
         }
 
-        // Deal size range filter
-        if (filters.dealSizeMin && (!deal.deal_size || deal.deal_size < filters.dealSizeMin)) {
+        // Current round size range filter
+        if (filters.currentRoundSizeMin && (!deal.current_round_size || deal.current_round_size < filters.currentRoundSizeMin)) {
           return false;
         }
-        if (filters.dealSizeMax && (!deal.deal_size || deal.deal_size > filters.dealSizeMax)) {
+        if (filters.currentRoundSizeMax && (!deal.current_round_size || deal.current_round_size > filters.currentRoundSizeMax)) {
           return false;
         }
 
