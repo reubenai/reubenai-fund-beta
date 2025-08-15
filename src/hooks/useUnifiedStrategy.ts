@@ -90,31 +90,51 @@ export function useUnifiedStrategy(fundId?: string) {
   };
 
   const updateStrategy = async (updates: Partial<EnhancedStrategy>) => {
-    if (!fundId) return null;
+    console.log('=== UPDATE STRATEGY CALLED ===');
+    console.log('Fund ID:', fundId);
+    console.log('Current strategy:', strategy);
+    console.log('Updates received:', updates);
+    
+    if (!fundId) {
+      console.error('No fund ID provided to updateStrategy');
+      return null;
+    }
     
     setLoading(true);
     setError(null);
     
     try {
       let updatedStrategy;
+      const strategyId = updates.id || strategy?.id;
       
-      if (strategy?.id) {
+      console.log('Strategy ID for update:', strategyId);
+      
+      if (strategyId) {
         // Update existing strategy
-        updatedStrategy = await unifiedStrategyService.updateFundStrategy(strategy.id, updates);
+        console.log('Updating existing strategy with ID:', strategyId);
+        updatedStrategy = await unifiedStrategyService.updateFundStrategy(strategyId, updates);
+        console.log('Update result:', updatedStrategy);
       } else {
         // Use upsert for creating/updating when no strategy exists
+        console.log('Using upsert for fund:', fundId);
         updatedStrategy = await unifiedStrategyService.upsertFundStrategy(fundId, updates);
+        console.log('Upsert result:', updatedStrategy);
       }
       
       if (updatedStrategy) {
+        console.log('Setting new strategy state:', updatedStrategy);
         setStrategy(updatedStrategy);
         toast({
           title: 'Success',
-          description: strategy?.id ? 'Strategy updated successfully' : 'Strategy created successfully'
+          description: strategyId ? 'Strategy updated successfully' : 'Strategy created successfully'
         });
+      } else {
+        console.error('No strategy returned from service');
+        throw new Error('Update operation failed - no data returned');
       }
       return updatedStrategy;
     } catch (err) {
+      console.error('Update strategy error:', err);
       const errorMessage = strategy?.id ? 'Failed to update strategy' : 'Failed to create strategy';
       setError(errorMessage);
       toast({

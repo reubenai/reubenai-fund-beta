@@ -53,10 +53,48 @@ export function CleanThesisConfiguration({
   const hasDetailedCriteria = wizardCriteriaConfig.length > 0;
 
   const handleSave = async () => {
-    // Strategy should always exist now due to database trigger
-    const result = await updateStrategy(editedStrategy);
-    if (result) {
-      onSave(); // Use the parent callback instead of forcing page reload
+    console.log('=== MANUAL SAVE TRIGGERED ===');
+    console.log('Strategy ID:', strategy?.id);
+    console.log('Edited Strategy:', editedStrategy);
+    console.log('Current Strategy:', strategy);
+    
+    if (!strategy?.id) {
+      console.error('No strategy ID found - cannot save');
+      toast({
+        title: 'Error',
+        description: 'Strategy not properly initialized. Please refresh the page.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      const updatesWithId = {
+        ...editedStrategy,
+        id: strategy.id
+      };
+      
+      console.log('Calling updateStrategy with:', updatesWithId);
+      const result = await updateStrategy(updatesWithId);
+      
+      if (result) {
+        console.log('Save successful:', result);
+        onSave(); // Use the parent callback instead of forcing page reload
+      } else {
+        console.error('Save failed - no result returned');
+        toast({
+          title: 'Error',
+          description: 'Failed to save changes. Please try again.',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred while saving.',
+        variant: 'destructive'
+      });
     }
   };
 

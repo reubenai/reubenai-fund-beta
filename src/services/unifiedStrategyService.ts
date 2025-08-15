@@ -268,48 +268,84 @@ class UnifiedStrategyService {
   // Comprehensive strategy updates
   async updateFundStrategy(strategyId: string, updates: any): Promise<EnhancedStrategy | null> {
     try {
+      console.log('=== UPDATE FUND STRATEGY SERVICE ===');
+      console.log('Strategy ID:', strategyId);
+      console.log('Updates:', updates);
+      
+      // Remove the id from updates to avoid conflicts
+      const { id, ...updateData } = updates;
+      
+      console.log('Clean update data:', updateData);
+      
       const { data, error } = await supabase
         .from('investment_strategies')
-        .update(updates)
+        .update(updateData)
         .eq('id', strategyId)
         .select()
         .single();
 
+      console.log('Supabase update result:', { data, error });
+
       if (error) {
-        console.error('Error updating strategy:', error);
-        return null;
+        console.error('Supabase error updating strategy:', error);
+        throw new Error(`Database update failed: ${error.message}`);
       }
 
+      if (!data) {
+        console.error('No data returned from update');
+        throw new Error('Update succeeded but no data returned');
+      }
+
+      console.log('Successfully updated strategy:', data);
       return data as EnhancedStrategy;
     } catch (error) {
       console.error('Unexpected error in updateFundStrategy:', error);
-      return null;
+      throw error; // Re-throw to preserve error handling in hook
     }
   }
 
   // Upsert strategy for fund (create if doesn't exist, update if it does)
   async upsertFundStrategy(fundId: string, updates: any): Promise<EnhancedStrategy | null> {
     try {
+      console.log('=== UPSERT FUND STRATEGY SERVICE ===');
+      console.log('Fund ID:', fundId);
+      console.log('Updates:', updates);
+      
+      // Remove the id from updates to avoid conflicts in upsert
+      const { id, ...updateData } = updates;
+      
+      const upsertData = {
+        fund_id: fundId,
+        ...updateData
+      };
+      
+      console.log('Upsert data:', upsertData);
+      
       const { data, error } = await supabase
         .from('investment_strategies')
-        .upsert({
-          fund_id: fundId,
-          ...updates
-        }, {
+        .upsert(upsertData, {
           onConflict: 'fund_id'
         })
         .select()
         .single();
 
+      console.log('Supabase upsert result:', { data, error });
+
       if (error) {
-        console.error('Error upserting strategy:', error);
-        return null;
+        console.error('Supabase error upserting strategy:', error);
+        throw new Error(`Database upsert failed: ${error.message}`);
       }
 
+      if (!data) {
+        console.error('No data returned from upsert');
+        throw new Error('Upsert succeeded but no data returned');
+      }
+
+      console.log('Successfully upserted strategy:', data);
       return data as EnhancedStrategy;
     } catch (error) {
       console.error('Unexpected error in upsertFundStrategy:', error);
-      return null;
+      throw error; // Re-throw to preserve error handling in hook
     }
   }
 
