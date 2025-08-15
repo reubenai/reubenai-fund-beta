@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface CleanThesisConfigurationProps {
   strategy: EnhancedStrategy;
+  fundId: string; // Add fundId prop
   onSave: () => void;
   onCancel: () => void;
   onLaunchWizard?: () => void;
@@ -32,13 +33,14 @@ interface CleanThesisConfigurationProps {
 
 export function CleanThesisConfiguration({ 
   strategy, 
+  fundId, // Add fundId parameter
   onSave, 
   onCancel,
   onLaunchWizard
 }: CleanThesisConfigurationProps) {
   const [editedStrategy, setEditedStrategy] = useState<Partial<EnhancedStrategy>>(strategy);
   const [criteriaEditing, setCriteriaEditing] = useState(false);
-  const { updateStrategy, loading } = useUnifiedStrategy();
+  const { updateStrategy, loading } = useUnifiedStrategy(fundId); // Pass fundId to hook
   const { canConfigureStrategy } = usePermissions();
   const { toast } = useToast();
 

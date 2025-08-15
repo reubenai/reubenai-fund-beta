@@ -102,6 +102,7 @@ export function StrategyConfigurationManager({ fundId, fundName, fundType }: Str
   return (
     <CleanThesisConfiguration
       strategy={strategyToEdit}
+      fundId={fundId} // Pass fundId to CleanThesisConfiguration
       onSave={handleStrategySave}
       onCancel={() => {}} // No cancel needed since this is the main view
       onLaunchWizard={() => setShowWizard(true)}
