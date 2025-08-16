@@ -43,7 +43,7 @@ import { DealDataRepairTool } from '@/components/admin/DealDataRepairTool';
 import { AnalysisQueueDashboard } from '@/components/admin/AnalysisQueueDashboard';
 import { SafeModeTestPanel } from '@/components/admin/SafeModeTestPanel';
 import { DealAllowlistManager } from '@/components/admin/DealAllowlistManager';
-import { StuckDocumentRecovery } from '@/components/admin/StuckDocumentRecovery';
+import { DynamicStuckDocumentRecovery } from '@/components/admin/DynamicStuckDocumentRecovery';
 
 import { useFund } from '@/contexts/FundContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -933,7 +933,7 @@ export default function Admin() {
             </TabsContent>
 
             <TabsContent value="recovery" className="space-y-6">
-              <StuckDocumentRecovery onRecoveryComplete={fetchData} />
+              <DynamicStuckDocumentRecovery onRecoveryComplete={fetchData} />
             </TabsContent>
 
           </Tabs>

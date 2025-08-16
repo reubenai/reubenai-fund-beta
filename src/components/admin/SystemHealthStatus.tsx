@@ -122,10 +122,13 @@ export function SystemHealthStatus() {
 
       // 3. Analysis Queue Health
       try {
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+        const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString();
+        
         const { data: queueData, error: queueError } = await supabase
           .from('analysis_queue')
-          .select('status')
-          .limit(10);
+          .select('status, created_at')
+          .limit(100);
 
         if (queueError) {
           checks.push({
@@ -140,20 +143,38 @@ export function SystemHealthStatus() {
         } else {
           const processingCount = queueData?.filter(q => q.status === 'processing').length || 0;
           const failedCount = queueData?.filter(q => q.status === 'failed').length || 0;
+          const queuedCount = queueData?.filter(q => q.status === 'queued').length || 0;
+          
+          // Check for stuck items
+          const stuckProcessing = queueData?.filter(q => 
+            q.status === 'processing' && 
+            new Date(q.created_at) < new Date(oneHourAgo)
+          ).length || 0;
+          
+          const stuckQueued = queueData?.filter(q => 
+            q.status === 'queued' && 
+            new Date(q.created_at) < new Date(twoHoursAgo)
+          ).length || 0;
           
           let queueStatus: 'healthy' | 'warning' | 'critical' = 'healthy';
           let message = 'Queue operational';
           
-          if (failedCount > 5) {
+          if (stuckProcessing > 0 || stuckQueued > 0) {
+            queueStatus = 'critical';
+            message = `${stuckProcessing + stuckQueued} stuck items detected`;
+            overallStatus = 'critical';
+          } else if (failedCount > 5) {
             queueStatus = 'critical';
             message = `${failedCount} failed jobs detected`;
             overallStatus = 'critical';
-          } else if (processingCount > 25) {
+          } else if (processingCount > 25 || queuedCount > 50) {
             queueStatus = 'warning';
-            message = `High queue load: ${processingCount} processing`;
+            message = `High queue load: ${processingCount} processing, ${queuedCount} queued`;
             if (overallStatus === 'healthy') {
               overallStatus = 'warning';
             }
+          } else if (queuedCount > 0 || processingCount > 0) {
+            message = `${queuedCount} queued, ${processingCount} processing`;
           }
           
           checks.push({
