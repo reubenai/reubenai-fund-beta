@@ -130,9 +130,11 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
     }));
 
     setUploadingFiles(newUploads);
+    const filesToUpload = [...selectedFiles]; // Create a copy to avoid state mutation issues
     setSelectedFiles([]); // Clear selected files
 
-    for (const selectedFile of selectedFiles) {
+    // Process all files concurrently using Promise.allSettled
+    const uploadPromises = filesToUpload.map(async (selectedFile) => {
       try {
         const uploadInput: UploadDocumentInput = {
           dealId,
@@ -163,19 +165,22 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
             }
           }
           
-          // Remove from uploading list
+          // Remove from uploading list on success
           setUploadingFiles(prev => prev.filter(u => u.id !== selectedFile.id));
           
           onUploadComplete?.(result);
+          return { success: true, file: selectedFile, result };
         } else {
+          // Update status to error but keep in list for retry
           setUploadingFiles(prev => prev.map(u => 
             u.id === selectedFile.id 
               ? { ...u, progress: { progress: 0, status: 'error', message: 'Upload failed' } }
               : u
           ));
+          return { success: false, file: selectedFile, error: 'Upload failed' };
         }
       } catch (err) {
-        console.error('Upload error:', err);
+        console.error('Upload error for file:', selectedFile.file.name, err);
         
         // Create specific error based on error type
         let documentError;
@@ -196,13 +201,44 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
           documentError = DocumentErrors.uploadFailed('Unknown upload error', 'UNKNOWN_ERROR');
         }
         
-        setError(documentError);
+        // Update status to error but keep in list for retry
         setUploadingFiles(prev => prev.map(u => 
           u.id === selectedFile.id 
             ? { ...u, progress: { progress: 0, status: 'error', message: documentError.message } }
             : u
         ));
+        
+        return { success: false, file: selectedFile, error: documentError };
       }
+    });
+
+    // Wait for all uploads to complete
+    const results = await Promise.allSettled(uploadPromises);
+    
+    // Check if any uploads failed and set global error for the first failure
+    const failedUploads = results.filter(result => 
+      result.status === 'fulfilled' && !result.value.success
+    );
+    
+    if (failedUploads.length > 0) {
+      const firstFailure = failedUploads[0];
+      if (firstFailure.status === 'fulfilled' && firstFailure.value.error) {
+        setError(firstFailure.value.error);
+      }
+    }
+
+    // Log completion summary
+    const successCount = results.filter(result => 
+      result.status === 'fulfilled' && result.value.success
+    ).length;
+    
+    console.log(`Upload batch completed: ${successCount}/${filesToUpload.length} successful`);
+    
+    if (successCount > 0) {
+      toast({
+        title: "Upload Complete",
+        description: `${successCount} document${successCount !== 1 ? 's' : ''} uploaded successfully`,
+      });
     }
   };
 
