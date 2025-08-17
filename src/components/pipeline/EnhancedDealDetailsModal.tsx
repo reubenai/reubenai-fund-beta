@@ -62,7 +62,7 @@ import { RiskAssessmentSection } from '@/components/analysis/RiskAssessmentSecti
 import { StrategicTimingAssessment } from '@/components/analysis/StrategicTimingAssessment';
 import { TrustTransparencyAssessment } from '@/components/analysis/TrustTransparencyAssessment';
 import { ReubenAISummaryScore } from '@/components/analysis/ReubenAISummaryScore';
-import { DealAnalysisTrigger } from '@/components/analysis/DealAnalysisTrigger';
+// Removed DealAnalysisTrigger - reverting to background processing
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useFund } from '@/contexts/FundContext';
 
@@ -107,9 +107,9 @@ export function EnhancedDealDetailsModal({
   onOpenChange, 
   onDealUpdated
 }: EnhancedDealDetailsModalProps) {
-  const [isEnriching, setIsEnriching] = useState(false);
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
   const [analysisData, setAnalysisData] = useState<any>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const { getRAGCategory } = useStrategyThresholds();
   const { canViewActivities, canViewAnalysis, role, loading } = usePermissions();
@@ -137,6 +137,10 @@ export function EnhancedDealDetailsModal({
   useEffect(() => {
     if (deal && open) {
       loadEnhancedData();
+      // Auto-trigger background enrichment if deal has minimal analysis
+      if (!deal.enhanced_analysis || !deal.overall_score) {
+        triggerBackgroundEnrichment();
+      }
     }
   }, [deal?.id, open]);
 
@@ -164,10 +168,42 @@ export function EnhancedDealDetailsModal({
     }
   };
 
-  const enrichCompanyData = async () => {
-    if (!deal || isEnriching) return;
+  const triggerBackgroundEnrichment = async () => {
+    if (!deal || !selectedFund) return;
 
-    setIsEnriching(true);
+    try {
+      // Silent background enrichment via deal-enrichment-engine
+      console.log('🔄 [Background] Starting silent enrichment...');
+      
+      const { data, error } = await supabase.functions.invoke('deal-enrichment-engine', {
+        body: {
+          org_id: selectedFund.organization_id,
+          fund_id: selectedFund.id,
+          deal_id: deal.id,
+          enrichment_packs: selectedFund.fund_type === 'private_equity' 
+            ? ['pe_financial_performance', 'pe_market_position', 'pe_operational_excellence', 'pe_growth_potential', 'pe_risk_assessment']
+            : ['vc_market_opportunity', 'vc_team_leadership', 'vc_product_technology', 'vc_business_traction', 'vc_strategic_fit'],
+          force_refresh: false
+        }
+      });
+
+      if (!error && data?.success) {
+        console.log('✅ [Background] Enrichment completed silently');
+        // Refresh data after enrichment
+        setTimeout(() => {
+          loadEnhancedData();
+          onDealUpdated?.();
+        }, 2000);
+      }
+    } catch (error) {
+      console.log('⚠️ [Background] Enrichment failed silently:', error);
+    }
+  };
+
+  const refreshAnalysis = async () => {
+    if (!deal || isRefreshing) return;
+
+    setIsRefreshing(true);
     try {
       // Step 1: Company Enrichment with Coresignal
       console.log('🔍 Step 1: Company Enrichment...');
@@ -377,19 +413,19 @@ export function EnhancedDealDetailsModal({
       }, 1000);
 
       toast({
-        title: "🎯 Comprehensive Analysis Complete",
-        description: `Successfully analyzed ${deal.company_name} using ${Object.keys(engines).length} AI engines`,
+        title: "✅ Analysis Updated",
+        description: `Successfully refreshed analysis for ${deal.company_name}`,
       });
 
     } catch (error) {
-      console.error('Comprehensive analysis failed:', error);
+      console.error('Analysis refresh failed:', error);
       toast({
-        title: "Analysis Error",
-        description: "Failed to complete comprehensive analysis. Please try again.",
+        title: "Refresh Error", 
+        description: "Failed to refresh analysis. Please try again.",
         variant: "destructive"
       });
     } finally {
-      setIsEnriching(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -421,7 +457,21 @@ export function EnhancedDealDetailsModal({
                 : 'grid-cols-3'
           }`}>
             <TabsTrigger value="overview" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-              Company Overview
+              <div className="flex items-center gap-2">
+                Company Overview
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    refreshAnalysis();
+                  }}
+                  disabled={isRefreshing}
+                  className="h-5 w-5 p-0 hover:bg-muted"
+                >
+                  <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
             </TabsTrigger>
             {canViewAnalysis && (
             <TabsTrigger value="analysis" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
@@ -444,96 +494,25 @@ export function EnhancedDealDetailsModal({
           </TabsList>
           
 
-          <TabsContent value="overview" className="space-y-6">
-            {/* Analysis Trigger Component */}
-            {selectedFund && (
-              <DealAnalysisTrigger
-                dealId={deal.id}
-                orgId={selectedFund.organization_id}
-                fundId={selectedFund.id}
-                deal={deal}
-                onAnalysisComplete={() => {
-                  onDealUpdated?.();
-                  loadEnhancedData();
-                }}
-              />
-            )}
-
-            {/* Executive Summary */}
-            <Card className="border-2 border-primary/20 bg-gradient-to-r from-background to-muted/30">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <Building2 className="h-6 w-6 text-primary" />
-                  Executive Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Key Metrics Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-lg border bg-background">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-full bg-primary/10">
-                        <DollarSign className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Capital Raised to Date</p>
-                        <p className="font-semibold text-lg text-foreground">
-                          {formatAmount((deal as any).capital_raised_to_date || deal.deal_size, deal.currency)}
-                        </p>
-                      </div>
+          <TabsContent value="overview" className="mt-6">
+            <div className="space-y-6">
+              {/* Company Overview Card with subtle background processing indicator */}
+              <Card>
+                <CardContent className="pt-6">
+                  {isRefreshing && (
+                    <div className="flex items-center gap-2 mb-4 p-2 bg-muted/50 rounded-md">
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary" />
+                      <span className="text-sm text-muted-foreground">Refreshing analysis...</span>
                     </div>
-                  </div>
+                  )}
 
-                  <div className="p-4 rounded-lg border bg-background">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-full bg-primary/10">
-                        <DollarSign className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Current Round</p>
-                        <p className="font-semibold text-lg text-foreground">
-                          {formatAmount((deal as any).current_round_size, deal.currency)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 rounded-lg border bg-background">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-full bg-primary/10">
-                        <TrendingUp className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Valuation</p>
-                        <p className="font-semibold text-lg text-foreground">
-                          {formatAmount(deal.valuation, deal.currency)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                {/* Company Info - 4 Column Grid Layout */}
-                <EnhancedCompanyDetails deal={deal} />
-
-              </CardContent>
-            </Card>
-
-            {/* Company Description */}
-            {(deal.description || companyDetails?.description) && (
-              <Card className="border-2 border-primary/20 bg-gradient-to-r from-background to-muted/30">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <FileText className="h-6 w-6 text-primary" />
-                    Company Description
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {companyDetails?.description || deal.description}
-                  </p>
+                  {/* Enhanced Company Details */}
+                  <EnhancedCompanyDetails 
+                    deal={deal}
+                  />
                 </CardContent>
               </Card>
-            )}
+            </div>
           </TabsContent>
 
 

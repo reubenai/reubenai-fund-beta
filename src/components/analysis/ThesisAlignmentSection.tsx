@@ -10,12 +10,14 @@ import {
   MapPin,
   Building2,
   DollarSign,
-  TrendingUp
+  TrendingUp,
+  Info
 } from 'lucide-react';
 import { Deal } from '@/hooks/usePipelineDeals';
 import { EnhancedStrategy } from '@/services/unifiedStrategyService';
 import { useFund } from '@/contexts/FundContext';
 import { supabase } from '@/integrations/supabase/client';
+import { industryMappingService, SemanticMatch } from '@/services/industryMappingService';
 
 interface ThesisAlignmentSectionProps {
   deal: Deal;
@@ -28,6 +30,8 @@ interface AlignmentCheck {
   icon: React.ReactNode;
   weight: number;
   score?: number;
+  semanticMatch?: SemanticMatch;
+  explanation?: string;
 }
 
 interface AlignmentAssessment {
@@ -116,21 +120,23 @@ export function ThesisAlignmentSection({ deal }: ThesisAlignmentSectionProps) {
       weight: 20
     });
 
-    // Industry/Sector Check
-    const industryAligned = !strategy.industries?.length || 
-      strategy.industries.some(industry => 
-        deal.industry?.toLowerCase().includes(industry.toLowerCase()) ||
-        industry.toLowerCase().includes(deal.industry?.toLowerCase() || '')
-      );
+    // Enhanced Industry/Sector Check with semantic matching
+    const industryAlignment = industryMappingService.areIndustriesAligned(
+      deal.industry || '', 
+      strategy.industries || [],
+      60 // minimum confidence threshold
+    );
     
     checks.push({
       criterion: 'Industry Focus',
-      aligned: industryAligned,
-      reasoning: industryAligned 
-        ? `Industry "${deal.industry}" aligns with fund focus` 
-        : `Industry "${deal.industry}" not in target sectors: ${strategy.industries?.join(', ')}`,
+      aligned: industryAlignment.aligned,
+      reasoning: industryAlignment.explanation,
       icon: <Building2 className="h-4 w-4" />,
-      weight: 25
+      weight: 25,
+      semanticMatch: industryAlignment.match,
+      explanation: industryAlignment.match 
+        ? `Semantic confidence: ${industryAlignment.match.confidence}%` 
+        : undefined
     });
 
     // Deal Size Check
@@ -300,9 +306,20 @@ export function ThesisAlignmentSection({ deal }: ThesisAlignmentSectionProps) {
                   {check.icon}
                   {getStatusIcon(check.aligned)}
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="font-medium text-sm">{check.criterion}</p>
                   <p className="text-xs text-muted-foreground">{check.reasoning}</p>
+                  {check.semanticMatch && (
+                    <div className="flex items-center gap-1 mt-1">
+                      <Info className="h-3 w-3 text-blue-500" />
+                      <span className="text-xs text-blue-600">
+                        {check.semanticMatch.reason} ({check.semanticMatch.confidence}% confidence)
+                      </span>
+                    </div>
+                  )}
+                  {check.explanation && (
+                    <p className="text-xs text-amber-600 mt-1">{check.explanation}</p>
+                  )}
                 </div>
               </div>
               <div className="text-right">
