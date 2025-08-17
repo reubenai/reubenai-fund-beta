@@ -28,6 +28,14 @@ interface MarketCheck {
   icon: React.ReactNode;
   weight: number;
   score?: number;
+  industryBreakdown?: Array<{
+    industry: string;
+    weight: number;
+    tam: number;
+    sam: number;
+    som: number;
+    citation: any;
+  }>;
 }
 
 interface MarketAssessment {
@@ -141,7 +149,23 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
           : 'Add company documents or description for market size analysis',
       icon: <Globe className="h-4 w-4" />,
       weight: 25,
-      score: marketSizeGood ? 85 : (totalTAM > 100000000) ? 60 : 40
+      score: marketSizeGood ? 85 : (totalTAM > 100000000) ? 60 : 40,
+      industryBreakdown: industries.map((industry, index) => {
+        const weight = index === 0 ? 0.6 : 0.2;
+        const tamValue = tamData?.value > 0 ? tamData.value : extractTAMForIndustry(deal, industry);
+        const samValue = Math.round(tamValue * 0.25);
+        const somValue = Math.round(samValue * 0.15);
+        const industryCitation = tamData?.citation || getDefaultCitation(industry);
+        
+        return {
+          industry,
+          weight,
+          tam: tamValue,
+          sam: samValue,
+          som: somValue,
+          citation: industryCitation
+        };
+      })
     });
 
     // Market Growth Rate - Using enriched growth data and CAGR analysis
@@ -550,20 +574,28 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Market Opportunity</CardTitle>
-          <Badge variant="outline" className={getStatusColor(assessment.overallStatus)}>
-            {assessment.overallStatus}
-          </Badge>
-        </div>
+        <CardTitle className="text-lg font-semibold">Market Opportunity</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Overall Score */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Market Opportunity Score</span>
-          <div className="flex items-center gap-2">
-            <Progress value={assessment.overallScore} className="w-32" />
-            <span className="text-sm font-medium">{assessment.overallScore}%</span>
+        {/* Overall Market Opportunity Summary */}
+        <div className="p-4 rounded-lg bg-muted/30 border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <BarChart3 className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <div className="font-medium text-sm">Market Opportunity Score</div>
+                <div className="text-xs text-muted-foreground">Based on 6 market factors</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className={getStatusColor(assessment.overallStatus)}>
+                {assessment.overallStatus}
+              </Badge>
+              <div className="flex items-center gap-2">
+                <Progress value={assessment.overallScore} className="w-20" />
+                <span className="text-sm font-medium">{assessment.overallScore}%</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -573,23 +605,78 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
           <h4 className="font-medium text-sm">Market Factors</h4>
           <div className="space-y-3">
             {assessment.checks.map((check, index) => (
-              <div key={index} className="flex items-center justify-between p-3 rounded-lg border">
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0">
-                    {getStatusIcon(check.aligned)}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {check.icon}
-                    <div>
-                      <div className="font-medium text-sm">{check.criterion}</div>
-                      <div className="text-xs text-muted-foreground">{check.reasoning}</div>
+              <div key={index} className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0">
+                      {getStatusIcon(check.aligned)}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {check.icon}
+                      <div>
+                        <div className="font-medium text-sm">{check.criterion}</div>
+                        <div className="text-xs text-muted-foreground">{check.reasoning}</div>
+                      </div>
                     </div>
                   </div>
+                  <div className="text-right">
+                    <div className="text-xs text-muted-foreground">Weight: {check.weight}%</div>
+                    <div className="text-sm font-medium">{check.score || (check.aligned ? 70 : 30)}/100</div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-xs text-muted-foreground">Weight: {check.weight}%</div>
-                  <div className="text-sm font-medium">{check.score || (check.aligned ? 70 : 30)}/100</div>
-                </div>
+                
+                {/* TAM/SAM/SOM Breakdown for Market Size criterion */}
+                {check.criterion === 'Market Size (TAM)' && check.industryBreakdown && (
+                  <div className="ml-8 space-y-3">
+                    {check.industryBreakdown.map((industry, idx) => (
+                      <div key={idx} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h5 className="font-medium">{industry.industry}</h5>
+                          <Badge variant="secondary">{Math.round(industry.weight * 100)}% weight</Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <div className="text-xs text-muted-foreground">TAM</div>
+                            <div className="font-semibold">{formatMarketSize(industry.tam)}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {industry.citation?.source || 'Industry Research'}
+                            </div>
+                            {industry.citation && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                <span className="font-medium">{industry.citation.report}</span>
+                                <br />
+                                <span>{industry.citation.publisher}, {industry.citation.year}</span>
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground">SAM</div>
+                            <div className="font-semibold">{formatMarketSize(industry.sam)}</div>
+                            <div className="text-xs text-muted-foreground">Geographic focus</div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              25% of TAM (addressable market)
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground">SOM</div>
+                            <div className="font-semibold">{formatMarketSize(industry.som)}</div>
+                            <div className="text-xs text-muted-foreground">Realistic capture</div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              15% of SAM (obtainable market)
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="text-xs text-muted-foreground">
+                          <strong>Methodology:</strong> TAM from {industry.citation?.source || 'industry reports'}, 
+                          SAM calculated as 25% of TAM based on geographic/regulatory constraints, 
+                          SOM estimated as 15% of SAM considering competitive positioning and market penetration capabilities.
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
