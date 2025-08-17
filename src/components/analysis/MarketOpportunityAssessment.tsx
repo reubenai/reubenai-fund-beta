@@ -204,7 +204,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     // Market Size (TAM) Assessment - Using enriched TAM data for all relevant industries
     const tamData = dataRetrieved?.tam_sam_som?.total_addressable_market;
     
-    // Create industry breakdown for TAM analysis
+    // Create industry breakdown for TAM analysis - separate calculation for each industry
     const industryBreakdown = industries.map((industry, index) => {
       const tamValue = extractTAMForIndustry(deal, industry);
       const samValue = Math.round(tamValue * 0.25);
@@ -227,9 +227,9 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
       criterion: 'Market Size (TAM)',
       aligned: marketSizeGood || false,
       reasoning: marketSizeGood 
-        ? `Large addressable market: $${(totalTAM/1000000000).toFixed(1)}B TAM across ${industries.length} industries. Sources: ${industryBreakdown.map(i => i.citation?.source).join(', ')}` 
+        ? `Large addressable market across ${industries.length} industries: ${industryBreakdown.map(i => `${i.industry} $${(i.tam/1000000000).toFixed(1)}B`).join(', ')}. Combined TAM: $${(totalTAM/1000000000).toFixed(1)}B.` 
         : totalTAM > 0
-          ? `Market size: $${(totalTAM/1000000).toFixed(0)}M TAM - may be limited for scale`
+          ? `Market size: $${(totalTAM/1000000).toFixed(0)}M TAM across ${industries.length} industries - may be limited for scale`
           : 'Add company documents or description for market size analysis',
       icon: <Globe className="h-4 w-4" />,
       weight: 20,
