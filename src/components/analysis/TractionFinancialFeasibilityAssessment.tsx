@@ -87,6 +87,20 @@ export function TractionFinancialFeasibilityAssessment({ deal }: TractionFinanci
     };
 
     fetchFinancialDataAndAssess();
+
+    // Listen for enrichment completion events
+    const handleEnrichmentComplete = (event: CustomEvent) => {
+      if (event.detail?.dealId === deal.id) {
+        console.log('🔄 TractionFinancial: Auto-refreshing due to enrichment completion');
+        fetchFinancialDataAndAssess();
+      }
+    };
+
+    window.addEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
+
+    return () => {
+      window.removeEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
+    };
   }, [deal]);
 
   const assessTractionFinancialFeasibility = (deal: Deal, financialData?: any): TractionAssessment => {

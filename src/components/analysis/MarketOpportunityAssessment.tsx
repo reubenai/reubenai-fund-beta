@@ -88,6 +88,20 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     };
 
     fetchMarketDataAndAssess();
+
+    // Listen for enrichment completion events
+    const handleEnrichmentComplete = (event: CustomEvent) => {
+      if (event.detail?.dealId === deal.id) {
+        console.log('🔄 MarketOpportunity: Auto-refreshing due to enrichment completion');
+        fetchMarketDataAndAssess();
+      }
+    };
+
+    window.addEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
+
+    return () => {
+      window.removeEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
+    };
   }, [deal]);
 
   const assessMarketOpportunity = (deal: Deal, marketData?: any): MarketAssessment => {

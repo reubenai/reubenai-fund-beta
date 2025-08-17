@@ -187,6 +187,10 @@ export function EnhancedDealDetailsModal({
 
       if (!error && data?.success) {
         console.log('✅ [Background] Enrichment completed silently');
+        // Dispatch event to notify components of enrichment completion
+        window.dispatchEvent(new CustomEvent('dealEnrichmentComplete', { 
+          detail: { dealId: deal.id } 
+        }));
         // Refresh data after enrichment
         setTimeout(() => {
           loadEnhancedData();
@@ -404,6 +408,11 @@ export function EnhancedDealDetailsModal({
         ...orchestratorData?.company_details
       });
       
+      // Dispatch event to notify components of analysis completion
+      window.dispatchEvent(new CustomEvent('dealEnrichmentComplete', { 
+        detail: { dealId: deal.id } 
+      }));
+      
       // Force refresh
       setTimeout(() => {
         onDealUpdated?.();
@@ -455,21 +464,7 @@ export function EnhancedDealDetailsModal({
                 : 'grid-cols-3'
           }`}>
             <TabsTrigger value="overview" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-              <div className="flex items-center gap-2">
-                Company Overview
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    refreshAnalysis();
-                  }}
-                  disabled={isRefreshing}
-                  className="h-5 w-5 p-0 hover:bg-muted"
-                >
-                  <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                </Button>
-              </div>
+              Company Overview
             </TabsTrigger>
             {canViewAnalysis && (
             <TabsTrigger value="analysis" className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">

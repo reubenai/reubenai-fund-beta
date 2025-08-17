@@ -88,6 +88,20 @@ export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAsses
     };
 
     fetchTeamDataAndAssess();
+
+    // Listen for enrichment completion events
+    const handleEnrichmentComplete = (event: CustomEvent) => {
+      if (event.detail?.dealId === deal.id) {
+        console.log('🔄 FounderTeam: Auto-refreshing due to enrichment completion');
+        fetchTeamDataAndAssess();
+      }
+    };
+
+    window.addEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
+
+    return () => {
+      window.removeEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
+    };
   }, [deal]);
 
   const assessFounderTeamStrength = (deal: Deal, teamData?: any): TeamAssessment => {

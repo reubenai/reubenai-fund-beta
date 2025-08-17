@@ -87,6 +87,20 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
     };
 
     fetchProductDataAndAssess();
+
+    // Listen for enrichment completion events
+    const handleEnrichmentComplete = (event: CustomEvent) => {
+      if (event.detail?.dealId === deal.id) {
+        console.log('🔄 ProductIP: Auto-refreshing due to enrichment completion');
+        fetchProductDataAndAssess();
+      }
+    };
+
+    window.addEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
+
+    return () => {
+      window.removeEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
+    };
   }, [deal]);
 
   const assessProductIPMoat = (deal: Deal, productData?: any): ProductIPAssessment => {
