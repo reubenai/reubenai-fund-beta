@@ -200,6 +200,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
 
     // Get industries from deal (for Excavox: E-Commerce, Fintech, Hardware)
     const industries = getIndustriesFromDeal(deal);
+    console.log('🔍 Industries for market assessment:', industries, 'Deal:', deal.company_name);
     
     // Create separate Market Size entries for each industry
     industries.forEach((industry, index) => {
@@ -209,6 +210,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
       const marketSizeGood = tamValue >= 1000000000; // $1B+ TAM threshold
       const citation = getDefaultCitation(industry);
       
+      console.log(`🏭 Creating Market Size entry for: ${industry}`);
       checks.push({
         criterion: `Market Size (TAM) - ${industry}`,
         aligned: marketSizeGood || false,
@@ -242,6 +244,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
       const growthOutlook = cagr > 15 ? 'Excellent' : cagr > 10 ? 'Strong' : cagr > 5 ? 'Moderate' : 'Slow';
       const competitionLevel = competitors.length > 5 ? 'Highly competitive' : competitors.length > 3 ? 'Competitive' : 'Moderate competition';
       
+      console.log(`📈 Creating Market Growth entry for: ${industry}`);
       checks.push({
         criterion: `Market Growth Rate - ${industry}`,
         aligned: growthRateGood || false,
