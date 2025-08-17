@@ -411,8 +411,12 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
   };
 
   const getIndustriesFromDeal = (deal: Deal): string[] => {
+    console.log('🔍 DEBUG: Checking industries for deal:', deal.company_name, deal.description);
+    
     // For Excavox specifically, return E-Commerce, Fintech, Hardware
-    if (deal.company_name?.toLowerCase().includes('excavox')) {
+    if (deal.company_name?.toLowerCase().includes('excavox') || 
+        deal.company_name?.toLowerCase().includes('escavox')) {
+      console.log('🏭 DEBUG: Excavox detected, returning multiple industries');
       return ['E-Commerce', 'Fintech', 'Hardware'];
     }
     
@@ -421,39 +425,50 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     const companyName = deal.company_name?.toLowerCase() || '';
     const industries: string[] = [];
     
+    console.log('🔍 DEBUG: Checking description:', description, 'company name:', companyName);
+    
     // Look for specific industry indicators
     if (description.includes('fintech') || description.includes('financial technology') ||
         description.includes('payment') || description.includes('banking') ||
         companyName.includes('fintech') || companyName.includes('pay')) {
       industries.push('Fintech');
+      console.log('✅ Added Fintech');
     }
     
     if (description.includes('e-commerce') || description.includes('ecommerce') ||
         description.includes('retail') || description.includes('marketplace') ||
         companyName.includes('shop') || companyName.includes('commerce')) {
       industries.push('E-Commerce');
+      console.log('✅ Added E-Commerce');
     }
     
     if (description.includes('hardware') || description.includes('device') ||
         description.includes('iot') || description.includes('sensor')) {
       industries.push('Hardware');
+      console.log('✅ Added Hardware');
     }
     
     if (description.includes('software') || description.includes('saas') ||
         description.includes('platform') || description.includes('app')) {
       industries.push('Software');
+      console.log('✅ Added Software');
     }
     
     if (description.includes('ai') || description.includes('artificial intelligence') ||
         description.includes('machine learning') || description.includes('ml')) {
       industries.push('AI');
+      console.log('✅ Added AI');
     }
+    
+    console.log('🏭 DEBUG: Final industries array:', industries);
     
     // If no specific industries found, use primary industry from deal.industry or default
     if (industries.length === 0) {
       if (deal.industry) {
+        console.log('🔧 Using deal.industry:', deal.industry);
         return [deal.industry];
       }
+      console.log('🔧 Using default Technology');
       return ['Technology'];
     }
     
