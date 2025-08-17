@@ -113,63 +113,89 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     const checks: MarketCheck[] = [];
     const dataRetrieved = marketData?.data_retrieved || {};
 
-    // Market Size Assessment - Using enriched TAM data from vc_market_opportunity
+    // Market Size (TAM) Assessment - Using enriched TAM data with industry breakdown
     const tamData = dataRetrieved?.tam_sam_som?.total_addressable_market;
-    const marketSizeGood = tamData && tamData.value > 0 && tamData.value >= 100; // $100M+ TAM threshold
+    const industries = getIndustriesFromDeal(deal);
+    
+    // Calculate weighted TAM from industry breakdown
+    let totalTAM = 0;
+    let totalSOM = 0;
+    industries.forEach((industry, index) => {
+      const weight = index === 0 ? 0.6 : 0.2;
+      const tamValue = tamData?.value > 0 ? tamData.value : extractTAMForIndustry(deal, industry);
+      const somValue = Math.round(tamValue * 0.25 * 0.15);
+      totalTAM += tamValue * weight;
+      totalSOM += somValue * weight;
+    });
+    
+    const marketSizeGood = totalTAM >= 1000000000; // $1B+ TAM threshold
+    const citation = tamData?.citation || getDefaultCitation(industries[0]);
     
     checks.push({
       criterion: 'Market Size (TAM)',
       aligned: marketSizeGood || false,
       reasoning: marketSizeGood 
-        ? `Large addressable market: ${formatMarketSize(tamData)}` 
-        : tamData && tamData.value > 0
-          ? `Market size: ${formatMarketSize(tamData)} - may be limited`
-          : tamData?.raw_text || 'Add company documents or description for market size analysis',
+        ? `Large addressable market: $${(totalTAM/1000000000).toFixed(1)}B TAM with $${(totalSOM/1000000).toFixed(0)}M achievable SOM. Source: ${citation?.source}` 
+        : totalTAM > 0
+          ? `Market size: $${(totalTAM/1000000).toFixed(0)}M TAM - may be limited for scale`
+          : 'Add company documents or description for market size analysis',
       icon: <Globe className="h-4 w-4" />,
       weight: 25,
-      score: marketSizeGood ? 85 : (tamData && tamData.value > 0) ? 60 : 40
+      score: marketSizeGood ? 85 : (totalTAM > 100000000) ? 60 : 40
     });
 
-    // Market Growth Rate - Using enriched growth data
+    // Market Growth Rate - Using enriched growth data and CAGR analysis
     const growthData = dataRetrieved?.growth_rate;
     const growthRate = typeof growthData?.cagr === 'number' ? growthData.cagr : 
       (dataRetrieved?.tam_sam_som?.market_growth_rate?.value || null);
     const growthRateGood = growthRate && growthRate > 10; // 10%+ CAGR threshold
     
+    // Get market driving forces and regulatory environment
+    const competitiveData = dataRetrieved?.competitive_landscape;
+    const incumbents = competitiveData?.top_players || [];
+    const marketPosition = competitiveData?.market_position || 'unknown';
+    
+    // Analyze regulatory and market forces
+    const regulatoryForces = deal.industry?.toLowerCase().includes('fintech') ? 'Digital finance regulations' :
+      deal.industry?.toLowerCase().includes('healthcare') ? 'FDA and healthcare compliance' :
+      deal.industry?.toLowerCase().includes('ai') ? 'AI governance frameworks' : 'Standard business regulations';
+    
+    const drivingForces = growthRateGood ? 'Digital transformation, market expansion' : 'Market maturation, consolidation';
+    
     checks.push({
       criterion: 'Market Growth Rate',
       aligned: growthRateGood || false,
       reasoning: growthRateGood 
-        ? `Strong market growth: ${growthRate}% CAGR` 
+        ? `Strong ${growthRate}% CAGR driven by ${drivingForces}. Key incumbents: ${incumbents.slice(0,3).join(', ')}. Regulatory: ${regulatoryForces}` 
          : growthRate 
-           ? `Moderate growth rate: ${growthRate}% CAGR`
-           : dataRetrieved?.tam_sam_som?.market_growth_rate?.raw_text || 'Add industry information for growth rate analysis',
+           ? `Moderate ${growthRate}% CAGR. Market position: ${marketPosition}. Incumbents: ${incumbents.slice(0,2).join(', ')}`
+           : `CAGR analysis pending. Industry: ${deal.industry || 'Unknown'}`,
       icon: <TrendingUp className="h-4 w-4" />,
       weight: 20,
       score: growthRateGood ? 80 : growthRate ? 65 : 35
     });
 
     // Competitive Landscape - Using enriched competitive data
-    const competitiveData = dataRetrieved?.competitive_landscape;
-    const hasRealCompetitors = competitiveData?.top_players && 
-      Array.isArray(competitiveData.top_players) && 
-      competitiveData.top_players.length > 0 && 
-      !competitiveData.top_players.some((player: string) => player.includes('pending'));
+    const competitiveLandscape = dataRetrieved?.competitive_landscape;
+    const hasRealCompetitors = competitiveLandscape?.top_players && 
+      Array.isArray(competitiveLandscape.top_players) && 
+      competitiveLandscape.top_players.length > 0 && 
+      !competitiveLandscape.top_players.some((player: string) => player.includes('pending'));
     
     const competitionHealthy = hasRealCompetitors && (
-      competitiveData.market_position === 'leader' || 
-      competitiveData.market_position === 'pioneer' ||
-      competitiveData.top_players.length < 5
+      competitiveLandscape.market_position === 'leader' || 
+      competitiveLandscape.market_position === 'pioneer' ||
+      competitiveLandscape.top_players.length < 5
     );
     
     checks.push({
       criterion: 'Competitive Position',
       aligned: competitionHealthy || false,
       reasoning: competitionHealthy 
-        ? `Favorable position with ${competitiveData.top_players.length} competitors. Market position: ${competitiveData.market_position}` 
+        ? `Favorable position with ${competitiveLandscape.top_players.length} competitors. Market position: ${competitiveLandscape.market_position}` 
         : hasRealCompetitors 
-          ? `Competitive market with ${competitiveData.top_players.length} players identified`
-          : 'Add market research documents for competitive analysis',
+           ? `Competitive market with ${competitiveLandscape.top_players.length} players identified`
+           : 'Add market research documents for competitive analysis',
       icon: <Target className="h-4 w-4" />,
       weight: 20,
       score: competitionHealthy ? 75 : hasRealCompetitors ? 55 : 40
@@ -541,22 +567,6 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
           </div>
         </div>
 
-        {/* Market Sizing by Industry */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">Market Sizing by Industry</h4>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Score:</span>
-              <span className="text-sm font-medium">{marketSizingSummary.score}/100</span>
-            </div>
-          </div>
-          
-          {renderIndustryBreakdown(deal, null)}
-          
-          <div className="p-3 rounded-lg bg-muted/50">
-            <p className="text-sm text-muted-foreground">{marketSizingSummary.insight}</p>
-          </div>
-        </div>
 
         {/* Market Factors */}
         <div className="space-y-4">
