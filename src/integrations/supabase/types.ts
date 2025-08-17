@@ -4308,6 +4308,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      force_process_analysis_queue: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       generate_ic_packet: {
         Args: { deal_id_param: string }
         Returns: Json
