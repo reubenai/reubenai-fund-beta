@@ -335,10 +335,6 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Enhanced Market Sizing */}
-        <div className="mb-6">
-          <EnhancedMarketSizing deal={deal} />
-        </div>
 
         {/* Overall Score */}
         <div className="flex items-center justify-between">
