@@ -489,34 +489,103 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     );
   }
 
+  // Calculate market sizing summary
+  const calculateMarketSizingSummary = () => {
+    const industries = getIndustriesFromDeal(deal);
+    let totalTAM = 0;
+    let totalSOM = 0;
+    
+    industries.forEach((industry, index) => {
+      const weight = index === 0 ? 0.6 : 0.2;
+      const tamValue = extractTAMForIndustry(deal, industry);
+      const somValue = Math.round(tamValue * 0.25 * 0.15);
+      totalTAM += tamValue * weight;
+      totalSOM += somValue * weight;
+    });
+
+    const score = totalTAM >= 10000000000 ? 85 : // $10B+ TAM
+                  totalTAM >= 1000000000 ? 70 : // $1B+ TAM  
+                  totalTAM >= 100000000 ? 55 : // $100M+ TAM
+                  40;
+
+    const insight = totalTAM >= 10000000000 
+      ? `Excellent market size: $${(totalTAM/1000000000).toFixed(1)}B TAM with achievable $${(totalSOM/1000000).toFixed(0)}M SOM presents significant investment opportunity.`
+      : totalTAM >= 1000000000
+      ? `Strong market size: $${(totalTAM/1000000000).toFixed(1)}B TAM with $${(totalSOM/1000000).toFixed(0)}M achievable SOM suitable for venture investment.`
+      : totalTAM >= 100000000  
+      ? `Moderate market: $${(totalTAM/1000000).toFixed(0)}M TAM with $${(totalSOM/1000000).toFixed(0)}M SOM - market size may limit scale potential.`
+      : `Limited market size: $${(totalTAM/1000000).toFixed(0)}M TAM suggests niche opportunity with constrained growth potential.`;
+
+    return { score, insight };
+  };
+
+  const marketSizingSummary = calculateMarketSizingSummary();
+
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-semibold">Market Opportunity</CardTitle>
           <Badge variant="outline" className={getStatusColor(assessment.overallStatus)}>
             {assessment.overallStatus}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         {/* Overall Score */}
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Overall Score</span>
+          <span className="text-sm font-medium">Market Opportunity Score</span>
           <div className="flex items-center gap-2">
             <Progress value={assessment.overallScore} className="w-32" />
             <span className="text-sm font-medium">{assessment.overallScore}%</span>
           </div>
         </div>
 
-        {/* Industry TAM/SAM/SOM Breakdown */}
-        {assessment && (
-          <div className="mb-6">
-            <h4 className="font-medium text-sm mb-3">Market Sizing by Industry</h4>
-            {renderIndustryBreakdown(deal, null)}
+        {/* Market Sizing by Industry */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-sm">Market Sizing by Industry</h4>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Score:</span>
+              <span className="text-sm font-medium">{marketSizingSummary.score}/100</span>
+            </div>
           </div>
-        )}
+          
+          {renderIndustryBreakdown(deal, null)}
+          
+          <div className="p-3 rounded-lg bg-muted/50">
+            <p className="text-sm text-muted-foreground">{marketSizingSummary.insight}</p>
+          </div>
+        </div>
 
-        {/* Insights */}
+        {/* Market Factors */}
+        <div className="space-y-4">
+          <h4 className="font-medium text-sm">Market Factors</h4>
+          <div className="space-y-3">
+            {assessment.checks.map((check, index) => (
+              <div key={index} className="flex items-center justify-between p-3 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    {getStatusIcon(check.aligned)}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {check.icon}
+                    <div>
+                      <div className="font-medium text-sm">{check.criterion}</div>
+                      <div className="text-xs text-muted-foreground">{check.reasoning}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-muted-foreground">Weight: {check.weight}%</div>
+                  <div className="text-sm font-medium">{check.score || (check.aligned ? 70 : 30)}/100</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Overall Insights */}
         <div className="p-3 rounded-lg bg-muted/50">
           <div className="text-sm">
             {assessment.overallStatus === 'Excellent' && (
