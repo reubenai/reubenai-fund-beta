@@ -102,16 +102,65 @@ export function useErrorHandler() {
 // Global error handler for unhandled promises
 export function setupGlobalErrorHandlers() {
   window.addEventListener('unhandledrejection', (event) => {
-    console.error('Unhandled promise rejection:', event.reason);
+    const errorId = generateErrorId();
+    console.error(`[ERROR ID: ${errorId}] Unhandled promise rejection:`, event.reason);
+    
+    // Create more detailed error logging
+    const errorDetails = {
+      id: errorId,
+      type: 'unhandled_promise_rejection',
+      reason: event.reason,
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      url: window.location.href
+    };
+    
+    console.error('Detailed error info:', errorDetails);
     
     // Prevent the default browser error message
     event.preventDefault();
     
-    // You could dispatch to a global error handler here
-    // For now, we'll just log it
+    // Show user-friendly error with ID
+    showErrorWithId(errorId, 'An unexpected error occurred', String(event.reason));
   });
 
   window.addEventListener('error', (event) => {
-    console.error('Global error:', event.error);
+    const errorId = generateErrorId();
+    console.error(`[ERROR ID: ${errorId}] Global error:`, event.error);
+    
+    const errorDetails = {
+      id: errorId,
+      type: 'global_error',
+      message: event.error?.message || 'Unknown error',
+      stack: event.error?.stack,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      url: window.location.href
+    };
+    
+    console.error('Detailed error info:', errorDetails);
+    
+    // Show user-friendly error with ID
+    showErrorWithId(errorId, 'An internal error occurred', event.error?.message || 'Unknown error');
   });
+}
+
+// Generate unique error ID
+function generateErrorId(): string {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
+// Show error dialog with ID (mock implementation - you'd integrate with your toast/dialog system)
+function showErrorWithId(errorId: string, title: string, message: string) {
+  // This is a simple implementation - in a real app you'd use your toast system
+  console.error(`User should see: ${title} (ID: ${errorId})`);
+  
+  // You could also trigger a toast notification here
+  const event = new CustomEvent('global-error', {
+    detail: { id: errorId, title, message }
+  });
+  window.dispatchEvent(event);
 }

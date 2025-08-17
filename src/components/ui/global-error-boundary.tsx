@@ -28,19 +28,36 @@ export class GlobalErrorBoundary extends React.Component<GlobalErrorBoundaryProp
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Global Error Boundary caught an error:', error, errorInfo);
+    const errorId = this.generateErrorId();
+    console.error(`[ERROR ID: ${errorId}] Global Error Boundary caught an error:`, error, errorInfo);
     this.setState({ errorInfo });
+    
+    // Create detailed error report
+    const errorReport = {
+      id: errorId,
+      type: 'react_error_boundary',
+      message: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      url: window.location.href,
+      retryCount: this.retryCount
+    };
+    
+    console.error('Detailed error report:', errorReport);
+    
+    // Store error ID for display
+    (this.state as any).errorId = errorId;
     
     // Log to external service in production
     if (process.env.NODE_ENV === 'production') {
-      // Add error logging service in production (Sentry, LogRocket, etc.)
-      console.error('Production error:', {
-        error: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack,
-        timestamp: new Date().toISOString()
-      });
+      console.error('Production error report:', errorReport);
     }
+  }
+
+  generateErrorId(): string {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   }
 
   retry = () => {
@@ -59,6 +76,7 @@ export class GlobalErrorBoundary extends React.Component<GlobalErrorBoundaryProp
       const isNetworkError = this.state.error?.message?.toLowerCase().includes('network') || 
                             this.state.error?.message?.toLowerCase().includes('fetch');
       const isChunkError = this.state.error?.message?.toLowerCase().includes('chunk');
+      const errorId = (this.state as any).errorId || 'unknown';
 
       return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -68,7 +86,7 @@ export class GlobalErrorBoundary extends React.Component<GlobalErrorBoundaryProp
               <AlertTitle>
                 {isNetworkError ? 'Connection Problem' : 
                  isChunkError ? 'Loading Issue' : 
-                 'Something went wrong'}
+                 'An internal error occurred'}
               </AlertTitle>
               <AlertDescription className="mt-2 space-y-3">
                 {isNetworkError ? (
@@ -79,6 +97,19 @@ export class GlobalErrorBoundary extends React.Component<GlobalErrorBoundaryProp
                   <p>An unexpected error occurred. Our team has been notified and is working on a fix.</p>
                 )}
                 
+                {/* Error ID display */}
+                <div className="mt-3 p-3 bg-muted rounded text-sm">
+                  <p className="text-muted-foreground">
+                    <strong>ID:</strong> <span className="font-mono">{errorId}</span>
+                  </p>
+                  <button 
+                    onClick={() => navigator.clipboard.writeText(errorId)}
+                    className="text-xs text-blue-600 hover:text-blue-800 mt-1"
+                  >
+                    📋 Copy ID
+                  </button>
+                </div>
+                
                 {process.env.NODE_ENV === 'development' && (
                   <details className="mt-2">
                     <summary className="cursor-pointer text-sm text-muted-foreground">
@@ -86,6 +117,7 @@ export class GlobalErrorBoundary extends React.Component<GlobalErrorBoundaryProp
                     </summary>
                     <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto max-h-32">
                       {this.state.error?.message}
+                      {this.state.error?.stack && '\n\nStack:\n' + this.state.error.stack}
                     </pre>
                   </details>
                 )}
