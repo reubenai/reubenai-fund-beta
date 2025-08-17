@@ -124,7 +124,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
         ? `Large addressable market: ${formatMarketSize(tamData)}` 
         : tamData && tamData.value > 0
           ? `Market size: ${formatMarketSize(tamData)} - may be limited`
-          : tamData?.raw_text || 'Market size data not available - requires analysis',
+          : tamData?.raw_text || 'Add company documents or description for market size analysis',
       icon: <Globe className="h-4 w-4" />,
       weight: 25,
       score: marketSizeGood ? 85 : (tamData && tamData.value > 0) ? 60 : 40
@@ -143,7 +143,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
         ? `Strong market growth: ${growthRate}% CAGR` 
          : growthRate 
            ? `Moderate growth rate: ${growthRate}% CAGR`
-           : dataRetrieved?.tam_sam_som?.market_growth_rate?.raw_text || 'Growth rate data not available - market research needed',
+           : dataRetrieved?.tam_sam_som?.market_growth_rate?.raw_text || 'Add industry information for growth rate analysis',
       icon: <TrendingUp className="h-4 w-4" />,
       weight: 20,
       score: growthRateGood ? 80 : growthRate ? 65 : 35
@@ -169,7 +169,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
         ? `Favorable position with ${competitiveData.top_players.length} competitors. Market position: ${competitiveData.market_position}` 
         : hasRealCompetitors 
           ? `Competitive market with ${competitiveData.top_players.length} players identified`
-          : 'Competitive analysis pending - industry research needed',
+          : 'Add market research documents for competitive analysis',
       icon: <Target className="h-4 w-4" />,
       weight: 20,
       score: competitionHealthy ? 75 : hasRealCompetitors ? 55 : 40
@@ -327,8 +327,8 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
           <div className="flex items-center justify-center py-8 text-muted-foreground">
             <div className="text-center">
               <AlertTriangle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium">Market analysis unavailable</p>
-              <p className="text-sm">Trigger AI analysis to assess market opportunity</p>
+              <p className="text-lg font-medium">Market analysis needs more data</p>
+              <p className="text-sm">Add company documents or website information to enable market intelligence</p>
             </div>
           </div>
         </CardContent>
