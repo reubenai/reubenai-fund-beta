@@ -198,98 +198,69 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     const checks: MarketCheck[] = [];
     const dataRetrieved = marketData?.data_retrieved || {};
 
-    // Market Size (TAM) Assessment - Using enriched TAM data with industry breakdown
+    // Get primary industry only for this deal
+    const primaryIndustry = getPrimaryIndustryFromDeal(deal);
+    
+    // Market Size (TAM) Assessment - Using enriched TAM data for primary industry only
     const tamData = dataRetrieved?.tam_sam_som?.total_addressable_market;
-    const industries = getIndustriesFromDeal(deal);
+    const tamValue = tamData?.value > 0 ? tamData.value : extractTAMForIndustry(deal, primaryIndustry);
+    const samValue = Math.round(tamValue * 0.25);
+    const somValue = Math.round(samValue * 0.15);
     
-    // Calculate weighted TAM from industry breakdown
-    let totalTAM = 0;
-    let totalSOM = 0;
-    industries.forEach((industry, index) => {
-      const weight = index === 0 ? 0.6 : 0.2;
-      const tamValue = tamData?.value > 0 ? tamData.value : extractTAMForIndustry(deal, industry);
-      const somValue = Math.round(tamValue * 0.25 * 0.15);
-      totalTAM += tamValue * weight;
-      totalSOM += somValue * weight;
-    });
-    
-    const marketSizeGood = totalTAM >= 1000000000; // $1B+ TAM threshold
-    const citation = tamData?.citation || getDefaultCitation(industries[0]);
+    const marketSizeGood = tamValue >= 1000000000; // $1B+ TAM threshold
+    const citation = tamData?.citation || getDefaultCitation(primaryIndustry);
     
     checks.push({
       criterion: 'Market Size (TAM)',
       aligned: marketSizeGood || false,
       reasoning: marketSizeGood 
-        ? `Large addressable market: $${(totalTAM/1000000000).toFixed(1)}B TAM with $${(totalSOM/1000000).toFixed(0)}M achievable SOM. Source: ${citation?.source}` 
-        : totalTAM > 0
-          ? `Market size: $${(totalTAM/1000000).toFixed(0)}M TAM - may be limited for scale`
+        ? `Large addressable market: $${(tamValue/1000000000).toFixed(1)}B TAM with $${(somValue/1000000).toFixed(0)}M achievable SOM. Source: ${citation?.source}` 
+        : tamValue > 0
+          ? `Market size: $${(tamValue/1000000).toFixed(0)}M TAM - may be limited for scale`
           : 'Add company documents or description for market size analysis',
       icon: <Globe className="h-4 w-4" />,
-      weight: 25,
-      score: marketSizeGood ? 85 : (totalTAM > 100000000) ? 60 : 40,
-      industryBreakdown: industries.map((industry, index) => {
-        const weight = index === 0 ? 0.6 : 0.2;
-        const tamValue = tamData?.value > 0 ? tamData.value : extractTAMForIndustry(deal, industry);
-        const samValue = Math.round(tamValue * 0.25);
-        const somValue = Math.round(samValue * 0.15);
-        const industryCitation = tamData?.citation || getDefaultCitation(industry);
-        
-        return {
-          industry,
-          weight,
-          tam: tamValue,
-          sam: samValue,
-          som: somValue,
-          citation: industryCitation
-        };
-      })
+      weight: 20,
+      score: marketSizeGood ? 85 : (tamValue > 100000000) ? 60 : 40,
+      industryBreakdown: [{
+        industry: primaryIndustry,
+        weight: 1.0,
+        tam: tamValue,
+        sam: samValue,
+        som: somValue,
+        citation: citation
+      }]
     });
 
     // Market Growth Rate - Using enriched growth data and CAGR analysis
     const growthData = dataRetrieved?.growth_rate;
     const growthRate = typeof growthData?.cagr === 'number' ? growthData.cagr : 
-      (dataRetrieved?.tam_sam_som?.market_growth_rate?.value || null);
+      (dataRetrieved?.tam_sam_som?.market_growth_rate?.value || getCAGRForIndustry(primaryIndustry));
     const growthRateGood = growthRate && growthRate > 10; // 10%+ CAGR threshold
     
-    // Get market driving forces and regulatory environment
+    // Get market driving forces and competitive analysis
     const competitiveData = dataRetrieved?.competitive_landscape;
-    const incumbents = competitiveData?.top_players || [];
-    const marketPosition = competitiveData?.market_position || 'unknown';
+    const incumbents = competitiveData?.top_players || getCompetitorsForIndustry(primaryIndustry);
+    const marketPosition = competitiveData?.market_position || 'emerging';
     
-    // Analyze regulatory and market forces
-    const regulatoryForces = deal.industry?.toLowerCase().includes('fintech') ? 'Digital finance regulations' :
-      deal.industry?.toLowerCase().includes('healthcare') ? 'FDA and healthcare compliance' :
-      deal.industry?.toLowerCase().includes('ai') ? 'AI governance frameworks' : 'Standard business regulations';
-    
-    const drivingForces = growthRateGood ? 'Digital transformation, market expansion' : 'Market maturation, consolidation';
+    // Analyze growth outlook based on CAGR and competition
+    const growthOutlook = growthRate > 15 ? 'Excellent' : growthRate > 10 ? 'Strong' : growthRate > 5 ? 'Moderate' : 'Slow';
+    const competitionLevel = incumbents.length > 5 ? 'Highly competitive' : incumbents.length > 3 ? 'Competitive' : 'Moderate competition';
     
     checks.push({
       criterion: 'Market Growth Rate',
       aligned: growthRateGood || false,
-      reasoning: growthRateGood 
-        ? `Strong ${growthRate}% CAGR driven by ${drivingForces}. Key incumbents: ${incumbents.slice(0,3).join(', ')}. Regulatory: ${regulatoryForces}` 
-         : growthRate 
-           ? `Moderate ${growthRate}% CAGR. Market position: ${marketPosition}. Incumbents: ${incumbents.slice(0,2).join(', ')}`
-           : `CAGR analysis pending. Industry: ${deal.industry || 'Unknown'}`,
+      reasoning: `${growthOutlook} growth at ${growthRate}% CAGR for ${primaryIndustry}. ${competitionLevel} with key players: ${incumbents.slice(0,3).join(', ')}. Market position: ${marketPosition}.`,
       icon: <TrendingUp className="h-4 w-4" />,
       weight: 20,
       score: growthRateGood ? 80 : growthRate ? 65 : 35,
-      growthBreakdown: industries.map((industry, index) => {
-        const weight = index === 0 ? 0.6 : 0.2;
-        const industryCagr = getCAGRForIndustry(industry);
-        const industryCompetitors = getCompetitorsForIndustry(industry);
-        const industryDrivers = getGrowthDriversForIndustry(industry);
-        const industryCitation = getDefaultCitation(industry);
-        
-        return {
-          industry,
-          weight,
-          cagr: industryCagr,
-          competitors: industryCompetitors,
-          growthDrivers: industryDrivers,
-          citation: industryCitation
-        };
-      })
+      growthBreakdown: [{
+        industry: primaryIndustry,
+        weight: 1.0,
+        cagr: growthRate,
+        competitors: incumbents,
+        growthDrivers: getGrowthDriversForIndustry(primaryIndustry),
+        citation: getDefaultCitation(primaryIndustry)
+      }]
     });
 
     // Competitive Landscape - Using enriched competitive data
@@ -439,74 +410,36 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     return size?.toString() || 'Unknown';
   };
 
-  const renderIndustryBreakdown = (deal: Deal, marketData?: any) => {
-    const industries = getIndustriesFromDeal(deal);
-    const dataRetrieved = marketData?.data_retrieved || {};
+  const getPrimaryIndustryFromDeal = (deal: Deal): string => {
+    // Primary industry from deal.industry or infer from description
+    if (deal.industry) {
+      return deal.industry;
+    }
     
-    return (
-      <div className="space-y-4">
-        {industries.map((industry, index) => {
-          const weight = index === 0 ? 0.6 : 0.2; // Primary industry 60%, others 20%
-          
-          // Get real TAM data from market intelligence or fallback to defaults
-          const realTamData = dataRetrieved?.tam_sam_som?.total_addressable_market;
-          const tamValue = realTamData?.value > 0 ? realTamData.value : extractTAMForIndustry(deal, industry);
-          const samValue = Math.round(tamValue * 0.25); // 25% of TAM
-          const somValue = Math.round(samValue * 0.15); // 15% of SAM
-          
-          // Extract citation info from real data
-          const citation = realTamData?.citation || getDefaultCitation(industry);
-          
-          return (
-            <div key={industry} className="border rounded-lg p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h5 className="font-medium">{industry}</h5>
-                <Badge variant="secondary">{Math.round(weight * 100)}% weight</Badge>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <div className="text-xs text-muted-foreground">TAM</div>
-                  <div className="font-semibold">{formatMarketSize(tamValue)}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {citation?.source || 'Industry Research'}
-                  </div>
-                  {citation && (
-                    <div className="text-xs text-muted-foreground mt-1">
-                      <span className="font-medium">{citation.report}</span>
-                      <br />
-                      <span>{citation.publisher}, {citation.year}</span>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">SAM</div>
-                  <div className="font-semibold">{formatMarketSize(samValue)}</div>
-                  <div className="text-xs text-muted-foreground">Geographic focus</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    25% of TAM (addressable market)
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">SOM</div>
-                  <div className="font-semibold">{formatMarketSize(somValue)}</div>
-                  <div className="text-xs text-muted-foreground">Realistic capture</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    15% of SAM (obtainable market)
-                  </div>
-                </div>
-              </div>
-              
-              <div className="text-xs text-muted-foreground">
-                <strong>Methodology:</strong> TAM from {citation?.source || 'industry reports'}, 
-                SAM calculated as 25% of TAM based on geographic/regulatory constraints, 
-                SOM estimated as 15% of SAM considering competitive positioning and market penetration capabilities.
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
+    // Check description for industry indicators
+    const description = deal.description?.toLowerCase() || '';
+    const companyName = deal.company_name?.toLowerCase() || '';
+    
+    // Look for specific industry indicators
+    if (description.includes('fintech') || description.includes('financial technology') ||
+        description.includes('payment') || description.includes('banking') ||
+        companyName.includes('fintech') || companyName.includes('pay')) {
+      return 'Fintech';
+    }
+    
+    if (description.includes('e-commerce') || description.includes('ecommerce') ||
+        description.includes('retail') || description.includes('marketplace') ||
+        companyName.includes('shop') || companyName.includes('commerce')) {
+      return 'E-Commerce';
+    }
+    
+    if (description.includes('hardware') || description.includes('device') ||
+        description.includes('iot') || description.includes('sensor')) {
+      return 'Hardware';
+    }
+    
+    // Default to Technology if no specific industry identified
+    return 'Technology';
   };
 
   const getDefaultCitation = (industry: string) => {
@@ -558,23 +491,8 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
   };
 
   const getIndustriesFromDeal = (deal: Deal): string[] => {
-    if (!deal.industry) return [];
-    
-    const primaryIndustry = deal.industry;
-    const relatedIndustries = [];
-    
-    // Add related industries based on primary industry
-    if (primaryIndustry.toLowerCase().includes('fintech')) {
-      relatedIndustries.push('Financial Services', 'Technology');
-    } else if (primaryIndustry.toLowerCase().includes('healthtech')) {
-      relatedIndustries.push('Healthcare', 'Technology');
-    } else if (primaryIndustry.toLowerCase().includes('edtech')) {
-      relatedIndustries.push('Education', 'Technology');
-    } else if (primaryIndustry.toLowerCase().includes('saas')) {
-      relatedIndustries.push('Software', 'Technology');
-    }
-    
-    return [primaryIndustry, ...relatedIndustries].slice(0, 3);
+    const primaryIndustry = getPrimaryIndustryFromDeal(deal);
+    return [primaryIndustry];
   };
 
   const extractTAMForIndustry = (deal: Deal, industry: string): number => {
@@ -636,17 +554,11 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
 
   // Calculate market sizing summary
   const calculateMarketSizingSummary = () => {
-    const industries = getIndustriesFromDeal(deal);
-    let totalTAM = 0;
-    let totalSOM = 0;
-    
-    industries.forEach((industry, index) => {
-      const weight = index === 0 ? 0.6 : 0.2;
-      const tamValue = extractTAMForIndustry(deal, industry);
-      const somValue = Math.round(tamValue * 0.25 * 0.15);
-      totalTAM += tamValue * weight;
-      totalSOM += somValue * weight;
-    });
+    const primaryIndustry = getPrimaryIndustryFromDeal(deal);
+    const tamValue = extractTAMForIndustry(deal, primaryIndustry);
+    const somValue = Math.round(tamValue * 0.25 * 0.15);
+    const totalTAM = tamValue;
+    const totalSOM = somValue;
 
     const score = totalTAM >= 10000000000 ? 85 : // $10B+ TAM
                   totalTAM >= 1000000000 ? 70 : // $1B+ TAM  
@@ -661,11 +573,9 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
       ? `Moderate market: $${(totalTAM/1000000).toFixed(0)}M TAM with $${(totalSOM/1000000).toFixed(0)}M SOM - market size may limit scale potential.`
       : `Limited market size: $${(totalTAM/1000000).toFixed(0)}M TAM suggests niche opportunity with constrained growth potential.`;
 
-    // Get source citations from industry breakdown
-    const sources = industries.map(industry => {
-      const citation = getDefaultCitation(industry);
-      return `${citation.publisher}, ${citation.year}`;
-    }).join('; ');
+    // Get source citations from primary industry
+    const citation = getDefaultCitation(primaryIndustry);
+    const sources = `${citation.publisher}, ${citation.year}`;
 
     return { score, insight, sources };
   };
