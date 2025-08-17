@@ -277,9 +277,447 @@ class IndustryIntelligenceService {
         critical_roles: ['Chief Technology Officer', 'VP Regulatory Affairs', 'Head of Business Development'],
         team_size_scaling: { seed: 12, series_a: 30, series_b: 80 }
       }
-    }
+    },
 
-    // Add more industries: Education, Real Estate, Transportation, Food & Agriculture, Media & Entertainment, etc.
+    'AI & Machine Learning': {
+      canonical: 'AI & Machine Learning',
+      marketSize: {
+        tam: 1800,
+        growthRate: 38,
+        maturity: 'emerging',
+        geographic_variation: { 'North America': 50, 'Europe': 20, 'Asia': 30 }
+      },
+      competitiveDynamics: {
+        concentration: 'moderately_concentrated',
+        barriers_to_entry: 'high',
+        differentiation_factors: ['Algorithm quality', 'Data access', 'Talent acquisition', 'Compute resources'],
+        typical_players: 800
+      },
+      financialBenchmarks: {
+        gross_margins: { min: 70, avg: 85, max: 95 },
+        ltv_cac_ratio: { min: 4, avg: 7, max: 12 },
+        burn_rate_months: { seed: 24, series_a: 30, series_b: 36 },
+        unit_economics_timeline: '18-24 months for platform businesses'
+      },
+      customerBehavior: {
+        acquisition_channels: ['Technical content marketing', 'Developer evangelism', 'Enterprise partnerships'],
+        retention_patterns: 'High retention once integrated into workflows',
+        decision_factors: ['Accuracy/performance', 'Ease of integration', 'Total cost of ownership'],
+        sales_cycle_length: '3-12 months depending on complexity'
+      },
+      technologyFactors: {
+        key_technologies: ['Deep learning', 'Neural networks', 'MLOps', 'Edge AI', 'Computer vision'],
+        innovation_drivers: ['Model efficiency', 'Democratization of AI', 'Edge computing'],
+        tech_adoption_cycle: 'Rapid adoption in tech-forward companies',
+        ip_importance: 'critical'
+      },
+      regulatoryEnvironment: {
+        regulatory_complexity: 'high',
+        compliance_requirements: ['AI governance', 'Data privacy', 'Algorithmic transparency', 'Bias testing'],
+        regulatory_trends: ['AI liability frameworks', 'Ethical AI standards', 'Data sovereignty']
+      },
+      teamProfiles: {
+        founder_backgrounds: ['Machine learning research', 'Data science', 'Software engineering'],
+        critical_roles: ['Chief AI Officer', 'VP Engineering', 'Head of Data Science'],
+        team_size_scaling: { seed: 10, series_a: 30, series_b: 90 }
+      }
+    },
+
+    'SaaS & Software': {
+      canonical: 'SaaS & Software',
+      marketSize: {
+        tam: 2800,
+        growthRate: 22,
+        maturity: 'growth',
+        geographic_variation: { 'North America': 45, 'Europe': 30, 'Asia': 25 }
+      },
+      competitiveDynamics: {
+        concentration: 'fragmented',
+        barriers_to_entry: 'medium',
+        differentiation_factors: ['User experience', 'Integration capabilities', 'Vertical specialization'],
+        typical_players: 3000
+      },
+      financialBenchmarks: {
+        gross_margins: { min: 75, avg: 85, max: 95 },
+        ltv_cac_ratio: { min: 3, avg: 5, max: 8 },
+        burn_rate_months: { seed: 18, series_a: 24, series_b: 30 },
+        unit_economics_timeline: '12-18 months to positive unit economics'
+      },
+      customerBehavior: {
+        acquisition_channels: ['Content marketing', 'Product-led growth', 'Partner channels'],
+        retention_patterns: 'High retention with annual contracts and seat expansion',
+        decision_factors: ['Ease of use', 'ROI demonstration', 'Integration capabilities'],
+        sales_cycle_length: '1-6 months for SMB, 6-18 months for enterprise'
+      },
+      technologyFactors: {
+        key_technologies: ['Cloud infrastructure', 'APIs', 'Mobile-first design', 'Analytics'],
+        innovation_drivers: ['AI integration', 'Workflow automation', 'Real-time collaboration'],
+        tech_adoption_cycle: 'Fast adoption driven by remote work trends',
+        ip_importance: 'medium'
+      },
+      regulatoryEnvironment: {
+        regulatory_complexity: 'medium',
+        compliance_requirements: ['Data privacy', 'Security standards', 'Industry-specific compliance'],
+        regulatory_trends: ['Data localization', 'AI transparency', 'Accessibility standards']
+      },
+      teamProfiles: {
+        founder_backgrounds: ['Software engineering', 'Product management', 'Sales'],
+        critical_roles: ['VP Product', 'VP Engineering', 'VP Sales'],
+        team_size_scaling: { seed: 8, series_a: 25, series_b: 75 }
+      }
+    },
+
+    'Biotechnology': {
+      canonical: 'Biotechnology',
+      marketSize: {
+        tam: 950,
+        growthRate: 15,
+        maturity: 'growth',
+        geographic_variation: { 'North America': 55, 'Europe': 25, 'Asia': 20 }
+      },
+      competitiveDynamics: {
+        concentration: 'moderately_concentrated',
+        barriers_to_entry: 'high',
+        differentiation_factors: ['Patent protection', 'Clinical trial results', 'Regulatory expertise'],
+        typical_players: 600
+      },
+      financialBenchmarks: {
+        gross_margins: { min: 60, avg: 80, max: 95 },
+        ltv_cac_ratio: { min: 10, avg: 20, max: 50 },
+        burn_rate_months: { seed: 48, series_a: 60, series_b: 72 },
+        unit_economics_timeline: '5-10 years due to development cycles'
+      },
+      customerBehavior: {
+        acquisition_channels: ['Scientific publications', 'Medical conferences', 'Key opinion leaders'],
+        retention_patterns: 'Very high retention once approved and adopted',
+        decision_factors: ['Clinical efficacy', 'Safety profile', 'Regulatory approval'],
+        sales_cycle_length: '2-5 years for drug development partnerships'
+      },
+      technologyFactors: {
+        key_technologies: ['Gene therapy', 'CRISPR', 'Synthetic biology', 'Bioinformatics'],
+        innovation_drivers: ['Personalized medicine', 'AI-driven drug discovery', 'Manufacturing innovation'],
+        tech_adoption_cycle: 'Conservative adoption with extensive validation',
+        ip_importance: 'critical'
+      },
+      regulatoryEnvironment: {
+        regulatory_complexity: 'high',
+        compliance_requirements: ['FDA approval', 'GMP manufacturing', 'Clinical trial protocols'],
+        regulatory_trends: ['Accelerated approval pathways', 'Real-world evidence', 'Biosimilar competition']
+      },
+      teamProfiles: {
+        founder_backgrounds: ['PhD in life sciences', 'Medical practice', 'Pharmaceutical industry'],
+        critical_roles: ['Chief Medical Officer', 'VP Regulatory Affairs', 'Head of Manufacturing'],
+        team_size_scaling: { seed: 15, series_a: 40, series_b: 120 }
+      }
+    },
+
+    'Hardware & IoT': {
+      canonical: 'Hardware & IoT',
+      marketSize: {
+        tam: 1200,
+        growthRate: 18,
+        maturity: 'growth',
+        geographic_variation: { 'North America': 30, 'Europe': 25, 'Asia': 45 }
+      },
+      competitiveDynamics: {
+        concentration: 'fragmented',
+        barriers_to_entry: 'high',
+        differentiation_factors: ['Design innovation', 'Manufacturing efficiency', 'Ecosystem integration'],
+        typical_players: 2000
+      },
+      financialBenchmarks: {
+        gross_margins: { min: 25, avg: 45, max: 70 },
+        ltv_cac_ratio: { min: 2, avg: 4, max: 8 },
+        burn_rate_months: { seed: 24, series_a: 30, series_b: 36 },
+        unit_economics_timeline: '18-30 months including manufacturing ramp'
+      },
+      customerBehavior: {
+        acquisition_channels: ['Retail partnerships', 'Direct-to-consumer', 'B2B sales'],
+        retention_patterns: 'Moderate retention with upgrade cycles',
+        decision_factors: ['Price-performance ratio', 'Design quality', 'Ecosystem compatibility'],
+        sales_cycle_length: '3-12 months for B2B, instant for consumer'
+      },
+      technologyFactors: {
+        key_technologies: ['IoT connectivity', 'Edge computing', 'Sensor technology', 'Battery technology'],
+        innovation_drivers: ['5G connectivity', 'Edge AI', 'Sustainability', 'Miniaturization'],
+        tech_adoption_cycle: 'Moderate adoption with manufacturing cycles',
+        ip_importance: 'high'
+      },
+      regulatoryEnvironment: {
+        regulatory_complexity: 'medium',
+        compliance_requirements: ['FCC certification', 'Safety standards', 'Environmental regulations'],
+        regulatory_trends: ['Right to repair', 'E-waste regulations', 'Cybersecurity standards']
+      },
+      teamProfiles: {
+        founder_backgrounds: ['Hardware engineering', 'Industrial design', 'Manufacturing'],
+        critical_roles: ['VP Hardware', 'Head of Manufacturing', 'VP Operations'],
+        team_size_scaling: { seed: 10, series_a: 30, series_b: 80 }
+      }
+    },
+
+    'Manufacturing & Industrial': {
+      canonical: 'Manufacturing & Industrial',
+      marketSize: {
+        tam: 2200,
+        growthRate: 6,
+        maturity: 'mature',
+        geographic_variation: { 'North America': 25, 'Europe': 30, 'Asia': 45 }
+      },
+      competitiveDynamics: {
+        concentration: 'moderately_concentrated',
+        barriers_to_entry: 'high',
+        differentiation_factors: ['Operational efficiency', 'Quality standards', 'Supply chain optimization'],
+        typical_players: 1500
+      },
+      financialBenchmarks: {
+        gross_margins: { min: 20, avg: 35, max: 55 },
+        ltv_cac_ratio: { min: 5, avg: 8, max: 15 },
+        burn_rate_months: { seed: 36, series_a: 42, series_b: 48 },
+        unit_economics_timeline: '24-48 months including capacity building'
+      },
+      customerBehavior: {
+        acquisition_channels: ['Industry partnerships', 'Trade shows', 'Direct sales'],
+        retention_patterns: 'Very high retention due to switching costs',
+        decision_factors: ['Total cost of ownership', 'Quality standards', 'Supply chain reliability'],
+        sales_cycle_length: '6-24 months for major contracts'
+      },
+      technologyFactors: {
+        key_technologies: ['Industrial IoT', 'Automation', 'Predictive maintenance', 'Digital twins'],
+        innovation_drivers: ['Industry 4.0', 'Sustainability', 'Supply chain digitization'],
+        tech_adoption_cycle: 'Conservative adoption with long validation periods',
+        ip_importance: 'medium'
+      },
+      regulatoryEnvironment: {
+        regulatory_complexity: 'high',
+        compliance_requirements: ['Safety standards', 'Environmental regulations', 'Quality certifications'],
+        regulatory_trends: ['Carbon emissions tracking', 'Supply chain transparency', 'Worker safety']
+      },
+      teamProfiles: {
+        founder_backgrounds: ['Industrial engineering', 'Manufacturing operations', 'Supply chain management'],
+        critical_roles: ['VP Operations', 'Head of Quality', 'VP Supply Chain'],
+        team_size_scaling: { seed: 15, series_a: 50, series_b: 150 }
+      }
+    },
+
+    'Real Estate & PropTech': {
+      canonical: 'Real Estate & PropTech',
+      marketSize: {
+        tam: 1600,
+        growthRate: 12,
+        maturity: 'growth',
+        geographic_variation: { 'North America': 40, 'Europe': 30, 'Asia': 30 }
+      },
+      competitiveDynamics: {
+        concentration: 'fragmented',
+        barriers_to_entry: 'medium',
+        differentiation_factors: ['Market knowledge', 'Technology adoption', 'Network effects'],
+        typical_players: 2500
+      },
+      financialBenchmarks: {
+        gross_margins: { min: 30, avg: 50, max: 80 },
+        ltv_cac_ratio: { min: 3, avg: 6, max: 12 },
+        burn_rate_months: { seed: 18, series_a: 24, series_b: 30 },
+        unit_economics_timeline: '12-24 months for technology platforms'
+      },
+      customerBehavior: {
+        acquisition_channels: ['Real estate partnerships', 'Digital marketing', 'Referral networks'],
+        retention_patterns: 'High retention for property management, lower for transactions',
+        decision_factors: ['Cost savings', 'Efficiency gains', 'User experience'],
+        sales_cycle_length: '3-12 months for property management, instant for consumers'
+      },
+      technologyFactors: {
+        key_technologies: ['Virtual reality', 'IoT sensors', 'Data analytics', 'Mobile platforms'],
+        innovation_drivers: ['Remote work trends', 'Smart buildings', 'ESG requirements'],
+        tech_adoption_cycle: 'Accelerating adoption driven by generational change',
+        ip_importance: 'low'
+      },
+      regulatoryEnvironment: {
+        regulatory_complexity: 'high',
+        compliance_requirements: ['Real estate licensing', 'Financial regulations', 'Data privacy'],
+        regulatory_trends: ['Digital identity verification', 'Climate disclosure', 'Tenant protection']
+      },
+      teamProfiles: {
+        founder_backgrounds: ['Real estate', 'Technology', 'Financial services'],
+        critical_roles: ['VP Real Estate', 'Head of Product', 'VP Partnerships'],
+        team_size_scaling: { seed: 8, series_a: 25, series_b: 70 }
+      }
+    },
+
+    'Food & Agriculture': {
+      canonical: 'Food & Agriculture',
+      marketSize: {
+        tam: 1100,
+        growthRate: 8,
+        maturity: 'mature',
+        geographic_variation: { 'North America': 35, 'Europe': 25, 'Asia': 40 }
+      },
+      competitiveDynamics: {
+        concentration: 'fragmented',
+        barriers_to_entry: 'medium',
+        differentiation_factors: ['Brand recognition', 'Distribution networks', 'Quality standards'],
+        typical_players: 3000
+      },
+      financialBenchmarks: {
+        gross_margins: { min: 20, avg: 40, max: 70 },
+        ltv_cac_ratio: { min: 2, avg: 4, max: 8 },
+        burn_rate_months: { seed: 18, series_a: 24, series_b: 30 },
+        unit_economics_timeline: '12-24 months for direct-to-consumer brands'
+      },
+      customerBehavior: {
+        acquisition_channels: ['Retail partnerships', 'Direct-to-consumer', 'Food service'],
+        retention_patterns: 'Moderate retention with seasonal variations',
+        decision_factors: ['Price', 'Quality', 'Sustainability', 'Convenience'],
+        sales_cycle_length: '1-6 months for retail partnerships'
+      },
+      technologyFactors: {
+        key_technologies: ['Precision agriculture', 'Supply chain tracking', 'Alternative proteins', 'Vertical farming'],
+        innovation_drivers: ['Sustainability', 'Health consciousness', 'Supply chain efficiency'],
+        tech_adoption_cycle: 'Slow adoption with generational change',
+        ip_importance: 'medium'
+      },
+      regulatoryEnvironment: {
+        regulatory_complexity: 'high',
+        compliance_requirements: ['Food safety', 'Organic certification', 'Labeling requirements'],
+        regulatory_trends: ['Carbon footprint disclosure', 'Regenerative agriculture', 'Novel food approval']
+      },
+      teamProfiles: {
+        founder_backgrounds: ['Food science', 'Agriculture', 'Consumer goods'],
+        critical_roles: ['Head of Operations', 'VP Sales', 'Head of Quality'],
+        team_size_scaling: { seed: 8, series_a: 25, series_b: 60 }
+      }
+    },
+
+    'Media & Entertainment': {
+      canonical: 'Media & Entertainment',
+      marketSize: {
+        tam: 900,
+        growthRate: 10,
+        maturity: 'mature',
+        geographic_variation: { 'North America': 40, 'Europe': 25, 'Asia': 35 }
+      },
+      competitiveDynamics: {
+        concentration: 'moderately_concentrated',
+        barriers_to_entry: 'medium',
+        differentiation_factors: ['Content quality', 'Distribution reach', 'Technology platform'],
+        typical_players: 1800
+      },
+      financialBenchmarks: {
+        gross_margins: { min: 40, avg: 65, max: 85 },
+        ltv_cac_ratio: { min: 2, avg: 4, max: 8 },
+        burn_rate_months: { seed: 15, series_a: 20, series_b: 24 },
+        unit_economics_timeline: '6-18 months for digital platforms'
+      },
+      customerBehavior: {
+        acquisition_channels: ['Social media', 'Influencer partnerships', 'Platform algorithms'],
+        retention_patterns: 'Variable retention based on content quality and engagement',
+        decision_factors: ['Content quality', 'Price', 'User experience', 'Exclusive content'],
+        sales_cycle_length: 'Instant for consumers, 3-12 months for B2B'
+      },
+      technologyFactors: {
+        key_technologies: ['Streaming technology', 'Content recommendation', 'AR/VR', 'Creator tools'],
+        innovation_drivers: ['Personalization', 'Interactive content', 'Creator economy'],
+        tech_adoption_cycle: 'Fast adoption driven by consumer demand',
+        ip_importance: 'high'
+      },
+      regulatoryEnvironment: {
+        regulatory_complexity: 'medium',
+        compliance_requirements: ['Content regulations', 'Copyright protection', 'Data privacy'],
+        regulatory_trends: ['Platform liability', 'Content moderation', 'Creator rights']
+      },
+      teamProfiles: {
+        founder_backgrounds: ['Media production', 'Technology', 'Entertainment industry'],
+        critical_roles: ['Head of Content', 'VP Technology', 'VP Marketing'],
+        team_size_scaling: { seed: 6, series_a: 20, series_b: 50 }
+      }
+    },
+
+    'Education & EdTech': {
+      canonical: 'Education & EdTech',
+      marketSize: {
+        tam: 750,
+        growthRate: 16,
+        maturity: 'growth',
+        geographic_variation: { 'North America': 35, 'Europe': 25, 'Asia': 40 }
+      },
+      competitiveDynamics: {
+        concentration: 'fragmented',
+        barriers_to_entry: 'medium',
+        differentiation_factors: ['Learning outcomes', 'Engagement metrics', 'Institutional partnerships'],
+        typical_players: 2200
+      },
+      financialBenchmarks: {
+        gross_margins: { min: 60, avg: 75, max: 90 },
+        ltv_cac_ratio: { min: 3, avg: 6, max: 12 },
+        burn_rate_months: { seed: 18, series_a: 24, series_b: 30 },
+        unit_economics_timeline: '12-24 months for B2C, 18-36 months for B2B'
+      },
+      customerBehavior: {
+        acquisition_channels: ['Institutional sales', 'Direct-to-consumer', 'Partner channels'],
+        retention_patterns: 'High retention for institutional, variable for consumer',
+        decision_factors: ['Learning effectiveness', 'Ease of use', 'Cost', 'Accreditation'],
+        sales_cycle_length: '6-18 months for institutions, instant for consumers'
+      },
+      technologyFactors: {
+        key_technologies: ['Learning management systems', 'AI tutoring', 'VR/AR learning', 'Analytics'],
+        innovation_drivers: ['Personalized learning', 'Remote education', 'Microlearning'],
+        tech_adoption_cycle: 'Accelerated adoption post-pandemic',
+        ip_importance: 'medium'
+      },
+      regulatoryEnvironment: {
+        regulatory_complexity: 'medium',
+        compliance_requirements: ['Student privacy', 'Accessibility standards', 'Accreditation'],
+        regulatory_trends: ['AI in education governance', 'Digital divide', 'Competency-based education']
+      },
+      teamProfiles: {
+        founder_backgrounds: ['Education', 'Technology', 'Academic research'],
+        critical_roles: ['Head of Curriculum', 'VP Product', 'VP Sales'],
+        team_size_scaling: { seed: 8, series_a: 25, series_b: 65 }
+      }
+    },
+
+    'Transportation & Logistics': {
+      canonical: 'Transportation & Logistics',
+      marketSize: {
+        tam: 1900,
+        growthRate: 9,
+        maturity: 'mature',
+        geographic_variation: { 'North America': 30, 'Europe': 30, 'Asia': 40 }
+      },
+      competitiveDynamics: {
+        concentration: 'moderately_concentrated',
+        barriers_to_entry: 'high',
+        differentiation_factors: ['Network density', 'Technology integration', 'Cost efficiency'],
+        typical_players: 1200
+      },
+      financialBenchmarks: {
+        gross_margins: { min: 15, avg: 30, max: 50 },
+        ltv_cac_ratio: { min: 3, avg: 6, max: 12 },
+        burn_rate_months: { seed: 24, series_a: 30, series_b: 36 },
+        unit_economics_timeline: '18-36 months including network effects'
+      },
+      customerBehavior: {
+        acquisition_channels: ['B2B sales', 'Platform onboarding', 'Partnership channels'],
+        retention_patterns: 'High retention due to network effects and switching costs',
+        decision_factors: ['Cost efficiency', 'Reliability', 'Technology capabilities'],
+        sales_cycle_length: '3-12 months for enterprise logistics'
+      },
+      technologyFactors: {
+        key_technologies: ['Route optimization', 'IoT tracking', 'Autonomous vehicles', 'Warehouse automation'],
+        innovation_drivers: ['E-commerce growth', 'Sustainability', 'Last-mile efficiency'],
+        tech_adoption_cycle: 'Moderate adoption with infrastructure constraints',
+        ip_importance: 'medium'
+      },
+      regulatoryEnvironment: {
+        regulatory_complexity: 'high',
+        compliance_requirements: ['Transportation safety', 'Environmental standards', 'Labor regulations'],
+        regulatory_trends: ['Carbon emissions tracking', 'Autonomous vehicle regulation', 'Gig worker classification']
+      },
+      teamProfiles: {
+        founder_backgrounds: ['Logistics operations', 'Transportation industry', 'Technology'],
+        critical_roles: ['VP Operations', 'Head of Technology', 'VP Business Development'],
+        team_size_scaling: { seed: 12, series_a: 35, series_b: 100 }
+      }
+    }
   };
 
   private subCriteriaInstructions: Record<string, SubCriteriaInstruction> = {
