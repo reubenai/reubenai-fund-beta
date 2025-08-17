@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { 
   CheckCircle, 
   XCircle, 
@@ -12,10 +13,12 @@ import {
   BarChart3,
   Target,
   Clock,
-  Shield
+  Shield,
+  RefreshCw
 } from 'lucide-react';
 import { Deal } from '@/hooks/usePipelineDeals';
 import { supabase } from '@/integrations/supabase/client';
+import { useAnalysisResilience } from '@/hooks/useAnalysisResilience';
 
 interface MarketOpportunityAssessmentProps {
   deal: Deal;
@@ -34,6 +37,11 @@ interface MarketAssessment {
   overallStatus: 'Excellent' | 'Good' | 'Fair' | 'Poor';
   overallScore: number;
   checks: MarketCheck[];
+  dataQuality?: {
+    completeness: number;
+    confidence: number;
+    sources: number;
+  };
 }
 
 const getStatusColor = (status: string): string => {
@@ -57,45 +65,56 @@ const getStatusIcon = (aligned: boolean) => {
 export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmentProps) {
   const [loading, setLoading] = useState(true);
   const [assessment, setAssessment] = useState<MarketAssessment | null>(null);
-  const [marketData, setMarketData] = useState<any>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const { analyzeWithResilience, getQualityStatus, lastQualityCheck, isProcessing } = useAnalysisResilience();
 
-  const fetchMarketDataAndAssess = React.useCallback(async () => {
+  const fetchMarketDataAndAssess = React.useCallback(async (forceRefresh = false) => {
     try {
       setLoading(true);
       
-      // Fetch market opportunity enrichment data for this deal
-      const { data: marketIntelligence, error } = await supabase
+      if (forceRefresh) {
+        setRetryCount(prev => prev + 1);
+      }
+
+      // First check current quality status
+      const qualityResult = await getQualityStatus(deal.id, 'market_opportunity');
+      
+      // Try resilient analysis
+      const analysisResult = await analyzeWithResilience(deal.id, 'market_opportunity', {
+        maxRetries: 3,
+        retryDelay: 2000,
+        qualityThreshold: 40 // Lower threshold for market opportunity
+      });
+
+      // Fetch the latest market intelligence data regardless of analysis result
+      const { data: marketData } = await supabase
         .from('deal_analysis_sources')
         .select('*')
         .eq('deal_id', deal.id)
-        .eq('engine_name', 'vc_market_opportunity')
+        .eq('engine_name', 'market-intelligence-engine')
         .order('retrieved_at', { ascending: false })
-        .limit(1);
+        .limit(1)
+        .maybeSingle();
 
-      let enrichmentData = null;
-      if (!error && marketIntelligence && marketIntelligence.length > 0) {
-        const data = marketIntelligence[0].data_retrieved;
-        // Validate enrichment data quality - check if it contains meaningful content
-        if (data && typeof data === 'object' && Object.keys(data).length > 0) {
-          enrichmentData = data;
-          console.log('📊 MarketOpportunity: Valid enrichment data found');
-        } else {
-          console.log('📊 MarketOpportunity: Empty enrichment data, using deal fallback');
-        }
-        setMarketData(enrichmentData);
-      } else {
-        console.log('📊 MarketOpportunity: No enrichment data found, using deal fallback');
+      const assessmentResult = assessMarketOpportunity(deal, marketData);
+      
+      // Add quality information if available
+      if (qualityResult.success) {
+        assessmentResult.dataQuality = {
+          completeness: qualityResult.quality_data?.quality_score || 0,
+          confidence: analysisResult.quality_score || 0,
+          sources: qualityResult.quality_data?.sources_count || 0
+        };
       }
-
-      // Perform market opportunity assessment
-      const marketAssessment = assessMarketOpportunity(deal, enrichmentData);
-      setAssessment(marketAssessment);
+      
+      setAssessment(assessmentResult);
     } catch (error) {
-      console.error('Error in market opportunity assessment:', error);
+      console.error('Error in market assessment:', error);
+      setAssessment(assessMarketOpportunity(deal, null));
     } finally {
       setLoading(false);
     }
-  }, [deal]);
+  }, [deal.id, analyzeWithResilience, getQualityStatus]);
 
   useEffect(() => {
     // Initial load
@@ -414,9 +433,19 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
               <p>🔍 Market opportunity concerns identified - significant market risks to evaluate.</p>
             )}
             
-            {marketData && (
+            {assessment.dataQuality && assessment.dataQuality.sources > 0 && (
               <p className="mt-2 pt-2 border-t border-muted-foreground/20">
-                💡 Market intelligence data available from recent analysis
+                💡 Quality Score: {assessment.dataQuality.completeness}% | Sources: {assessment.dataQuality.sources}
+              </p>
+            )}
+            
+            {retryCount > 0 && (
+              <p className="text-xs">
+                🔄 Refreshed {retryCount} time{retryCount > 1 ? 's' : ''} | 
+                <Button variant="ghost" size="sm" onClick={() => fetchMarketDataAndAssess(true)} disabled={isProcessing}>
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Refresh
+                </Button>
               </p>
             )}
           </div>

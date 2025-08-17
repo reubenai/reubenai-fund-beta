@@ -479,6 +479,54 @@ export type Database = {
         }
         Relationships: []
       }
+      analysis_quality_monitor: {
+        Row: {
+          analysis_type: string
+          confidence_score: number | null
+          created_at: string | null
+          data_completeness_score: number | null
+          data_sources_count: number | null
+          deal_id: string
+          fund_id: string
+          has_competitive_data: boolean | null
+          has_financial_data: boolean | null
+          has_market_data: boolean | null
+          id: string
+          org_id: string
+          quality_flags: Json | null
+        }
+        Insert: {
+          analysis_type: string
+          confidence_score?: number | null
+          created_at?: string | null
+          data_completeness_score?: number | null
+          data_sources_count?: number | null
+          deal_id: string
+          fund_id: string
+          has_competitive_data?: boolean | null
+          has_financial_data?: boolean | null
+          has_market_data?: boolean | null
+          id?: string
+          org_id: string
+          quality_flags?: Json | null
+        }
+        Update: {
+          analysis_type?: string
+          confidence_score?: number | null
+          created_at?: string | null
+          data_completeness_score?: number | null
+          data_sources_count?: number | null
+          deal_id?: string
+          fund_id?: string
+          has_competitive_data?: boolean | null
+          has_financial_data?: boolean | null
+          has_market_data?: boolean | null
+          id?: string
+          org_id?: string
+          quality_flags?: Json | null
+        }
+        Relationships: []
+      }
       analysis_queue: {
         Row: {
           attempts: number
@@ -4394,6 +4442,10 @@ export type Database = {
           title: string
           user_id: string
         }[]
+      }
+      monitor_analysis_quality: {
+        Args: { p_analysis_type: string; p_deal_id: string }
+        Returns: Json
       }
       populate_enhanced_analysis: {
         Args: { target_deal_id: string }
