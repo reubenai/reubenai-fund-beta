@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
 import { 
   CheckCircle, 
   XCircle, 
@@ -13,12 +12,10 @@ import {
   BarChart3,
   Target,
   Clock,
-  Shield,
-  RefreshCw
+  Shield
 } from 'lucide-react';
 import { Deal } from '@/hooks/usePipelineDeals';
 import { supabase } from '@/integrations/supabase/client';
-import { useAnalysisResilience } from '@/hooks/useAnalysisResilience';
 
 interface MarketOpportunityAssessmentProps {
   deal: Deal;
@@ -65,48 +62,22 @@ const getStatusIcon = (aligned: boolean) => {
 export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmentProps) {
   const [loading, setLoading] = useState(true);
   const [assessment, setAssessment] = useState<MarketAssessment | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const { analyzeWithResilience, getQualityStatus, lastQualityCheck, isProcessing } = useAnalysisResilience();
 
-  const fetchMarketDataAndAssess = React.useCallback(async (forceRefresh = false) => {
+  const fetchMarketDataAndAssess = React.useCallback(async () => {
     try {
       setLoading(true);
-      
-      if (forceRefresh) {
-        setRetryCount(prev => prev + 1);
-      }
 
-      // First check current quality status
-      const qualityResult = await getQualityStatus(deal.id, 'market_opportunity');
-      
-      // Try resilient analysis
-      const analysisResult = await analyzeWithResilience(deal.id, 'market_opportunity', {
-        maxRetries: 3,
-        retryDelay: 2000,
-        qualityThreshold: 40 // Lower threshold for market opportunity
-      });
-
-      // Fetch the latest market intelligence data regardless of analysis result
+      // Fetch the latest vc_market_opportunity data from deal_analysis_sources
       const { data: marketData } = await supabase
         .from('deal_analysis_sources')
         .select('*')
         .eq('deal_id', deal.id)
-        .eq('engine_name', 'market-intelligence-engine')
+        .eq('engine_name', 'vc_market_opportunity')
         .order('retrieved_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
       const assessmentResult = assessMarketOpportunity(deal, marketData);
-      
-      // Add quality information if available
-      if (qualityResult.success) {
-        assessmentResult.dataQuality = {
-          completeness: qualityResult.quality_data?.quality_score || 0,
-          confidence: analysisResult.quality_score || 0,
-          sources: qualityResult.quality_data?.sources_count || 0
-        };
-      }
-      
       setAssessment(assessmentResult);
     } catch (error) {
       console.error('Error in market assessment:', error);
@@ -114,7 +85,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     } finally {
       setLoading(false);
     }
-  }, [deal.id, analyzeWithResilience, getQualityStatus]);
+  }, [deal.id]);
 
   useEffect(() => {
     // Initial load
@@ -137,12 +108,13 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
   }, [deal.id, fetchMarketDataAndAssess]);
 
   const assessMarketOpportunity = (deal: Deal, marketData?: any): MarketAssessment => {
-    console.log('🔍 MarketOpportunity: Assessing with enrichment data:', marketData);
+    console.log('🔍 MarketOpportunity: Assessing with vc_market_opportunity data:', marketData);
     
     const checks: MarketCheck[] = [];
+    const dataRetrieved = marketData?.data_retrieved || {};
 
-    // Market Size Assessment - Using enriched TAM data
-    const tamData = marketData?.tam_sam_som?.total_addressable_market;
+    // Market Size Assessment - Using enriched TAM data from vc_market_opportunity
+    const tamData = dataRetrieved?.tam_sam_som?.total_addressable_market;
     const marketSizeGood = tamData && tamData.value > 0 && tamData.value >= 100; // $100M+ TAM threshold
     
     checks.push({
@@ -159,9 +131,9 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     });
 
     // Market Growth Rate - Using enriched growth data
-    const growthData = marketData?.growth_rate;
+    const growthData = dataRetrieved?.growth_rate;
     const growthRate = typeof growthData?.cagr === 'number' ? growthData.cagr : 
-      (marketData?.tam_sam_som?.market_growth_rate?.value || null);
+      (dataRetrieved?.tam_sam_som?.market_growth_rate?.value || null);
     const growthRateGood = growthRate && growthRate > 10; // 10%+ CAGR threshold
     
     checks.push({
@@ -169,16 +141,16 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
       aligned: growthRateGood || false,
       reasoning: growthRateGood 
         ? `Strong market growth: ${growthRate}% CAGR` 
-        : growthRate 
-          ? `Moderate growth rate: ${growthRate}% CAGR`
-          : marketData?.tam_sam_som?.market_growth_rate?.raw_text || 'Growth rate data not available - market research needed',
+         : growthRate 
+           ? `Moderate growth rate: ${growthRate}% CAGR`
+           : dataRetrieved?.tam_sam_som?.market_growth_rate?.raw_text || 'Growth rate data not available - market research needed',
       icon: <TrendingUp className="h-4 w-4" />,
       weight: 20,
       score: growthRateGood ? 80 : growthRate ? 65 : 35
     });
 
     // Competitive Landscape - Using enriched competitive data
-    const competitiveData = marketData?.competitive_landscape;
+    const competitiveData = dataRetrieved?.competitive_landscape;
     const hasRealCompetitors = competitiveData?.top_players && 
       Array.isArray(competitiveData.top_players) && 
       competitiveData.top_players.length > 0 && 
@@ -204,7 +176,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     });
 
     // Market Timing - Using enriched trend data
-    const marketTrends = marketData?.tam_sam_som?.market_trends;
+    const marketTrends = dataRetrieved?.tam_sam_som?.market_trends;
     const timingGood = marketTrends && Array.isArray(marketTrends) && 
       marketTrends.some((trend: string) => 
         ['growing', 'expanding', 'emerging', 'rising'].includes(trend.toLowerCase())
@@ -224,7 +196,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     });
 
     // Customer Demand - Using enriched financial data
-    const financialData = marketData?.financial_context;
+    const financialData = dataRetrieved?.financial_context;
     const revenueData = financialData?.revenue_data;
     const demandValidated = revenueData && revenueData.value > 0;
     
@@ -366,87 +338,61 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
 
   return (
     <Card>
-      <CardContent className="pt-6 space-y-6">
-        {/* Overall Status */}
-        <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-full bg-background">
-              <BarChart3 className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-medium">Market Opportunity</p>
-              <p className="text-sm text-muted-foreground">
-                Based on {assessment.checks.length} market factors
-              </p>
-            </div>
-          </div>
-          <div className="text-right">
-            <Badge variant="outline" className={`${getStatusColor(assessment.overallStatus)} mb-2`}>
-              {assessment.overallStatus}
-            </Badge>
-            <div className="flex items-center gap-2">
-              <Progress value={assessment.overallScore} className="w-24" />
-              <span className="text-sm font-medium">{assessment.overallScore}%</span>
-            </div>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <BarChart3 className="h-5 w-5" />
+          Market Opportunity Assessment
+          <Badge variant="outline" className={getStatusColor(assessment.overallStatus)}>
+            {assessment.overallStatus}
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Overall Score */}
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium">Overall Score</span>
+          <div className="flex items-center gap-2">
+            <Progress value={assessment.overallScore} className="w-32" />
+            <span className="text-sm font-medium">{assessment.overallScore}%</span>
           </div>
         </div>
 
-        {/* Individual Checks */}
+        {/* Market Factors */}
         <div className="space-y-3">
-          <h4 className="font-medium text-sm text-muted-foreground">Market Factors</h4>
+          <h4 className="font-medium text-sm">Market Factors</h4>
           {assessment.checks.map((check, index) => (
-            <div key={index} className="flex items-center justify-between p-3 rounded-lg border">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
+            <div key={index} className="flex items-start justify-between p-3 rounded-lg border">
+              <div className="flex items-start gap-3">
+                <div className="flex items-center gap-2 mt-0.5">
                   {check.icon}
                   {getStatusIcon(check.aligned)}
                 </div>
-                <div>
+                <div className="space-y-1">
                   <p className="font-medium text-sm">{check.criterion}</p>
-                  <p className="text-xs text-muted-foreground">{check.reasoning}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{check.reasoning}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <span className="text-xs text-muted-foreground">Weight: {check.weight}%</span>
-                {check.score && (
-                  <div className="text-xs font-medium">{check.score}/100</div>
-                )}
+              <div className="text-right text-xs text-muted-foreground">
+                {check.score}/100
               </div>
             </div>
           ))}
         </div>
 
-        {/* Market Insights */}
-        <div className="p-4 rounded-lg bg-muted/30 border">
-          <h4 className="font-medium text-sm mb-2">Market Insights</h4>
-          <div className="text-sm text-muted-foreground space-y-1">
+        {/* Insights */}
+        <div className="p-3 rounded-lg bg-muted/50">
+          <div className="text-sm">
             {assessment.overallStatus === 'Excellent' && (
-              <p>🎯 Exceptional market opportunity with strong fundamentals across multiple factors.</p>
+              <p className="text-emerald-700">🎯 Exceptional market opportunity with strong fundamentals across multiple factors.</p>
             )}
             {assessment.overallStatus === 'Good' && (
-              <p>✅ Solid market opportunity with good potential, consider deeper market research.</p>
+              <p className="text-blue-700">✅ Solid market opportunity with good potential, consider deeper market research.</p>
             )}
             {assessment.overallStatus === 'Fair' && (
-              <p>⚠️ Mixed market signals - thorough market validation recommended before proceeding.</p>
+              <p className="text-amber-700">⚠️ Mixed market signals - thorough market validation recommended before proceeding.</p>
             )}
             {assessment.overallStatus === 'Poor' && (
-              <p>🔍 Market opportunity concerns identified - significant market risks to evaluate.</p>
-            )}
-            
-            {assessment.dataQuality && assessment.dataQuality.sources > 0 && (
-              <p className="mt-2 pt-2 border-t border-muted-foreground/20">
-                💡 Quality Score: {assessment.dataQuality.completeness}% | Sources: {assessment.dataQuality.sources}
-              </p>
-            )}
-            
-            {retryCount > 0 && (
-              <p className="text-xs">
-                🔄 Refreshed {retryCount} time{retryCount > 1 ? 's' : ''} | 
-                <Button variant="ghost" size="sm" onClick={() => fetchMarketDataAndAssess(true)} disabled={isProcessing}>
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Refresh
-                </Button>
-              </p>
+              <p className="text-red-700">🔍 Market opportunity concerns identified - significant market risks to evaluate.</p>
             )}
           </div>
         </div>
