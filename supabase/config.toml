@@ -1,5 +1,8 @@
 project_id = "bueuioozcgmedkuxawju"
 
+[functions.market-sizing-research]
+verify_jwt = false
+
 [functions.safe-mode-analysis]
 verify_jwt = false
 

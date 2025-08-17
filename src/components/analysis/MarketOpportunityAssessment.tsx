@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Deal } from '@/hooks/usePipelineDeals';
 import { supabase } from '@/integrations/supabase/client';
+import { EnhancedMarketSizing } from './EnhancedMarketSizing';
 
 interface MarketOpportunityAssessmentProps {
   deal: Deal;
@@ -334,56 +335,9 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* TAM/SAM/SOM by Industry */}
-        <div className="mb-4">
-          <h4 className="font-medium text-sm mb-3">Market Sizing by Industry</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="text-center p-3 bg-primary/5 rounded-lg border">
-              <div className="text-lg font-bold text-primary">
-                {(() => {
-                  const tamCheck = assessment.checks.find(c => c.criterion === 'Market Size (TAM)');
-                  const tamMatch = tamCheck?.reasoning.match(/\$[\d.]+[BMK]/);
-                  return tamMatch ? tamMatch[0] : 'Pending';
-                })()}
-              </div>
-              <div className="text-xs text-muted-foreground">Total Addressable Market</div>
-              <div className="text-xs text-primary/70">{deal.industry || 'Industry'}</div>
-            </div>
-            <div className="text-center p-3 bg-secondary/5 rounded-lg border">
-              <div className="text-lg font-bold text-secondary">
-                {(() => {
-                  const tamCheck = assessment.checks.find(c => c.criterion === 'Market Size (TAM)');
-                  const tamMatch = tamCheck?.reasoning.match(/\$[\d.]+[BMK]/);
-                  if (tamMatch) {
-                    const value = parseFloat(tamMatch[0].replace(/[$BMK]/g, ''));
-                    const unit = tamMatch[0].match(/[BMK]/)?.[0];
-                    const samValue = unit === 'T' ? (value * 0.08) : unit === 'B' ? (value * 0.15) : (value * 0.3);
-                    return `$${samValue.toFixed(1)}${unit === 'T' ? 'B' : unit === 'B' ? 'B' : 'M'}`;
-                  }
-                  return 'Pending';
-                })()}
-              </div>
-              <div className="text-xs text-muted-foreground">Serviceable Addressable Market</div>
-              <div className="text-xs text-secondary/70">{deal.location || 'Global'}</div>
-            </div>
-            <div className="text-center p-3 bg-accent/5 rounded-lg border">
-              <div className="text-lg font-bold text-accent">
-                {(() => {
-                  const tamCheck = assessment.checks.find(c => c.criterion === 'Market Size (TAM)');
-                  const tamMatch = tamCheck?.reasoning.match(/\$[\d.]+[BMK]/);
-                  if (tamMatch) {
-                    const value = parseFloat(tamMatch[0].replace(/[$BMK]/g, ''));
-                    const unit = tamMatch[0].match(/[BMK]/)?.[0];
-                    const somValue = unit === 'T' ? (value * 0.002) : unit === 'B' ? (value * 0.02) : (value * 0.05);
-                    return `$${somValue.toFixed(1)}${unit === 'T' ? 'B' : unit === 'B' ? 'M' : 'M'}`;
-                  }
-                  return 'Pending';
-                })()}
-              </div>
-              <div className="text-xs text-muted-foreground">Serviceable Obtainable Market</div>
-              <div className="text-xs text-accent/70">3-Year Target</div>
-            </div>
-          </div>
+        {/* Enhanced Market Sizing */}
+        <div className="mb-6">
+          <EnhancedMarketSizing deal={deal} />
         </div>
 
         {/* Overall Score */}
