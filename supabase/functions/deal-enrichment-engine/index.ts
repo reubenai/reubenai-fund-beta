@@ -861,20 +861,230 @@ async function searchGoogle(query: string): Promise<any> {
   }
 }
 
-// Data extraction helpers (simplified implementations)
+// Data extraction helpers - Real implementations
 function extractMarketMetrics(content: string): any {
-  // Extract TAM, SAM, SOM, CAGR, etc. from content
-  return {};
+  console.log('🔍 [Market Metrics] Extracting market data from content');
+  
+  const metrics: any = {};
+  
+  try {
+    // Extract market size values (TAM, SAM, SOM)
+    const marketSizePatterns = [
+      /(?:TAM|total addressable market|market size).*?(?:\$|USD)?\s*([0-9.,]+)\s*(?:billion|million|trillion|B|M|T)/gi,
+      /market.*?worth.*?(?:\$|USD)?\s*([0-9.,]+)\s*(?:billion|million|trillion|B|M|T)/gi,
+      /(?:\$|USD)?\s*([0-9.,]+)\s*(?:billion|million|trillion|B|M|T).*?market/gi
+    ];
+    
+    for (const pattern of marketSizePatterns) {
+      const matches = content.match(pattern);
+      if (matches && matches.length > 0) {
+        metrics.market_size = {
+          value: parseFloat(matches[0].match(/([0-9.,]+)/)?.[1]?.replace(/,/g, '') || '0'),
+          unit: matches[0].match(/(billion|million|trillion|B|M|T)/i)?.[1] || 'unknown',
+          raw_text: matches[0].trim()
+        };
+        break;
+      }
+    }
+    
+    // Extract growth rates (CAGR, YoY growth)
+    const growthPatterns = [
+      /(?:CAGR|compound annual growth|growth rate).*?([0-9.]+)%/gi,
+      /growing.*?([0-9.]+)%.*?(?:annually|year|CAGR)/gi,
+      /([0-9.]+)%.*?(?:growth|CAGR|annual)/gi
+    ];
+    
+    for (const pattern of growthPatterns) {
+      const matches = content.match(pattern);
+      if (matches && matches.length > 0) {
+        metrics.growth_rate = {
+          value: parseFloat(matches[0].match(/([0-9.]+)/)?.[1] || '0'),
+          type: matches[0].toLowerCase().includes('cagr') ? 'CAGR' : 'annual_growth',
+          raw_text: matches[0].trim()
+        };
+        break;
+      }
+    }
+    
+    // Extract market dynamics
+    const trendKeywords = ['growing', 'expanding', 'increasing', 'rising', 'emerging', 'declining', 'mature', 'saturated'];
+    const foundTrends = trendKeywords.filter(keyword => 
+      content.toLowerCase().includes(keyword)
+    );
+    
+    if (foundTrends.length > 0) {
+      metrics.market_trends = foundTrends.slice(0, 3); // Top 3 trends
+    }
+    
+    console.log('✅ [Market Metrics] Extracted:', Object.keys(metrics));
+    
+  } catch (error) {
+    console.error('❌ [Market Metrics] Extraction failed:', error);
+  }
+  
+  // Fallback data if extraction failed
+  if (Object.keys(metrics).length === 0) {
+    console.log('🔄 [Market Metrics] Using fallback data');
+    metrics.market_size = { value: 0, unit: 'unknown', raw_text: 'Market size data not available' };
+    metrics.growth_rate = { value: 0, type: 'unknown', raw_text: 'Growth rate data not available' };
+    metrics.market_trends = ['analysis_pending'];
+  }
+  
+  return metrics;
 }
 
 function extractFinancialMetrics(content: string): any {
-  // Extract financial KPIs from content
-  return {};
+  console.log('💰 [Financial Metrics] Extracting financial data from content');
+  
+  const metrics: any = {};
+  
+  try {
+    // Extract revenue figures
+    const revenuePatterns = [
+      /revenue.*?(?:\$|USD)?\s*([0-9.,]+)\s*(?:billion|million|thousand|B|M|K)/gi,
+      /(?:\$|USD)?\s*([0-9.,]+)\s*(?:billion|million|thousand|B|M|K).*?revenue/gi,
+      /sales.*?(?:\$|USD)?\s*([0-9.,]+)\s*(?:billion|million|thousand|B|M|K)/gi
+    ];
+    
+    for (const pattern of revenuePatterns) {
+      const matches = content.match(pattern);
+      if (matches && matches.length > 0) {
+        metrics.revenue = {
+          value: parseFloat(matches[0].match(/([0-9.,]+)/)?.[1]?.replace(/,/g, '') || '0'),
+          unit: matches[0].match(/(billion|million|thousand|B|M|K)/i)?.[1] || 'unknown',
+          raw_text: matches[0].trim()
+        };
+        break;
+      }
+    }
+    
+    // Extract valuation
+    const valuationPatterns = [
+      /(?:valued|valuation|worth).*?(?:\$|USD)?\s*([0-9.,]+)\s*(?:billion|million|B|M)/gi,
+      /(?:\$|USD)?\s*([0-9.,]+)\s*(?:billion|million|B|M).*?(?:valuation|valued)/gi
+    ];
+    
+    for (const pattern of valuationPatterns) {
+      const matches = content.match(pattern);
+      if (matches && matches.length > 0) {
+        metrics.valuation = {
+          value: parseFloat(matches[0].match(/([0-9.,]+)/)?.[1]?.replace(/,/g, '') || '0'),
+          unit: matches[0].match(/(billion|million|B|M)/i)?.[1] || 'unknown',
+          raw_text: matches[0].trim()
+        };
+        break;
+      }
+    }
+    
+    // Extract funding information
+    const fundingPatterns = [
+      /raised.*?(?:\$|USD)?\s*([0-9.,]+)\s*(?:billion|million|B|M)/gi,
+      /funding.*?(?:\$|USD)?\s*([0-9.,]+)\s*(?:billion|million|B|M)/gi,
+      /(?:\$|USD)?\s*([0-9.,]+)\s*(?:billion|million|B|M).*?(?:raised|funding)/gi
+    ];
+    
+    for (const pattern of fundingPatterns) {
+      const matches = content.match(pattern);
+      if (matches && matches.length > 0) {
+        metrics.funding = {
+          value: parseFloat(matches[0].match(/([0-9.,]+)/)?.[1]?.replace(/,/g, '') || '0'),
+          unit: matches[0].match(/(billion|million|B|M)/i)?.[1] || 'unknown',
+          raw_text: matches[0].trim()
+        };
+        break;
+      }
+    }
+    
+    console.log('✅ [Financial Metrics] Extracted:', Object.keys(metrics));
+    
+  } catch (error) {
+    console.error('❌ [Financial Metrics] Extraction failed:', error);
+  }
+  
+  // Fallback data if extraction failed
+  if (Object.keys(metrics).length === 0) {
+    console.log('🔄 [Financial Metrics] Using fallback data');
+    metrics.revenue = { value: 0, unit: 'unknown', raw_text: 'Revenue data not available' };
+    metrics.funding = { value: 0, unit: 'unknown', raw_text: 'Funding data not available' };
+  }
+  
+  return metrics;
 }
 
 function extractCompetitiveData(content: string): any {
-  // Extract competitive information from content
-  return {};
+  console.log('🏆 [Competitive Data] Extracting competitive analysis from content');
+  
+  const competitive: any = {};
+  
+  try {
+    // Extract competitor mentions
+    const companyPatterns = [
+      /compet(?:itor|ing)s?.*?(?:include|are|such as).*?([A-Z][a-zA-Z\s&.,]+)/gi,
+      /(?:versus|vs\.?|against|compared to).*?([A-Z][a-zA-Z\s&.,]{2,20})/gi,
+      /([A-Z][a-zA-Z\s&.,]{2,20}).*?(?:competitor|rival|alternative)/gi
+    ];
+    
+    const competitors = new Set<string>();
+    
+    for (const pattern of companyPatterns) {
+      const matches = [...content.matchAll(pattern)];
+      matches.forEach(match => {
+        if (match[1]) {
+          const competitor = match[1].trim().replace(/[.,;]$/, '');
+          if (competitor.length > 2 && competitor.length < 50) {
+            competitors.add(competitor);
+          }
+        }
+      });
+    }
+    
+    competitive.competitors = Array.from(competitors).slice(0, 5); // Top 5 competitors
+    
+    // Extract market position indicators
+    const positionKeywords = ['leader', 'leading', 'pioneer', 'dominant', 'emerging', 'challenger', 'niche'];
+    const marketPosition = positionKeywords.filter(keyword => 
+      content.toLowerCase().includes(keyword)
+    );
+    
+    if (marketPosition.length > 0) {
+      competitive.market_position = marketPosition[0]; // Primary position indicator
+    }
+    
+    // Extract competitive advantages
+    const advantagePatterns = [
+      /(?:advantage|differentiat|unique|proprietary).*?([a-zA-Z\s]{10,100})/gi,
+      /(?:edge|strength|benefit).*?([a-zA-Z\s]{10,100})/gi
+    ];
+    
+    const advantages = new Set<string>();
+    
+    for (const pattern of advantagePatterns) {
+      const matches = content.match(pattern);
+      if (matches && matches.length > 0) {
+        matches.slice(0, 3).forEach(match => {
+          const advantage = match.trim().substring(0, 100);
+          advantages.add(advantage);
+        });
+      }
+    }
+    
+    competitive.competitive_advantages = Array.from(advantages).slice(0, 3);
+    
+    console.log('✅ [Competitive Data] Extracted:', Object.keys(competitive));
+    
+  } catch (error) {
+    console.error('❌ [Competitive Data] Extraction failed:', error);
+  }
+  
+  // Fallback data if extraction failed
+  if (Object.keys(competitive).length === 0) {
+    console.log('🔄 [Competitive Data] Using fallback data');
+    competitive.competitors = ['Analysis pending'];
+    competitive.market_position = 'unknown';
+    competitive.competitive_advantages = ['Competitive analysis pending'];
+  }
+  
+  return competitive;
 }
 
 function extractPartnerships(items: any[]): any[] {
