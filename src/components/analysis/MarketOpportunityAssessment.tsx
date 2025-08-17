@@ -202,65 +202,67 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     const industries = getIndustriesFromDeal(deal);
     console.log('🔍 Industries for market assessment:', industries, 'Deal:', deal.company_name);
     
-    // Create separate Market Size entries for each industry
-    industries.forEach((industry, index) => {
+    // Create ONE Market Size (TAM) entry with all industries as breakdown
+    const industryBreakdown = industries.map((industry) => {
       const tamValue = extractTAMForIndustry(deal, industry);
       const samValue = Math.round(tamValue * 0.25);
       const somValue = Math.round(samValue * 0.15);
-      const marketSizeGood = tamValue >= 1000000000; // $1B+ TAM threshold
-      const citation = getDefaultCitation(industry);
       
-      console.log(`🏭 Creating Market Size entry for: ${industry}`);
-      checks.push({
-        criterion: `Market Size (TAM) - ${industry}`,
-        aligned: marketSizeGood || false,
-        reasoning: marketSizeGood 
-          ? `Large ${industry} market: $${(tamValue/1000000000).toFixed(1)}B TAM with $${(somValue/1000000).toFixed(0)}M achievable SOM. Source: ${citation?.source}` 
-          : tamValue > 0
-            ? `${industry} market size: $${(tamValue/1000000).toFixed(0)}M TAM - may be limited for scale`
-            : `Add company documents for ${industry} market size analysis`,
-        icon: <Globe className="h-4 w-4" />,
-        weight: Math.round(20 / industries.length), // Distribute weight equally
-        score: marketSizeGood ? 85 : (tamValue > 100000000) ? 60 : 40,
-        industryBreakdown: [{
-          industry,
-          weight: 1.0,
-          tam: tamValue,
-          sam: samValue,
-          som: somValue,
-          citation: citation
-        }]
-      });
+      return {
+        industry,
+        weight: 1.0 / industries.length, // Equal weight distribution
+        tam: tamValue,
+        sam: samValue,
+        som: somValue,
+        citation: getDefaultCitation(industry)
+      };
+    });
+    
+    const totalTAM = industryBreakdown.reduce((sum, item) => sum + item.tam, 0);
+    const marketSizeGood = totalTAM >= 1000000000; // $1B+ TAM threshold
+    
+    console.log('🏭 Creating single Market Size entry with breakdown:', industryBreakdown);
+    checks.push({
+      criterion: 'Market Size (TAM)',
+      aligned: marketSizeGood || false,
+      reasoning: `Large addressable market across ${industries.length} industries: ${industries.join(', ')}. Combined TAM: $${(totalTAM/1000000000).toFixed(1)}B with individual markets ranging from $${Math.min(...industryBreakdown.map(i => i.tam/1000000000)).toFixed(1)}B to $${Math.max(...industryBreakdown.map(i => i.tam/1000000000)).toFixed(1)}B.`,
+      icon: <Globe className="h-4 w-4" />,
+      weight: 20,
+      score: marketSizeGood ? 85 : (totalTAM > 100000000) ? 60 : 40,
+      industryBreakdown
     });
 
-    // Create separate Market Growth Rate entries for each industry
-    industries.forEach((industry, index) => {
+    // Create ONE Market Growth Rate entry with all industries as breakdown
+    const growthBreakdown = industries.map((industry) => {
       const cagr = getCAGRForIndustry(industry);
       const competitors = getCompetitorsForIndustry(industry);
       const growthDrivers = getGrowthDriversForIndustry(industry);
-      const growthRateGood = cagr && cagr > 10; // 10%+ CAGR threshold
       
-      // Analyze growth outlook based on CAGR and competition
-      const growthOutlook = cagr > 15 ? 'Excellent' : cagr > 10 ? 'Strong' : cagr > 5 ? 'Moderate' : 'Slow';
-      const competitionLevel = competitors.length > 5 ? 'Highly competitive' : competitors.length > 3 ? 'Competitive' : 'Moderate competition';
-      
-      console.log(`📈 Creating Market Growth entry for: ${industry}`);
-      checks.push({
-        criterion: `Market Growth Rate - ${industry}`,
-        aligned: growthRateGood || false,
-        reasoning: `${growthOutlook} ${industry} growth at ${cagr}% CAGR. ${competitionLevel} with key players: ${competitors.slice(0,3).join(', ')}.`,
-        icon: <TrendingUp className="h-4 w-4" />,
-        weight: Math.round(20 / industries.length), // Distribute weight equally
-        score: growthRateGood ? 80 : cagr ? 65 : 35,
-        growthBreakdown: [{
-          industry,
-          weight: 1.0,
-          cagr,
-          competitors,
-          growthDrivers,
-          citation: getDefaultCitation(industry)
-        }]
-      });
+      return {
+        industry,
+        weight: 1.0 / industries.length, // Equal weight distribution
+        cagr,
+        competitors,
+        growthDrivers,
+        citation: getDefaultCitation(industry)
+      };
+    });
+    
+    const avgCAGR = growthBreakdown.reduce((sum, item) => sum + item.cagr, 0) / growthBreakdown.length;
+    const growthRateGood = avgCAGR && avgCAGR > 10; // 10%+ CAGR threshold
+    const topGrowthIndustry = growthBreakdown.reduce((prev, current) => 
+      (prev.cagr > current.cagr) ? prev : current
+    );
+    
+    console.log('📈 Creating single Market Growth entry with breakdown:', growthBreakdown);
+    checks.push({
+      criterion: 'Market Growth Rate',
+      aligned: growthRateGood || false,
+      reasoning: `Strong growth across ${industries.length} industries with ${avgCAGR.toFixed(1)}% average CAGR. ${topGrowthIndustry.industry} leads at ${topGrowthIndustry.cagr}% CAGR. Market dynamics vary by vertical with distinct competitive landscapes.`,
+      icon: <TrendingUp className="h-4 w-4" />,
+      weight: 20,
+      score: growthRateGood ? 80 : avgCAGR ? 65 : 35,
+      growthBreakdown
     });
 
     // Competitive Landscape - Using enriched competitive data
@@ -688,7 +690,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                 </div>
                 
                 {/* TAM/SAM/SOM Breakdown for Market Size criterion */}
-                {check.criterion.includes('Market Size (TAM)') && check.industryBreakdown && expandedCriteria.includes(check.criterion) && (
+                {check.criterion === 'Market Size (TAM)' && check.industryBreakdown && expandedCriteria.includes(check.criterion) && (
                   <div className="ml-8 space-y-3">
                     {check.industryBreakdown.map((industry, idx) => (
                       <div key={idx} className="border rounded-lg p-4 space-y-3">
@@ -741,7 +743,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                 )}
 
                 {/* CAGR/Competitors/Growth Drivers Breakdown for Market Growth Rate criterion */}
-                {check.criterion.includes('Market Growth Rate') && check.growthBreakdown && expandedCriteria.includes(check.criterion) && (
+                {check.criterion === 'Market Growth Rate' && check.growthBreakdown && expandedCriteria.includes(check.criterion) && (
                   <div className="ml-8 space-y-3">
                     {check.growthBreakdown.map((industry, idx) => (
                       <div key={idx} className="border rounded-lg p-4 space-y-3">
