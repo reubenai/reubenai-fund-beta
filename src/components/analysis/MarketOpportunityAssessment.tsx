@@ -63,24 +63,32 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     try {
       setLoading(true);
       
-      // Fetch market intelligence data for this deal
+      // Fetch market opportunity enrichment data for this deal
       const { data: marketIntelligence, error } = await supabase
         .from('deal_analysis_sources')
         .select('*')
         .eq('deal_id', deal.id)
-        .eq('engine_name', 'market-intelligence-engine')
+        .eq('engine_name', 'vc_market_opportunity')
         .order('retrieved_at', { ascending: false })
         .limit(1);
 
+      let enrichmentData = null;
       if (!error && marketIntelligence && marketIntelligence.length > 0) {
-        console.log('📊 MarketOpportunity: Market data found:', marketIntelligence[0]);
-        setMarketData(marketIntelligence[0].data_retrieved);
+        const data = marketIntelligence[0].data_retrieved;
+        // Validate enrichment data quality - check if it contains meaningful content
+        if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+          enrichmentData = data;
+          console.log('📊 MarketOpportunity: Valid enrichment data found');
+        } else {
+          console.log('📊 MarketOpportunity: Empty enrichment data, using deal fallback');
+        }
+        setMarketData(enrichmentData);
       } else {
-        console.log('📊 MarketOpportunity: No market data found, using deal data');
+        console.log('📊 MarketOpportunity: No enrichment data found, using deal fallback');
       }
 
       // Perform market opportunity assessment
-      const marketAssessment = assessMarketOpportunity(deal, marketIntelligence?.[0]?.data_retrieved);
+      const marketAssessment = assessMarketOpportunity(deal, enrichmentData);
       setAssessment(marketAssessment);
     } catch (error) {
       console.error('Error in market opportunity assessment:', error);
@@ -93,34 +101,19 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     // Initial load
     fetchMarketDataAndAssess();
 
-    // Guaranteed auto-refresh every 30 seconds while modal is open
-    const autoRefreshInterval = setInterval(() => {
-      console.log('🔄 MarketOpportunity: Auto-refresh via timer for deal:', deal.id);
-      fetchMarketDataAndAssess();
-    }, 30000);
-
-    // Listen for enrichment completion events (backup trigger)
+    // Listen for enrichment completion events
     const handleEnrichmentComplete = (event: CustomEvent) => {
       if (event.detail?.dealId === deal.id) {
-        console.log('🔄 MarketOpportunity: Auto-refreshing due to enrichment completion for deal:', deal.id);
+        console.log('🔄 MarketOpportunity: Refreshing due to enrichment completion for deal:', deal.id);
         fetchMarketDataAndAssess();
       }
     };
 
-    // Listen for deal updates (another backup trigger)
-    const handleDealUpdate = () => {
-      console.log('🔄 MarketOpportunity: Refreshing due to deal update');
-      fetchMarketDataAndAssess();
-    };
-
-    console.log('🎧 MarketOpportunity: Setting up all event listeners for deal:', deal.id);
+    console.log('🎧 MarketOpportunity: Setting up enrichment listener for deal:', deal.id);
     window.addEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
-    window.addEventListener('dealUpdated', handleDealUpdate as EventListener);
 
     return () => {
-      clearInterval(autoRefreshInterval);
       window.removeEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
-      window.removeEventListener('dealUpdated', handleDealUpdate as EventListener);
     };
   }, [deal.id, fetchMarketDataAndAssess]);
 
