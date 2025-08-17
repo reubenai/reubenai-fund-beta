@@ -118,34 +118,32 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
   }, [deal.id, fetchMarketDataAndAssess]);
 
   const assessMarketOpportunity = (deal: Deal, marketData?: any): MarketAssessment => {
+    console.log('🔍 MarketOpportunity: Assessing with enrichment data:', marketData);
+    
     const checks: MarketCheck[] = [];
 
-    // Market Size Assessment
-    const marketSize = marketData?.market_size || marketData?.tam;
-    const marketSizeGood = marketSize && (
-      (typeof marketSize === 'number' && marketSize > 1000000000) || // $1B+ TAM
-      (typeof marketSize === 'string' && marketSize.toLowerCase().includes('billion'))
-    );
+    // Market Size Assessment - Using enriched TAM data
+    const tamData = marketData?.tam_sam_som?.total_addressable_market;
+    const marketSizeGood = tamData && tamData.value > 0 && tamData.value >= 100; // $100M+ TAM threshold
     
     checks.push({
       criterion: 'Market Size (TAM)',
       aligned: marketSizeGood || false,
       reasoning: marketSizeGood 
-        ? `Large addressable market identified: ${formatMarketSize(marketSize)}` 
-        : marketSize 
-          ? `Market size may be limited: ${formatMarketSize(marketSize)}`
-          : 'Market size data not available - requires analysis',
+        ? `Large addressable market: ${formatMarketSize(tamData)}` 
+        : tamData && tamData.value > 0
+          ? `Market size: ${formatMarketSize(tamData)} - may be limited`
+          : tamData?.raw_text || 'Market size data not available - requires analysis',
       icon: <Globe className="h-4 w-4" />,
       weight: 25,
-      score: marketSizeGood ? 85 : marketSize ? 60 : 40
+      score: marketSizeGood ? 85 : (tamData && tamData.value > 0) ? 60 : 40
     });
 
-    // Market Growth Rate
-    const growthRate = marketData?.growth_rate || marketData?.cagr;
-    const growthRateGood = growthRate && (
-      (typeof growthRate === 'number' && growthRate > 15) ||
-      (typeof growthRate === 'string' && parseFloat(growthRate) > 15)
-    );
+    // Market Growth Rate - Using enriched growth data
+    const growthData = marketData?.growth_rate;
+    const growthRate = typeof growthData?.cagr === 'number' ? growthData.cagr : 
+      (marketData?.tam_sam_som?.market_growth_rate?.value || null);
+    const growthRateGood = growthRate && growthRate > 10; // 10%+ CAGR threshold
     
     checks.push({
       criterion: 'Market Growth Rate',
@@ -154,99 +152,84 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
         ? `Strong market growth: ${growthRate}% CAGR` 
         : growthRate 
           ? `Moderate growth rate: ${growthRate}% CAGR`
-          : 'Growth rate data not available - market research needed',
+          : marketData?.tam_sam_som?.market_growth_rate?.raw_text || 'Growth rate data not available - market research needed',
       icon: <TrendingUp className="h-4 w-4" />,
       weight: 20,
       score: growthRateGood ? 80 : growthRate ? 65 : 35
     });
 
-    // Competitive Landscape
-    const competitiveData = marketData?.competitive_landscape || marketData?.competition;
-    const competitionHealthy = competitiveData && (
-      competitiveData.fragmented || 
-      competitiveData.emerging_market ||
-      (competitiveData.competitors && competitiveData.competitors.length < 5)
+    // Competitive Landscape - Using enriched competitive data
+    const competitiveData = marketData?.competitive_landscape;
+    const hasRealCompetitors = competitiveData?.top_players && 
+      Array.isArray(competitiveData.top_players) && 
+      competitiveData.top_players.length > 0 && 
+      !competitiveData.top_players.some((player: string) => player.includes('pending'));
+    
+    const competitionHealthy = hasRealCompetitors && (
+      competitiveData.market_position === 'leader' || 
+      competitiveData.market_position === 'pioneer' ||
+      competitiveData.top_players.length < 5
     );
     
     checks.push({
       criterion: 'Competitive Position',
       aligned: competitionHealthy || false,
       reasoning: competitionHealthy 
-        ? 'Favorable competitive landscape with differentiation opportunities' 
-        : competitiveData 
-          ? 'Competitive market - strong execution required'
+        ? `Favorable position with ${competitiveData.top_players.length} competitors. Market position: ${competitiveData.market_position}` 
+        : hasRealCompetitors 
+          ? `Competitive market with ${competitiveData.top_players.length} players identified`
           : 'Competitive analysis pending - industry research needed',
       icon: <Target className="h-4 w-4" />,
       weight: 20,
-      score: competitionHealthy ? 75 : competitiveData ? 55 : 40
+      score: competitionHealthy ? 75 : hasRealCompetitors ? 55 : 40
     });
 
-    // Market Maturity & Timing
-    const marketTrends = marketData?.market_trends || 
-      (deal.enhanced_analysis && 
-       typeof deal.enhanced_analysis === 'object' && 
-       'market_intelligence' in deal.enhanced_analysis ? 
-         (deal.enhanced_analysis as any).market_intelligence?.trends : 
-         null);
-         
-    const timingGood = marketTrends && (
-      Array.isArray(marketTrends) ? marketTrends.some(trend => 
-        trend.toLowerCase().includes('growing') || 
-        trend.toLowerCase().includes('emerging') ||
-        trend.toLowerCase().includes('adoption')
-      ) : typeof marketTrends === 'string' && (
-        marketTrends.toLowerCase().includes('growing') ||
-        marketTrends.toLowerCase().includes('emerging')
-      )
-    );
+    // Market Timing - Using enriched trend data
+    const marketTrends = marketData?.tam_sam_som?.market_trends;
+    const timingGood = marketTrends && Array.isArray(marketTrends) && 
+      marketTrends.some((trend: string) => 
+        ['growing', 'expanding', 'emerging', 'rising'].includes(trend.toLowerCase())
+      );
     
     checks.push({
       criterion: 'Market Timing',
       aligned: timingGood || false,
       reasoning: timingGood 
-        ? 'Market timing appears favorable with positive trends' 
-        : marketTrends 
-          ? 'Mixed market signals - timing assessment needed'
+        ? `Favorable trends: ${marketTrends.filter((t: string) => ['growing', 'expanding', 'emerging', 'rising'].includes(t.toLowerCase())).join(', ')}` 
+        : marketTrends && marketTrends.length > 0 
+          ? `Mixed signals: ${marketTrends.join(', ')}`
           : 'Market timing analysis pending',
       icon: <Clock className="h-4 w-4" />,
       weight: 15,
-      score: timingGood ? 70 : marketTrends ? 50 : 35
+      score: timingGood ? 70 : (marketTrends && marketTrends.length > 0) ? 50 : 35
     });
 
-    // Customer Demand Validation
-    const customerData = marketData?.customer_segments || 
-      (deal.enhanced_analysis && 
-       typeof deal.enhanced_analysis === 'object' && 
-       'business_traction' in deal.enhanced_analysis ? 
-         (deal.enhanced_analysis as any).business_traction : 
-         null);
-         
-    const demandValidated = customerData || deal.deal_size || (deal.overall_score && deal.overall_score > 60);
+    // Customer Demand - Using enriched financial data
+    const financialData = marketData?.financial_context;
+    const revenueData = financialData?.revenue_data;
+    const demandValidated = revenueData && revenueData.value > 0;
     
     checks.push({
       criterion: 'Customer Demand',
       aligned: demandValidated || false,
       reasoning: demandValidated 
-        ? 'Customer demand indicators present' 
-        : 'Customer demand validation required',
+        ? `Revenue indicators: ${formatMarketSize(revenueData)} suggests market demand` 
+        : revenueData?.raw_text || 'Customer demand validation required',
       icon: <Users className="h-4 w-4" />,
       weight: 15,
       score: demandValidated ? 65 : 30
     });
 
     // Regulatory Environment
-    const regulatoryRisk = marketData?.regulatory_environment;
-    const regulatoryFavorable = !regulatoryRisk || 
-      (regulatoryRisk && (regulatoryRisk.favorable || regulatoryRisk.risk_level === 'low'));
+    const regulatoryFavorable = !deal.industry?.toLowerCase().includes('crypto') && 
+      !deal.industry?.toLowerCase().includes('gambling');
     
     checks.push({
       criterion: 'Regulatory Environment',
       aligned: regulatoryFavorable,
       reasoning: regulatoryFavorable 
         ? 'Regulatory environment appears favorable' 
-        : regulatoryRisk 
-          ? 'Regulatory considerations identified'
-          : 'Regulatory assessment pending',
+        : 'Potential regulatory challenges in this sector',
       icon: <Shield className="h-4 w-4" />,
       weight: 5,
       score: regulatoryFavorable ? 70 : 45
@@ -278,6 +261,38 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
   };
 
   const formatMarketSize = (size: any): string => {
+    if (!size) return 'Unknown';
+    
+    // Handle our new enrichment data structure
+    if (typeof size === 'object' && size.value !== undefined) {
+      if (size.value === 0) return size.raw_text || 'Not available';
+      
+      const value = size.value;
+      const unit = size.unit || '';
+      
+      if (typeof value === 'number' && value > 0) {
+        if (unit.toLowerCase().includes('billion') || unit.toLowerCase() === 'b') {
+          return `$${value}B`;
+        } else if (unit.toLowerCase().includes('million') || unit.toLowerCase() === 'm') {
+          return `$${value}M`;
+        } else if (unit.toLowerCase().includes('thousand') || unit.toLowerCase() === 'k') {
+          return `$${value}K`;
+        } else {
+          // Auto-format based on value size
+          if (value >= 1000000000) {
+            return `$${(value / 1000000000).toFixed(1)}B`;
+          } else if (value >= 1000000) {
+            return `$${(value / 1000000).toFixed(1)}M`;
+          } else if (value >= 1000) {
+            return `$${(value / 1000).toFixed(1)}K`;
+          }
+          return `$${value.toLocaleString()}`;
+        }
+      }
+      return size.raw_text || 'Unknown';
+    }
+    
+    // Handle legacy numeric values
     if (typeof size === 'number') {
       if (size >= 1000000000) {
         return `$${(size / 1000000000).toFixed(1)}B`;
@@ -286,6 +301,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
       }
       return `$${size.toLocaleString()}`;
     }
+    
     return size?.toString() || 'Unknown';
   };
 
