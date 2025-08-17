@@ -44,6 +44,7 @@ import { AnalysisQueueDashboard } from '@/components/admin/AnalysisQueueDashboar
 import { SafeModeTestPanel } from '@/components/admin/SafeModeTestPanel';
 import { DealAllowlistManager } from '@/components/admin/DealAllowlistManager';
 import { DynamicStuckDocumentRecovery } from '@/components/admin/DynamicStuckDocumentRecovery';
+import { FeatureFlagsPanel } from '@/components/admin/FeatureFlagsPanel';
 
 import { useFund } from '@/contexts/FundContext';
 import { useUserRole } from '@/hooks/useUserRole';

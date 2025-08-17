@@ -661,6 +661,51 @@ export type Database = {
         }
         Relationships: []
       }
+      artifacts: {
+        Row: {
+          artifact_data: Json
+          artifact_kind: string
+          artifact_type: string
+          citations: Json | null
+          created_at: string
+          deal_id: string | null
+          fund_id: string
+          id: string
+          org_id: string
+          provenance: Json | null
+          updated_at: string
+          validation_status: string | null
+        }
+        Insert: {
+          artifact_data: Json
+          artifact_kind: string
+          artifact_type: string
+          citations?: Json | null
+          created_at?: string
+          deal_id?: string | null
+          fund_id: string
+          id?: string
+          org_id: string
+          provenance?: Json | null
+          updated_at?: string
+          validation_status?: string | null
+        }
+        Update: {
+          artifact_data?: Json
+          artifact_kind?: string
+          artifact_type?: string
+          citations?: Json | null
+          created_at?: string
+          deal_id?: string | null
+          fund_id?: string
+          id?: string
+          org_id?: string
+          provenance?: Json | null
+          updated_at?: string
+          validation_status?: string | null
+        }
+        Relationships: []
+      }
       data_lineage_log: {
         Row: {
           approved: boolean
@@ -1088,6 +1133,54 @@ export type Database = {
           },
         ]
       }
+      deal_features: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          deal_id: string
+          extraction_method: string | null
+          feature_name: string
+          feature_type: string
+          feature_value: Json
+          fund_id: string
+          id: string
+          org_id: string
+          source_references: Json | null
+          updated_at: string
+          validation_status: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          deal_id: string
+          extraction_method?: string | null
+          feature_name: string
+          feature_type: string
+          feature_value: Json
+          fund_id: string
+          id?: string
+          org_id: string
+          source_references?: Json | null
+          updated_at?: string
+          validation_status?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          deal_id?: string
+          extraction_method?: string | null
+          feature_name?: string
+          feature_type?: string
+          feature_value?: Json
+          fund_id?: string
+          id?: string
+          org_id?: string
+          source_references?: Json | null
+          updated_at?: string
+          validation_status?: string | null
+        }
+        Relationships: []
+      }
       deal_notes: {
         Row: {
           category: string | null
@@ -1131,6 +1224,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      deal_scores: {
+        Row: {
+          category: string
+          confidence_level: number | null
+          created_at: string
+          deal_id: string
+          driver_contributions: Json | null
+          evidence_refs: Json | null
+          fund_id: string
+          id: string
+          org_id: string
+          raw_score: number | null
+          rubric_version: string
+          scoring_method: string | null
+          updated_at: string
+          weighted_score: number | null
+        }
+        Insert: {
+          category: string
+          confidence_level?: number | null
+          created_at?: string
+          deal_id: string
+          driver_contributions?: Json | null
+          evidence_refs?: Json | null
+          fund_id: string
+          id?: string
+          org_id: string
+          raw_score?: number | null
+          rubric_version: string
+          scoring_method?: string | null
+          updated_at?: string
+          weighted_score?: number | null
+        }
+        Update: {
+          category?: string
+          confidence_level?: number | null
+          created_at?: string
+          deal_id?: string
+          driver_contributions?: Json | null
+          evidence_refs?: Json | null
+          fund_id?: string
+          id?: string
+          org_id?: string
+          raw_score?: number | null
+          rubric_version?: string
+          scoring_method?: string | null
+          updated_at?: string
+          weighted_score?: number | null
+        }
+        Relationships: []
       }
       deals: {
         Row: {
@@ -1494,6 +1638,36 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_flags: {
+        Row: {
+          created_at: string
+          flag_config: Json | null
+          flag_name: string
+          flag_value: boolean | null
+          id: string
+          org_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          flag_config?: Json | null
+          flag_name: string
+          flag_value?: boolean | null
+          id?: string
+          org_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          flag_config?: Json | null
+          flag_name?: string
+          flag_value?: boolean | null
+          id?: string
+          org_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fund_decision_patterns: {
         Row: {
           actionable_insights: string | null
@@ -1545,6 +1719,51 @@ export type Database = {
           pattern_type?: string
           recommended_adjustments?: Json | null
           validation_status?: string | null
+        }
+        Relationships: []
+      }
+      fund_memory: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          expires_at: string | null
+          fund_id: string
+          id: string
+          memory_key: string
+          memory_type: string
+          memory_value: Json
+          namespace: string
+          org_id: string
+          retention_period: unknown | null
+          updated_at: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          expires_at?: string | null
+          fund_id: string
+          id?: string
+          memory_key: string
+          memory_type?: string
+          memory_value?: Json
+          namespace: string
+          org_id: string
+          retention_period?: unknown | null
+          updated_at?: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          expires_at?: string | null
+          fund_id?: string
+          id?: string
+          memory_key?: string
+          memory_type?: string
+          memory_value?: Json
+          namespace?: string
+          org_id?: string
+          retention_period?: unknown | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1951,6 +2170,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ic_decisions: {
+        Row: {
+          confidence_level: number | null
+          created_at: string
+          deal_id: string
+          decision_context: Json | null
+          decision_maker: string
+          decision_outcome: string
+          decision_rationale: string | null
+          decision_type: string
+          fund_id: string
+          id: string
+          org_id: string
+          supporting_evidence: Json | null
+          updated_at: string
+        }
+        Insert: {
+          confidence_level?: number | null
+          created_at?: string
+          deal_id: string
+          decision_context?: Json | null
+          decision_maker: string
+          decision_outcome: string
+          decision_rationale?: string | null
+          decision_type: string
+          fund_id: string
+          id?: string
+          org_id: string
+          supporting_evidence?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          confidence_level?: number | null
+          created_at?: string
+          deal_id?: string
+          decision_context?: Json | null
+          decision_maker?: string
+          decision_outcome?: string
+          decision_rationale?: string | null
+          decision_type?: string
+          fund_id?: string
+          id?: string
+          org_id?: string
+          supporting_evidence?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       ic_meeting_deals: {
         Row: {
@@ -2944,6 +3211,57 @@ export type Database = {
           model_id?: string | null
           provider?: string | null
           timestamp?: string | null
+        }
+        Relationships: []
+      }
+      orchestrator_executions: {
+        Row: {
+          created_at: string
+          current_step: string
+          deal_id: string | null
+          error_details: Json | null
+          execution_token: string
+          fund_id: string
+          id: string
+          org_id: string
+          step_input: Json | null
+          step_output: Json | null
+          step_status: string | null
+          telemetry_data: Json | null
+          updated_at: string
+          workflow_type: string
+        }
+        Insert: {
+          created_at?: string
+          current_step: string
+          deal_id?: string | null
+          error_details?: Json | null
+          execution_token: string
+          fund_id: string
+          id?: string
+          org_id: string
+          step_input?: Json | null
+          step_output?: Json | null
+          step_status?: string | null
+          telemetry_data?: Json | null
+          updated_at?: string
+          workflow_type: string
+        }
+        Update: {
+          created_at?: string
+          current_step?: string
+          deal_id?: string | null
+          error_details?: Json | null
+          execution_token?: string
+          fund_id?: string
+          id?: string
+          org_id?: string
+          step_input?: Json | null
+          step_output?: Json | null
+          step_status?: string | null
+          telemetry_data?: Json | null
+          updated_at?: string
+          workflow_type?: string
         }
         Relationships: []
       }
