@@ -527,19 +527,19 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
 
 
   const extractTAMForIndustry = (deal: Deal, industry: string): number => {
-    // Default values based on industry research - make sure E-commerce has correct value
+    // Default values based on industry research - different values for each Excavox industry
     const industryDefaults: Record<string, number> = {
       'Financial Services': 22000000000, // $22B
       'Technology': 5000000000, // $5B  
       'Healthcare': 15000000000, // $15B
       'Education': 8000000000, // $8B
       'Software': 650000000, // $650M
-      'Fintech': 12000000000, // $12B - moved from E-commerce
+      'Fintech': 332000000000, // $332B for Fintech
       'SaaS': 195000000000, // $195B
-      'E-commerce': 6200000000000, // $6.2T - correct E-commerce TAM
+      'E-Commerce': 6200000000000, // $6.2T for E-commerce
       'AI': 1800000000000, // $1.8T
       'Blockchain': 67000000000, // $67B
-      'Hardware': 4500000000000, // $4.5T
+      'Hardware': 4500000000000, // $4.5T for Hardware
     };
     
     // Try to match industry to our defaults
@@ -624,7 +624,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">Market Opportunity</CardTitle>
+        <CardTitle className="text-lg font-semibold">Market Assessment</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Overall Market Opportunity Summary */}
