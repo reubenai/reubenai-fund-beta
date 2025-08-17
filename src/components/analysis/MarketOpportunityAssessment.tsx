@@ -59,37 +59,47 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
   const [assessment, setAssessment] = useState<MarketAssessment | null>(null);
   const [marketData, setMarketData] = useState<any>(null);
 
-  useEffect(() => {
-    const fetchMarketDataAndAssess = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch market intelligence data for this deal
-        const { data: marketIntelligence, error } = await supabase
-          .from('deal_analysis_sources')
-          .select('*')
-          .eq('deal_id', deal.id)
-          .eq('engine_name', 'market-intelligence-engine')
-          .order('retrieved_at', { ascending: false })
-          .limit(1);
+  const fetchMarketDataAndAssess = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch market intelligence data for this deal
+      const { data: marketIntelligence, error } = await supabase
+        .from('deal_analysis_sources')
+        .select('*')
+        .eq('deal_id', deal.id)
+        .eq('engine_name', 'market-intelligence-engine')
+        .order('retrieved_at', { ascending: false })
+        .limit(1);
 
-        if (!error && marketIntelligence && marketIntelligence.length > 0) {
-          setMarketData(marketIntelligence[0].data_retrieved);
-        }
-
-        // Perform market opportunity assessment
-        const marketAssessment = assessMarketOpportunity(deal, marketIntelligence?.[0]?.data_retrieved);
-        setAssessment(marketAssessment);
-      } catch (error) {
-        console.error('Error in market opportunity assessment:', error);
-      } finally {
-        setLoading(false);
+      if (!error && marketIntelligence && marketIntelligence.length > 0) {
+        console.log('📊 MarketOpportunity: Market data found:', marketIntelligence[0]);
+        setMarketData(marketIntelligence[0].data_retrieved);
+      } else {
+        console.log('📊 MarketOpportunity: No market data found, using deal data');
       }
-    };
 
+      // Perform market opportunity assessment
+      const marketAssessment = assessMarketOpportunity(deal, marketIntelligence?.[0]?.data_retrieved);
+      setAssessment(marketAssessment);
+    } catch (error) {
+      console.error('Error in market opportunity assessment:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [deal]);
+
+  useEffect(() => {
+    // Initial load
     fetchMarketDataAndAssess();
 
-    // Listen for enrichment completion events
+    // Guaranteed auto-refresh every 30 seconds while modal is open
+    const autoRefreshInterval = setInterval(() => {
+      console.log('🔄 MarketOpportunity: Auto-refresh via timer for deal:', deal.id);
+      fetchMarketDataAndAssess();
+    }, 30000);
+
+    // Listen for enrichment completion events (backup trigger)
     const handleEnrichmentComplete = (event: CustomEvent) => {
       if (event.detail?.dealId === deal.id) {
         console.log('🔄 MarketOpportunity: Auto-refreshing due to enrichment completion for deal:', deal.id);
@@ -97,13 +107,22 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
       }
     };
 
-    console.log('🎧 MarketOpportunity: Setting up event listener for deal:', deal.id);
+    // Listen for deal updates (another backup trigger)
+    const handleDealUpdate = () => {
+      console.log('🔄 MarketOpportunity: Refreshing due to deal update');
+      fetchMarketDataAndAssess();
+    };
+
+    console.log('🎧 MarketOpportunity: Setting up all event listeners for deal:', deal.id);
     window.addEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
+    window.addEventListener('dealUpdated', handleDealUpdate as EventListener);
 
     return () => {
+      clearInterval(autoRefreshInterval);
       window.removeEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
+      window.removeEventListener('dealUpdated', handleDealUpdate as EventListener);
     };
-  }, [deal]);
+  }, [deal.id, fetchMarketDataAndAssess]);
 
   const assessMarketOpportunity = (deal: Deal, marketData?: any): MarketAssessment => {
     const checks: MarketCheck[] = [];
