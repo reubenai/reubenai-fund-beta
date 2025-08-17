@@ -126,6 +126,72 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     };
   }, [deal.id, fetchMarketDataAndAssess]);
 
+  // Helper functions for growth analysis
+  const getCAGRForIndustry = (industry: string): number => {
+    const cagrDefaults: Record<string, number> = {
+      'Financial Services': 8.5,
+      'Technology': 12.3,
+      'Healthcare': 7.2,
+      'Education': 6.1,
+      'Software': 15.8,
+      'Fintech': 23.4,
+      'SaaS': 18.7,
+      'E-commerce': 14.2,
+      'AI': 37.3,
+      'Blockchain': 67.3,
+    };
+    
+    for (const [key, value] of Object.entries(cagrDefaults)) {
+      if (industry.toLowerCase().includes(key.toLowerCase()) || 
+          key.toLowerCase().includes(industry.toLowerCase())) {
+        return value;
+      }
+    }
+    return 8.0; // Default CAGR
+  };
+
+  const getCompetitorsForIndustry = (industry: string): string[] => {
+    const competitorDefaults: Record<string, string[]> = {
+      'Financial Services': ['JPMorgan Chase', 'Bank of America', 'Wells Fargo'],
+      'Technology': ['Microsoft', 'Google', 'Apple'],
+      'Healthcare': ['UnitedHealth', 'Johnson & Johnson', 'Pfizer'],
+      'Fintech': ['Square', 'PayPal', 'Stripe'],
+      'SaaS': ['Salesforce', 'Microsoft', 'Adobe'],
+      'E-commerce': ['Amazon', 'Shopify', 'eBay'],
+      'AI': ['OpenAI', 'Google', 'Microsoft'],
+      'Blockchain': ['Coinbase', 'Binance', 'Ethereum Foundation'],
+    };
+    
+    for (const [key, value] of Object.entries(competitorDefaults)) {
+      if (industry.toLowerCase().includes(key.toLowerCase()) || 
+          key.toLowerCase().includes(industry.toLowerCase())) {
+        return value;
+      }
+    }
+    return ['Industry competitors', 'Market leaders', 'Emerging players'];
+  };
+
+  const getGrowthDriversForIndustry = (industry: string): string[] => {
+    const driverDefaults: Record<string, string[]> = {
+      'Financial Services': ['Digital transformation', 'Regulatory changes', 'Consumer demand'],
+      'Technology': ['AI adoption', 'Cloud migration', 'Digital infrastructure'],
+      'Healthcare': ['Aging population', 'Telehealth adoption', 'Precision medicine'],
+      'Fintech': ['Cashless payments', 'DeFi growth', 'Financial inclusion'],
+      'SaaS': ['Remote work trends', 'Digital transformation', 'Subscription economy'],
+      'E-commerce': ['Mobile commerce', 'Social commerce', 'Cross-border trade'],
+      'AI': ['Enterprise adoption', 'Automation demand', 'Data abundance'],
+      'Blockchain': ['Institutional adoption', 'DeFi innovation', 'Web3 development'],
+    };
+    
+    for (const [key, value] of Object.entries(driverDefaults)) {
+      if (industry.toLowerCase().includes(key.toLowerCase()) || 
+          key.toLowerCase().includes(industry.toLowerCase())) {
+        return value;
+      }
+    }
+    return ['Market expansion', 'Technology adoption', 'Consumer trends'];
+  };
+
   const assessMarketOpportunity = (deal: Deal, marketData?: any): MarketAssessment => {
     console.log('🔍 MarketOpportunity: Assessing with vc_market_opportunity data:', marketData);
     
@@ -567,71 +633,6 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     );
   }
 
-  // Helper functions for growth analysis
-  const getCAGRForIndustry = (industry: string): number => {
-    const cagrDefaults: Record<string, number> = {
-      'Financial Services': 8.5,
-      'Technology': 12.3,
-      'Healthcare': 7.2,
-      'Education': 6.1,
-      'Software': 15.8,
-      'Fintech': 23.4,
-      'SaaS': 18.7,
-      'E-commerce': 14.2,
-      'AI': 37.3,
-      'Blockchain': 67.3,
-    };
-    
-    for (const [key, value] of Object.entries(cagrDefaults)) {
-      if (industry.toLowerCase().includes(key.toLowerCase()) || 
-          key.toLowerCase().includes(industry.toLowerCase())) {
-        return value;
-      }
-    }
-    return 8.0; // Default CAGR
-  };
-
-  const getCompetitorsForIndustry = (industry: string): string[] => {
-    const competitorDefaults: Record<string, string[]> = {
-      'Financial Services': ['JPMorgan Chase', 'Bank of America', 'Wells Fargo'],
-      'Technology': ['Microsoft', 'Google', 'Apple'],
-      'Healthcare': ['UnitedHealth', 'Johnson & Johnson', 'Pfizer'],
-      'Fintech': ['Square', 'PayPal', 'Stripe'],
-      'SaaS': ['Salesforce', 'Microsoft', 'Adobe'],
-      'E-commerce': ['Amazon', 'Shopify', 'eBay'],
-      'AI': ['OpenAI', 'Google', 'Microsoft'],
-      'Blockchain': ['Coinbase', 'Binance', 'Ethereum Foundation'],
-    };
-    
-    for (const [key, value] of Object.entries(competitorDefaults)) {
-      if (industry.toLowerCase().includes(key.toLowerCase()) || 
-          key.toLowerCase().includes(industry.toLowerCase())) {
-        return value;
-      }
-    }
-    return ['Industry competitors', 'Market leaders', 'Emerging players'];
-  };
-
-  const getGrowthDriversForIndustry = (industry: string): string[] => {
-    const driverDefaults: Record<string, string[]> = {
-      'Financial Services': ['Digital transformation', 'Regulatory changes', 'Consumer demand'],
-      'Technology': ['AI adoption', 'Cloud migration', 'Digital infrastructure'],
-      'Healthcare': ['Aging population', 'Telehealth adoption', 'Precision medicine'],
-      'Fintech': ['Cashless payments', 'DeFi growth', 'Financial inclusion'],
-      'SaaS': ['Remote work trends', 'Digital transformation', 'Subscription economy'],
-      'E-commerce': ['Mobile commerce', 'Social commerce', 'Cross-border trade'],
-      'AI': ['Enterprise adoption', 'Automation demand', 'Data abundance'],
-      'Blockchain': ['Institutional adoption', 'DeFi innovation', 'Web3 development'],
-    };
-    
-    for (const [key, value] of Object.entries(driverDefaults)) {
-      if (industry.toLowerCase().includes(key.toLowerCase()) || 
-          key.toLowerCase().includes(industry.toLowerCase())) {
-        return value;
-      }
-    }
-    return ['Market expansion', 'Technology adoption', 'Consumer trends'];
-  };
 
   // Calculate market sizing summary
   const calculateMarketSizingSummary = () => {
