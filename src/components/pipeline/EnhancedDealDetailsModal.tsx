@@ -185,9 +185,13 @@ export function EnhancedDealDetailsModal({
         }
       });
 
-      if (!error && data?.success) {
+      
+      console.log('📊 [Background] Enrichment response:', { data, error });
+
+      if (!error) {
         console.log('✅ [Background] Enrichment completed silently');
         // Dispatch event to notify components of enrichment completion
+        console.log('🎯 [Background] Dispatching dealEnrichmentComplete event for deal:', deal.id);
         window.dispatchEvent(new CustomEvent('dealEnrichmentComplete', { 
           detail: { dealId: deal.id } 
         }));
@@ -196,6 +200,8 @@ export function EnhancedDealDetailsModal({
           loadEnhancedData();
           onDealUpdated?.();
         }, 3000); // Increased timeout to allow engines to populate data
+      } else {
+        console.warn('⚠️ [Background] Enrichment had error:', error);
       }
     } catch (error) {
       console.log('⚠️ [Background] Enrichment failed silently:', error);

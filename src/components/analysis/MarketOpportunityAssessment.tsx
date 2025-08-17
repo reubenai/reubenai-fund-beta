@@ -92,11 +92,12 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     // Listen for enrichment completion events
     const handleEnrichmentComplete = (event: CustomEvent) => {
       if (event.detail?.dealId === deal.id) {
-        console.log('🔄 MarketOpportunity: Auto-refreshing due to enrichment completion');
+        console.log('🔄 MarketOpportunity: Auto-refreshing due to enrichment completion for deal:', deal.id);
         fetchMarketDataAndAssess();
       }
     };
 
+    console.log('🎧 MarketOpportunity: Setting up event listener for deal:', deal.id);
     window.addEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
 
     return () => {
