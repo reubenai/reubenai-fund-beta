@@ -306,74 +306,125 @@ async function enrichTeamLeadership(dealData: any, fundData: any, request: Enric
 async function enrichMarketOpportunity(dealData: any, fundData: any, request: EnrichmentRequest): Promise<EnrichmentResult> {
   console.log('📊 [Market Opportunity] Enriching market intelligence...');
   
-  // Use existing market intelligence engine for baseline
-  const { data: marketData } = await supabase.functions.invoke('market-intelligence-engine', {
-    body: {
-      dealId: request.deal_id,
-      fundId: request.fund_id,
-      context: { industry: dealData.industry, stage: dealData.funding_stage },
-      documentData: {}
+  try {
+    // Use existing market intelligence engine for baseline (but don't let it fail the whole function)
+    let marketData = null;
+    try {
+      const { data } = await supabase.functions.invoke('market-intelligence-engine', {
+        body: {
+          dealId: request.deal_id,
+          fundId: request.fund_id,
+          context: { industry: dealData.industry, stage: dealData.funding_stage },
+          documentData: {}
+        }
+      });
+      marketData = data;
+    } catch (error) {
+      console.warn('📊 [Market Opportunity] Market intelligence engine failed, continuing with Perplexity only:', error);
     }
-  });
-  
-  // TAM/SAM/SOM validation via Perplexity with real data extraction
-  const market_size_research = await searchPerplexity(
-    `${dealData.industry} market size TAM SAM SOM ${new Date().getFullYear()} growth rate CAGR total addressable market`,
-    'market-reports'
-  );
-  
-  // Competitive landscape research with real data extraction
-  const competitive_research = await searchPerplexity(
-    `${dealData.industry} competitive landscape top companies funding trends ${dealData.company_name} competitors market leaders`,
-    'competitive-analysis'
-  );
-  
-  // Extract real data using our implemented functions
-  const extractedMarketMetrics = extractMarketMetrics(market_size_research.insights || '');
-  const extractedFinancialMetrics = extractFinancialMetrics(market_size_research.insights || '');
-  const extractedCompetitiveData = extractCompetitiveData(competitive_research.insights || '');
-  
-  console.log('✅ [Market Opportunity] Extracted metrics:', {
-    market: Object.keys(extractedMarketMetrics),
-    financial: Object.keys(extractedFinancialMetrics),
-    competitive: Object.keys(extractedCompetitiveData)
-  });
-  
-  return {
-    pack_name: 'vc_market_opportunity',
-    data: {
-      tam_sam_som: {
-        total_addressable_market: extractedMarketMetrics.market_size || { value: 0, unit: 'unknown', raw_text: 'Market size analysis pending' },
-        market_growth_rate: extractedMarketMetrics.growth_rate || { value: 0, type: 'unknown', raw_text: 'Growth rate analysis pending' },
-        market_trends: extractedMarketMetrics.market_trends || ['Trend analysis pending'],
-        sources: market_size_research.sources || []
+    
+    // TAM/SAM/SOM validation via Perplexity with real data extraction
+    const market_size_research = await searchPerplexity(
+      `${dealData.industry} market size TAM SAM SOM ${new Date().getFullYear()} growth rate CAGR total addressable market`,
+      'market-reports'
+    );
+    
+    // Competitive landscape research with real data extraction
+    const competitive_research = await searchPerplexity(
+      `${dealData.industry} competitive landscape top companies funding trends ${dealData.company_name} competitors market leaders`,
+      'competitive-analysis'
+    );
+    
+    // Extract real data using our implemented functions with error handling
+    let extractedMarketMetrics = {};
+    let extractedFinancialMetrics = {};
+    let extractedCompetitiveData = {};
+    
+    try {
+      extractedMarketMetrics = extractMarketMetrics(market_size_research.insights || '');
+      extractedFinancialMetrics = extractFinancialMetrics(market_size_research.insights || '');
+      extractedCompetitiveData = extractCompetitiveData(competitive_research.insights || '');
+    } catch (extractionError) {
+      console.warn('📊 [Market Opportunity] Data extraction failed, using defaults:', extractionError);
+    }
+    
+    console.log('✅ [Market Opportunity] Extracted metrics:', {
+      market: Object.keys(extractedMarketMetrics),
+      financial: Object.keys(extractedFinancialMetrics),
+      competitive: Object.keys(extractedCompetitiveData)
+    });
+    
+    return {
+      pack_name: 'vc_market_opportunity',
+      data: {
+        tam_sam_som: {
+          total_addressable_market: extractedMarketMetrics.market_size || { value: 0, unit: 'unknown', raw_text: 'Market size analysis pending' },
+          market_growth_rate: extractedMarketMetrics.growth_rate || { value: 0, type: 'unknown', raw_text: 'Growth rate analysis pending' },
+          market_trends: extractedMarketMetrics.market_trends || ['Trend analysis pending'],
+          sources: market_size_research.sources || []
+        },
+        growth_rate: {
+          cagr: extractedMarketMetrics.growth_rate?.value || 0,
+          growth_type: extractedMarketMetrics.growth_rate?.type || 'unknown',
+          adoption_curve: marketData?.adoption_signals || extractedMarketMetrics.market_trends || [],
+          timing_signals: marketData?.timing_analysis || {}
+        },
+        competitive_landscape: {
+          top_players: extractedCompetitiveData.competitors || ['Competitive analysis pending'],
+          market_position: extractedCompetitiveData.market_position || 'unknown',
+          competitive_advantages: extractedCompetitiveData.competitive_advantages || ['Competitive advantage analysis pending'],
+          funding_trends: extractedFinancialMetrics.funding || { value: 0, unit: 'unknown', raw_text: 'Funding trend analysis pending' }
+        },
+        financial_context: {
+          revenue_data: extractedFinancialMetrics.revenue || { value: 0, unit: 'unknown', raw_text: 'Revenue analysis pending' },
+          valuation_data: extractedFinancialMetrics.valuation || { value: 0, unit: 'unknown', raw_text: 'Valuation analysis pending' },
+          funding_history: extractedFinancialMetrics.funding || { value: 0, unit: 'unknown', raw_text: 'Funding history analysis pending' }
+        }
       },
-      growth_rate: {
-        cagr: extractedMarketMetrics.growth_rate?.value || 0,
-        growth_type: extractedMarketMetrics.growth_rate?.type || 'unknown',
-        adoption_curve: marketData?.adoption_signals || extractedMarketMetrics.market_trends || [],
-        timing_signals: marketData?.timing_analysis || {}
+      sources: [
+        ...(marketData?.sources || []),
+        ...market_size_research.sources,
+        ...competitive_research.sources
+      ],
+      confidence: Math.min(95, (marketData?.confidence || 75) + 15),
+      last_updated: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('❌ [Market Opportunity] Fatal error:', error);
+    
+    // Return a basic fallback result instead of throwing
+    return {
+      pack_name: 'vc_market_opportunity',
+      data: {
+        tam_sam_som: {
+          total_addressable_market: { value: 0, unit: 'unknown', raw_text: 'Market analysis failed - retry needed' },
+          market_growth_rate: { value: 0, type: 'unknown', raw_text: 'Growth rate analysis failed' },
+          market_trends: ['Market trend analysis failed'],
+          sources: []
+        },
+        growth_rate: {
+          cagr: 0,
+          growth_type: 'unknown',
+          adoption_curve: [],
+          timing_signals: {}
+        },
+        competitive_landscape: {
+          top_players: ['Competitive analysis failed'],
+          market_position: 'unknown',
+          competitive_advantages: ['Competitive advantage analysis failed'],
+          funding_trends: { value: 0, unit: 'unknown', raw_text: 'Funding trend analysis failed' }
+        },
+        financial_context: {
+          revenue_data: { value: 0, unit: 'unknown', raw_text: 'Revenue analysis failed' },
+          valuation_data: { value: 0, unit: 'unknown', raw_text: 'Valuation analysis failed' },
+          funding_history: { value: 0, unit: 'unknown', raw_text: 'Funding history analysis failed' }
+        }
       },
-      competitive_landscape: {
-        top_players: extractedCompetitiveData.competitors || ['Competitive analysis pending'],
-        market_position: extractedCompetitiveData.market_position || 'unknown',
-        competitive_advantages: extractedCompetitiveData.competitive_advantages || ['Competitive advantage analysis pending'],
-        funding_trends: extractedFinancialMetrics.funding || { value: 0, unit: 'unknown', raw_text: 'Funding trend analysis pending' }
-      },
-      financial_context: {
-        revenue_data: extractedFinancialMetrics.revenue || { value: 0, unit: 'unknown', raw_text: 'Revenue analysis pending' },
-        valuation_data: extractedFinancialMetrics.valuation || { value: 0, unit: 'unknown', raw_text: 'Valuation analysis pending' },
-        funding_history: extractedFinancialMetrics.funding || { value: 0, unit: 'unknown', raw_text: 'Funding history analysis pending' }
-      }
-    },
-    sources: [
-      ...(marketData?.sources || []),
-      ...market_size_research.sources,
-      ...competitive_research.sources
-    ],
-    confidence: Math.min(95, (marketData?.confidence || 75) + 15),
-    last_updated: new Date().toISOString()
-  };
+      sources: ['error-fallback'],
+      confidence: 20,
+      last_updated: new Date().toISOString()
+    };
+  }
 }
 
 async function enrichProductTechnology(dealData: any, fundData: any, request: EnrichmentRequest): Promise<EnrichmentResult> {
