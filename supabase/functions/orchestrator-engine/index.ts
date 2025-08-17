@@ -278,66 +278,72 @@ async function retrievalPlan(context: StepContext) {
 }
 
 async function hybridRetrieve(context: StepContext) {
-  // TODO: Implement hybrid retrieval
+  const { data } = await supabase.functions.invoke('hybrid-retrieval-engine', {
+    body: {
+      org_id: context.org_id,
+      fund_id: context.fund_id,
+      deal_id: context.deal_id,
+      query: context.step_input.query || 'company analysis',
+      context_budget: 8,
+      search_namespaces: [`deal_corpus/${context.org_id}`, `fund_memory/${context.org_id}/${context.fund_id}`]
+    }
+  });
+  
   return {
-    output: { ...context.step_input, retrieved_chunks: [] },
-    telemetry: { step_duration_ms: 1000, chunks_retrieved: 0 }
-  };
-}
-
-async function basicRetrieve(context: StepContext) {
-  // TODO: Implement basic retrieval
-  return {
-    output: { ...context.step_input, retrieved_chunks: [] },
-    telemetry: { step_duration_ms: 800, chunks_retrieved: 0 }
-  };
-}
-
-async function reRank(context: StepContext) {
-  // TODO: Implement re-ranking
-  return {
-    output: { ...context.step_input, chunks_reranked: true },
-    telemetry: { step_duration_ms: 300 }
-  };
-}
-
-async function contextPack(context: StepContext) {
-  // TODO: Implement context packing
-  return {
-    output: { ...context.step_input, context_packed: true },
-    telemetry: { step_duration_ms: 150 }
+    output: { ...context.step_input, retrieved_chunks: data?.chunks || [] },
+    telemetry: { step_duration_ms: 1000, chunks_retrieved: data?.chunks?.length || 0 }
   };
 }
 
 async function extractFeatures(context: StepContext) {
-  // TODO: Implement feature extraction
+  const { data } = await supabase.functions.invoke('feature-extraction-engine', {
+    body: {
+      org_id: context.org_id,
+      fund_id: context.fund_id,
+      deal_id: context.deal_id,
+      deal_data: context.step_input.deal_data || {},
+      context_chunks: context.step_input.retrieved_chunks || []
+    }
+  });
+  
   return {
-    output: { ...context.step_input, features_extracted: true },
-    telemetry: { step_duration_ms: 2000 }
-  };
-}
-
-async function scoreDealV1(context: StepContext) {
-  // TODO: Keep existing scoring logic
-  return {
-    output: { ...context.step_input, score_v1: true },
-    telemetry: { step_duration_ms: 1500 }
+    output: { ...context.step_input, features: data?.features || [] },
+    telemetry: { step_duration_ms: 2000, features_extracted: data?.features_extracted || 0 }
   };
 }
 
 async function scoreDealV2(context: StepContext) {
-  // TODO: Implement feature-first scoring
+  const { data } = await supabase.functions.invoke('feature-first-scoring', {
+    body: {
+      org_id: context.org_id,
+      fund_id: context.fund_id,
+      deal_id: context.deal_id,
+      features: context.step_input.features || [],
+      context_chunks: context.step_input.retrieved_chunks || []
+    }
+  });
+  
   return {
-    output: { ...context.step_input, score_v2: true },
-    telemetry: { step_duration_ms: 1200 }
+    output: { ...context.step_input, scores: data?.category_scores || [], overall_score: data?.overall_score },
+    telemetry: { step_duration_ms: 1200, scoring_method: 'feature_first_v2' }
   };
 }
 
 async function draftICMemo(context: StepContext) {
-  // TODO: Implement IC memo drafting
+  const { data } = await supabase.functions.invoke('ic-memo-drafter', {
+    body: {
+      org_id: context.org_id,
+      fund_id: context.fund_id,
+      deal_id: context.deal_id,
+      features: context.step_input.features || [],
+      scores: context.step_input.scores || [],
+      context_chunks: context.step_input.retrieved_chunks || []
+    }
+  });
+  
   return {
-    output: { ...context.step_input, memo_drafted: true },
-    telemetry: { step_duration_ms: 3000 }
+    output: { ...context.step_input, memo: data?.memo, fact_check_status: data?.fact_check_status },
+    telemetry: { step_duration_ms: 3000, memo_generated: !!data?.memo }
   };
 }
 
