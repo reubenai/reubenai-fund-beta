@@ -178,6 +178,13 @@ async function extractMarketIntelligenceFromDocuments(documentData: any) {
 
     if (response.ok) {
       const data = await response.json();
+      
+      // Handle API errors
+      if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+        console.error('Invalid OpenAI response format in document extraction:', data);
+        throw new Error('Invalid response from OpenAI API');
+      }
+      
       const content = data.choices[0].message.content;
       
       return {
@@ -319,6 +326,13 @@ async function callOpenAI(messages: any[]) {
   });
 
   const data = await response.json();
+  
+  // Handle API errors
+  if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+    console.error('Invalid OpenAI response format:', data);
+    throw new Error('Invalid response from OpenAI API');
+  }
+  
   return data.choices[0].message.content;
 }
 

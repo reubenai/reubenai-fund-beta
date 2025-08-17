@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { Deal } from '@/hooks/usePipelineDeals';
 import { supabase } from '@/integrations/supabase/client';
-import { EnhancedMarketSizing } from './EnhancedMarketSizing';
+import { IndustryMarketSizing } from './IndustryMarketSizing';
 
 interface MarketOpportunityAssessmentProps {
   deal: Deal;
@@ -335,6 +335,10 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Industry Market Sizing Breakdown */}
+        <div className="mb-6">
+          <IndustryMarketSizing deal={deal} />
+        </div>
 
         {/* Overall Score */}
         <div className="flex items-center justify-between">
