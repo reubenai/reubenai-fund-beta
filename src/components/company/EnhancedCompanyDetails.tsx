@@ -1,26 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Building2, 
-  Globe, 
+  Target, 
+  Calendar,
   Users, 
   MapPin, 
-  Calendar,
-  Briefcase,
-  TrendingUp,
-  Shield,
-  Lightbulb,
-  CheckCircle,
-  AlertCircle,
-  RefreshCw,
-  ExternalLink
+  Globe, 
+  FileText, 
+  User, 
+  Mail, 
+  DollarSign,
+  TrendingUp
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface CompanyDetailsProps {
   deal: {
@@ -30,31 +25,22 @@ interface CompanyDetailsProps {
     industry?: string;
     location?: string;
     description?: string;
-    business_model?: string;
-    founder?: string;
-    employee_count?: number;
-    linkedin_url?: string;
-    crunchbase_url?: string;
+    deal_size?: number;
+    valuation?: number;
   };
 }
 
 interface CompanyEnrichmentData {
   business_model?: string;
   revenue_model?: string;
-  customer_segments?: string[];
-  competitive_advantages?: string[];
-  technology_stack?: string[];
-  ip_portfolio?: string[];
+  competitive_advantages?: string | string[];
+  technology_stack?: string | string[];
   market_position?: string;
   growth_trajectory?: string;
-  funding_history?: any[];
-  key_partnerships?: string[];
-  regulatory_compliance?: string[];
   team_info?: {
-    leadership_team?: any[];
-    board_members?: any[];
-    advisors?: any[];
-    total_employees?: number;
+    founders?: string | any[];
+    key_employees?: string;
+    team_size?: string;
   };
 }
 
@@ -64,128 +50,85 @@ export function EnhancedCompanyDetails({ deal }: CompanyDetailsProps) {
   const [hasEnriched, setHasEnriched] = useState(false);
   const { toast } = useToast();
 
-  // Check if we have existing analysis data
-  useEffect(() => {
-    checkExistingAnalysis();
-  }, [deal.id]);
-
+  // Check for existing analysis data
   const checkExistingAnalysis = async () => {
     try {
-      const { data: analysisData } = await supabase
+      const { data, error } = await supabase
         .from('deal_analyses')
         .select('engine_results')
         .eq('deal_id', deal.id)
-        .order('created_at', { ascending: false })
+        .order('updated_at', { ascending: false })
         .limit(1);
 
-      if (analysisData && analysisData.length > 0 && analysisData[0].engine_results) {
-        const engineResults = analysisData[0].engine_results as any;
-        
-        // Extract company data from various engine results
-        const companyData: CompanyEnrichmentData = {};
-        
-        // From financial engine
-        if (engineResults.financial_feasibility?.data) {
-          companyData.revenue_model = engineResults.financial_feasibility.data.revenue_model;
-          companyData.funding_history = engineResults.financial_feasibility.data.funding_requirements;
-        }
-        
-        // From product engine
-        if (engineResults.product_strength_ip?.data) {
-          companyData.competitive_advantages = engineResults.product_strength_ip.data.competitive_advantages;
-          companyData.technology_stack = engineResults.product_strength_ip.data.technology_moat ? [engineResults.product_strength_ip.data.technology_moat] : [];
-        }
-        
-        // From team engine
-        if (engineResults.founder_team_strength?.data) {
-          companyData.team_info = {
-            leadership_team: engineResults.founder_team_strength.data.founder_profile ? [engineResults.founder_team_strength.data.founder_profile] : [],
-            total_employees: deal.employee_count
-          };
-        }
-        
-        // From market engine
-        if (engineResults.market_attractiveness?.data) {
-          companyData.market_position = engineResults.market_attractiveness.data.competitive_landscape;
-          companyData.growth_trajectory = engineResults.market_attractiveness.data.growth_rate;
-        }
+      if (error) throw error;
 
-        if (Object.keys(companyData).length > 0) {
-          setEnrichmentData(companyData);
-          setHasEnriched(true);
-        }
+      if (data && data.length > 0 && data[0].engine_results) {
+        const results = data[0].engine_results as any;
+        
+        // Map engine results to enrichment data  
+        const mappedData: CompanyEnrichmentData = {
+          business_model: results?.business_model || results?.company_enrichment?.business_model,
+          revenue_model: results?.revenue_model || results?.company_enrichment?.revenue_model,
+          competitive_advantages: results?.competitive_advantages || results?.company_enrichment?.competitive_advantages,
+          technology_stack: results?.technology_stack || results?.company_enrichment?.technology_stack,
+          market_position: results?.market_position || results?.company_enrichment?.market_position,
+          growth_trajectory: results?.growth_trajectory || results?.company_enrichment?.growth_trajectory,
+          team_info: results?.team_info || results?.company_enrichment?.team_info
+        };
+
+        setEnrichmentData(mappedData);
+        setHasEnriched(true);
       }
     } catch (error) {
       console.error('Error checking existing analysis:', error);
     }
   };
 
+  useEffect(() => {
+    checkExistingAnalysis();
+  }, [deal.id]);
+
+  // Silent background enrichment
   const enrichCompanyData = async () => {
     if (isEnriching) return;
     
-    setIsEnriching(true);
-    
     try {
-      // Call the enhanced deal analysis function to get comprehensive data
+      setIsEnriching(true);
+      
       const { data, error } = await supabase.functions.invoke('enhanced-deal-analysis', {
-        body: { 
-          dealId: deal.id,
+        body: {
+          deal_id: deal.id,
           analysis_type: 'comprehensive'
         }
       });
 
       if (error) throw error;
 
-      if (data?.success && data.analysis) {
-        const analysis = data.analysis;
+      if (data && data.analysis_results) {
+        const results = data.analysis_results;
         
-        // Map the comprehensive analysis to company enrichment data
-        const enrichedData: CompanyEnrichmentData = {
-          business_model: analysis.financial_feasibility?.data?.revenue_model || deal.business_model,
-          revenue_model: analysis.financial_feasibility?.data?.revenue_model,
-          competitive_advantages: analysis.product_strength_ip?.data?.competitive_advantages || [],
-          technology_stack: analysis.product_strength_ip?.data?.technology_moat ? [analysis.product_strength_ip.data.technology_moat] : [],
-          market_position: analysis.market_attractiveness?.analysis,
-          growth_trajectory: analysis.market_attractiveness?.data?.growth_rate,
-          team_info: {
-            leadership_team: analysis.founder_team_strength?.data?.founder_profile ? [analysis.founder_team_strength.data.founder_profile] : [],
-            total_employees: deal.employee_count
-          }
+        const mappedData: CompanyEnrichmentData = {
+          business_model: results.business_model || results.company_enrichment?.business_model,
+          revenue_model: results.revenue_model || results.company_enrichment?.revenue_model,
+          competitive_advantages: results.competitive_advantages || results.company_enrichment?.competitive_advantages,
+          technology_stack: results.technology_stack || results.company_enrichment?.technology_stack,
+          market_position: results.market_position || results.company_enrichment?.market_position,
+          growth_trajectory: results.growth_trajectory || results.company_enrichment?.growth_trajectory,
+          team_info: results.team_info || results.company_enrichment?.team_info
         };
 
-        setEnrichmentData(enrichedData);
+        setEnrichmentData(mappedData);
         setHasEnriched(true);
-        
-        toast({
-          title: "Company data enriched",
-          description: "Successfully gathered comprehensive company insights using ReubenAI analysis.",
-        });
-      } else {
-        throw new Error('No analysis data returned');
       }
     } catch (error) {
-      console.error('Error enriching company data:', error);
-      toast({
-        title: "Enrichment failed",
-        description: "Unable to gather additional company data at this time.",
-        variant: "destructive",
-      });
+      console.error('Company enrichment failed:', error);
     } finally {
       setIsEnriching(false);
     }
   };
 
-  const LoadingSkeleton = () => (
-    <div className="space-y-4">
-      <Skeleton className="h-4 w-3/4" />
-      <Skeleton className="h-4 w-1/2" />
-      <Skeleton className="h-20 w-full" />
-    </div>
-  );
-
-  // Auto-trigger background enrichment when component loads
+  // Auto-trigger silent background enrichment when component loads
   useEffect(() => {
-    console.log('🏢 [Company Details] Auto-triggering enrichment for:', deal.company_name);
     if (!hasEnriched && !isEnriching) {
       enrichCompanyData();
     }
@@ -193,256 +136,212 @@ export function EnhancedCompanyDetails({ deal }: CompanyDetailsProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header - Clean Company Information */}
+      {/* Executive Summary */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            Company Information
+            Executive Summary
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Basic Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="space-y-3">
-              <div>
-                <div className="text-sm font-medium text-muted-foreground">Company Name</div>
-                <div className="font-semibold">{deal.company_name}</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-center mb-2">
+                <DollarSign className="h-5 w-5 text-green-600" />
               </div>
-              
-              {deal.industry && (
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Industry</div>
-                  <Badge variant="secondary">{deal.industry}</Badge>
-                </div>
-              )}
-              
-              {deal.location && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{deal.location}</span>
-                </div>
-              )}
+              <div className="text-sm text-muted-foreground">Capital Raised to Date</div>
+              <div className="font-semibold">
+                {deal.deal_size ? `$${deal.deal_size.toLocaleString()}` : 'Not specified'}
+              </div>
             </div>
             
-            <div className="space-y-3">
-              {deal.website && (
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Website</div>
-                  <a 
-                    href={deal.website.startsWith('http') ? deal.website : `https://${deal.website}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-primary hover:underline"
-                  >
-                    <Globe className="h-3 w-3" />
-                    {deal.website}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-              )}
-              
-              {deal.founder && (
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground">Founder</div>
-                  <div>{deal.founder}</div>
-                </div>
-              )}
-              
-              {deal.employee_count && (
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{deal.employee_count} employees</span>
-                </div>
-              )}
+            <div className="text-center p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-center mb-2">
+                <DollarSign className="h-5 w-5 text-blue-600" />
+              </div>
+              <div className="text-sm text-muted-foreground">Current Round</div>
+              <div className="font-semibold">Not specified</div>
+            </div>
+            
+            <div className="text-center p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-center mb-2">
+                <TrendingUp className="h-5 w-5 text-purple-600" />
+              </div>
+              <div className="text-sm text-muted-foreground">Valuation</div>
+              <div className="font-semibold">
+                {deal.valuation ? `$${deal.valuation.toLocaleString()}` : 'Not specified'}
+              </div>
             </div>
           </div>
-
-          {deal.description && (
-            <>
-              <Separator className="my-4" />
-              <div>
-                <div className="text-sm font-medium text-muted-foreground mb-2">Description</div>
-                <p className="text-sm text-foreground leading-relaxed">{deal.description}</p>
-              </div>
-            </>
-          )}
         </CardContent>
       </Card>
 
-      {/* Enriched Data Sections */}
-      {isEnriching && (
+      {/* Main Details Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Company Details */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <RefreshCw className="h-5 w-5 animate-spin" />
-              Analyzing Company Data...
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">COMPANY DETAILS</CardTitle>
           </CardHeader>
-          <CardContent>
-            <LoadingSkeleton />
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-3">
+              <Target className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Industry</div>
+                <div className="text-sm text-muted-foreground">
+                  {deal.industry || 'Not specified'}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <Building2 className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Company Stage</div>
+                <div className="text-sm text-muted-foreground">Not specified</div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <Calendar className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Founded</div>
+                <div className="text-sm text-muted-foreground">Not specified</div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Team Size</div>
+                <div className="text-sm text-muted-foreground">Not specified</div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Headquarters</div>
+                <div className="text-sm text-muted-foreground">
+                  {deal.location || 'Not specified'}
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
-      )}
 
-      {enrichmentData && (
-        <>
-          {/* Business Model & Revenue */}
-          {(enrichmentData.business_model || enrichmentData.revenue_model) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Briefcase className="h-5 w-5" />
-                  Business Model & Revenue
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {enrichmentData.business_model && (
-                  <div>
-                    <h4 className="font-medium mb-2">Business Model</h4>
-                    <p className="text-sm text-muted-foreground">{enrichmentData.business_model}</p>
-                  </div>
-                )}
-                
-                {enrichmentData.revenue_model && (
-                  <div>
-                    <h4 className="font-medium mb-2">Revenue Model</h4>
-                    <p className="text-sm text-muted-foreground">{enrichmentData.revenue_model}</p>
-                  </div>
-                )}
-
-                {enrichmentData.customer_segments && enrichmentData.customer_segments.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Customer Segments</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {enrichmentData.customer_segments.map((segment, index) => (
-                        <Badge key={index} variant="outline">{segment}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Competitive Advantages */}
-          {enrichmentData.competitive_advantages && enrichmentData.competitive_advantages.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Competitive Advantages
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {enrichmentData.competitive_advantages.map((advantage, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>{advantage}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Technology & Innovation */}
-          {enrichmentData.technology_stack && enrichmentData.technology_stack.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Lightbulb className="h-5 w-5" />
-                  Technology & Innovation
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Technology Stack</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {enrichmentData.technology_stack.map((tech, index) => (
-                        <Badge key={index} variant="secondary">{tech}</Badge>
-                      ))}
-                    </div>
-                  </div>
+        {/* Digital Presence */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium text-muted-foreground">DIGITAL PRESENCE</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-3">
+              <Globe className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Website</div>
+                <div className="text-sm">
+                  {deal.website ? (
+                    <a 
+                      href={deal.website.startsWith('http') ? deal.website : `https://${deal.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-green-600 hover:underline"
+                    >
+                      {deal.website}
+                    </a>
+                  ) : (
+                    <span className="text-muted-foreground">Not specified</span>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <Building2 className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">LinkedIn</div>
+                <div className="text-sm text-muted-foreground">Not specified</div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <FileText className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Crunchbase</div>
+                <div className="text-sm text-muted-foreground">Not specified</div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <Target className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Business Model</div>
+                <div className="text-sm text-muted-foreground">
+                  {enrichmentData?.business_model || 'Not specified'}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Target Market</div>
+                <div className="text-sm text-muted-foreground">Not specified</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Market Position */}
-          {(enrichmentData.market_position || enrichmentData.growth_trajectory) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Market Position & Growth
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {enrichmentData.market_position && (
-                  <div>
-                    <h4 className="font-medium mb-2">Market Position</h4>
-                    <p className="text-sm text-muted-foreground">{enrichmentData.market_position}</p>
-                  </div>
-                )}
-                
-                {enrichmentData.growth_trajectory && (
-                  <div>
-                    <h4 className="font-medium mb-2">Growth Trajectory</h4>
-                    <p className="text-sm text-muted-foreground">{enrichmentData.growth_trajectory}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Team Information */}
-          {enrichmentData.team_info && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Team & Leadership
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {enrichmentData.team_info.leadership_team && enrichmentData.team_info.leadership_team.length > 0 && (
-                  <div>
-                    <h4 className="font-medium mb-2">Leadership Team</h4>
-                    <div className="space-y-2">
-                      {enrichmentData.team_info.leadership_team.map((member, index) => (
-                        <div key={index} className="bg-muted/30 rounded-lg p-3">
-                          <div className="text-sm">
-                            {typeof member === 'object' ? (
-                              <div className="space-y-1">
-                                {member.name && <div className="font-medium">{member.name}</div>}
-                                {member.background && <div className="text-muted-foreground">{member.background}</div>}
-                                {member.experience && <div className="text-muted-foreground">{member.experience}</div>}
-                              </div>
-                            ) : (
-                              <div>{String(member)}</div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {enrichmentData.team_info.total_employees && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>Total Employees: {enrichmentData.team_info.total_employees}</span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </>
-      )}
-
+        {/* Leadership & Funding */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium text-muted-foreground">LEADERSHIP & FUNDING</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-3">
+              <User className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Founder</div>
+                <div className="text-sm text-muted-foreground">Not specified</div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <Mail className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Founder Email</div>
+                <div className="text-sm text-muted-foreground">Not specified</div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <Users className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Co-Founders</div>
+                <div className="text-sm text-muted-foreground">Not specified</div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <DollarSign className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Funding Stage</div>
+                <div className="text-sm text-muted-foreground">Not specified</div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <DollarSign className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Previous Funding</div>
+                <div className="text-sm text-muted-foreground">Not specified</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
