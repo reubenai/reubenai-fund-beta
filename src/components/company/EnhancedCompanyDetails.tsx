@@ -300,13 +300,6 @@ export function EnhancedCompanyDetails({ deal }: CompanyDetailsProps) {
             <CardTitle className="text-sm font-medium text-muted-foreground">LEADERSHIP & FUNDING</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-start gap-3">
-              <User className="h-4 w-4 mt-0.5 text-muted-foreground" />
-              <div className="flex-1">
-                <div className="text-sm font-medium">Founder</div>
-                <div className="text-sm text-muted-foreground">Not specified</div>
-              </div>
-            </div>
             
             <div className="flex items-start gap-3">
               <Mail className="h-4 w-4 mt-0.5 text-muted-foreground" />
@@ -332,13 +325,6 @@ export function EnhancedCompanyDetails({ deal }: CompanyDetailsProps) {
               </div>
             </div>
             
-            <div className="flex items-start gap-3">
-              <DollarSign className="h-4 w-4 mt-0.5 text-muted-foreground" />
-              <div className="flex-1">
-                <div className="text-sm font-medium">Previous Funding</div>
-                <div className="text-sm text-muted-foreground">Not specified</div>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

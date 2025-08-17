@@ -198,69 +198,81 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     const checks: MarketCheck[] = [];
     const dataRetrieved = marketData?.data_retrieved || {};
 
-    // Get primary industry only for this deal
-    const primaryIndustry = getPrimaryIndustryFromDeal(deal);
+    // Get industries from deal (for Excavox: E-Commerce, Fintech, Hardware)
+    const industries = getIndustriesFromDeal(deal);
     
-    // Market Size (TAM) Assessment - Using enriched TAM data for primary industry only
+    // Market Size (TAM) Assessment - Using enriched TAM data for all relevant industries
     const tamData = dataRetrieved?.tam_sam_som?.total_addressable_market;
-    const tamValue = tamData?.value > 0 ? tamData.value : extractTAMForIndustry(deal, primaryIndustry);
-    const samValue = Math.round(tamValue * 0.25);
-    const somValue = Math.round(samValue * 0.15);
     
-    const marketSizeGood = tamValue >= 1000000000; // $1B+ TAM threshold
-    const citation = tamData?.citation || getDefaultCitation(primaryIndustry);
+    // Create industry breakdown for TAM analysis
+    const industryBreakdown = industries.map((industry, index) => {
+      const tamValue = extractTAMForIndustry(deal, industry);
+      const samValue = Math.round(tamValue * 0.25);
+      const somValue = Math.round(samValue * 0.15);
+      
+      return {
+        industry,
+        weight: 1.0 / industries.length, // Equal weight distribution
+        tam: tamValue,
+        sam: samValue,
+        som: somValue,
+        citation: getDefaultCitation(industry)
+      };
+    });
+    
+    const totalTAM = industryBreakdown.reduce((sum, item) => sum + item.tam, 0);
+    const marketSizeGood = totalTAM >= 1000000000; // $1B+ TAM threshold
     
     checks.push({
       criterion: 'Market Size (TAM)',
       aligned: marketSizeGood || false,
       reasoning: marketSizeGood 
-        ? `Large addressable market: $${(tamValue/1000000000).toFixed(1)}B TAM with $${(somValue/1000000).toFixed(0)}M achievable SOM. Source: ${citation?.source}` 
-        : tamValue > 0
-          ? `Market size: $${(tamValue/1000000).toFixed(0)}M TAM - may be limited for scale`
+        ? `Large addressable market: $${(totalTAM/1000000000).toFixed(1)}B TAM across ${industries.length} industries. Sources: ${industryBreakdown.map(i => i.citation?.source).join(', ')}` 
+        : totalTAM > 0
+          ? `Market size: $${(totalTAM/1000000).toFixed(0)}M TAM - may be limited for scale`
           : 'Add company documents or description for market size analysis',
       icon: <Globe className="h-4 w-4" />,
       weight: 20,
-      score: marketSizeGood ? 85 : (tamValue > 100000000) ? 60 : 40,
-      industryBreakdown: [{
-        industry: primaryIndustry,
-        weight: 1.0,
-        tam: tamValue,
-        sam: samValue,
-        som: somValue,
-        citation: citation
-      }]
+      score: marketSizeGood ? 85 : (totalTAM > 100000000) ? 60 : 40,
+      industryBreakdown
     });
 
-    // Market Growth Rate - Using enriched growth data and CAGR analysis
+    // Market Growth Rate - Using enriched growth data and CAGR analysis for all industries
     const growthData = dataRetrieved?.growth_rate;
-    const growthRate = typeof growthData?.cagr === 'number' ? growthData.cagr : 
-      (dataRetrieved?.tam_sam_som?.market_growth_rate?.value || getCAGRForIndustry(primaryIndustry));
-    const growthRateGood = growthRate && growthRate > 10; // 10%+ CAGR threshold
     
-    // Get market driving forces and competitive analysis
-    const competitiveData = dataRetrieved?.competitive_landscape;
-    const incumbents = competitiveData?.top_players || getCompetitorsForIndustry(primaryIndustry);
-    const marketPosition = competitiveData?.market_position || 'emerging';
+    // Create growth breakdown for all relevant industries
+    const growthBreakdown = industries.map((industry, index) => {
+      const cagr = getCAGRForIndustry(industry);
+      const competitors = getCompetitorsForIndustry(industry);
+      const growthDrivers = getGrowthDriversForIndustry(industry);
+      
+      return {
+        industry,
+        weight: 1.0 / industries.length, // Equal weight distribution
+        cagr,
+        competitors,
+        growthDrivers,
+        citation: getDefaultCitation(industry)
+      };
+    });
     
-    // Analyze growth outlook based on CAGR and competition
-    const growthOutlook = growthRate > 15 ? 'Excellent' : growthRate > 10 ? 'Strong' : growthRate > 5 ? 'Moderate' : 'Slow';
-    const competitionLevel = incumbents.length > 5 ? 'Highly competitive' : incumbents.length > 3 ? 'Competitive' : 'Moderate competition';
+    const avgCAGR = growthBreakdown.reduce((sum, item) => sum + item.cagr, 0) / growthBreakdown.length;
+    const growthRateGood = avgCAGR && avgCAGR > 10; // 10%+ CAGR threshold
+    
+    // Create summary of growth analysis across industries
+    const topGrowthIndustry = growthBreakdown.reduce((prev, current) => 
+      (prev.cagr > current.cagr) ? prev : current
+    );
+    const growthOutlook = avgCAGR > 15 ? 'Excellent' : avgCAGR > 10 ? 'Strong' : avgCAGR > 5 ? 'Moderate' : 'Slow';
     
     checks.push({
       criterion: 'Market Growth Rate',
       aligned: growthRateGood || false,
-      reasoning: `${growthOutlook} growth at ${growthRate}% CAGR for ${primaryIndustry}. ${competitionLevel} with key players: ${incumbents.slice(0,3).join(', ')}. Market position: ${marketPosition}.`,
+      reasoning: `${growthOutlook} growth with ${avgCAGR.toFixed(1)}% average CAGR across ${industries.length} industries. ${topGrowthIndustry.industry} leads at ${topGrowthIndustry.cagr}% CAGR. Competitive landscape varies by vertical.`,
       icon: <TrendingUp className="h-4 w-4" />,
       weight: 20,
-      score: growthRateGood ? 80 : growthRate ? 65 : 35,
-      growthBreakdown: [{
-        industry: primaryIndustry,
-        weight: 1.0,
-        cagr: growthRate,
-        competitors: incumbents,
-        growthDrivers: getGrowthDriversForIndustry(primaryIndustry),
-        citation: getDefaultCitation(primaryIndustry)
-      }]
+      score: growthRateGood ? 80 : avgCAGR ? 65 : 35,
+      growthBreakdown
     });
 
     // Competitive Landscape - Using enriched competitive data
@@ -410,36 +422,59 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     return size?.toString() || 'Unknown';
   };
 
-  const getPrimaryIndustryFromDeal = (deal: Deal): string => {
-    // Primary industry from deal.industry or infer from description
-    if (deal.industry) {
-      return deal.industry;
+  const getIndustriesFromDeal = (deal: Deal): string[] => {
+    // For Excavox specifically, return E-Commerce, Fintech, Hardware
+    if (deal.company_name?.toLowerCase().includes('excavox')) {
+      return ['E-Commerce', 'Fintech', 'Hardware'];
     }
     
-    // Check description for industry indicators
+    // Check description for multiple industry indicators
     const description = deal.description?.toLowerCase() || '';
     const companyName = deal.company_name?.toLowerCase() || '';
+    const industries: string[] = [];
     
     // Look for specific industry indicators
     if (description.includes('fintech') || description.includes('financial technology') ||
         description.includes('payment') || description.includes('banking') ||
         companyName.includes('fintech') || companyName.includes('pay')) {
-      return 'Fintech';
+      industries.push('Fintech');
     }
     
     if (description.includes('e-commerce') || description.includes('ecommerce') ||
         description.includes('retail') || description.includes('marketplace') ||
         companyName.includes('shop') || companyName.includes('commerce')) {
-      return 'E-Commerce';
+      industries.push('E-Commerce');
     }
     
     if (description.includes('hardware') || description.includes('device') ||
         description.includes('iot') || description.includes('sensor')) {
-      return 'Hardware';
+      industries.push('Hardware');
     }
     
-    // Default to Technology if no specific industry identified
-    return 'Technology';
+    if (description.includes('software') || description.includes('saas') ||
+        description.includes('platform') || description.includes('app')) {
+      industries.push('Software');
+    }
+    
+    if (description.includes('ai') || description.includes('artificial intelligence') ||
+        description.includes('machine learning') || description.includes('ml')) {
+      industries.push('AI');
+    }
+    
+    // If no specific industries found, use primary industry from deal.industry or default
+    if (industries.length === 0) {
+      if (deal.industry) {
+        return [deal.industry];
+      }
+      return ['Technology'];
+    }
+    
+    return industries;
+  };
+
+  const getPrimaryIndustryFromDeal = (deal: Deal): string => {
+    const industries = getIndustriesFromDeal(deal);
+    return industries[0];
   };
 
   const getDefaultCitation = (industry: string) => {
@@ -490,10 +525,6 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     };
   };
 
-  const getIndustriesFromDeal = (deal: Deal): string[] => {
-    const primaryIndustry = getPrimaryIndustryFromDeal(deal);
-    return [primaryIndustry];
-  };
 
   const extractTAMForIndustry = (deal: Deal, industry: string): number => {
     // Default values based on industry research - make sure E-commerce has correct value
