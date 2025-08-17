@@ -183,26 +183,22 @@ export function EnhancedCompanyDetails({ deal }: CompanyDetailsProps) {
     </div>
   );
 
+  // Auto-trigger background enrichment when component loads
+  useEffect(() => {
+    if (!hasEnriched && !isEnriching) {
+      enrichCompanyData();
+    }
+  }, [deal.id]);
+
   return (
     <div className="space-y-6">
-      {/* Header with Enrichment Button */}
+      {/* Header - Clean Company Information */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Company Information
-            </CardTitle>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={enrichCompanyData}
-              disabled={isEnriching}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isEnriching ? 'animate-spin' : ''}`} />
-              {isEnriching ? 'Enriching...' : hasEnriched ? 'Refresh Data' : 'Enrich with ReubenAI'}
-            </Button>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
+            Company Information
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {/* Basic Info */}
@@ -446,22 +442,6 @@ export function EnhancedCompanyDetails({ deal }: CompanyDetailsProps) {
         </>
       )}
 
-      {/* No Data State */}
-      {!isEnriching && !hasEnriched && !enrichmentData && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <Building2 className="h-12 w-12 text-muted-foreground/50 mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">Limited Company Data</h3>
-            <p className="text-sm text-muted-foreground text-center mb-4">
-              Enrich this company profile with comprehensive ReubenAI analysis to unlock detailed insights
-            </p>
-            <Button onClick={enrichCompanyData}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Enrich with ReubenAI
-            </Button>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

@@ -137,10 +137,8 @@ export function EnhancedDealDetailsModal({
   useEffect(() => {
     if (deal && open) {
       loadEnhancedData();
-      // Auto-trigger background enrichment if deal has minimal analysis
-      if (!deal.enhanced_analysis || !deal.overall_score) {
-        triggerBackgroundEnrichment();
-      }
+      // Auto-trigger background enrichment for all deals silently
+      triggerBackgroundEnrichment();
     }
   }, [deal?.id, open]);
 
@@ -182,7 +180,7 @@ export function EnhancedDealDetailsModal({
           deal_id: deal.id,
           enrichment_packs: selectedFund.fund_type === 'private_equity' 
             ? ['pe_financial_performance', 'pe_market_position', 'pe_operational_excellence', 'pe_growth_potential', 'pe_risk_assessment']
-            : ['vc_market_opportunity', 'vc_team_leadership', 'vc_product_technology', 'vc_business_traction', 'vc_strategic_fit'],
+            : ['vc_market_opportunity', 'vc_team_leadership', 'vc_product_technology', 'vc_business_traction', 'vc_strategic_fit', 'vc_strategic_timing'],
           force_refresh: false
         }
       });
@@ -193,7 +191,7 @@ export function EnhancedDealDetailsModal({
         setTimeout(() => {
           loadEnhancedData();
           onDealUpdated?.();
-        }, 2000);
+        }, 3000); // Increased timeout to allow engines to populate data
       }
     } catch (error) {
       console.log('⚠️ [Background] Enrichment failed silently:', error);
