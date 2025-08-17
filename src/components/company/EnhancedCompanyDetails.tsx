@@ -185,6 +185,7 @@ export function EnhancedCompanyDetails({ deal }: CompanyDetailsProps) {
 
   // Auto-trigger background enrichment when component loads
   useEffect(() => {
+    console.log('🏢 [Company Details] Auto-triggering enrichment for:', deal.company_name);
     if (!hasEnriched && !isEnriching) {
       enrichCompanyData();
     }
