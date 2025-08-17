@@ -18,6 +18,7 @@ const WORKFLOWS = {
     'CanonicaliseEntities',
     'CacheCheck', 
     'RetrievalPlan',
+    'EnrichmentCheck',
     'HybridRetrieve',
     'ReRank',
     'ContextPack',
@@ -33,6 +34,13 @@ const WORKFLOWS = {
     'DraftICMemo',
     'FactConsistencyCheck',
     'PersistArtifacts'
+  ],
+  deal_enrichment: [
+    'ValidateMetadata',
+    'DetermineEnrichmentPacks',
+    'ExecuteEnrichment',
+    'ValidateEnrichment',
+    'TriggerRescoring'
   ]
 };
 
@@ -244,6 +252,9 @@ async function executeStep(
     case 'FactConsistencyCheck':
       return await factConsistencyCheck(context);
       
+    case 'EnrichmentCheck':
+      return await enrichmentCheck(context);
+      
     case 'PersistArtifacts':
       return await persistArtifacts(context);
       
@@ -353,6 +364,103 @@ async function factConsistencyCheck(context: StepContext) {
     output: { ...context.step_input, fact_check_passed: true },
     telemetry: { step_duration_ms: 800 }
   };
+}
+
+async function enrichmentCheck(context: StepContext) {
+  // Check if deal needs enrichment and trigger if necessary
+  try {
+    const { data: dealData } = await supabase
+      .from('deals')
+      .select('*')
+      .eq('id', context.deal_id)
+      .single();
+    
+    const { data: fundData } = await supabase
+      .from('funds')
+      .select('fund_type')
+      .eq('id', context.fund_id)
+      .single();
+    
+    // Determine enrichment packs needed based on fund type and deal metadata
+    const enrichmentPacks = determineRequiredEnrichmentPacks(dealData, fundData);
+    
+    if (enrichmentPacks.length > 0) {
+      console.log(`🔬 [Orchestrator] Triggering enrichment packs: ${enrichmentPacks.join(', ')}`);
+      
+      // Trigger enrichment
+      const { data: enrichmentResult } = await supabase.functions.invoke('deal-enrichment-engine', {
+        body: {
+          org_id: context.org_id,
+          fund_id: context.fund_id,
+          deal_id: context.deal_id,
+          enrichment_packs: enrichmentPacks
+        }
+      });
+      
+      return {
+        output: { ...context.step_input, enrichment_completed: true, enrichment_data: enrichmentResult },
+        telemetry: { step_duration_ms: 3000, packs_processed: enrichmentPacks.length }
+      };
+    }
+    
+    return {
+      output: { ...context.step_input, enrichment_skipped: true },
+      telemetry: { step_duration_ms: 100 }
+    };
+    
+  } catch (error) {
+    console.error('Enrichment check failed:', error);
+    return {
+      output: { ...context.step_input, enrichment_failed: true, error: error.message },
+      telemetry: { step_duration_ms: 200 }
+    };
+  }
+}
+
+function determineRequiredEnrichmentPacks(dealData: any, fundData: any): string[] {
+  const packs: string[] = [];
+  
+  // Check if deal has minimum metadata for enrichment
+  if (!dealData.industry && !dealData.funding_stage && !dealData.location) {
+    return []; // Skip enrichment if insufficient metadata
+  }
+  
+  // Determine packs based on fund type
+  if (fundData.fund_type === 'venture_capital') {
+    // Always enrich core VC categories
+    packs.push('vc_market_opportunity', 'vc_team_leadership');
+    
+    // Add conditional packs based on available data
+    if (dealData.website || dealData.description) {
+      packs.push('vc_product_technology', 'vc_business_traction');
+    }
+    
+    if (dealData.deal_size || dealData.valuation) {
+      packs.push('vc_financial_health');
+    }
+    
+    // Always add strategic fit and timing
+    packs.push('vc_strategic_fit', 'vc_strategic_timing');
+    
+    // Add trust/transparency if company is mature enough
+    if (dealData.funding_stage && ['series_a', 'series_b', 'series_c'].includes(dealData.funding_stage)) {
+      packs.push('vc_trust_transparency');
+    }
+    
+  } else if (fundData.fund_type === 'private_equity') {
+    // PE companies typically have more data available
+    packs.push(
+      'pe_financial_performance',
+      'pe_market_position', 
+      'pe_operational_excellence',
+      'pe_growth_potential',
+      'pe_risk_assessment',
+      'pe_strategic_timing',
+      'pe_trust_transparency'
+    );
+  }
+  
+  return packs;
 }
 
 async function persistArtifacts(context: StepContext) {

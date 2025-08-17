@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface OrchestrationRequest {
-  workflow_type: 'deal_analysis' | 'ic_memo_generation';
+  workflow_type: 'deal_analysis' | 'ic_memo_generation' | 'deal_enrichment';
   org_id: string;
   fund_id: string;
   deal_id?: string;
@@ -113,6 +113,27 @@ export function useOrchestrator() {
     }
   };
 
+  const enrichDeal = async (
+    org_id: string,
+    fund_id: string,
+    deal_id: string,
+    enrichment_packs: string[] = [],
+    input_data: any = {}
+  ) => {
+    return executeWorkflow({
+      workflow_type: 'deal_enrichment',
+      org_id,
+      fund_id,
+      deal_id,
+      input_data: {
+        deal_id,
+        enrichment_packs,
+        trigger_reason: 'manual_enrichment',
+        ...input_data
+      }
+    });
+  };
+
   const resumeWorkflow = async (
     execution_token: string,
     from_step: string,
@@ -147,6 +168,7 @@ export function useOrchestrator() {
     executeWorkflow,
     analyzeDeal,
     generateICMemo,
+    enrichDeal,
     getExecutionLogs,
     resumeWorkflow
   };
