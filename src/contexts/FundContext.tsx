@@ -157,6 +157,10 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('🚨 SECURITY: Filtered out unauthorized funds in FundContext');
           console.error('Original count:', fundsData.length, 'Filtered count:', secureData.length);
         }
+      } else if (isSuperAdmin) {
+        // Super admins should see all funds without filtering
+        console.log('  - Super admin access: showing all funds without organization filtering');
+        secureData = fundsData;
       }
 
       console.log('  - Final secure query result:');
