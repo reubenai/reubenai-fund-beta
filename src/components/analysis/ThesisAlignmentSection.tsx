@@ -139,22 +139,23 @@ export function ThesisAlignmentSection({ deal }: ThesisAlignmentSectionProps) {
         : undefined
     });
 
-    // Deal Size Check
-    const dealSizeAligned = deal.deal_size && 
-      (deal.deal_size >= (strategy.min_investment_amount || 0)) &&
-      (deal.deal_size <= (strategy.max_investment_amount || Infinity));
+    // Investment Size Check - Use Current Round Size
+    const currentRoundSize = deal.current_round_size;
+    const dealSizeAligned = currentRoundSize && 
+      (currentRoundSize >= (strategy.min_investment_amount || 0)) &&
+      (currentRoundSize <= (strategy.max_investment_amount || Infinity));
     
     checks.push({
       criterion: 'Investment Size',
       aligned: dealSizeAligned || false,
-      reasoning: !deal.deal_size 
-        ? 'Deal size not specified - requires clarification'
+      reasoning: !currentRoundSize 
+        ? 'Current round size not specified - requires clarification'
         : dealSizeAligned 
-          ? `Deal size ${formatCurrency(deal.deal_size)} within fund range` 
-          : `Deal size ${formatCurrency(deal.deal_size)} outside range: ${formatCurrency(strategy.min_investment_amount)} - ${formatCurrency(strategy.max_investment_amount)}`,
+          ? `Current round ${formatCurrency(currentRoundSize)} within fund range` 
+          : `Current round ${formatCurrency(currentRoundSize)} outside range: ${formatCurrency(strategy.min_investment_amount)} - ${formatCurrency(strategy.max_investment_amount)}`,
       icon: <DollarSign className="h-4 w-4" />,
       weight: 20,
-      score: dealSizeAligned ? 80 : deal.deal_size ? 30 : 45
+      score: dealSizeAligned ? 80 : currentRoundSize ? 30 : 45
     });
 
     // Score Threshold Check
