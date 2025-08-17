@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { enhancedAnalysisEngine } from '@/services/EnhancedAnalysisEngine';
 
 interface EnrichmentRequest {
   dealId: string;
@@ -36,57 +37,100 @@ export function useEnrichmentEngine() {
     setIsEnriching(true);
     
     try {
-      console.log('🔬 [Enrichment Hook] Starting enrichment for deal:', request.dealId);
+      console.log('🔬 [Enrichment Hook] Starting intelligent enrichment for deal:', request.dealId);
       
-      // Get current deal data for comparison
+      // Get current deal and fund data
       const { data: currentDeal } = await supabase
         .from('deals')
         .select('*')
         .eq('id', request.dealId)
         .single();
-      
-      // Determine enrichment packs if not specified
-      let enrichmentPacks = request.enrichmentPacks;
-      if (!enrichmentPacks) {
-        enrichmentPacks = await determineEnrichmentPacks(request.dealId, request.fundId);
+        
+      const { data: fund } = await supabase
+        .from('funds')
+        .select('fund_type')
+        .eq('id', request.fundId)
+        .single();
+
+      if (!currentDeal || !fund) {
+        throw new Error('Deal or fund not found');
       }
-      
-      // Call enrichment engine
-      const { data, error } = await supabase.functions.invoke('deal-enrichment-engine', {
-        body: {
-          org_id: request.orgId,
-          fund_id: request.fundId,
-          deal_id: request.dealId,
-          enrichment_packs: enrichmentPacks,
-          force_refresh: request.forceRefresh || false
-        }
+
+      // Generate enhanced analysis using industry intelligence
+      const analysisResults = await enhancedAnalysisEngine.generateEnhancedAnalysis({
+        dealId: request.dealId,
+        fundId: request.fundId,
+        industry: currentDeal.industry,
+        fundType: fund.fund_type === 'venture_capital' ? 'vc' : 'pe',
+        companyData: currentDeal,
+        forceRefresh: request.forceRefresh
       });
 
-      if (error) throw error;
+      console.log('✅ [Enhanced Analysis] Generated intelligent baseline analysis:', analysisResults.length, 'categories');
 
-      console.log('✅ [Enrichment Hook] Enrichment completed:', data);
+      // Update deal with enhanced analysis
+      const enhancedAnalysisData = {
+        analysis_engines: analysisResults.reduce((acc, result) => {
+          acc[result.categoryName.toLowerCase().replace(/[^a-z]/g, '_')] = {
+            name: result.categoryName,
+            score: result.overallScore,
+            confidence: result.confidence,
+            status: result.status,
+            subcriteria: result.subcriteria,
+            recommendations: result.recommendations,
+            data_gaps: result.dataGaps,
+            last_run: new Date().toISOString(),
+            version: '2.0',
+            data_sources: 'industry_intelligence'
+          };
+          return acc;
+        }, {} as any),
+        analysis_completeness: Math.round(
+          analysisResults.reduce((sum, r) => sum + r.confidence, 0) / analysisResults.length
+        ),
+        last_comprehensive_analysis: new Date().toISOString(),
+        fund_type_analysis: {
+          fund_type: fund.fund_type,
+          focus_areas: analysisResults.filter(r => r.overallScore >= 70).map(r => r.categoryName),
+          strengths: analysisResults.filter(r => r.overallScore >= 70).map(r => r.categoryName),
+          concerns: analysisResults.filter(r => r.overallScore < 60).map(r => r.categoryName),
+          alignment_score: Math.round(
+            analysisResults.reduce((sum, r) => sum + r.overallScore, 0) / analysisResults.length
+          ),
+          strategic_recommendations: analysisResults.flatMap(r => r.recommendations).slice(0, 5)
+        }
+      };
+
+      // Update deal with enhanced analysis
+      await supabase
+        .from('deals')
+        .update({ 
+          enhanced_analysis: enhancedAnalysisData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', request.dealId);
+
+      // Store enrichment results
+      const enrichmentResults = analysisResults.map(result => ({
+        pack_name: result.categoryName,
+        data: result,
+        confidence: result.confidence,
+        timestamp: new Date().toISOString()
+      }));
       
-      // Store results
-      setEnrichmentResults(data.enrichment_results || []);
+      setEnrichmentResults(enrichmentResults);
       
       // Check for significant metric shifts
-      const shifts = await detectMetricShifts(request.dealId, currentDeal, data.enrichment_results);
+      const shifts = await detectMetricShifts(request.dealId, currentDeal, enrichmentResults);
       setMetricShifts(shifts);
       
-      // Show notifications for significant shifts
-      if (shifts.length > 0) {
-        const majorShifts = shifts.filter(s => s.significance === 'major');
-        if (majorShifts.length > 0) {
-          toast.warning(`${majorShifts.length} significant metric shifts detected`, {
-            description: 'Check the deal analysis for updated insights',
-            duration: 10000
-          });
-        }
-      }
+      toast.success(`Intelligent analysis completed (${analysisResults.length} categories analyzed)`);
       
-      toast.success(`Deal enrichment completed (${data.enrichment_results?.length || 0} packs processed)`);
-      
-      return data;
+      return {
+        success: true,
+        enrichment_results: enrichmentResults,
+        timestamp: new Date().toISOString()
+      };
       
     } catch (error) {
       console.error('❌ [Enrichment Hook] Failed:', error);
