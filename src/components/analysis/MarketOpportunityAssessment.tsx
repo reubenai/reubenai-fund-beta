@@ -670,7 +670,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                 </div>
                 
                 {/* TAM/SAM/SOM Breakdown for Market Size criterion */}
-                {check.criterion === 'Market Size (TAM)' && check.industryBreakdown && expandedCriteria.includes(check.criterion) && (
+                {check.criterion.includes('Market Size (TAM)') && check.industryBreakdown && expandedCriteria.includes(check.criterion) && (
                   <div className="ml-8 space-y-3">
                     {check.industryBreakdown.map((industry, idx) => (
                       <div key={idx} className="border rounded-lg p-4 space-y-3">
@@ -723,7 +723,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                 )}
 
                 {/* CAGR/Competitors/Growth Drivers Breakdown for Market Growth Rate criterion */}
-                {check.criterion === 'Market Growth Rate' && check.growthBreakdown && expandedCriteria.includes(check.criterion) && (
+                {check.criterion.includes('Market Growth Rate') && check.growthBreakdown && expandedCriteria.includes(check.criterion) && (
                   <div className="ml-8 space-y-3">
                     {check.growthBreakdown.map((industry, idx) => (
                       <div key={idx} className="border rounded-lg p-4 space-y-3">
