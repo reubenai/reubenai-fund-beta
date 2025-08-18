@@ -10,7 +10,11 @@ import {
   Zap,
   Building,
   TrendingUp,
-  Target
+  Target,
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  BarChart3
 } from 'lucide-react';
 import { Deal } from '@/hooks/usePipelineDeals';
 import { supabase } from '@/integrations/supabase/client';
@@ -60,6 +64,7 @@ const getStatusIcon = (aligned: boolean) => {
 export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) {
   const [loading, setLoading] = useState(true);
   const [assessment, setAssessment] = useState<ProductIPAssessment | null>(null);
+  const [expandedCriteria, setExpandedCriteria] = useState<string[]>([]);
 
   const fetchProductDataAndAssess = React.useCallback(async () => {
     try {
@@ -194,6 +199,14 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
     );
   }
 
+  const toggleExpanded = (criterion: string) => {
+    if (expandedCriteria.includes(criterion)) {
+      setExpandedCriteria(expandedCriteria.filter(c => c !== criterion));
+    } else {
+      setExpandedCriteria([...expandedCriteria, criterion]);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Product & IP Moat Summary Score */}
@@ -201,7 +214,7 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
         <CardContent className="p-6">
           <div className="flex items-start gap-3">
             <div className="text-muted-foreground mt-1">
-              <Shield className="h-5 w-5" />
+              <BarChart3 className="h-5 w-5" />
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-lg mb-1">Product & IP Moat Score</h3>
@@ -212,15 +225,10 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
                 <Badge 
                   className={`${getStatusColor(assessment?.overallStatus || 'Poor')} border px-3 py-1`}
                 >
-                  {assessment?.overallStatus || 'Data Unavailable'}
+                  {assessment?.overallStatus || 'Poor'}
                 </Badge>
-                {assessment?.overallScore > 0 && (
-                  <div className="flex-1">
-                    <Progress value={assessment.overallScore} className="h-2" />
-                  </div>
-                )}
                 <span className="font-bold text-xl min-w-[60px] text-right">
-                  {assessment?.overallScore > 0 ? `${Math.round(assessment.overallScore)}%` : 'N/A'}
+                  N/A
                 </span>
               </div>
             </div>
@@ -235,25 +243,68 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
           {assessment?.checks.map((check, index) => (
             <Card key={index} className="bg-muted/20">
               <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="mt-1">
-                    {check.aligned ? (
-                      <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    ) : (
-                      <XCircle className="h-4 w-4 text-red-600" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium mb-2">{check.criterion}</h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {check.reasoning}
-                    </p>
-                  </div>
-                  <div className="text-right ml-4 flex-shrink-0">
-                    <div className="text-xs text-muted-foreground mb-1">Weight:</div>
-                    <div className="text-xs text-muted-foreground mb-2">{check.weight}%</div>
-                    <div className="font-semibold text-lg">
-                      {check.score ? `${check.score}/100` : 'N/A'}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3 flex-1">
+                    <div className="mt-1">
+                      {getStatusIcon(check.aligned)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">{check.criterion}</h4>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">Weight: {check.weight}%</span>
+                          <span className="font-semibold text-sm">
+                            {check.score !== undefined ? `${check.score}/100` : 'N/A'}
+                          </span>
+                          <button
+                            onClick={() => toggleExpanded(check.criterion)}
+                            className="p-1 hover:bg-muted rounded"
+                          >
+                            {expandedCriteria.includes(check.criterion) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {check.reasoning}
+                      </p>
+                      
+                      {/* Expanded Analysis Framework */}
+                      {expandedCriteria.includes(check.criterion) && (
+                        <div className="mt-4 pt-4 border-t">
+                          <div className="space-y-4">
+                            <div className="bg-muted/50 p-3 rounded-lg">
+                              <h5 className="font-medium text-sm mb-2 flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                Analysis Framework
+                              </h5>
+                              <div className="text-xs text-muted-foreground space-y-1">
+                                <p>• Comprehensive IP portfolio analysis</p>
+                                <p>• Technology differentiation assessment</p>
+                                <p>• Competitive barrier evaluation</p>
+                                <p>• Innovation pipeline review</p>
+                                <p>• Market position analysis</p>
+                                <p>• Scalability moat identification</p>
+                              </div>
+                            </div>
+                            
+                            <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                              <h5 className="font-medium text-sm mb-2 text-amber-800">Data Requirements</h5>
+                              <div className="text-xs text-amber-700 space-y-1">
+                                <p>• Patent filings and IP documentation</p>
+                                <p>• Technology architecture details</p>
+                                <p>• Competitive analysis reports</p>
+                                <p>• R&D pipeline documentation</p>
+                                <p>• Market positioning materials</p>
+                                <p>• Scalability strategy documents</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
