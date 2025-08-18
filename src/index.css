@@ -96,6 +96,15 @@ All colors MUST be HSL. Emerald green primary with orange accent.
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+  
+  /* Chart Colors - Using brand emerald and orange with complementary colors */
+  :root {
+    --chart-1: 160 84% 39%;   /* Brand emerald green */
+    --chart-2: 25 95% 53%;    /* Brand orange */
+    --chart-3: 210 84% 60%;   /* Complementary blue */
+    --chart-4: 210 40% 88%;   /* Light neutral for whitespace */
+    --chart-5: 280 85% 60%;   /* Purple accent */
+  }
 }
 
 @layer base {
