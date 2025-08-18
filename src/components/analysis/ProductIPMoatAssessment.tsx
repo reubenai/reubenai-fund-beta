@@ -16,7 +16,8 @@ import {
   ChevronDown,
   ChevronRight,
   FileText,
-  Clock
+  Clock,
+  BarChart3
 } from 'lucide-react';
 import { Deal } from '@/hooks/usePipelineDeals';
 import { supabase } from '@/integrations/supabase/client';
@@ -381,18 +382,18 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
         <div className="space-y-4">
           {assessment.checks.map((check, index) => (
             <Card key={index} className="bg-muted/30 border">
-              <CardContent className="p-4">
-                <Collapsible 
-                  open={expandedCriteria.includes(check.criterion)}
-                  onOpenChange={(open) => {
-                    if (open) {
-                      setExpandedCriteria([...expandedCriteria, check.criterion]);
-                    } else {
-                      setExpandedCriteria(expandedCriteria.filter(c => c !== check.criterion));
-                    }
-                  }}
-                >
-                  <CollapsibleTrigger className="w-full">
+              <Collapsible 
+                open={expandedCriteria.includes(check.criterion)}
+                onOpenChange={(open) => {
+                  if (open) {
+                    setExpandedCriteria([...expandedCriteria, check.criterion]);
+                  } else {
+                    setExpandedCriteria(expandedCriteria.filter(c => c !== check.criterion));
+                  }
+                }}
+              >
+                <CollapsibleTrigger className="w-full">
+                  <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
                         {check.icon}
@@ -413,21 +414,23 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
                         {getStatusIcon(check.aligned)}
                       </div>
                     </div>
-                  </CollapsibleTrigger>
-                  
-                  <div className="mt-3">
-                    <p className="text-sm text-muted-foreground">{check.reasoning}</p>
                     
-                    {check.score !== undefined && (
-                      <div className="mt-3">
-                        <Progress value={check.score} className="w-full" />
-                      </div>
-                    )}
-                  </div>
+                    <div className="mt-3 text-left">
+                      <p className="text-sm text-muted-foreground">{check.reasoning}</p>
+                      
+                      {check.score !== undefined && (
+                        <div className="mt-3">
+                          <Progress value={check.score} className="w-full" />
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </CollapsibleTrigger>
 
-                  {check.breakdown && (
-                    <CollapsibleContent className="mt-4">
-                      <div className="pl-6 space-y-3 border-l-2 border-emerald-200">
+                {check.breakdown && (
+                  <CollapsibleContent>
+                    <CardContent className="pt-0 pb-4 px-4">
+                      <div className="pl-6 space-y-4 border-l-2 border-emerald-200">
                         <div>
                           <h5 className="font-medium text-sm flex items-center gap-2">
                             <FileText className="h-4 w-4" />
@@ -468,79 +471,45 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
                         </div>
 
                         <div>
-                          <h6 className="font-medium text-xs text-muted-foreground mb-1">Data Sources</h6>
-                          <div className="flex flex-wrap gap-1">
-                            {check.breakdown.sources.map((source, i) => (
-                              <Badge key={i} variant="outline" className="text-xs">
-                                {source}
-                              </Badge>
-                            ))}
+                          <h6 className="font-medium text-xs text-muted-foreground mb-1">Sources</h6>
+                          <div className="text-xs text-muted-foreground">
+                            {check.breakdown.sources.join(', ')}
                           </div>
                         </div>
                       </div>
-                    </CollapsibleContent>
-                  )}
-                </Collapsible>
-              </CardContent>
+                    </CardContent>
+                  </CollapsibleContent>
+                )}
+              </Collapsible>
             </Card>
           ))}
         </div>
 
-        {/* Overall Insights */}
-        <Card className="bg-blue-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Overall Insights
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium mb-2">🎯 Product & IP Strength Summary</h4>
-                <p className="text-sm text-muted-foreground">
-                  {assessment.overallScore > 0 ? (
-                    assessment.overallStatus === 'Excellent' ? 
-                      "Exceptional product and IP defensibility with comprehensive portfolio and strong competitive moats." :
-                    assessment.overallStatus === 'Good' ? 
-                      "Strong product differentiation and IP protection providing meaningful competitive advantages." :
-                    assessment.overallStatus === 'Fair' ? 
-                      "Moderate product strength with some defensible elements requiring additional development." :
-                      "Product and IP positioning shows areas for improvement and strengthening."
-                  ) : (
-                    "Research Needed: Comprehensive product and IP analysis pending - USPTO patent search, technical architecture review, and competitive moat evaluation required for defensibility assessment."
-                  )}
-                </p>
-              </div>
-
-              {assessment.dataQuality && (
+        {/* Data Quality Summary */}
+        {assessment.dataQuality && (
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-4">
+              <h4 className="font-medium text-sm flex items-center gap-2 mb-3">
+                <BarChart3 className="h-4 w-4" />
+                Data Quality & Source Attribution
+              </h4>
+              <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <h4 className="font-medium mb-2">📊 Analysis Status</h4>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <p><strong>Completeness:</strong> {assessment.dataQuality.completeness}%</p>
-                    </div>
-                    <div>
-                      <p><strong>Confidence:</strong> {assessment.dataQuality.confidence}%</p>
-                    </div>
-                    <div>
-                      <p><strong>Sources:</strong> {assessment.dataQuality.sources}</p>
-                    </div>
-                  </div>
-                  
-                  {assessment.dataQuality.completeness === 0 && (
-                    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                      <p className="font-medium text-sm text-amber-800">⚠️ Research Required</p>
-                      <p className="text-xs text-amber-700 mt-1">
-                        Product & IP analysis will be enhanced when patent searches, technical documentation, and competitive intelligence are available.
-                      </p>
-                    </div>
-                  )}
+                  <div className="text-2xl font-bold text-blue-600">{assessment.dataQuality.completeness}%</div>
+                  <div className="text-xs text-muted-foreground">Completeness</div>
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{assessment.dataQuality.confidence}%</div>
+                  <div className="text-xs text-muted-foreground">Confidence</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{assessment.dataQuality.sources}</div>
+                  <div className="text-xs text-muted-foreground">Sources</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </CardContent>
     </Card>
   );
