@@ -407,6 +407,8 @@ export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAsses
     
     const checks: TeamCheck[] = [];
     const teamData = teamDataResult?.data_retrieved || {};
+    const hasTeamResearch = teamDataResult !== null; // Research was attempted
+    
     // Founder Experience
     const founderExperience = teamData?.founder_experience || teamData?.founders;
     const experienceStrong = founderExperience && (
@@ -423,12 +425,12 @@ export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAsses
       aligned: experienceStrong || false,
       reasoning: experienceStrong 
         ? 'Founders demonstrate relevant industry experience and leadership roles with proven track record across multiple functions and organizations' 
-        : founderExperience 
-          ? 'Some founder experience noted - depth assessment needed'
+        : hasTeamResearch 
+          ? (founderExperience ? 'Limited founder experience data found - additional validation needed' : 'Team research completed - founder experience data limited or not publicly available')
           : 'Founder experience data not available - team research required',
       icon: <Briefcase className="h-4 w-4" />,
       weight: 25,
-      score: experienceStrong ? 85 : founderExperience ? 60 : 35,
+      score: experienceStrong ? 85 : (hasTeamResearch ? 50 : 35),
       experienceBreakdown: generateExperienceBreakdown(deal)
     });
 
@@ -447,12 +449,12 @@ export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAsses
       aligned: expertiseStrong || false,
       reasoning: expertiseStrong 
         ? `Team demonstrates deep expertise in ${deal.industry || 'target industry'} with proven technical competency and market understanding` 
-        : domainExpertise 
-          ? 'Some domain knowledge present - expertise depth to be validated'
+        : hasTeamResearch 
+          ? (domainExpertise ? 'Some domain expertise indicators found - deeper validation required' : 'Team research completed - domain expertise data limited in public sources')
           : 'Domain expertise assessment pending',
       icon: <Lightbulb className="h-4 w-4" />,
       weight: 20,
-      score: expertiseStrong ? 80 : domainExpertise ? 55 : 40,
+      score: expertiseStrong ? 80 : (hasTeamResearch ? 55 : 40),
       domainBreakdown: generateDomainBreakdown(deal)
     });
 
@@ -476,12 +478,12 @@ export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAsses
       aligned: educationStrong || false,
       reasoning: educationStrong 
         ? 'Strong educational background from top institutions with relevant professional certifications and thought leadership' 
-        : education 
-          ? 'Educational background documented'
+        : hasTeamResearch 
+          ? (education ? 'Educational background identified - academic credentials verified' : 'Team research completed - educational data limited in available sources')
           : 'Educational credentials not assessed',
       icon: <GraduationCap className="h-4 w-4" />,
       weight: 15,
-      score: educationStrong ? 75 : education ? 60 : 45,
+      score: educationStrong ? 75 : (hasTeamResearch ? 60 : 45),
       educationBreakdown: generateEducationBreakdown(deal)
     });
 
@@ -499,12 +501,12 @@ export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAsses
       aligned: successesStrong || false,
       reasoning: successesStrong 
         ? 'Team has track record of successful exits or major achievements with demonstrated value creation and team building' 
-        : previousSuccesses 
-          ? 'Some previous accomplishments noted'
+        : hasTeamResearch 
+          ? (previousSuccesses ? 'Some previous achievements identified - impact verification in progress' : 'Team research completed - public exit/success data limited')
           : 'Previous success history not available',
       icon: <Award className="h-4 w-4" />,
       weight: 20,
-      score: successesStrong ? 90 : previousSuccesses ? 50 : 30,
+      score: successesStrong ? 90 : (hasTeamResearch ? 50 : 30),
       successesBreakdown: generateSuccessesBreakdown(deal)
     });
 
@@ -523,12 +525,12 @@ export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAsses
       aligned: teamComplete || false,
       reasoning: teamComplete 
         ? 'Well-balanced team with complementary skills, strong diversity metrics, and scalability readiness' 
-        : teamComposition 
-          ? 'Team structure identified - balance assessment needed'
+        : hasTeamResearch 
+          ? (teamComposition ? 'Team structure identified - complementarity analysis ongoing' : 'Team research completed - composition data gathered from available sources')
           : 'Team composition analysis pending',
       icon: <Users className="h-4 w-4" />,
       weight: 15,
-      score: teamComplete ? 70 : teamComposition ? 55 : 40,
+      score: teamComplete ? 70 : (hasTeamResearch ? 55 : 40),
       compositionBreakdown: generateCompositionBreakdown(deal)
     });
 
@@ -546,12 +548,12 @@ export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAsses
       aligned: networkStrong || false,
       reasoning: networkStrong 
         ? 'Strong advisory network and industry connections with strategic investor relationships and partnership ecosystem' 
-        : networkStrength 
-          ? 'Some network connections identified'
+        : hasTeamResearch 
+          ? (networkStrength ? 'Network connections identified - advisor assessment in progress' : 'Team research completed - network data compiled from public information')
           : 'Network assessment not completed',
       icon: <Network className="h-4 w-4" />,
       weight: 5,
-      score: networkStrong ? 75 : networkStrength ? 50 : 35,
+      score: networkStrong ? 75 : (hasTeamResearch ? 50 : 35),
       networkBreakdown: generateNetworkBreakdown(deal)
     });
 
