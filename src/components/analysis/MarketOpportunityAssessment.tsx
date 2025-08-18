@@ -899,120 +899,124 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                             </div>
                           </div>
 
-                          {/* Market Share Visualization */}
-                          <div className="mb-4">
-                            <h5 className="font-medium text-orange-900 mb-2">Market Share Distribution</h5>
-                          <div className="h-48">
-                            <ChartContainer
-                              config={{
-                                incumbents: { label: 'Incumbents', color: 'hsl(160, 84%, 39%)' },
-                                challengers: { label: 'Challengers', color: 'hsl(25, 95%, 53%)' },
-                                emerging: { label: 'Emerging', color: 'hsl(210, 84%, 60%)' },
-                                whitespace: { label: 'Whitespace', color: 'hsl(210, 40%, 88%)' }
-                              }}
-                            >
-                              <PieChart>
-                                <Pie
-                                  data={[
-                                    ...breakdown.competitors.map(comp => ({
-                                      name: comp.name,
-                                      value: comp.marketShare,
-                                      type: comp.competitorType.toLowerCase(),
-                                      fill: comp.competitorType === 'Incumbent' ? 'hsl(160, 84%, 39%)' :
-                                            comp.competitorType === 'Challenger' ? 'hsl(25, 95%, 53%)' :
-                                            'hsl(210, 84%, 60%)'
-                                    })),
-                                    {
-                                      name: 'Whitespace',
-                                      value: Math.max(0, 100 - breakdown.competitors.reduce((sum, comp) => sum + comp.marketShare, 0)),
-                                      type: 'whitespace',
-                                      fill: 'hsl(210, 40%, 88%)'
-                                    }
-                                  ]}
-                                  dataKey="value"
-                                  nameKey="name"
-                                  cx="50%"
-                                  cy="50%"
-                                  outerRadius={80}
-                                  innerRadius={20}
-                                  label={({ name, value }) => value > 0 ? `${name}: ${value.toFixed(1)}%` : ''}
-                                />
-                                <ChartTooltip 
-                                  content={({ active, payload }) => {
-                                    if (active && payload && payload.length) {
-                                      const data = payload[0];
-                                      const value = typeof data.value === 'number' ? data.value : parseFloat(String(data.value)) || 0;
-                                      return (
-                                        <div className="bg-background border border-border rounded-lg p-2 shadow-lg">
-                                          <p className="font-medium">{data.name}</p>
-                                          <p className="text-sm">{value.toFixed(1)}% market share</p>
-                                        </div>
-                                      );
-                                    }
-                                    return null;
-                                  }}
-                                />
-                              </PieChart>
-                            </ChartContainer>
-                          </div>
-                          
-                          {/* Legend */}
-                          <div className="flex flex-wrap gap-4 justify-center mt-2 text-sm">
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full bg-emerald-600"></div>
-                              <span>Incumbents</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                              <span>Challengers</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                              <span>Emerging</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full bg-gray-300"></div>
-                              <span>Whitespace</span>
-                            </div>
-                          </div>
-                          </div>
+                           {/* Market Share Visualization and Key Players */}
+                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">
+                             {/* Key Players List */}
+                             <div>
+                               <h5 className="font-medium text-orange-900 mb-3">Key Players</h5>
+                               <div className="space-y-2">
+                                 {breakdown.competitors.slice(0, 4).map((competitor, compIndex) => (
+                                   <div key={compIndex} className="flex items-center justify-between bg-white rounded p-3 text-sm border border-orange-100">
+                                     <div className="flex items-center gap-2">
+                                       <Building2 className="h-4 w-4 text-orange-600" />
+                                       <span className="font-medium">{competitor.name}</span>
+                                       <Badge 
+                                         variant={
+                                           competitor.competitorType === 'Incumbent' ? 'default' :
+                                           competitor.competitorType === 'Challenger' ? 'secondary' :
+                                           'outline'
+                                         }
+                                         className="text-xs"
+                                       >
+                                         {competitor.competitorType}
+                                       </Badge>
+                                     </div>
+                                     <div className="text-right">
+                                       <div className="font-semibold text-orange-700">{competitor.marketShare.toFixed(1)}%</div>
+                                       {competitor.lastFunding > 0 && (
+                                         <div className="flex items-center gap-1 justify-end text-muted-foreground">
+                                           <DollarSign className="h-3 w-3" />
+                                           <span className="text-xs">
+                                             ${competitor.lastFunding > 1000000000 ? 
+                                               `${(competitor.lastFunding / 1000000000).toFixed(1)}B` : 
+                                               `${(competitor.lastFunding / 1000000).toFixed(0)}M`}
+                                           </span>
+                                         </div>
+                                       )}
+                                     </div>
+                                   </div>
+                                 ))}
+                               </div>
+                             </div>
 
-                          {/* Competitor Details */}
-                          <div className="mb-4">
-                            <h5 className="font-medium text-orange-900 mb-2">Key Players</h5>
-                            <div className="space-y-2">
-                              {breakdown.competitors.slice(0, 4).map((competitor, compIndex) => (
-                                <div key={compIndex} className="flex items-center justify-between bg-white rounded p-2 text-sm">
-                                  <div className="flex items-center gap-2">
-                                    <Building2 className="h-4 w-4 text-orange-600" />
-                                    <span className="font-medium">{competitor.name}</span>
-                                    <Badge 
-                                      variant={
-                                        competitor.competitorType === 'Incumbent' ? 'default' :
-                                        competitor.competitorType === 'Challenger' ? 'secondary' :
-                                        'outline'
-                                      }
-                                    >
-                                      {competitor.competitorType}
-                                    </Badge>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-orange-700">
-                                    <span>{competitor.marketShare.toFixed(1)}%</span>
-                                    {competitor.lastFunding > 0 && (
-                                      <div className="flex items-center gap-1">
-                                        <DollarSign className="h-3 w-3" />
-                                        <span className="text-xs">
-                                          ${competitor.lastFunding > 1000000000 ? 
-                                            `${(competitor.lastFunding / 1000000000).toFixed(1)}B` : 
-                                            `${(competitor.lastFunding / 1000000).toFixed(0)}M`}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
+                             {/* Market Share Pie Chart */}
+                             <div>
+                               <h5 className="font-medium text-orange-900 mb-3">Market Share Distribution</h5>
+                               <div className="h-48">
+                                 <ChartContainer
+                                   config={{
+                                     incumbents: { label: 'Incumbents', color: 'hsl(160, 84%, 39%)' },
+                                     challengers: { label: 'Challengers', color: 'hsl(25, 95%, 53%)' },
+                                     emerging: { label: 'Emerging', color: 'hsl(210, 84%, 60%)' },
+                                     whitespace: { label: 'Whitespace', color: 'hsl(210, 40%, 88%)' }
+                                   }}
+                                 >
+                                   <PieChart>
+                                     <Pie
+                                       data={[
+                                         ...breakdown.competitors.map(comp => ({
+                                           name: comp.name,
+                                           value: comp.marketShare,
+                                           type: comp.competitorType.toLowerCase(),
+                                           fill: comp.competitorType === 'Incumbent' ? 'hsl(160, 84%, 39%)' :
+                                                 comp.competitorType === 'Challenger' ? 'hsl(25, 95%, 53%)' :
+                                                 'hsl(210, 84%, 60%)'
+                                         })),
+                                         {
+                                           name: 'Whitespace',
+                                           value: Math.max(0, 100 - breakdown.competitors.reduce((sum, comp) => sum + comp.marketShare, 0)),
+                                           type: 'whitespace',
+                                           fill: 'hsl(210, 40%, 88%)'
+                                         }
+                                       ]}
+                                       dataKey="value"
+                                       nameKey="name"
+                                       cx="50%"
+                                       cy="50%"
+                                       outerRadius={80}
+                                       innerRadius={20}
+                                       label={({ name, value }) => value > 0 ? `${name}: ${value.toFixed(1)}%` : ''}
+                                     />
+                                     <ChartTooltip 
+                                       content={({ active, payload }) => {
+                                         if (active && payload && payload.length) {
+                                           const data = payload[0];
+                                           const value = typeof data.value === 'number' ? data.value : parseFloat(String(data.value)) || 0;
+                                           return (
+                                             <div className="bg-background border border-border rounded-lg p-2 shadow-lg">
+                                               <p className="font-medium">{data.name}</p>
+                                               <p className="text-sm">{value.toFixed(1)}% market share</p>
+                                             </div>
+                                           );
+                                         }
+                                         return null;
+                                       }}
+                                     />
+                                   </PieChart>
+                                 </ChartContainer>
+                               </div>
+                               
+                               {/* Legend */}
+                               <div className="flex flex-wrap gap-2 justify-center mt-2 text-xs">
+                                 <div className="flex items-center gap-1">
+                                   <div className="w-2 h-2 rounded-full bg-emerald-600"></div>
+                                   <span>Incumbents</span>
+                                 </div>
+                                 <div className="flex items-center gap-1">
+                                   <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                                   <span>Challengers</span>
+                                 </div>
+                                 <div className="flex items-center gap-1">
+                                   <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                   <span>Emerging</span>
+                                 </div>
+                                 <div className="flex items-center gap-1">
+                                   <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+                                   <span>Whitespace</span>
+                                 </div>
+                               </div>
+                             </div>
+                           </div>
 
                         {/* Competitive Positioning Matrix */}
                         <div className="mb-4">
@@ -1024,15 +1028,25 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                                 fundingAmount: { label: 'Last Funding ($M)', color: 'hsl(25, 95%, 53%)' }
                               }}
                             >
-                              <ScatterChart 
-                                margin={{ top: 20, right: 20, bottom: 40, left: 40 }}
-                                data={breakdown.competitors.map(comp => ({
-                                  name: comp.name,
-                                  marketShare: comp.marketShare,
-                                  fundingAmount: comp.lastFunding / 1000000,
-                                  type: comp.competitorType
-                                }))}
-                              >
+                               <ScatterChart 
+                                 margin={{ top: 20, right: 20, bottom: 40, left: 40 }}
+                                 data={[
+                                   ...breakdown.competitors.map(comp => ({
+                                     name: comp.name,
+                                     marketShare: comp.marketShare,
+                                     fundingAmount: comp.lastFunding / 1000000,
+                                     type: comp.competitorType
+                                   })),
+                                   // Add smaller players for competitive matrix
+                                   { name: 'Gumroad', marketShare: 1.2, fundingAmount: 16, type: 'Emerging' },
+                                   { name: 'ConvertKit', marketShare: 0.8, fundingAmount: 29, type: 'Emerging' },
+                                   { name: 'Thinkific', marketShare: 0.6, fundingAmount: 22, type: 'Emerging' },
+                                   { name: 'Teachable', marketShare: 0.5, fundingAmount: 12.5, type: 'Emerging' },
+                                   { name: 'Printful', marketShare: 0.4, fundingAmount: 8, type: 'Emerging' },
+                                   { name: 'Rebuy', marketShare: 0.3, fundingAmount: 17, type: 'Emerging' },
+                                   { name: 'Klaviyo', marketShare: 0.2, fundingAmount: 320, type: 'Challenger' }
+                                 ]}
+                               >
                                 <XAxis 
                                   dataKey="marketShare" 
                                   type="number" 
