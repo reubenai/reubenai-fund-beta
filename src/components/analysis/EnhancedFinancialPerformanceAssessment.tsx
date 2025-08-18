@@ -148,10 +148,9 @@ export function EnhancedFinancialPerformanceAssessment({ deal }: FinancialPerfor
     const dataRetrieved = financialData?.data_retrieved || {};
     const hasRealData = Boolean(dataRetrieved && Object.keys(dataRetrieved).length > 0);
 
-    // Enhanced analysis based on fund type (VC vs PE focus)
-    const fundType = deal.fund_id ? 'vc' : 'pe'; // Simplified detection
-
-    // 1. Revenue Quality & Predictability (25% weight)
+    // PE-focused financial analysis (EBITDA, FCF, margins)
+    
+    // 1. Revenue Growth & Quality (30% weight)
     const revenueBreakdown = hasRealData ? {
       category: 'Revenue Stream Analysis',
       metrics: [
@@ -190,7 +189,7 @@ export function EnhancedFinancialPerformanceAssessment({ deal }: FinancialPerfor
       breakdown: revenueBreakdown
     });
 
-    // 2. Unit Economics & Scalability (25% weight)
+    // 2. EBITDA Margins & Profitability (25% weight)
     const unitEconomicsBreakdown = hasRealData ? {
       category: 'Unit Economics Analysis',
       metrics: [
@@ -227,7 +226,7 @@ export function EnhancedFinancialPerformanceAssessment({ deal }: FinancialPerfor
       breakdown: unitEconomicsBreakdown
     });
 
-    // 3. Working Capital & Cash Management (20% weight)
+    // 3. Cash Flow Generation (25% weight)
     const workingCapitalBreakdown = hasRealData ? {
       category: 'Cash Flow Management',
       metrics: [
@@ -266,7 +265,7 @@ export function EnhancedFinancialPerformanceAssessment({ deal }: FinancialPerfor
       breakdown: workingCapitalBreakdown
     });
 
-    // 4. Profitability Pathway & Timing (15% weight)
+    // 4. Debt Service & Leverage (10% weight)
     const profitabilityBreakdown = hasRealData ? {
       category: 'Path to Profitability',
       metrics: [
@@ -305,7 +304,7 @@ export function EnhancedFinancialPerformanceAssessment({ deal }: FinancialPerfor
       breakdown: profitabilityBreakdown
     });
 
-    // 5. Capital Efficiency & Returns (15% weight)
+    // 5. Financial Stability & Risk (10% weight)
     const capitalEfficiencyBreakdown = hasRealData ? {
       category: 'Capital Allocation Analysis',
       metrics: [
