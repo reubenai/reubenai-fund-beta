@@ -1180,6 +1180,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
   return (
     <Card>
       <CardContent className="space-y-6">
+        <div className="h-4"></div>
         {/* Overall Market Opportunity Summary */}
         <div className="p-4 rounded-lg bg-muted/30 border">
           <div className="flex items-center justify-between">
