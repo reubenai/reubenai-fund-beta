@@ -247,67 +247,71 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
 
   return (
     <div className="space-y-6">
-      {/* Traction & Financial Feasibility Summary */}
-      <Card className="h-fit">
-        <CardHeader className="pb-3">
-          <CardTitle className="font-semibold">Traction & Financial Feasibility</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-center">
-            <div className="font-bold text-2xl mb-2">
-              {assessment?.overallScore ? `${assessment.overallScore}%` : 'N/A'}
+      {/* Traction & Financial Feasibility Summary Score */}
+      <Card className="bg-muted/30">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-3">
+            <div className="text-muted-foreground mt-1">
+              <BarChart3 className="h-5 w-5" />
             </div>
-            <Badge 
-              className={`${getStatusColor(assessment?.overallStatus || 'Poor')} border px-3 py-1`}
-            >
-              {assessment?.overallStatus || 'Data Unavailable'}
-            </Badge>
-          </div>
-          
-          {assessment?.dataQuality && (
-            <div className="pt-3 border-t">
-              <div className="text-sm text-muted-foreground mb-2">Data Quality</div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Completeness</span>
-                  <span>{assessment.dataQuality.completeness}%</span>
-                </div>
-                <Progress value={assessment.dataQuality.completeness} className="h-2" />
-                <div className="flex justify-between text-sm">
-                  <span>Confidence</span>
-                  <span>{assessment.dataQuality.confidence}%</span>
-                </div>
-                <Progress value={assessment.dataQuality.confidence} className="h-2" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg mb-1">Traction & Financial Feasibility Score</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Based on {assessment?.checks.length || 0} financial factors • Sources: Data Unavailable
+              </p>
+              <div className="flex items-center gap-4">
+                <Badge 
+                  className={`${getStatusColor(assessment?.overallStatus || 'Poor')} border px-3 py-1`}
+                >
+                  {assessment?.overallStatus || 'Data Unavailable'}
+                </Badge>
+                {assessment?.overallScore > 0 && (
+                  <div className="flex-1">
+                    <Progress value={assessment.overallScore} className="h-2" />
+                  </div>
+                )}
+                <span className="font-bold text-xl min-w-[60px] text-right">
+                  {assessment?.overallScore > 0 ? `${Math.round(assessment.overallScore)}%` : 'N/A'}
+                </span>
               </div>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Sub-criteria Analysis Cards */}
-        {assessment?.checks.map((check, index) => (
-          <Card key={index} className="h-fit">
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                {check.icon}
-                <span className="font-semibold text-sm">{check.criterion}</span>
-                {getStatusIcon(check.aligned)}
-              </div>
-              <div className="text-center">
-                <div className="font-bold text-lg mb-1">
-                  {check.score ? `${check.score}%` : 'N/A'}
+      {/* Financial Factors */}
+      <div>
+        <h3 className="font-semibold text-lg mb-4">Financial Factors</h3>
+        <div className="space-y-3">
+          {assessment?.checks.map((check, index) => (
+            <Card key={index} className="bg-muted/20">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="mt-1">
+                    {check.aligned ? (
+                      <CheckCircle className="h-4 w-4 text-emerald-600" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-600" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium mb-2">{check.criterion}</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {check.reasoning}
+                    </p>
+                  </div>
+                  <div className="text-right ml-4 flex-shrink-0">
+                    <div className="text-xs text-muted-foreground mb-1">Weight:</div>
+                    <div className="text-xs text-muted-foreground mb-2">{check.weight}%</div>
+                    <div className="font-semibold text-lg">
+                      {check.score ? `${check.score}/100` : 'N/A'}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground mb-2">
-                  Weight: {check.weight}%
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                {check.reasoning}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );
