@@ -516,8 +516,8 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
                           <div>
                             <h6 className="font-medium text-xs text-muted-foreground mb-2">Performance Trends</h6>
                             <div className="h-32 w-full">
-                              <ResponsiveContainer width="100%" height="100%">
-                                {check.criterion.includes('Revenue') && (
+                              {check.criterion.includes('Revenue') && (
+                                <ResponsiveContainer width="100%" height="100%">
                                   <LineChart data={check.breakdown.visualizations}>
                                     <XAxis dataKey="period" fontSize={10} />
                                     <YAxis fontSize={10} />
@@ -529,8 +529,10 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
                                       strokeWidth={2}
                                     />
                                   </LineChart>
-                                )}
-                                {check.criterion.includes('Customer') && (
+                                </ResponsiveContainer>
+                              )}
+                              {check.criterion.includes('Customer') && (
+                                <ResponsiveContainer width="100%" height="100%">
                                   <LineChart data={check.breakdown.visualizations}>
                                     <XAxis dataKey="month" fontSize={10} />
                                     <YAxis fontSize={10} />
@@ -541,16 +543,20 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
                                       strokeWidth={2}
                                     />
                                   </LineChart>
-                                )}
-                                {check.criterion.includes('Cash Flow') && (
+                                </ResponsiveContainer>
+                              )}
+                              {check.criterion.includes('Cash Flow') && (
+                                <ResponsiveContainer width="100%" height="100%">
                                   <BarChart data={check.breakdown.visualizations}>
                                     <XAxis dataKey="month" fontSize={10} />
                                     <YAxis fontSize={10} />
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <Bar dataKey="fcf" fill="hsl(var(--primary))" />
                                   </BarChart>
-                                )}
-                                {check.criterion.includes('Market Validation') && (
+                                </ResponsiveContainer>
+                              )}
+                              {check.criterion.includes('Market Validation') && (
+                                <ResponsiveContainer width="100%" height="100%">
                                   <BarChart data={check.breakdown.visualizations}>
                                     <XAxis dataKey="metric" fontSize={10} />
                                     <YAxis fontSize={10} />
@@ -558,8 +564,10 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
                                     <Bar dataKey="value" fill="hsl(var(--emerald-600))" />
                                     <Bar dataKey="benchmark" fill="hsl(var(--muted))" />
                                   </BarChart>
-                                )}
-                                {check.criterion.includes('Capital') && (
+                                </ResponsiveContainer>
+                              )}
+                              {check.criterion.includes('Capital') && (
+                                <ResponsiveContainer width="100%" height="100%">
                                   <LineChart data={check.breakdown.visualizations}>
                                     <XAxis dataKey="quarter" fontSize={10} />
                                     <YAxis fontSize={10} />
@@ -571,8 +579,8 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
                                       strokeWidth={2}
                                     />
                                   </LineChart>
-                                )}
-                              </ResponsiveContainer>
+                                </ResponsiveContainer>
+                              )}
                             </div>
                           </div>
                         )}
