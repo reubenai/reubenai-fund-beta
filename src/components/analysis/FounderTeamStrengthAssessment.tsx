@@ -1043,32 +1043,22 @@ export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAsses
           ))}
         </div>
 
-        {/* Bottom summary insight */}
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
-          {assessment.overallStatus === 'Exceptional' && (
-            <>
-              <Trophy className="h-4 w-4 text-emerald-600" />
-              <span className="text-sm text-emerald-700 font-medium">Exceptional team strength with strong fundamentals across multiple factors.</span>
-            </>
-          )}
-          {assessment.overallStatus === 'Strong' && (
-            <>
-              <CheckCircle className="h-4 w-4 text-emerald-600" />
-              <span className="text-sm text-emerald-700 font-medium">Strong team foundation with good execution potential.</span>
-            </>
-          )}
-          {assessment.overallStatus === 'Adequate' && (
-            <>
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
-              <span className="text-sm text-amber-700 font-medium">Team shows promise but may need strengthening in key areas.</span>
-            </>
-          )}
-          {assessment.overallStatus === 'Weak' && (
-            <>
-              <XCircle className="h-4 w-4 text-red-600" />
-              <span className="text-sm text-red-700 font-medium">Team strength concerns identified - execution capability needs assessment.</span>
-            </>
-          )}
+        {/* Overall Insights */}
+        <div className="p-3 rounded-lg bg-muted/50">
+          <div className="text-sm">
+            {assessment.overallStatus === 'Exceptional' && (
+              <p className="text-emerald-700">🏆 Exceptional team strength with strong fundamentals across multiple factors.</p>
+            )}
+            {assessment.overallStatus === 'Strong' && (
+              <p className="text-emerald-700">✅ Strong team foundation with good execution potential and relevant experience.</p>
+            )}
+            {assessment.overallStatus === 'Adequate' && (
+              <p className="text-amber-700">⚠️ Team shows promise but may need strengthening in key areas before scaling.</p>
+            )}
+            {assessment.overallStatus === 'Weak' && (
+              <p className="text-red-700">🔍 Team strength concerns identified - execution capability needs assessment.</p>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
