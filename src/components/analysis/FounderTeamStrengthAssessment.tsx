@@ -226,53 +226,51 @@ const getStatusIcon = (aligned: boolean) => {
 export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAssessmentProps) {
   const [loading, setLoading] = useState(true);
   const [assessment, setAssessment] = useState<TeamAssessment | null>(null);
-  const [teamData, setTeamData] = useState<any>(null);
   const [expandedCriteria, setExpandedCriteria] = useState<string[]>([]);
 
+  const fetchTeamDataAndAssess = React.useCallback(async () => {
+    try {
+      setLoading(true);
+
+      // Fetch the latest team research data from deal_analysis_sources
+      const { data: teamData } = await supabase
+        .from('deal_analysis_sources')
+        .select('*')
+        .eq('deal_id', deal.id)
+        .eq('engine_name', 'team-research-engine')
+        .order('retrieved_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const assessmentResult = assessFounderTeamStrength(deal, teamData);
+      setAssessment(assessmentResult);
+    } catch (error) {
+      console.error('Error in team assessment:', error);
+      setAssessment(assessFounderTeamStrength(deal, null));
+    } finally {
+      setLoading(false);
+    }
+  }, [deal.id]);
+
   useEffect(() => {
-    const fetchTeamDataAndAssess = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch team research data for this deal
-        const { data: teamResearch, error } = await supabase
-          .from('deal_analysis_sources')
-          .select('*')
-          .eq('deal_id', deal.id)
-          .eq('engine_name', 'team-research-engine')
-          .order('retrieved_at', { ascending: false })
-          .limit(1);
-
-        if (!error && teamResearch && teamResearch.length > 0) {
-          setTeamData(teamResearch[0].data_retrieved);
-        }
-
-        // Perform team strength assessment
-        const teamAssessment = assessFounderTeamStrength(deal, teamResearch?.[0]?.data_retrieved);
-        setAssessment(teamAssessment);
-      } catch (error) {
-        console.error('Error in team strength assessment:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+    // Initial load
     fetchTeamDataAndAssess();
 
     // Listen for enrichment completion events
     const handleEnrichmentComplete = (event: CustomEvent) => {
       if (event.detail?.dealId === deal.id) {
-        console.log('🔄 FounderTeam: Auto-refreshing due to enrichment completion');
+        console.log('🔄 FounderTeam: Refreshing due to enrichment completion for deal:', deal.id);
         fetchTeamDataAndAssess();
       }
     };
 
+    console.log('🎧 FounderTeam: Setting up enrichment listener for deal:', deal.id);
     window.addEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
 
     return () => {
       window.removeEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
     };
-  }, [deal]);
+  }, [deal.id, fetchTeamDataAndAssess]);
 
   const getDefaultCitation = (industry: string) => ({
     source: 'Team Research Engine',
@@ -404,9 +402,11 @@ export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAsses
     }];
   };
 
-  const assessFounderTeamStrength = (deal: Deal, teamData?: any): TeamAssessment => {
+  const assessFounderTeamStrength = (deal: Deal, teamDataResult?: any): TeamAssessment => {
+    console.log('🔍 FounderTeam: Assessing with team research data:', teamDataResult);
+    
     const checks: TeamCheck[] = [];
-
+    const teamData = teamDataResult?.data_retrieved || {};
     // Founder Experience
     const founderExperience = teamData?.founder_experience || teamData?.founders;
     const experienceStrong = founderExperience && (
@@ -576,7 +576,12 @@ export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAsses
     return {
       overallStatus,
       overallScore,
-      checks
+      checks,
+      dataQuality: {
+        completeness: teamData ? 75 : 30,
+        confidence: teamData ? 80 : 40,
+        sources: teamData ? 3 : 1
+      }
     };
   };
 
@@ -1054,7 +1059,7 @@ export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAsses
               <p>🔍 Team strength concerns identified - thorough assessment of execution capability and hiring needs required.</p>
             )}
             
-            {teamData && (
+            {assessment.dataQuality && assessment.dataQuality.completeness > 50 && (
               <p className="mt-2 pt-2 border-t border-muted-foreground/20">
                 💡 Enhanced team research data available - click criteria above to explore detailed breakdowns
               </p>
