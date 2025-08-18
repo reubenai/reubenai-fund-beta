@@ -395,7 +395,7 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
         <div className="flex items-center gap-3">
           <DollarSign className="h-5 w-5 text-muted-foreground" />
           <div>
-            <h3 className="text-lg font-semibold">Traction & Financial Feasibility</h3>
+            <h3 className="font-semibold">Traction & Financial Feasibility</h3>
             <p className="text-sm text-muted-foreground">
               Based on {assessment?.checks.length || 0} financial factors
             </p>
@@ -406,7 +406,7 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
             {assessment.overallStatus}
           </Badge>
           <Progress value={assessment.overallScore} className="w-20" />
-          <span className="text-2xl font-bold">{assessment.overallScore}%</span>
+          <span className="font-bold text-2xl">{assessment.overallScore}%</span>
         </div>
       </div>
 
