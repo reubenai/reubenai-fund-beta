@@ -979,27 +979,27 @@ export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAsses
 
   return (
     <Card>
-      <CardContent className="pt-6 space-y-6">
-        {/* Overall Status */}
-        <div className="flex items-center justify-between p-4 rounded-lg border bg-emerald-50">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-full bg-white">
-              <Users className="h-5 w-5 text-emerald-600" />
+      <CardContent className="space-y-6">
+        {/* Overall Team Strength Summary */}
+        <div className="p-4 rounded-lg bg-muted/30 border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <div className="font-medium text-sm">Founder & Team Strength</div>
+                  <div className="text-xs text-muted-foreground">Based on {assessment.checks.length} team factors</div>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-emerald-800">Founder & Team Strength</p>
-              <p className="text-sm text-emerald-600">
-                Based on {assessment.checks.length} team factors
-              </p>
-            </div>
-          </div>
-          <div className="text-right">
-            <Badge variant="outline" className={`${getStatusColor(assessment.overallStatus)} mb-2`}>
-              {assessment.overallStatus}
-            </Badge>
-            <div className="flex items-center gap-2">
-              <Progress value={assessment.overallScore} className="w-24" />
-              <span className="text-sm font-medium">{assessment.overallScore}%</span>
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className={getStatusColor(assessment.overallStatus)}>
+                {assessment.overallStatus}
+              </Badge>
+              <div className="flex items-center gap-2">
+                <Progress value={assessment.overallScore} className="w-20" />
+                <span className="text-xs font-medium text-muted-foreground">{assessment.overallScore}%</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1042,35 +1042,32 @@ export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAsses
           ))}
         </div>
 
-        {/* Team Insights */}
-        <div className="p-4 rounded-lg bg-muted/30 border">
-          <h4 className="font-medium text-sm mb-2">Team Intelligence Summary</h4>
-          <div className="text-sm text-muted-foreground space-y-1">
-            {assessment.overallStatus === 'Exceptional' && (
-              <p>🌟 Outstanding founding team with exceptional track record and deep expertise across multiple domains.</p>
-            )}
-            {assessment.overallStatus === 'Strong' && (
-              <p>💪 Strong team foundation with relevant experience and good potential for execution and scaling.</p>
-            )}
-            {assessment.overallStatus === 'Adequate' && (
-              <p>⚠️ Team shows promise but may need additional validation or strengthening in key areas before scaling.</p>
-            )}
-            {assessment.overallStatus === 'Weak' && (
-              <p>🔍 Team strength concerns identified - thorough assessment of execution capability and hiring needs required.</p>
-            )}
-            
-            {assessment.dataQuality && assessment.dataQuality.completeness > 50 && (
-              <p className="mt-2 pt-2 border-t border-muted-foreground/20">
-                💡 Enhanced team research data available - click criteria above to explore detailed breakdowns
-              </p>
-            )}
-            
-            {deal.founder && (
-              <p className="text-xs">
-                <span className="font-medium">Founder(s):</span> {deal.founder}
-              </p>
-            )}
-          </div>
+        {/* Bottom summary insight */}
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+          {assessment.overallStatus === 'Exceptional' && (
+            <>
+              <Trophy className="h-4 w-4 text-emerald-600" />
+              <span className="text-sm text-emerald-700 font-medium">Exceptional team strength with strong fundamentals across multiple factors.</span>
+            </>
+          )}
+          {assessment.overallStatus === 'Strong' && (
+            <>
+              <CheckCircle className="h-4 w-4 text-emerald-600" />
+              <span className="text-sm text-emerald-700 font-medium">Strong team foundation with good execution potential.</span>
+            </>
+          )}
+          {assessment.overallStatus === 'Adequate' && (
+            <>
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <span className="text-sm text-amber-700 font-medium">Team shows promise but may need strengthening in key areas.</span>
+            </>
+          )}
+          {assessment.overallStatus === 'Weak' && (
+            <>
+              <XCircle className="h-4 w-4 text-red-600" />
+              <span className="text-sm text-red-700 font-medium">Team strength concerns identified - execution capability needs assessment.</span>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>
