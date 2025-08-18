@@ -429,9 +429,6 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
           )}
         </div>
 
-        {assessment.overallScore > 0 && (
-          <Progress value={assessment.overallScore} className="w-full" />
-        )}
 
         {/* Individual Criteria with Deep Dives */}
         <div className="space-y-4">
