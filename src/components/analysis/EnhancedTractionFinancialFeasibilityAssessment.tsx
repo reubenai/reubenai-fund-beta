@@ -401,15 +401,8 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Traction & Financial Feasibility
-          </CardTitle>
-        </CardHeader>
-      <CardContent className="space-y-6">
+    <Card className="w-full">
+      <CardContent className="space-y-6 p-6">
         {/* Overall Status */}
         <div className="flex items-center justify-between">
           <div>
@@ -659,8 +652,7 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
             </CardContent>
           </Card>
         )}
-        </CardContent>
-      </Card>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
