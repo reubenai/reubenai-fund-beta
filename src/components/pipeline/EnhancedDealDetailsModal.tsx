@@ -468,7 +468,7 @@ export function EnhancedDealDetailsModal({
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="overview" className="w-full">
+        <Tabs defaultValue="analysis" className="w-full">
           <TabsList className={`grid w-full bg-muted/30 ${
             canViewAnalysis && canViewActivities 
               ? 'grid-cols-5' 

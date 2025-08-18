@@ -152,222 +152,79 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
     const checks: FinancialCheck[] = [];
     const dataRetrieved = financialData?.data_retrieved || {};
     
-    // Always show detailed analysis for investor insights
-    const hasCompanyData = Boolean(deal?.company_name && deal?.description);
-    const hasRealData = true; // Always show detailed breakdowns for investor insights
+    // ZERO FABRICATION POLICY: Only use real data from documents or engine results
+    const hasRealEngineData = Boolean(dataRetrieved && Object.keys(dataRetrieved).length > 0);
+    const hasDocumentData = Boolean(deal?.description && deal.description.length > 100); // Meaningful description
+    const hasRealData = hasRealEngineData || hasDocumentData;
 
     // 1. Revenue Quality & Growth (25% weight)
     checks.push({
       criterion: 'Revenue Quality & Growth',
-      aligned: hasRealData,
-      reasoning: hasRealData 
-        ? `Revenue analysis completed with strong growth trajectory and high-quality recurring revenue streams. ARR growth of 150% YoY with 95% revenue retention.`
-        : 'Research Needed: Revenue stream analysis, growth rate evaluation, and revenue quality assessment pending for comprehensive financial analysis.',
+      aligned: false, // Never aligned without verified data
+      reasoning: 'Data Unavailable: Revenue analysis requires verified financial statements, pitch deck data, or financial model uploads. Following zero-fabrication policy - no metrics provided without verified data sources.',
       icon: <DollarSign className="h-4 w-4" />,
       weight: 25,
-      score: hasRealData ? 82 : undefined,
-      breakdown: hasRealData ? {
-        category: 'Revenue Analysis',
-        metrics: [
-          { label: 'ARR Growth', value: '150% YoY', trend: 'Up' },
-          { label: 'Revenue Retention', value: '95%', trend: 'Stable' },
-          { label: 'Recurring Revenue', value: '85%', trend: 'Up' },
-          { label: 'Monthly Growth', value: '8.5%', trend: 'Up' }
-        ],
-        visualizations: [
-          { period: 'Q1', revenue: 100000 },
-          { period: 'Q2', revenue: 140000 },
-          { period: 'Q3', revenue: 195000 },
-          { period: 'Q4', revenue: 280000 }
-        ],
-        insights: [
-          'Strong month-over-month revenue growth with predictable patterns',
-          'High percentage of recurring revenue indicates stable business model',
-          'Revenue retention above industry benchmarks (90%+)',
-          'Growth acceleration in recent quarters'
-        ],
-        strength: 'Strong',
-        sources: ['Financial statements', 'Revenue reports', 'Subscription analytics'],
-        confidence: 88
-      } : undefined
+      score: undefined, // No score without real data
+      breakdown: undefined // No breakdown without real data
     });
 
     // 2. Customer Acquisition & Unit Economics (20% weight)
     checks.push({
       criterion: 'Customer Acquisition & Unit Economics',
-      aligned: hasRealData,
-      reasoning: hasRealData 
-        ? `Unit economics analysis reveals healthy CAC/LTV ratio of 1:4.2 with decreasing customer acquisition costs and strong cohort performance.`
-        : 'Research Needed: Customer acquisition cost analysis, lifetime value calculation, and cohort performance assessment required.',
+      aligned: false,
+      reasoning: 'Data Unavailable: Unit economics analysis requires customer acquisition data, cohort analysis, or financial models with LTV/CAC metrics. No fabricated metrics provided.',
       icon: <Users className="h-4 w-4" />,
       weight: 20,
-      score: hasRealData ? 78 : undefined,
-      breakdown: hasRealData ? {
-        category: 'Unit Economics',
-        metrics: [
-          { label: 'LTV:CAC Ratio', value: '4.2:1', trend: 'Up' },
-          { label: 'CAC Payback', value: '8 months', trend: 'Down' },
-          { label: 'Customer LTV', value: '$12,600', trend: 'Up' },
-          { label: 'Blended CAC', value: '$3,000', trend: 'Down' }
-        ],
-        visualizations: [
-          { month: 'Jan', ltv: 10000, cac: 2800 },
-          { month: 'Feb', ltv: 11200, cac: 2900 },
-          { month: 'Mar', ltv: 12000, cac: 2850 },
-          { month: 'Apr', ltv: 12600, cac: 3000 }
-        ],
-        insights: [
-          'LTV:CAC ratio above 3:1 threshold indicates healthy unit economics',
-          'CAC payback period under 12 months shows efficient acquisition',
-          'Improving customer lifetime value through product expansion',
-          'Multiple acquisition channels showing consistent performance'
-        ],
-        strength: 'Strong',
-        sources: ['Customer analytics', 'Acquisition data', 'Cohort analysis'],
-        confidence: 85
-      } : undefined
+      score: undefined,
+      breakdown: undefined
     });
 
     // 3. Cash Flow & Burn Analysis (20% weight)
     checks.push({
       criterion: 'Cash Flow & Burn Analysis',
-      aligned: hasRealData,
-      reasoning: hasRealData 
-        ? `Cash flow analysis shows controlled burn rate with 18-month runway and path to positive free cash flow within 12 months.`
-        : 'Research Needed: Cash flow analysis, burn rate calculation, and runway assessment pending for liquidity evaluation.',
+      aligned: false,
+      reasoning: 'Data Unavailable: Cash flow analysis requires financial statements, burn rate data, or detailed financial projections. No fabricated cash flow metrics provided.',
       icon: <BarChart3 className="h-4 w-4" />,
       weight: 20,
-      score: hasRealData ? 75 : undefined,
-      breakdown: hasRealData ? {
-        category: 'Cash Flow Management',
-        metrics: [
-          { label: 'Monthly Burn', value: '$95K', trend: 'Down' },
-          { label: 'Cash Runway', value: '18 months', trend: 'Stable' },
-          { label: 'FCF Margin', value: '-15%', trend: 'Up' },
-          { label: 'Cash Efficiency', value: '2.8x', trend: 'Up' }
-        ],
-        visualizations: [
-          { month: 'Jan', fcf: -80000 },
-          { month: 'Feb', fcf: -75000 },
-          { month: 'Mar', fcf: -70000 },
-          { month: 'Apr', fcf: -65000 }
-        ],
-        insights: [
-          'Burn rate decreasing as revenue scales and efficiency improves',
-          'Adequate runway provides flexibility for growth investments',
-          'Clear path to cash flow positive within next 12 months',
-          'Strong cash management and financial discipline'
-        ],
-        strength: 'Moderate',
-        sources: ['Cash flow statements', 'Financial forecasts', 'Budget analysis'],
-        confidence: 82
-      } : undefined
+      score: undefined,
+      breakdown: undefined
     });
 
     // 4. Market Validation & Traction (20% weight)
     checks.push({
       criterion: 'Market Validation & Traction',
-      aligned: hasRealData,
-      reasoning: hasRealData 
-        ? `Market validation demonstrates strong product-market fit with 85% customer satisfaction, 40% organic growth, and expanding market presence.`
-        : 'Research Needed: Customer satisfaction analysis, organic growth assessment, and market validation metrics pending.',
+      aligned: false,
+      reasoning: 'Data Unavailable: Market validation analysis requires customer feedback data, usage analytics, or traction metrics from verified sources. No fabricated traction data provided.',
       icon: <Target className="h-4 w-4" />,
       weight: 20,
-      score: hasRealData ? 80 : undefined,
-      breakdown: hasRealData ? {
-        category: 'Market Validation',
-        metrics: [
-          { label: 'NPS Score', value: '65', trend: 'Up' },
-          { label: 'Organic Growth', value: '40%', trend: 'Up' },
-          { label: 'Churn Rate', value: '5%', trend: 'Down' },
-          { label: 'Expansion Rate', value: '125%', trend: 'Up' }
-        ],
-        visualizations: [
-          { metric: 'NPS', value: 65, benchmark: 50 },
-          { metric: 'Churn', value: 5, benchmark: 8 },
-          { metric: 'Expansion', value: 125, benchmark: 110 },
-          { metric: 'Satisfaction', value: 85, benchmark: 75 }
-        ],
-        insights: [
-          'Strong product-market fit evidenced by low churn and high satisfaction',
-          'Significant organic growth indicates word-of-mouth validation',
-          'Revenue expansion from existing customers shows product stickiness',
-          'Market metrics exceed industry benchmarks across key indicators'
-        ],
-        strength: 'Strong',
-        sources: ['Customer surveys', 'Usage analytics', 'Market research'],
-        confidence: 87
-      } : undefined
+      score: undefined,
+      breakdown: undefined
     });
 
     // 5. Capital Efficiency & Scaling (15% weight)
     checks.push({
       criterion: 'Capital Efficiency & Scaling',
-      aligned: hasRealData,
-      reasoning: hasRealData 
-        ? `Capital efficiency analysis shows strong ROI on invested capital with efficient scaling model and improving operational leverage.`
-        : 'Research Needed: Capital efficiency metrics, scaling analysis, and operational leverage assessment pending.',
+      aligned: false,
+      reasoning: 'Data Unavailable: Capital efficiency assessment requires operational metrics, ROI data, or scaling projections from verified sources. No fabricated efficiency metrics provided.',
       icon: <TrendingUp className="h-4 w-4" />,
       weight: 15,
-      score: hasRealData ? 73 : undefined,
-      breakdown: hasRealData ? {
-        category: 'Capital Efficiency',
-        metrics: [
-          { label: 'Capital ROI', value: '3.2x', trend: 'Up' },
-          { label: 'Revenue per Employee', value: '$180K', trend: 'Up' },
-          { label: 'Gross Margin', value: '78%', trend: 'Up' },
-          { label: 'Efficiency Score', value: '85%', trend: 'Up' }
-        ],
-        visualizations: [
-          { quarter: 'Q1', revenue: 100000, investment: 50000 },
-          { quarter: 'Q2', revenue: 140000, investment: 60000 },
-          { quarter: 'Q3', revenue: 195000, investment: 70000 },
-          { quarter: 'Q4', revenue: 280000, investment: 80000 }
-        ],
-        insights: [
-          'High capital efficiency with strong return on invested capital',
-          'Operational leverage improving as company scales',
-          'Revenue per employee metrics above industry averages',
-          'Sustainable scaling model with predictable capital requirements'
-        ],
-        strength: 'Moderate',
-        sources: ['Financial analysis', 'Operational metrics', 'Efficiency reports'],
-        confidence: 80
-      } : undefined
+      score: undefined,
+      breakdown: undefined
     });
 
-    // Calculate overall assessment
+    // Calculate overall assessment - ZERO FABRICATION POLICY
     const scoresWithData = checks.filter(check => check.score !== undefined);
-    const totalWeightedScore = scoresWithData.reduce((sum, check) => {
-      return sum + ((check.score || 0) * check.weight);
-    }, 0);
-    const totalWeight = scoresWithData.reduce((sum, check) => sum + check.weight, 0);
-    
-    const overallScore = totalWeight > 0 ? Math.round(totalWeightedScore / totalWeight) : 0;
-    
-    let overallStatus: 'Excellent' | 'Good' | 'Fair' | 'Poor';
-    if (hasRealData) {
-      if (overallScore >= 85) {
-        overallStatus = 'Excellent';
-      } else if (overallScore >= 70) {
-        overallStatus = 'Good';
-      } else if (overallScore >= 55) {
-        overallStatus = 'Fair';
-      } else {
-        overallStatus = 'Poor';
-      }
-    } else {
-      overallStatus = 'Poor'; // No real data means poor assessment
-    }
+    const overallScore = 0; // Always zero without real data
+    const overallStatus: 'Excellent' | 'Good' | 'Fair' | 'Poor' = 'Poor'; // Always poor without data
 
     return {
       overallStatus,
-      overallScore: hasRealData ? overallScore : 0,
+      overallScore,
       checks,
       dataQuality: {
-        completeness: hasRealData ? 85 : 0,
-        confidence: hasRealData ? 83 : 0,
-        sources: hasRealData ? 8 : 0
+        completeness: 0, // No data without verified sources
+        confidence: 0, // No confidence without verified sources  
+        sources: 0 // No sources available
       }
     };
   };
@@ -390,112 +247,64 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
 
   return (
     <div className="space-y-6">
-      {/* Overall Status */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <DollarSign className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <h3 className="font-semibold">Traction & Financial Feasibility</h3>
-                <p className="text-sm text-muted-foreground">
-                  Based on {assessment?.checks.length || 0} financial factors
-                </p>
+      {/* Traction & Financial Feasibility Summary */}
+      <Card className="h-fit">
+        <CardHeader className="pb-3">
+          <CardTitle className="font-semibold">Traction & Financial Feasibility</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-center">
+            <div className="font-bold text-2xl mb-2">
+              {assessment?.overallScore ? `${assessment.overallScore}%` : 'N/A'}
+            </div>
+            <Badge 
+              className={`${getStatusColor(assessment?.overallStatus || 'Poor')} border px-3 py-1`}
+            >
+              {assessment?.overallStatus || 'Data Unavailable'}
+            </Badge>
+          </div>
+          
+          {assessment?.dataQuality && (
+            <div className="pt-3 border-t">
+              <div className="text-sm text-muted-foreground mb-2">Data Quality</div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Completeness</span>
+                  <span>{assessment.dataQuality.completeness}%</span>
+                </div>
+                <Progress value={assessment.dataQuality.completeness} className="h-2" />
+                <div className="flex justify-between text-sm">
+                  <span>Confidence</span>
+                  <span>{assessment.dataQuality.confidence}%</span>
+                </div>
+                <Progress value={assessment.dataQuality.confidence} className="h-2" />
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Badge className={`${getStatusColor(assessment.overallStatus)} border`}>
-                {assessment.overallStatus}
-              </Badge>
-              <Progress value={assessment.overallScore} className="w-20" />
-              <span className="font-semibold text-lg">{assessment.overallScore}%</span>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Financial Criteria */}
-      <div className="space-y-3">
-        {assessment.checks.map((check, index) => (
-          <Card key={index} className="hover:bg-muted/50 transition-colors">
-            <CardContent className="p-3">
-              <div 
-                className="flex items-center justify-between cursor-pointer"
-                onClick={() => toggleExpanded(check.criterion)}
-              >
-                <div className="flex items-center gap-3">
-                  {check.icon}
-                  {getStatusIcon(check.aligned)}
-                    <div>
-                      <h5 className="font-medium text-sm">{check.criterion}</h5>
-                      <p className="text-xs text-muted-foreground">{check.reasoning}</p>
-                    </div>
-                </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground">Weight: {check.weight}%</span>
-                    {check.score !== undefined && (
-                      <span className="font-medium text-sm">{check.score}/100</span>
-                    )}
-                    {expandedCriteria.includes(check.criterion) ? (
-                      <ChevronDown className="h-3 w-3" />
-                    ) : (
-                      <ChevronRight className="h-3 w-3" />
-                    )}
-                  </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Sub-criteria Analysis Cards */}
+        {assessment?.checks.map((check, index) => (
+          <Card key={index} className="h-fit">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                {check.icon}
+                <span className="font-semibold text-sm">{check.criterion}</span>
+                {getStatusIcon(check.aligned)}
               </div>
-
-              {expandedCriteria.includes(check.criterion) && check.breakdown && (
-                <div className="mt-4 pt-4 border-t space-y-4">
-                  <div>
-                    <h6 className="font-medium text-sm mb-2">Key Metrics</h6>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      {check.breakdown.metrics.map((metric, i) => (
-                        <div key={i} className="text-center p-2 bg-background rounded border">
-                          <div className="text-xs font-semibold">{metric.value}</div>
-                          <div className="text-xs text-muted-foreground">{metric.label}</div>
-                          {metric.trend && (
-                            <div className="flex items-center justify-center mt-1">
-                              {getTrendIcon(metric.trend)}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h6 className="font-medium text-sm mb-2">Key Insights</h6>
-                    <ul className="space-y-1">
-                      {check.breakdown.insights.map((insight, i) => (
-                        <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                          <span className="text-emerald-600 mt-1">•</span>
-                          <span>{insight}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm pt-3 border-t">
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">Strength:</span>
-                      <Badge 
-                        variant="outline" 
-                        className={
-                          check.breakdown.strength === 'Strong' ? 'text-emerald-700 border-emerald-200' :
-                          check.breakdown.strength === 'Moderate' ? 'text-amber-700 border-amber-200' :
-                          'text-red-700 border-red-200'
-                        }
-                      >
-                        {check.breakdown.strength}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">Confidence:</span>
-                      <span className="font-medium">{check.breakdown.confidence}%</span>
-                    </div>
-                  </div>
+              <div className="text-center">
+                <div className="font-bold text-lg mb-1">
+                  {check.score ? `${check.score}%` : 'N/A'}
                 </div>
-              )}
+                <div className="text-xs text-muted-foreground mb-2">
+                  Weight: {check.weight}%
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {check.reasoning}
+              </p>
             </CardContent>
           </Card>
         ))}
