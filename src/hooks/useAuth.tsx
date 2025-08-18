@@ -67,77 +67,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) {
           console.error('Auth initialization error:', error);
           setError(error.message);
-        } else if (session) {
+        } else {
           setSession(session);
           setUser(session?.user ?? null);
-        } else {
-          // Auto-create a test session for development
-          console.log('🔑 [Auth] No session found, creating test session...');
-          const testSignIn = await supabase.auth.signInWithPassword({
-            email: 'test@goreuben.com',
-            password: 'testpassword123'
-          });
-          
-          if (testSignIn.data.session) {
-            setSession(testSignIn.data.session);
-            setUser(testSignIn.data.user);
-            console.log('🔑 [Auth] Test user session created successfully');
-          } else {
-            console.log('🔑 [Auth] Test user login failed, creating anonymous session...');
-            // Create anonymous session for immediate functionality
-            const mockSession = {
-              access_token: 'mock-token',
-              token_type: 'bearer',
-              expires_in: 3600,
-              expires_at: Math.floor(Date.now() / 1000) + 3600,
-              refresh_token: 'mock-refresh',
-              user: {
-                id: '550e8400-e29b-41d4-a716-446655440000',
-                email: 'test@goreuben.com',
-                aud: 'authenticated',
-                role: 'authenticated',
-                user_metadata: {
-                  role: 'super_admin',
-                  org_id: '550e8400-e29b-41d4-a716-446655440000'
-                },
-                app_metadata: {},
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }
-            } as any;
-            
-            setSession(mockSession);
-            setUser(mockSession.user);
-            console.log('🔑 [Auth] Mock session created for development');
-          }
         }
       } catch (err) {
         console.error('Failed to initialize auth:', err);
-        // Create fallback session
-        const fallbackSession = {
-          access_token: 'fallback-token',
-          token_type: 'bearer',
-          expires_in: 3600,
-          expires_at: Math.floor(Date.now() / 1000) + 3600,
-          refresh_token: 'fallback-refresh',
-          user: {
-            id: '550e8400-e29b-41d4-a716-446655440000',
-            email: 'test@goreuben.com',
-            aud: 'authenticated',
-            role: 'authenticated',
-            user_metadata: {
-              role: 'super_admin',
-              org_id: '550e8400-e29b-41d4-a716-446655440000'
-            },
-            app_metadata: {},
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        } as any;
-        
-        setSession(fallbackSession);
-        setUser(fallbackSession.user);
-        console.log('🔑 [Auth] Fallback session created');
+        handleError(err, { silent: true });
       } finally {
         if (mounted) {
           setLoading(false);
