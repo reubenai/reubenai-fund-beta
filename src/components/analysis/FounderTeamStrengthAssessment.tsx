@@ -795,7 +795,7 @@ export function FounderTeamStrengthAssessment({ deal }: FounderTeamStrengthAsses
     if (!isExpanded) return null;
 
     return (
-      <div className="mt-4 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+      <div className="mt-4 p-4 bg-white rounded-lg border">
         {check.experienceBreakdown && renderExperienceBreakdown(check.experienceBreakdown)}
         {check.domainBreakdown && renderDomainBreakdown(check.domainBreakdown)}
         {check.educationBreakdown && (
