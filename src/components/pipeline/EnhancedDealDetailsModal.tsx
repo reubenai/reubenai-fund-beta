@@ -110,6 +110,7 @@ export function EnhancedDealDetailsModal({
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasTriggeredEnrichment, setHasTriggeredEnrichment] = useState(false);
   const { toast } = useToast();
   const { getRAGCategory } = useStrategyThresholds();
   const { canViewActivities, canViewAnalysis, role, loading } = usePermissions();
@@ -137,10 +138,16 @@ export function EnhancedDealDetailsModal({
   useEffect(() => {
     if (deal && open) {
       loadEnhancedData();
-      // Auto-trigger background enrichment for all deals silently
-      triggerBackgroundEnrichment();
+      // Only trigger enrichment once per modal session to prevent infinite loops
+      if (!hasTriggeredEnrichment) {
+        setHasTriggeredEnrichment(true);
+        triggerBackgroundEnrichment();
+      }
+    } else if (!open) {
+      // Reset enrichment flag when modal closes
+      setHasTriggeredEnrichment(false);
     }
-  }, [deal?.id, open]);
+  }, [deal?.id, open, hasTriggeredEnrichment]);
 
   const loadEnhancedData = async () => {
     if (!deal) return;
@@ -195,10 +202,10 @@ export function EnhancedDealDetailsModal({
         window.dispatchEvent(new CustomEvent('dealEnrichmentComplete', { 
           detail: { dealId: deal.id } 
         }));
-        // Refresh data after enrichment
+        // Refresh data after enrichment, but don't call onDealUpdated to prevent infinite loop
         setTimeout(() => {
           loadEnhancedData();
-          onDealUpdated?.();
+          // Note: Removed onDealUpdated?.() call to prevent infinite re-rendering
         }, 3000); // Increased timeout to allow engines to populate data
       } else {
         console.warn('⚠️ [Background] Enrichment had error:', error);
