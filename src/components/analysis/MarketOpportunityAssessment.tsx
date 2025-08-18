@@ -768,11 +768,11 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                       <div className="text-xs text-muted-foreground">Weight: {check.weight}%</div>
                       <div className="text-sm font-medium">{check.score || (check.aligned ? 70 : 30)}/100</div>
                     </div>
-                    {(check.industryBreakdown || check.growthBreakdown) && (
-                      expandedCriteria.includes(check.criterion) ? 
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" /> :
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    )}
+                     {(check.industryBreakdown || check.growthBreakdown || check.competitiveBreakdown) && (
+                       expandedCriteria.includes(check.criterion) ? 
+                         <ChevronDown className="h-4 w-4 text-muted-foreground" /> :
+                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                     )}
                   </div>
                 </div>
                 
@@ -876,10 +876,10 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
 
                 {/* Enhanced Competitive Breakdown with Visualizations */}
                 {check.competitiveBreakdown && expandedCriteria.includes(check.criterion) && (
-                  <div className="mt-3 pl-6 border-l-2 border-orange-200">
-                    <div className="space-y-4">
+                  <div className="mt-6 pl-6 border-l-2 border-orange-200">
+                    <div className="space-y-6">
                       {check.competitiveBreakdown.map((breakdown, index) => (
-                        <div key={index} className="bg-orange-50 rounded-lg p-4">
+                        <div key={index} className="bg-orange-50 rounded-lg p-6">
                           <div className="flex items-center justify-between mb-3">
                             <span className="font-medium text-orange-900">{breakdown.industry}</span>
                             <div className="flex gap-2">
@@ -900,7 +900,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                           </div>
 
                            {/* Market Share Visualization and Key Players */}
-                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">
+                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
                              {/* Key Players List */}
                              <div>
                                <h5 className="font-medium text-orange-900 mb-3">Key Players</h5>
@@ -939,10 +939,10 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                                </div>
                              </div>
 
-                             {/* Market Share Pie Chart */}
-                             <div>
-                               <h5 className="font-medium text-orange-900 mb-3">Market Share Distribution</h5>
-                               <div className="h-48">
+                              {/* Market Share Pie Chart */}
+                              <div>
+                                <h5 className="font-medium text-orange-900 mb-3">Market Share Distribution</h5>
+                                <div className="h-64">
                                  <ChartContainer
                                    config={{
                                      incumbents: { label: 'Incumbents', color: 'hsl(160, 84%, 39%)' },
@@ -1018,10 +1018,10 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                              </div>
                            </div>
 
-                        {/* Competitive Positioning Matrix */}
-                        <div className="mb-4">
-                          <h5 className="font-medium text-orange-900 mb-2">Competitive Positioning Matrix</h5>
-                          <div className="h-64 bg-white rounded-lg p-4 border border-orange-200/40">
+                         {/* Competitive Positioning Matrix */}
+                         <div className="mb-6">
+                           <h5 className="font-medium text-orange-900 mb-4">Competitive Positioning Matrix</h5>
+                           <div className="h-72 bg-white rounded-lg p-4 border border-orange-200/40">
                             <ChartContainer
                               config={{
                                 marketShare: { label: 'Market Share %', color: 'hsl(160, 84%, 39%)' },
@@ -1087,10 +1087,10 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                           </div>
                         </div>
 
-                          {/* Whitespace Opportunities */}
-                          <div>
-                            <span className="font-medium text-orange-900">Whitespace Opportunities:</span>
-                            <div className="flex flex-wrap gap-1 mt-1">
+                           {/* Whitespace Opportunities */}
+                           <div className="pt-4 border-t border-orange-200">
+                             <span className="font-medium text-orange-900">Whitespace Opportunities:</span>
+                             <div className="flex flex-wrap gap-2 mt-3">
                               {breakdown.whitespaceOpportunity.map((opportunity, oppIndex) => (
                                 <Badge key={oppIndex} variant="outline" className="text-xs text-orange-700 border-orange-300">
                                   {opportunity}
