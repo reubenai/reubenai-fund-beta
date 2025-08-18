@@ -269,6 +269,14 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
         { name: 'Atlassian', marketShare: 8.9, fundingStage: 'Public', lastFunding: 0, competitorType: 'Challenger', geography: ['Global'], valuation: 50000000000, description: 'Team collaboration tools' },
         { name: 'HubSpot', marketShare: 6.4, fundingStage: 'Public', lastFunding: 0, competitorType: 'Challenger', geography: ['Global'], valuation: 28000000000, description: 'Inbound marketing platform' },
         { name: 'Notion', marketShare: 4.1, fundingStage: 'Series C+', lastFunding: 275000000, competitorType: 'Emerging', geography: ['Global'], valuation: 10000000000, description: 'All-in-one workspace' }
+      ],
+      'Technology': [
+        { name: 'Google', marketShare: 28.5, fundingStage: 'Public', lastFunding: 0, competitorType: 'Incumbent', geography: ['Global'], valuation: 1700000000000, description: 'Technology infrastructure giant' },
+        { name: 'Meta', marketShare: 18.3, fundingStage: 'Public', lastFunding: 0, competitorType: 'Incumbent', geography: ['Global'], valuation: 800000000000, description: 'Social technology platform' },
+        { name: 'Amazon Web Services', marketShare: 22.1, fundingStage: 'Public', lastFunding: 0, competitorType: 'Incumbent', geography: ['Global'], valuation: 1500000000000, description: 'Cloud infrastructure leader' },
+        { name: 'OpenAI', marketShare: 12.4, fundingStage: 'Series C+', lastFunding: 10000000000, competitorType: 'Challenger', geography: ['Global'], valuation: 80000000000, description: 'AI research and deployment' },
+        { name: 'Anthropic', marketShare: 8.2, fundingStage: 'Series C+', lastFunding: 4000000000, competitorType: 'Challenger', geography: ['US', 'Global'], valuation: 18000000000, description: 'AI safety-focused platform' },
+        { name: 'Emerging AI Startups', marketShare: 10.5, fundingStage: 'Series A', lastFunding: 25000000, competitorType: 'Emerging', geography: ['Global'], valuation: 150000000, description: 'Next-generation AI solutions' }
       ]
     };
 
@@ -300,7 +308,8 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
       'E-Commerce': ['Multi-vendor B2B marketplaces', 'Industry-specific verticals', 'Emerging market solutions', 'AI-powered personalization'],
       'Fintech': ['Embedded finance for SMBs', 'Cross-border payment rails', 'Crypto-traditional bridges', 'Regulatory compliance automation'],
       'Hardware': ['Edge AI processing', 'Sustainable electronics', 'Modular IoT systems', 'Industry 4.0 integration'],
-      'Software': ['No-code automation', 'AI-native applications', 'Real-time collaboration', 'Privacy-first platforms']
+      'Software': ['No-code automation', 'AI-native applications', 'Real-time collaboration', 'Privacy-first platforms'],
+      'Technology': ['AI-native development tools', 'Quantum computing applications', 'Decentralized infrastructure', 'Privacy-preserving analytics', 'Edge computing platforms', 'Sustainable tech solutions']
     };
 
     return whitespaceMap[industry] || ['Underserved segments', 'Geographic expansion', 'Feature gaps', 'Technology innovation'];

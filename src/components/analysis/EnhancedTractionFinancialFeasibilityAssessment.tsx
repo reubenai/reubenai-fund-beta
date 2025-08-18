@@ -453,10 +453,12 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
                         <Badge variant="outline" className="text-xs">
                           {check.weight}% weight
                         </Badge>
-                        {check.breakdown && expandedCriteria.includes(check.criterion) ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : check.breakdown ? (
-                          <ChevronRight className="h-4 w-4" />
+                        {check.breakdown ? (
+                          expandedCriteria.includes(check.criterion) ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )
                         ) : null}
                       </div>
                       <div className="flex items-center gap-2">

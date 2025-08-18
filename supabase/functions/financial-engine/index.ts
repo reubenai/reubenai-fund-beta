@@ -184,8 +184,21 @@ function generateFinancialFundTypeAnalysis(fundType: string, analysisData: any):
 }
 
 function validateFinancialData(dealData: any) {
+  // Add null check to prevent the crash
+  if (!dealData) {
+    console.log('⚠️ Financial Engine: No deal data provided');
+    return {
+      company_name: 'Unknown Company',
+      deal_size: null,
+      valuation: null,
+      business_model: 'N/A',
+      description: 'N/A',
+      industry: 'N/A'
+    };
+  }
+
   return {
-    company_name: dealData.company_name || 'N/A',
+    company_name: dealData.company_name || 'Unknown Company',
     deal_size: dealData.deal_size || null,
     valuation: dealData.valuation || null,
     business_model: dealData.business_model || 'N/A',
