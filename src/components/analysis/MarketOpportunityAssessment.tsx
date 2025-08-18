@@ -913,15 +913,15 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                                         name: comp.name,
                                         value: comp.marketShare,
                                         type: comp.competitorType.toLowerCase(),
-                                        fill: comp.competitorType === 'Incumbent' ? 'hsl(var(--chart-1))' :
-                                              comp.competitorType === 'Challenger' ? 'hsl(var(--chart-2))' :
-                                              'hsl(var(--chart-3))'
+                                         fill: comp.competitorType === 'Incumbent' ? 'hsl(var(--brand-emerald))' :
+                                               comp.competitorType === 'Challenger' ? 'hsl(var(--accent-orange))' :
+                                               'hsl(var(--muted-foreground))'
                                       })),
                                       {
                                         name: 'Whitespace',
                                         value: Math.max(0, 100 - breakdown.competitors.reduce((sum, comp) => sum + comp.marketShare, 0)),
                                         type: 'whitespace',
-                                        fill: 'hsl(var(--chart-4))'
+                                        fill: 'hsl(var(--muted))'
                                       }
                                     ]}
                                     dataKey="value"
@@ -954,22 +954,22 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                             
                             {/* Legend */}
                             <div className="flex flex-wrap gap-3 justify-center text-xs">
-                              <div className="flex items-center gap-1">
-                                <div className="w-3 h-3 rounded-full bg-chart-1"></div>
-                                <span>Incumbents</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <div className="w-3 h-3 rounded-full bg-chart-2"></div>
-                                <span>Challengers</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <div className="w-3 h-3 rounded-full bg-chart-3"></div>
-                                <span>Emerging</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <div className="w-3 h-3 rounded-full bg-chart-4"></div>
-                                <span>Whitespace</span>
-                              </div>
+                               <div className="flex items-center gap-1">
+                                 <div className="w-3 h-3 rounded-full bg-brand-emerald"></div>
+                                 <span>Incumbents</span>
+                               </div>
+                               <div className="flex items-center gap-1">
+                                 <div className="w-3 h-3 rounded-full bg-accent-orange"></div>
+                                 <span>Challengers</span>
+                               </div>
+                               <div className="flex items-center gap-1">
+                                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(var(--muted-foreground))' }}></div>
+                                 <span>Emerging</span>
+                               </div>
+                               <div className="flex items-center gap-1">
+                                 <div className="w-3 h-3 rounded-full bg-muted"></div>
+                                 <span>Whitespace</span>
+                               </div>
                             </div>
                           </div>
                         </div>
