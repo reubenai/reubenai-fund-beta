@@ -10,6 +10,12 @@ if (typeof window !== 'undefined') {
   (window as any).React = React;
 }
 
+// Double-check React is properly loaded
+if (!React || !React.useState) {
+  console.error('Critical: React is not properly loaded');
+  throw new Error('React failed to load properly');
+}
+
 // Setup global error handlers
 setupGlobalErrorHandlers();
 
