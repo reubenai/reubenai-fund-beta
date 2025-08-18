@@ -589,36 +589,27 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Shield className="h-5 w-5" />
-          Product & IP Moat
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Overall Status */}
-        <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Shield className="h-5 w-5 text-muted-foreground" />
           <div>
-            <Badge className={getStatusColor(assessment.overallStatus)}>
-              {assessment.overallStatus}
-            </Badge>
-            {assessment.overallScore > 0 && (
-              <p className="text-sm text-muted-foreground mt-1">
-                Overall Score: {assessment.overallScore}/100
-              </p>
-            )}
+            <h3 className="text-lg font-semibold">Product & IP Moat</h3>
+            <p className="text-sm text-muted-foreground">
+              Based on {assessment?.checks.length || 0} product factors
+            </p>
           </div>
-          {assessment.overallScore > 0 && (
-            <div className="text-right">
-              <div className="text-2xl font-bold">{assessment.overallScore}</div>
-              <div className="text-sm text-muted-foreground">IP & Product Strength</div>
-            </div>
-          )}
         </div>
+        <div className="flex items-center gap-3">
+          <Badge className={`${getStatusColor(assessment.overallStatus)} border`}>
+            {assessment.overallStatus}
+          </Badge>
+          <Progress value={assessment.overallScore} className="w-20" />
+          <span className="text-2xl font-bold">{assessment.overallScore}%</span>
+        </div>
+      </div>
 
-        {/* Individual Criteria with Deep Dives */}
-        <div className="space-y-4">
+      <div className="space-y-4">
           {assessment.checks.map((check, index) => (
             <Card key={index} className="bg-muted/30 border">
               <Collapsible 
@@ -631,34 +622,36 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
                   }
                 }}
               >
-                <CollapsibleTrigger className="w-full">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        {check.icon}
-                        <span className="font-medium">{check.criterion}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {check.weight}% weight
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(check.aligned)}
-                        <ChevronRight className={`h-4 w-4 transition-transform ${
-                          expandedCriteria.includes(check.criterion) ? 'rotate-90' : ''
-                        }`} />
+                <CardContent className="p-4 cursor-pointer" 
+                  onClick={() => {
+                    if (expandedCriteria.includes(check.criterion)) {
+                      setExpandedCriteria(expandedCriteria.filter(c => c !== check.criterion));
+                    } else {
+                      setExpandedCriteria([...expandedCriteria, check.criterion]);
+                    }
+                  }}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {check.icon}
+                      {getStatusIcon(check.aligned)}
+                      <div>
+                        <h5 className="font-medium">{check.criterion}</h5>
+                        <p className="text-sm text-muted-foreground">{check.reasoning}</p>
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-2 text-left">
-                      {check.reasoning}
-                    </p>
-                    {check.score && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <Progress value={check.score} className="flex-1" />
-                        <span className="text-sm font-medium">{check.score}</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </CollapsibleTrigger>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground">Weight: {check.weight}%</span>
+                      {check.score !== undefined && (
+                        <span className="font-semibold">{check.score}/100</span>
+                      )}
+                      {expandedCriteria.includes(check.criterion) ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
                 
                 <CollapsibleContent>
                   <CardContent className="pt-0 px-4 pb-4">
@@ -841,8 +834,6 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
             </Card>
           ))}
         </div>
-
-      </CardContent>
-    </Card>
+    </div>
   );
 }

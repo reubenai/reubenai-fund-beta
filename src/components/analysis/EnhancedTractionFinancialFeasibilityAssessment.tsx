@@ -94,6 +94,14 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
   const [assessment, setAssessment] = useState<FinancialAssessment | null>(null);
   const [expandedCriteria, setExpandedCriteria] = useState<string[]>([]);
 
+  const toggleExpanded = (criterion: string) => {
+    if (expandedCriteria.includes(criterion)) {
+      setExpandedCriteria(expandedCriteria.filter(c => c !== criterion));
+    } else {
+      setExpandedCriteria([...expandedCriteria, criterion]);
+    }
+  };
+
   const fetchFinancialDataAndAssess = React.useCallback(async () => {
     try {
       setLoading(true);
@@ -366,208 +374,128 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
 
   if (loading) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Traction & Financial Feasibility
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-32">
-            <div className="text-muted-foreground">Loading financial analysis...</div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
     );
   }
 
   if (!assessment) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Traction & Financial Feasibility
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-32">
-            <div className="text-muted-foreground">Financial analysis unavailable</div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="text-center py-8 text-muted-foreground">
+        Financial analysis unavailable
+      </div>
     );
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <DollarSign className="h-5 w-5" />
-          Traction & Financial Feasibility
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Overall Status */}
-        <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Overall Status */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <DollarSign className="h-5 w-5 text-muted-foreground" />
           <div>
-            <Badge className={getStatusColor(assessment.overallStatus)}>
-              {assessment.overallStatus}
-            </Badge>
-            {assessment.overallScore > 0 && (
-              <p className="text-sm text-muted-foreground mt-1">
-                Overall Score: {assessment.overallScore}/100
-              </p>
-            )}
+            <h3 className="text-lg font-semibold">Traction & Financial Feasibility</h3>
+            <p className="text-sm text-muted-foreground">
+              Based on {assessment?.checks.length || 0} financial factors
+            </p>
           </div>
-          {assessment.overallScore > 0 && (
-            <div className="text-right">
-              <div className="text-2xl font-bold">{assessment.overallScore}</div>
-              <div className="text-sm text-muted-foreground">Financial Health</div>
-            </div>
-          )}
         </div>
+        <div className="flex items-center gap-3">
+          <Badge className={`${getStatusColor(assessment.overallStatus)} border`}>
+            {assessment.overallStatus}
+          </Badge>
+          <Progress value={assessment.overallScore} className="w-20" />
+          <span className="text-2xl font-bold">{assessment.overallScore}%</span>
+        </div>
+      </div>
 
-
-        {/* Individual Criteria with Deep Dives */}
-        <div className="space-y-4">
-          {assessment.checks.map((check, index) => (
-            <Card key={index} className="bg-muted/30 border">
-              <Collapsible 
-                open={expandedCriteria.includes(check.criterion)}
-                onOpenChange={(open) => {
-                  if (open) {
-                    setExpandedCriteria([...expandedCriteria, check.criterion]);
-                  } else {
-                    setExpandedCriteria(expandedCriteria.filter(c => c !== check.criterion));
-                  }
-                }}
+      {/* Financial Criteria */}
+      <div className="space-y-4">
+        {assessment.checks.map((check, index) => (
+          <Card key={index} className="hover:bg-muted/50 transition-colors">
+            <CardContent className="p-4">
+              <div 
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => toggleExpanded(check.criterion)}
               >
-                <CollapsibleTrigger className="w-full">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        {check.icon}
-                        <span className="font-medium">{check.criterion}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {check.weight}% weight
-                        </Badge>
-                        {expandedCriteria.includes(check.criterion) ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {check.score !== undefined && (
-                          <span className="text-sm font-medium">{check.score}/100</span>
-                        )}
-                        {getStatusIcon(check.aligned)}
-                      </div>
-                    </div>
-                    
-                    <div className="mt-3 text-left">
-                      <p className="text-sm text-muted-foreground">{check.reasoning}</p>
-                    </div>
-                  </CardContent>
-                </CollapsibleTrigger>
+                <div className="flex items-center gap-3">
+                  {check.icon}
+                  {getStatusIcon(check.aligned)}
+                  <div>
+                    <h5 className="font-medium">{check.criterion}</h5>
+                    <p className="text-sm text-muted-foreground">{check.reasoning}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground">Weight: {check.weight}%</span>
+                  {check.score !== undefined && (
+                    <span className="font-semibold">{check.score}/100</span>
+                  )}
+                  {expandedCriteria.includes(check.criterion) ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </div>
+              </div>
 
-                {check.breakdown && (
-                  <CollapsibleContent>
-                    <CardContent className="pt-0 pb-4 px-4">
-                      <div className="pl-6 space-y-4 border-l-2 border-emerald-200">
-                        <div>
-                          <h5 className="font-medium text-sm flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            {check.breakdown.category}
-                          </h5>
-                        </div>
-                        
-                        {/* Key Metrics */}
-                        <div>
-                          <h6 className="font-medium text-xs text-muted-foreground mb-2">Key Metrics</h6>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            {check.breakdown.metrics.map((metric, i) => (
-                              <div key={i} className="text-center p-2 bg-white rounded border">
-                                <div className="text-sm font-semibold text-card-foreground">{metric.value}</div>
-                                <div className="text-xs text-muted-foreground">{metric.label}</div>
-                                {metric.trend && (
-                                  <div className="flex items-center justify-center mt-1">
-                                    {getTrendIcon(metric.trend)}
-                                    <span className="text-xs ml-1">{metric.trend}</span>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Visualization */}
-                        {check.breakdown.visualizations && check.breakdown.visualizations.length > 0 && (
-                          <div>
-                            <h6 className="font-medium text-xs text-muted-foreground mb-2">Performance Trends</h6>
-                            <div className="h-32 w-full bg-muted/20 rounded p-4 flex items-center justify-center">
-                              <div className="text-xs text-muted-foreground">
-                                {check.criterion.includes('Revenue') && 'Revenue trending upward: Q1 $100K → Q4 $280K'}
-                                {check.criterion.includes('Customer') && 'LTV growing consistently: $10K → $12.6K'}
-                                {check.criterion.includes('Cash Flow') && 'FCF improving: -$80K → -$65K monthly'}
-                                {check.criterion.includes('Market Validation') && 'All metrics above industry benchmarks'}
-                                {check.criterion.includes('Capital') && 'Capital efficiency improving with scale'}
-                              </div>
+              {expandedCriteria.includes(check.criterion) && check.breakdown && (
+                <div className="mt-4 pt-4 border-t space-y-4">
+                  <div>
+                    <h6 className="font-medium text-sm mb-2">Key Metrics</h6>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {check.breakdown.metrics.map((metric, i) => (
+                        <div key={i} className="text-center p-2 bg-background rounded border">
+                          <div className="text-sm font-semibold">{metric.value}</div>
+                          <div className="text-xs text-muted-foreground">{metric.label}</div>
+                          {metric.trend && (
+                            <div className="flex items-center justify-center mt-1">
+                              {getTrendIcon(metric.trend)}
                             </div>
-                          </div>
-                        )}
-
-                        {/* Key Insights */}
-                        <div>
-                          <h6 className="font-medium text-xs text-muted-foreground mb-2">Key Insights</h6>
-                          <ul className="space-y-1">
-                            {check.breakdown.insights.map((insight, i) => (
-                              <li key={i} className="text-xs text-muted-foreground flex items-start gap-2">
-                                <span className="text-emerald-600 mt-1">•</span>
-                                <span>{insight}</span>
-                              </li>
-                            ))}
-                          </ul>
+                          )}
                         </div>
+                      ))}
+                    </div>
+                  </div>
 
-                        <div className="flex items-center justify-between text-xs pt-3 border-t">
-                          <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground">Strength:</span>
-                            <Badge 
-                              variant="outline" 
-                              className={
-                                check.breakdown.strength === 'Strong' ? 'text-emerald-700 border-emerald-200' :
-                                check.breakdown.strength === 'Moderate' ? 'text-amber-700 border-amber-200' :
-                                'text-red-700 border-red-200'
-                              }
-                            >
-                              {check.breakdown.strength}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground">Confidence:</span>
-                            <span className="font-medium">{check.breakdown.confidence}%</span>
-                          </div>
-                        </div>
+                  <div>
+                    <h6 className="font-medium text-sm mb-2">Key Insights</h6>
+                    <ul className="space-y-1">
+                      {check.breakdown.insights.map((insight, i) => (
+                        <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                          <span className="text-emerald-600 mt-1">•</span>
+                          <span>{insight}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
 
-                        <div>
-                          <h6 className="font-medium text-xs text-muted-foreground mb-1">Sources</h6>
-                          <div className="text-xs text-muted-foreground">
-                            {check.breakdown.sources.join(', ')}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </CollapsibleContent>
-                )}
-              </Collapsible>
-            </Card>
-          ))}
-        </div>
-
-      </CardContent>
-    </Card>
+                  <div className="flex items-center justify-between text-sm pt-3 border-t">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Strength:</span>
+                      <Badge 
+                        variant="outline" 
+                        className={
+                          check.breakdown.strength === 'Strong' ? 'text-emerald-700 border-emerald-200' :
+                          check.breakdown.strength === 'Moderate' ? 'text-amber-700 border-amber-200' :
+                          'text-red-700 border-red-200'
+                        }
+                      >
+                        {check.breakdown.strength}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Confidence:</span>
+                      <span className="font-medium">{check.breakdown.confidence}%</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 }
