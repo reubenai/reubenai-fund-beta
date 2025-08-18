@@ -469,12 +469,6 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
                     
                     <div className="mt-3 text-left">
                       <p className="text-sm text-muted-foreground">{check.reasoning}</p>
-                      
-                      {check.score !== undefined && (
-                        <div className="mt-3">
-                          <Progress value={check.score} className="w-full" />
-                        </div>
-                      )}
                     </div>
                   </CardContent>
                 </CollapsibleTrigger>
