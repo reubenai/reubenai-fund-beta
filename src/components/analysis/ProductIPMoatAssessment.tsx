@@ -842,31 +842,6 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
           ))}
         </div>
 
-        {/* Investment Readiness Summary */}
-        {assessment.dataQuality && (
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <h4 className="font-medium text-sm flex items-center gap-2 mb-3">
-                <BarChart3 className="h-4 w-4" />
-                IP Analysis Summary
-              </h4>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-blue-600">{assessment.dataQuality.completeness}%</div>
-                  <div className="text-xs text-muted-foreground">Data Quality</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-blue-600">{assessment.dataQuality.confidence}%</div>
-                  <div className="text-xs text-muted-foreground">Analysis Confidence</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-blue-600">{assessment.dataQuality.sources}</div>
-                  <div className="text-xs text-muted-foreground">Data Sources</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </CardContent>
     </Card>
   );

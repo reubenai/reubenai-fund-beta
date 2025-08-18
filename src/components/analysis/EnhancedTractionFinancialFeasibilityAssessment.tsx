@@ -401,13 +401,14 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <DollarSign className="h-5 w-5" />
-          Traction & Financial Feasibility
-        </CardTitle>
-      </CardHeader>
+    <div className="space-y-6">
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Traction & Financial Feasibility
+          </CardTitle>
+        </CardHeader>
       <CardContent className="space-y-6">
         {/* Overall Status */}
         <div className="flex items-center justify-between">
@@ -561,8 +562,8 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
                                     <XAxis dataKey="metric" fontSize={10} />
                                     <YAxis fontSize={10} />
                                     <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Bar dataKey="value" fill="hsl(var(--emerald-600))" />
-                                    <Bar dataKey="benchmark" fill="hsl(var(--muted))" />
+                                     <Bar dataKey="value" fill="#10b981" />
+                                     <Bar dataKey="benchmark" fill="#e5e7eb" />
                                   </BarChart>
                                 </ResponsiveContainer>
                               )}
@@ -574,8 +575,8 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <Line 
                                       type="monotone" 
-                                      dataKey="revenue" 
-                                      stroke="hsl(var(--emerald-600))" 
+                                       dataKey="revenue" 
+                                       stroke="#10b981"
                                       strokeWidth={2}
                                     />
                                   </LineChart>
@@ -658,7 +659,8 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
             </CardContent>
           </Card>
         )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
