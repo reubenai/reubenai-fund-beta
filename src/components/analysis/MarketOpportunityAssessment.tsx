@@ -1242,10 +1242,10 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                 
                 {/* TAM/SAM/SOM Breakdown for Market Size criterion */}
                 {check.criterion === 'Market Size (TAM)' && check.industryBreakdown && expandedCriteria.includes(check.criterion) && (
-                  <div className="ml-8 space-y-3">
+                  <div className="space-y-3">
                     {check.industryBreakdown.map((industry, idx) => (
-                      <div key={idx} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex items-center justify-between">
+                      <div key={idx} className="bg-white rounded-lg p-4 border">
+                        <div className="flex items-center justify-between mb-3">
                           <h5 className="font-medium">{industry.industry}</h5>
                           <Badge variant="secondary">{Math.round(industry.weight * 100)}% weight</Badge>
                         </div>
@@ -1283,10 +1283,10 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
 
                 {/* Growth Rate Breakdown for Market Growth criterion */}
                 {check.criterion === 'Market Growth Rate' && check.growthBreakdown && expandedCriteria.includes(check.criterion) && (
-                  <div className="ml-8 space-y-3">
+                  <div className="space-y-3">
                     {check.growthBreakdown.map((industry, idx) => (
-                      <div key={idx} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex items-center justify-between">
+                      <div key={idx} className="bg-white rounded-lg p-4 border">
+                        <div className="flex items-center justify-between mb-3">
                           <h5 className="font-medium">{industry.industry}</h5>
                           <Badge variant="secondary">{Math.round(industry.weight * 100)}% weight</Badge>
                         </div>
@@ -1328,10 +1328,10 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
 
                 {/* Market Timing Breakdown */}
                 {check.criterion === 'Market Timing' && check.timingBreakdown && expandedCriteria.includes(check.criterion) && (
-                  <div className="ml-8 space-y-4">
+                  <div className="space-y-4">
                     {check.timingBreakdown.map((timing, idx) => (
-                      <div key={idx} className="border rounded-lg p-4 space-y-4">
-                        <div className="flex items-center justify-between">
+                      <div key={idx} className="bg-white rounded-lg p-4 border">
+                        <div className="flex items-center justify-between mb-3">
                           <h4 className="font-medium text-card-foreground">{timing.industry}</h4>
                           <Badge variant="outline">Score: {timing.score}/100</Badge>
                         </div>
@@ -1383,10 +1383,10 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
 
                 {/* Customer Acquisition Breakdown */}
                 {check.criterion === 'Customer Acquisition' && check.customerBreakdown && expandedCriteria.includes(check.criterion) && (
-                  <div className="ml-8 space-y-4">
+                  <div className="space-y-4">
                     {check.customerBreakdown.map((customer, idx) => (
-                      <div key={idx} className="border rounded-lg p-4 space-y-4">
-                        <div className="flex items-center justify-between">
+                      <div key={idx} className="bg-white rounded-lg p-4 border">
+                        <div className="flex items-center justify-between mb-3">
                           <h4 className="font-medium text-card-foreground">{customer.industry}</h4>
                           <Badge variant="outline">Score: {customer.score}/100</Badge>
                         </div>
@@ -1445,10 +1445,10 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
 
                 {/* Market Barriers & Regulation Breakdown */}
                 {check.criterion === 'Market Barriers & Regulation' && check.barriersBreakdown && expandedCriteria.includes(check.criterion) && (
-                  <div className="ml-8 space-y-4">
+                  <div className="space-y-4">
                     {check.barriersBreakdown.map((barriers, idx) => (
-                      <div key={idx} className="border rounded-lg p-4 space-y-4">
-                        <div className="flex items-center justify-between">
+                      <div key={idx} className="bg-white rounded-lg p-4 border">
+                        <div className="flex items-center justify-between mb-3">
                           <h4 className="font-medium text-card-foreground">{barriers.industry}</h4>
                           <Badge variant="outline">Score: {barriers.score}/100</Badge>
                         </div>
