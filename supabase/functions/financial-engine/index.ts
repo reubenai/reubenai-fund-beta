@@ -39,6 +39,20 @@ serve(async (req) => {
     console.log('💰 Financial Engine: Analyzing financial feasibility for:', dealData?.company_name || 'Unknown Company');
     console.log('🎯 Fund Type:', fundType, '| Enhanced Criteria:', !!enhancedCriteria);
     
+    // Check if we have proper deal data
+    if (!dealData || !dealData.id) {
+      console.log('⚠️ Financial Engine: No deal data or deal ID provided');
+      return new Response(JSON.stringify({
+        score: 0,
+        analysis: 'Deal data required for financial analysis',
+        data_retrieved: {},
+        sources: []
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400
+      });
+    }
+    
     // Enhanced document-driven financial analysis
     const documentInsights = documentData ? await extractFinancialInsightsFromDocuments(documentData) : null;
     console.log('📄 Financial document insights extracted:', !!documentInsights);
