@@ -634,22 +634,22 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
                     <div className="flex items-center gap-3">
                       {check.icon}
                       {getStatusIcon(check.aligned)}
-                      <div>
-                        <h5 className="font-medium">{check.criterion}</h5>
-                        <p className="text-sm text-muted-foreground">{check.reasoning}</p>
-                      </div>
+                    <div>
+                      <h5 className="font-medium text-sm">{check.criterion}</h5>
+                      <p className="text-xs text-muted-foreground">{check.reasoning}</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground">Weight: {check.weight}%</span>
-                      {check.score !== undefined && (
-                        <span className="font-semibold">{check.score}/100</span>
-                      )}
-                      {expandedCriteria.includes(check.criterion) ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
                     </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground">Weight: {check.weight}%</span>
+                    {check.score !== undefined && (
+                      <span className="font-medium text-sm">{check.score}/100</span>
+                    )}
+                    {expandedCriteria.includes(check.criterion) ? (
+                      <ChevronDown className="h-3 w-3" />
+                    ) : (
+                      <ChevronRight className="h-3 w-3" />
+                    )}
+                  </div>
                   </div>
                 </CardContent>
                 

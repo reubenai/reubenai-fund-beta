@@ -391,30 +391,34 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
   return (
     <div className="space-y-6">
       {/* Overall Status */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <DollarSign className="h-5 w-5 text-muted-foreground" />
-          <div>
-            <h3 className="font-semibold">Traction & Financial Feasibility</h3>
-            <p className="text-sm text-muted-foreground">
-              Based on {assessment?.checks.length || 0} financial factors
-            </p>
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <DollarSign className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <h3 className="font-semibold">Traction & Financial Feasibility</h3>
+                <p className="text-sm text-muted-foreground">
+                  Based on {assessment?.checks.length || 0} financial factors
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge className={`${getStatusColor(assessment.overallStatus)} border`}>
+                {assessment.overallStatus}
+              </Badge>
+              <Progress value={assessment.overallScore} className="w-20" />
+              <span className="font-semibold text-lg">{assessment.overallScore}%</span>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Badge className={`${getStatusColor(assessment.overallStatus)} border`}>
-            {assessment.overallStatus}
-          </Badge>
-          <Progress value={assessment.overallScore} className="w-20" />
-          <span className="font-bold text-2xl">{assessment.overallScore}%</span>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Financial Criteria */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {assessment.checks.map((check, index) => (
           <Card key={index} className="hover:bg-muted/50 transition-colors">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div 
                 className="flex items-center justify-between cursor-pointer"
                 onClick={() => toggleExpanded(check.criterion)}
@@ -422,32 +426,32 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
                 <div className="flex items-center gap-3">
                   {check.icon}
                   {getStatusIcon(check.aligned)}
-                  <div>
-                    <h5 className="font-medium">{check.criterion}</h5>
-                    <p className="text-sm text-muted-foreground">{check.reasoning}</p>
+                    <div>
+                      <h5 className="font-medium text-sm">{check.criterion}</h5>
+                      <p className="text-xs text-muted-foreground">{check.reasoning}</p>
+                    </div>
+                </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground">Weight: {check.weight}%</span>
+                    {check.score !== undefined && (
+                      <span className="font-medium text-sm">{check.score}/100</span>
+                    )}
+                    {expandedCriteria.includes(check.criterion) ? (
+                      <ChevronDown className="h-3 w-3" />
+                    ) : (
+                      <ChevronRight className="h-3 w-3" />
+                    )}
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground">Weight: {check.weight}%</span>
-                  {check.score !== undefined && (
-                    <span className="font-semibold">{check.score}/100</span>
-                  )}
-                  {expandedCriteria.includes(check.criterion) ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </div>
               </div>
 
               {expandedCriteria.includes(check.criterion) && check.breakdown && (
                 <div className="mt-4 pt-4 border-t space-y-4">
                   <div>
                     <h6 className="font-medium text-sm mb-2">Key Metrics</h6>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       {check.breakdown.metrics.map((metric, i) => (
                         <div key={i} className="text-center p-2 bg-background rounded border">
-                          <div className="text-sm font-semibold">{metric.value}</div>
+                          <div className="text-xs font-semibold">{metric.value}</div>
                           <div className="text-xs text-muted-foreground">{metric.label}</div>
                           {metric.trend && (
                             <div className="flex items-center justify-center mt-1">
