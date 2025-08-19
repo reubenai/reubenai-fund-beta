@@ -1181,6 +1181,147 @@ export type Database = {
           },
         ]
       }
+      deal_enrichment_linkedin_export: {
+        Row: {
+          about: string | null
+          affiliated: Json | null
+          alumni: Json | null
+          alumni_information: Json | null
+          company_id: string | null
+          company_name: string | null
+          company_size: string | null
+          country_code: string | null
+          country_codes_array: string[] | null
+          created_at: string
+          crunchbase_url: string | null
+          deal_id: string
+          description: string | null
+          employees: Json | null
+          employees_in_linkedin: number | null
+          error_details: string | null
+          followers: number | null
+          formatted_locations: string[] | null
+          founded: number | null
+          funding: Json | null
+          get_directions_url: string | null
+          headquarters: string | null
+          id: string
+          image: string | null
+          industries: string | null
+          investors: Json | null
+          linkedin_url: string | null
+          locations: string[] | null
+          logo: string | null
+          organization_type: string | null
+          processed_at: string | null
+          processing_status: string | null
+          raw_brightdata_response: Json
+          similar_companies: Json | null
+          slogan: string | null
+          snapshot_id: string
+          specialties: string[] | null
+          stock_info: Json | null
+          timestamp: string | null
+          unformatted_about: string | null
+          updated_at: string
+          updates: Json | null
+          website: string | null
+          website_simplified: string | null
+        }
+        Insert: {
+          about?: string | null
+          affiliated?: Json | null
+          alumni?: Json | null
+          alumni_information?: Json | null
+          company_id?: string | null
+          company_name?: string | null
+          company_size?: string | null
+          country_code?: string | null
+          country_codes_array?: string[] | null
+          created_at?: string
+          crunchbase_url?: string | null
+          deal_id: string
+          description?: string | null
+          employees?: Json | null
+          employees_in_linkedin?: number | null
+          error_details?: string | null
+          followers?: number | null
+          formatted_locations?: string[] | null
+          founded?: number | null
+          funding?: Json | null
+          get_directions_url?: string | null
+          headquarters?: string | null
+          id?: string
+          image?: string | null
+          industries?: string | null
+          investors?: Json | null
+          linkedin_url?: string | null
+          locations?: string[] | null
+          logo?: string | null
+          organization_type?: string | null
+          processed_at?: string | null
+          processing_status?: string | null
+          raw_brightdata_response: Json
+          similar_companies?: Json | null
+          slogan?: string | null
+          snapshot_id: string
+          specialties?: string[] | null
+          stock_info?: Json | null
+          timestamp?: string | null
+          unformatted_about?: string | null
+          updated_at?: string
+          updates?: Json | null
+          website?: string | null
+          website_simplified?: string | null
+        }
+        Update: {
+          about?: string | null
+          affiliated?: Json | null
+          alumni?: Json | null
+          alumni_information?: Json | null
+          company_id?: string | null
+          company_name?: string | null
+          company_size?: string | null
+          country_code?: string | null
+          country_codes_array?: string[] | null
+          created_at?: string
+          crunchbase_url?: string | null
+          deal_id?: string
+          description?: string | null
+          employees?: Json | null
+          employees_in_linkedin?: number | null
+          error_details?: string | null
+          followers?: number | null
+          formatted_locations?: string[] | null
+          founded?: number | null
+          funding?: Json | null
+          get_directions_url?: string | null
+          headquarters?: string | null
+          id?: string
+          image?: string | null
+          industries?: string | null
+          investors?: Json | null
+          linkedin_url?: string | null
+          locations?: string[] | null
+          logo?: string | null
+          organization_type?: string | null
+          processed_at?: string | null
+          processing_status?: string | null
+          raw_brightdata_response?: Json
+          similar_companies?: Json | null
+          slogan?: string | null
+          snapshot_id?: string
+          specialties?: string[] | null
+          stock_info?: Json | null
+          timestamp?: string | null
+          unformatted_about?: string | null
+          updated_at?: string
+          updates?: Json | null
+          website?: string | null
+          website_simplified?: string | null
+        }
+        Relationships: []
+      }
       deal_features: {
         Row: {
           confidence_score: number | null

@@ -165,7 +165,17 @@ async function enrichWithBrightdata(request: EnrichmentRequest): Promise<Company
     throw new Error(`Brightdata enrichment failed: ${data?.error || 'Unknown error'}`);
   }
 
-  const enrichmentData = data.data;
+  // Try to read from the structured LinkedIn export table
+  const { data: linkedinExports, error: exportError } = await supabase
+    .from('deal_enrichment_linkedin_export')
+    .select('*')
+    .eq('deal_id', request.dealId)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (exportError || !linkedinExports || linkedinExports.length === 0) {
+    console.log('⚠️ [Brightdata] No structured LinkedIn export found, using legacy data');
+    const enrichmentData = data.data;
   
   // Enhanced data extraction from Brightdata response
   const extractEmployeeCount = (teamData: any): number | undefined => {
@@ -193,23 +203,43 @@ async function enrichWithBrightdata(request: EnrichmentRequest): Promise<Company
            undefined;
   };
 
-  // Transform the enrichment data with intelligent extraction
+    // Transform the enrichment data with intelligent extraction (legacy format)
+    return {
+      employeeCount: extractEmployeeCount(enrichmentData['Team Size'] || enrichmentData.employees),
+      website: extractWebsite(enrichmentData.raw_response?.[0] || enrichmentData),
+      foundingYear: enrichmentData.Founded || enrichmentData.founded,
+      location: enrichmentData.Headquarters || enrichmentData.headquarters || enrichmentData.location,
+      keyPersonnel: enrichmentData.key_personnel || [],
+      competitors: enrichmentData.competitors || [],
+      trustScore: data.trustScore || 95,
+      dataQuality: data.dataQuality || 85,
+      source: 'brightdata_linkedin',
+      revenueEstimate: enrichmentData.revenue_estimate || 
+                      (extractEmployeeCount(enrichmentData['Team Size']) ? 
+                       estimateRevenue(extractEmployeeCount(enrichmentData['Team Size'])!, enrichmentData.specialties) : 
+                       undefined),
+      fundingHistory: enrichmentData.funding_rounds || [],
+      rawData: enrichmentData.raw_response?.[0] || enrichmentData // Store the actual Brightdata response
+    };
+  }
+
+  // Use structured LinkedIn export data
+  const linkedinData = linkedinExports[0];
+  console.log('✅ [Brightdata] Using structured LinkedIn data for deal:', request.dealId);
+
   return {
-    employeeCount: extractEmployeeCount(enrichmentData['Team Size'] || enrichmentData.employees),
-    website: extractWebsite(enrichmentData.raw_response?.[0] || enrichmentData),
-    foundingYear: enrichmentData.Founded || enrichmentData.founded,
-    location: enrichmentData.Headquarters || enrichmentData.headquarters || enrichmentData.location,
-    keyPersonnel: enrichmentData.key_personnel || [],
-    competitors: enrichmentData.competitors || [],
-    trustScore: data.trustScore || 95,
-    dataQuality: data.dataQuality || 85,
+    employeeCount: linkedinData.employees?.length || linkedinData.employees_in_linkedin,
+    website: linkedinData.website,
+    foundingYear: linkedinData.founded,
+    location: linkedinData.headquarters || linkedinData.locations?.[0],
+    keyPersonnel: linkedinData.employees?.slice(0, 4) || [],
+    competitors: linkedinData.similar_companies?.map((comp: any) => comp.title || comp.name) || [],
+    trustScore: 95,
+    dataQuality: calculateBrightdataQuality(linkedinData),
     source: 'brightdata_linkedin',
-    revenueEstimate: enrichmentData.revenue_estimate || 
-                    (extractEmployeeCount(enrichmentData['Team Size']) ? 
-                     estimateRevenue(extractEmployeeCount(enrichmentData['Team Size'])!, enrichmentData.specialties) : 
-                     undefined),
-    fundingHistory: enrichmentData.funding_rounds || [],
-    rawData: enrichmentData.raw_response?.[0] || enrichmentData // Store the actual Brightdata response
+    revenueEstimate: estimateRevenue(linkedinData.employees?.length || 0, linkedinData.industries),
+    fundingHistory: linkedinData.funding || [],
+    rawData: linkedinData // Store the structured LinkedIn data
   };
 }
 
@@ -230,10 +260,22 @@ async function updateDealFieldsSelectively(dealId: string, enrichmentData: any):
   const updates: any = {};
   const updatedFields: string[] = [];
   
-  // Process Brightdata data with proper extraction
-  const rawData = enrichmentData.rawData;
-  if (!rawData) {
-    console.log('⚠️ [Selective Update] No raw data available for field mapping');
+  // Try to get structured LinkedIn data first
+  const { data: linkedinExports } = await supabase
+    .from('deal_enrichment_linkedin_export')
+    .select('*')
+    .eq('deal_id', dealId)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  let rawData = enrichmentData.rawData;
+  
+  // Use structured LinkedIn data if available
+  if (linkedinExports && linkedinExports.length > 0) {
+    rawData = linkedinExports[0];
+    console.log('✅ [Selective Update] Using structured LinkedIn export data');
+  } else if (!rawData) {
+    console.log('⚠️ [Selective Update] No structured or raw data available for field mapping');
     return updatedFields;
   }
 
@@ -259,12 +301,17 @@ async function updateDealFieldsSelectively(dealId: string, enrichmentData: any):
         // Handle different Brightdata formats for employee count
         if (Array.isArray(value)) return value.length;
         if (typeof value === 'number') return value;
-        if (typeof value === 'string' && value.includes('-')) {
-          // Handle ranges like "51-200 employees"
-          const match = value.match(/(\d+)-(\d+)/);
-          if (match) return parseInt(match[1]); // Use lower bound
+        if (typeof value === 'string') {
+          if (value.includes('-')) {
+            // Handle ranges like "51-200 employees"
+            const match = value.match(/(\d+)-(\d+)/);
+            if (match) return parseInt(match[1]); // Use lower bound
+          }
+          // Try to extract number from string
+          const numMatch = value.match(/\d+/);
+          if (numMatch) return parseInt(numMatch[0]);
         }
-        return parseInt(value) || null;
+        return null;
       }
     },
     { 

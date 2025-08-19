@@ -96,9 +96,9 @@ serve(async (req) => {
     console.log(`✅ [Brightdata] Final data retrieved:`, JSON.stringify(brightdataData, null, 2));
 
     // Process and structure the Brightdata response
-    const processedData = await processBrightdataResponse(brightdataData, companyName);
+    const processedData = await processBrightdataResponse(brightdataData, companyName, dealId, snapshotId, supabaseClient);
     
-    // Store the enrichment result in deal_analysis_sources
+    // Store the enrichment result in deal_analysis_sources for backward compatibility
     await supabaseClient.from('deal_analysis_sources').insert({
       deal_id: dealId,
       engine_name: 'brightdata-linkedin-enrichment',
@@ -135,7 +135,7 @@ serve(async (req) => {
   }
 });
 
-async function processBrightdataResponse(rawData: any, companyName: string): Promise<any> {
+async function processBrightdataResponse(rawData: any, companyName: string, dealId: string, snapshotId: string, supabaseClient: any): Promise<any> {
   console.log(`🔄 [Brightdata] Processing response for ${companyName}`);
   
   // Handle different response formats from Brightdata
@@ -151,7 +151,78 @@ async function processBrightdataResponse(rawData: any, companyName: string): Pro
     companyData = rawData.data;
   }
 
-  // Extract key information from Brightdata response with proper field mapping
+  // Store structured LinkedIn export data
+  const linkedinExportData = {
+    deal_id: dealId,
+    snapshot_id: snapshotId,
+    timestamp: new Date().toISOString(),
+    
+    // Company identification
+    company_id: companyData.company_id || companyData.id || null,
+    linkedin_url: `https://www.linkedin.com/company/${companyData.id || companyData.company_id || ''}`,
+    company_name: companyData.name || companyName,
+    
+    // Company description and details
+    about: companyData.about || null,
+    description: companyData.about || null,
+    organization_type: companyData.organization_type || null,
+    industries: companyData.industries || null,
+    specialties: companyData.specialties || [],
+    
+    // Metrics and following
+    followers: companyData.followers || null,
+    employees_in_linkedin: companyData.employees_in_linkedin || null,
+    company_size: companyData.company_size || null,
+    
+    // Location information
+    headquarters: companyData.headquarters || null,
+    country_code: companyData.country_code || null,
+    country_codes_array: companyData.country_codes || [],
+    locations: companyData.locations || [],
+    formatted_locations: companyData.formatted_locations || [],
+    
+    // Web presence
+    website: companyData.website || null,
+    website_simplified: companyData.website_simplified || null,
+    
+    // Financial and company data
+    founded: companyData.founded || null,
+    funding: companyData.funding || {},
+    investors: companyData.investors || [],
+    crunchbase_url: companyData.crunchbase_url || null,
+    stock_info: companyData.stock_info || {},
+    
+    // Social and network data
+    employees: companyData.employees || [],
+    alumni: companyData.alumni || [],
+    alumni_information: companyData.alumni_information || {},
+    updates: companyData.updates || [],
+    similar_companies: companyData.similar || [],
+    affiliated: companyData.affiliated || [],
+    
+    // Visual assets
+    image: companyData.image || null,
+    logo: companyData.logo || null,
+    
+    // Raw data and processing
+    raw_brightdata_response: rawData,
+    unformatted_about: companyData.about || null,
+    processing_status: 'raw'
+  };
+
+  // Insert into the new LinkedIn export table
+  const { error: insertError } = await supabaseClient
+    .from('deal_enrichment_linkedin_export')
+    .insert(linkedinExportData);
+
+  if (insertError) {
+    console.error('❌ [Brightdata] Failed to insert LinkedIn export:', insertError);
+    // Continue processing even if structured storage fails
+  } else {
+    console.log('✅ [Brightdata] Saved structured LinkedIn export for', companyName);
+  }
+
+  // Return legacy format for backward compatibility
   const processed = {
     company_name: companyData.company_name || companyData.name || companyName,
     website: companyData.website || companyData.company_website || null,
