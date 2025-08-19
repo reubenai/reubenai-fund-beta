@@ -28,6 +28,7 @@ import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { HierarchicalSectorSelector } from './HierarchicalSectorSelector';
 
 interface EnhancedStrategyWizardProps {
   fundId: string;
@@ -598,31 +599,20 @@ export function EnhancedStrategyWizard({
 
               {currentStep === 1 && (
                 <div className="space-y-8">
-                  {/* Sectors */}
+                  {/* Sectors - Hierarchical Selection */}
                   <div className="space-y-4">
-                    <Label className="text-base font-medium">Target Sectors</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {SECTOR_OPTIONS.map(sector => {
-                        const isSelected = wizardData.sectors?.includes(sector);
-                        return (
-                          <Button
-                            key={sector}
-                            variant={isSelected ? "default" : "outline"}
-                            className="h-12 justify-start"
-                            onClick={() => {
-                              const current = wizardData.sectors || [];
-                              if (isSelected) {
-                                updateWizardData({ sectors: current.filter(s => s !== sector) });
-                              } else {
-                                updateWizardData({ sectors: [...current, sector] });
-                              }
-                            }}
-                          >
-                            {sector}
-                          </Button>
-                        );
-                      })}
+                    <div>
+                      <Label className="text-base font-medium">Target Industries & Sectors</Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Select entire industries or specific sectors within them. 
+                        {fundType && ` Relevance scores shown for ${fundType.toUpperCase()} funds.`}
+                      </p>
                     </div>
+                    <HierarchicalSectorSelector
+                      selectedSectors={wizardData.sectors || []}
+                      onSelectionChange={(sectors) => updateWizardData({ sectors })}
+                      fundType={fundType}
+                    />
                   </div>
 
                   {/* Stages */}
