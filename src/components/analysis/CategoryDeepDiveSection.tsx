@@ -25,6 +25,7 @@ import { TeamLeadershipDeepDive } from './deep-dive/TeamLeadershipDeepDive';
 import { ProductTechnologyDeepDive } from './deep-dive/ProductTechnologyDeepDive';
 import { FinancialHealthDeepDive } from './deep-dive/FinancialHealthDeepDive';
 import { BusinessTractionDeepDive } from './deep-dive/BusinessTractionDeepDive';
+import { PEFinancialPerformanceDeepDive } from './deep-dive/PEFinancialPerformanceDeepDive';
 
 interface SubCriteriaItem {
   name: string;
@@ -83,9 +84,9 @@ const getDeepDiveComponent = (category: string, detailedAnalysis?: CategoryDeepD
     return <BusinessTractionDeepDive data={detailedAnalysis.business_traction} />;
   }
   
-  // PE Categories - map to closest equivalent deep dive components
+  // PE Categories - use PE-specific deep dive components
   if (lowerCategory.includes('performance') && detailedAnalysis.financial_health) {
-    return <FinancialHealthDeepDive data={detailedAnalysis.financial_health} />;
+    return <PEFinancialPerformanceDeepDive data={detailedAnalysis.financial_health} />;
   }
   if (lowerCategory.includes('position') && detailedAnalysis.market_opportunity) {
     return <MarketOpportunityDeepDive data={detailedAnalysis.market_opportunity} />;

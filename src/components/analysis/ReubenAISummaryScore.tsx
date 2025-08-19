@@ -42,51 +42,115 @@ export function ReubenAISummaryScore({ deal, onScoreCalculated }: ReubenAISummar
   const [assessmentScores, setAssessmentScores] = useState<AssessmentScore[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock calculation - in real implementation, these would come from each assessment component
+  // Get real scores from deal analysis data
   useEffect(() => {
     const calculateOverallScore = async () => {
       try {
         setLoading(true);
         
-        // Simulate assessment calculations
-        // In real implementation, we'd get these from the actual assessment components
-        const mockScores: AssessmentScore[] = [
-          {
-            name: 'Thesis Alignment',
-            score: Math.floor(Math.random() * 40) + 60, // 60-100
-            weight: 20
-          },
-          {
-            name: 'Market Opportunity',
-            score: Math.floor(Math.random() * 40) + 50, // 50-90
-            weight: 25
-          },
-          {
-            name: 'Founder & Team Strength',
-            score: Math.floor(Math.random() * 40) + 55, // 55-95
-            weight: 20
-          },
-          {
-            name: 'Product & IP Moat',
-            score: Math.floor(Math.random() * 40) + 45, // 45-85
-            weight: 20
-          },
-          {
-            name: 'Traction & Financial Feasibility',
-            score: Math.floor(Math.random() * 40) + 50, // 50-90
-            weight: 15
-          }
-        ];
-
-        setAssessmentScores(mockScores);
-
-        // Calculate simple sum product (weight * score/100 then summed)
-        const finalScore = Math.round(
-          mockScores.reduce((sum, score) => sum + (score.weight * score.score / 100), 0)
-        );
+        // Get actual analysis data from deal
+        const analysisData = deal.enhanced_analysis;
         
-        setOverallScore(finalScore);
-        onScoreCalculated?.(finalScore);
+        if (analysisData && typeof analysisData === 'object' && analysisData !== null && !Array.isArray(analysisData)) {
+          const analysisObj = analysisData as Record<string, any>;
+          if (analysisObj.rubric_breakdown) {
+            // Extract actual scores from analysis
+            const rubricBreakdown = analysisObj.rubric_breakdown;
+            const scores: AssessmentScore[] = [];
+          
+          // Map rubric categories to assessment scores with proper weights
+          Object.entries(rubricBreakdown).forEach(([category, categoryData]: [string, any]) => {
+            if (categoryData && typeof categoryData === 'object' && categoryData.score !== undefined) {
+              let weight = 20; // Default weight
+              
+              // Apply proper category weights based on fund type
+              if (category.toLowerCase().includes('financial')) {
+                weight = deal.fund_id ? 35 : 20; // PE: 35%, VC: 20%
+              } else if (category.toLowerCase().includes('operational')) {
+                weight = deal.fund_id ? 25 : 15; // PE: 25%, VC: 15%
+              } else if (category.toLowerCase().includes('market')) {
+                weight = deal.fund_id ? 15 : 25; // PE: 15%, VC: 25%
+              } else if (category.toLowerCase().includes('management') || category.toLowerCase().includes('team')) {
+                weight = deal.fund_id ? 10 : 20; // PE: 10%, VC: 20%
+              } else if (category.toLowerCase().includes('growth')) {
+                weight = deal.fund_id ? 10 : 15; // PE: 10%, VC: 15%
+              } else if (category.toLowerCase().includes('strategic')) {
+                weight = deal.fund_id ? 5 : 5; // PE: 5%, VC: 5%
+              }
+              
+              scores.push({
+                name: category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                score: Math.round(categoryData.score || 0),
+                weight: weight
+              });
+            }
+          });
+          
+          // If we have real scores, use them
+          if (scores.length > 0) {
+            setAssessmentScores(scores);
+            
+            // Calculate weighted average (proper Reuben score calculation)
+            const totalWeight = scores.reduce((sum, score) => sum + score.weight, 0);
+            const weightedScore = scores.reduce((sum, score) => 
+              sum + (score.weight * score.score / 100), 0
+            );
+            
+            // Normalize to 100-point scale
+            const finalScore = Math.round((weightedScore / totalWeight) * 100);
+            
+            setOverallScore(finalScore);
+            onScoreCalculated?.(finalScore);
+          } else {
+            // Fallback to mock data if no real analysis yet
+            const mockScores: AssessmentScore[] = [
+              { name: 'Financial Performance', score: 75, weight: 35 },
+              { name: 'Operational Excellence', score: 68, weight: 25 },
+              { name: 'Market Position', score: 72, weight: 15 },
+              { name: 'Management Quality', score: 80, weight: 10 },
+              { name: 'Growth Potential', score: 65, weight: 10 },
+              { name: 'Strategic Fit', score: 85, weight: 5 }
+            ];
+            
+            setAssessmentScores(mockScores);
+            
+            // Calculate proper weighted score
+            const weightedScore = mockScores.reduce((sum, score) => 
+              sum + (score.weight * score.score / 100), 0
+            );
+            
+            setOverallScore(Math.round(weightedScore));
+            onScoreCalculated?.(Math.round(weightedScore));
+          }
+          } else {
+            // Fallback to mock PE data
+            const mockScores: AssessmentScore[] = [
+              { name: 'Financial Performance', score: 75, weight: 35 },
+              { name: 'Operational Excellence', score: 68, weight: 25 },
+              { name: 'Market Position', score: 72, weight: 15 },
+              { name: 'Management Quality', score: 80, weight: 10 },
+              { name: 'Growth Potential', score: 65, weight: 10 },
+              { name: 'Strategic Fit', score: 85, weight: 5 }
+            ];
+            
+            setAssessmentScores(mockScores);
+            const weightedScore = mockScores.reduce((sum, score) => 
+              sum + (score.weight * score.score / 100), 0
+            );
+            
+            setOverallScore(Math.round(weightedScore));
+            onScoreCalculated?.(Math.round(weightedScore));
+          }
+        } else {
+          // No analysis data - use placeholder scores
+          const placeholderScores: AssessmentScore[] = [
+            { name: 'Analysis Pending', score: 0, weight: 100 }
+          ];
+          
+          setAssessmentScores(placeholderScores);
+          setOverallScore(0);
+          onScoreCalculated?.(0);
+        }
         
       } catch (error) {
         console.error('Error calculating overall score:', error);
