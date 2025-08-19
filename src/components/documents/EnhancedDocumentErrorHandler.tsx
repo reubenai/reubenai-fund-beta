@@ -4,7 +4,7 @@ import { AlertCircle, RefreshCw, Upload, FileX, Network, Database, Shield } from
 import { Button } from '@/components/ui/button';
 
 interface DocumentError {
-  type: 'upload' | 'processing' | 'analysis' | 'network' | 'permission' | 'storage' | 'integration';
+  type: 'upload' | 'processing' | 'analysis' | 'network' | 'permission' | 'storage' | 'integration' | 'unknown';
   message: string;
   details?: string;
   code?: string;
@@ -12,7 +12,7 @@ interface DocumentError {
 }
 
 interface EnhancedDocumentErrorHandlerProps {
-  error: DocumentError;
+  error: DocumentError | any; // Allow any error format for defensive handling
   onRetry?: () => void;
   onDismiss?: () => void;
 }
@@ -94,11 +94,24 @@ const errorConfig = {
       'Try refreshing the page',
       'Contact support with error details for faster resolution'
     ]
+  },
+  unknown: {
+    icon: AlertCircle,
+    title: 'Unexpected Error',
+    color: 'text-red-600',
+    suggestions: [
+      'An unexpected error occurred during the operation',
+      'Try refreshing the page and attempting again',
+      'Check your internet connection',
+      'Contact support if the issue persists'
+    ]
   }
 };
 
 export function EnhancedDocumentErrorHandler({ error, onRetry, onDismiss }: EnhancedDocumentErrorHandlerProps) {
-  const config = errorConfig[error.type];
+  // Defensive programming: normalize error object
+  const normalizedError = normalizeError(error);
+  const config = errorConfig[normalizedError.type] || errorConfig.unknown;
   const Icon = config.icon;
 
   return (
@@ -113,17 +126,17 @@ export function EnhancedDocumentErrorHandler({ error, onRetry, onDismiss }: Enha
         )}
       </AlertTitle>
       <AlertDescription className="space-y-3">
-        <div className="font-medium">{error.message}</div>
+        <div className="font-medium">{normalizedError.message}</div>
         
-        {error.details && (
+        {normalizedError.details && (
           <div className="text-sm text-muted-foreground">
-            <strong>Technical details:</strong> {error.details}
+            <strong>Technical details:</strong> {normalizedError.details}
           </div>
         )}
         
-        {error.code && (
+        {normalizedError.code && (
           <div className="text-xs font-mono bg-muted p-2 rounded">
-            Error Code: {error.code}
+            Error Code: {normalizedError.code}
           </div>
         )}
         
@@ -139,7 +152,7 @@ export function EnhancedDocumentErrorHandler({ error, onRetry, onDismiss }: Enha
           </ul>
         </div>
         
-        {error.retryable && onRetry && (
+        {normalizedError.retryable && onRetry && (
           <Button 
             variant="outline" 
             size="sm" 
@@ -153,6 +166,52 @@ export function EnhancedDocumentErrorHandler({ error, onRetry, onDismiss }: Enha
       </AlertDescription>
     </Alert>
   );
+}
+
+// Normalize any error object to DocumentError format
+function normalizeError(error: any): DocumentError {
+  // If already a proper DocumentError, return as-is
+  if (error && typeof error === 'object' && error.type && typeof error.message === 'string') {
+    return error as DocumentError;
+  }
+
+  // Handle Error instances
+  if (error instanceof Error) {
+    return {
+      type: 'unknown',
+      message: error.message,
+      details: error.stack,
+      retryable: true
+    };
+  }
+
+  // Handle string errors
+  if (typeof error === 'string') {
+    return {
+      type: 'unknown',
+      message: error,
+      retryable: true
+    };
+  }
+
+  // Handle any other object with message property
+  if (error && typeof error === 'object' && error.message) {
+    return {
+      type: 'unknown',
+      message: String(error.message),
+      details: error.details || error.stack,
+      code: error.code,
+      retryable: true
+    };
+  }
+
+  // Fallback for completely unknown error formats
+  return {
+    type: 'unknown',
+    message: 'An unexpected error occurred',
+    details: `Error object: ${JSON.stringify(error)}`,
+    retryable: true
+  };
 }
 
 // Helper function to create structured errors
