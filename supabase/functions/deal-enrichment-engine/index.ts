@@ -1179,6 +1179,48 @@ function extractAwards(items: any[]): any[] {
   return [];
 }
 
+async function enrichCompetitiveIntelligence(
+  dealData: any, 
+  competitiveResearch: string, 
+  extractedData: any
+): Promise<any> {
+  console.log('🎯 [Competitive Intelligence] Enriching competitive analysis...');
+  
+  try {
+    // Enhanced competitive analysis with multi-industry context
+    const enhancedAnalysis = {
+      primary_competitors: extractedData.competitors || [],
+      market_position: extractedData.market_position || 'unknown',
+      competitive_advantages: extractedData.competitive_advantages || [],
+      market_dynamics: {
+        competitive_intensity: competitiveResearch.toLowerCase().includes('fragmented') ? 'high' : 
+                               competitiveResearch.toLowerCase().includes('consolidat') ? 'medium' : 'low',
+        barrier_strength: competitiveResearch.toLowerCase().includes('barrier') ? 'high' : 'medium',
+        switching_costs: competitiveResearch.toLowerCase().includes('switching') ? 'high' : 'medium'
+      },
+      strategic_positioning: {
+        differentiation_strategy: competitiveResearch.toLowerCase().includes('unique') ? 'differentiation' : 'cost_leadership',
+        moat_sustainability: 75, // Default score
+        network_effects: competitiveResearch.toLowerCase().includes('network') || 
+                        competitiveResearch.toLowerCase().includes('platform')
+      }
+    };
+    
+    console.log('✅ [Competitive Intelligence] Enhanced analysis completed');
+    return enhancedAnalysis;
+    
+  } catch (error) {
+    console.error('❌ [Competitive Intelligence] Enhancement failed:', error);
+    return {
+      primary_competitors: [],
+      market_position: 'unknown',
+      competitive_advantages: ['Analysis failed'],
+      market_dynamics: { competitive_intensity: 'unknown', barrier_strength: 'unknown', switching_costs: 'unknown' },
+      strategic_positioning: { differentiation_strategy: 'unknown', moat_sustainability: 50, network_effects: false }
+    };
+  }
+}
+
 async function storeEnrichmentData(deal_id: string, result: EnrichmentResult): Promise<void> {
   try {
     await supabase
