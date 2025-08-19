@@ -101,33 +101,49 @@ class DocumentService {
         organizationId: fundData.organization_id
       });
 
-      // Verify user has access to this deal's organization
-      const { data: accessData, error: accessError } = await supabase
-        .from('profiles')
-        .select('user_id, organization_id, role, is_deleted')
-        .eq('user_id', userData.user.id)
-        .eq('organization_id', fundData.organization_id)
-        .maybeSingle();
+      // Check if user is super admin first
+      const isSuperAdmin = userData.user.email?.includes('@goreuben.com') || 
+                          userData.user.email?.includes('@reuben.com');
 
-      if (accessError) {
-        console.error('🔒 Organization access check failed:', accessError);
-        throw new Error(`Access validation failed: ${accessError.message}`);
-      }
-
-      if (!accessData || accessData.is_deleted) {
-        console.error('🔒 User lacks access to organization:', {
-          userId: userData.user.id,
-          organizationId: fundData.organization_id,
-          accessData
-        });
-        throw new Error('Access denied: You do not have permission to upload documents for this deal');
-      }
-
-      console.log('✅ Organization access verified:', { 
-        userId: accessData.user_id,
-        organizationId: accessData.organization_id,
-        userRole: accessData.role
+      console.log('🔐 Super admin check:', { 
+        email: userData.user.email,
+        isSuperAdmin,
+        organizationId: fundData.organization_id 
       });
+
+      // Super admins can upload to any organization
+      if (!isSuperAdmin) {
+        // For regular users, verify organization access
+        const { data: accessData, error: accessError } = await supabase
+          .from('profiles')
+          .select('user_id, organization_id, role, is_deleted')
+          .eq('user_id', userData.user.id)
+          .eq('organization_id', fundData.organization_id)
+          .maybeSingle();
+
+        if (accessError) {
+          console.error('🔒 Organization access check failed:', accessError);
+          throw new Error(`Access validation failed: ${accessError.message}`);
+        }
+
+        if (!accessData || accessData.is_deleted) {
+          console.error('🔒 User lacks access to organization:', {
+            userId: userData.user.id,
+            organizationId: fundData.organization_id,
+            accessData
+          });
+          throw new Error('Access denied: You do not have permission to upload documents for this deal');
+        }
+
+        console.log('✅ Organization access verified:', { 
+          userId: accessData.user_id,
+          organizationId: accessData.organization_id,
+          userRole: accessData.role
+        });
+      } else {
+        console.log('✅ Super admin access granted for cross-organization upload');
+      }
+
 
       // Generate unique filename
       const timestamp = Date.now();
