@@ -219,7 +219,8 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     const cagrDefaults: Record<string, number> = {
       'Financial Services': 8.5,
       'Technology': 12.3,
-      'Healthcare': 7.2,
+      'Healthcare': 9.4,
+      'HealthTech': 18.6,
       'Education': 6.1,
       'Software': 15.8,
       'Fintech': 23.4,
@@ -270,6 +271,22 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
         { name: 'Adyen', marketShare: 8.9, fundingStage: 'Public', lastFunding: 0, competitorType: 'Challenger', geography: ['Europe', 'Global'], valuation: 47000000000, description: 'Global payment platform' },
         { name: 'Klarna', marketShare: 4.2, fundingStage: 'Series C+', lastFunding: 800000000, competitorType: 'Emerging', geography: ['Europe', 'US'], valuation: 6700000000, description: 'Buy now, pay later' },
         { name: 'Revolut Business', marketShare: 2.9, fundingStage: 'Series C+', lastFunding: 800000000, competitorType: 'Emerging', geography: ['Europe', 'Global'], valuation: 33000000000, description: 'Digital banking for businesses' }
+      ],
+      'Healthcare': [
+        { name: 'Epic Systems', marketShare: 31.2, fundingStage: 'Incumbent', lastFunding: 0, competitorType: 'Incumbent', geography: ['US'], valuation: 0, description: 'Electronic health records leader' },
+        { name: 'Teladoc Health', marketShare: 18.5, fundingStage: 'Public', lastFunding: 0, competitorType: 'Challenger', geography: ['Global'], valuation: 12000000000, description: 'Telemedicine platform' },
+        { name: 'Veracyte', marketShare: 12.8, fundingStage: 'Public', lastFunding: 0, competitorType: 'Challenger', geography: ['US', 'Global'], valuation: 3500000000, description: 'Genomic diagnostics' },
+        { name: 'Amwell', marketShare: 8.3, fundingStage: 'Public', lastFunding: 0, competitorType: 'Challenger', geography: ['US'], valuation: 2800000000, description: 'Digital healthcare platform' },
+        { name: 'Health Catalyst', marketShare: 6.7, fundingStage: 'Public', lastFunding: 0, competitorType: 'Challenger', geography: ['US'], valuation: 2200000000, description: 'Healthcare data analytics' },
+        { name: 'Emerging HealthTech', marketShare: 22.5, fundingStage: 'Series A', lastFunding: 35000000, competitorType: 'Emerging', geography: ['Global'], valuation: 180000000, description: 'Digital health solutions' }
+      ],
+      'HealthTech': [
+        { name: 'Epic Systems', marketShare: 31.2, fundingStage: 'Incumbent', lastFunding: 0, competitorType: 'Incumbent', geography: ['US'], valuation: 0, description: 'Electronic health records leader' },
+        { name: 'Teladoc Health', marketShare: 18.5, fundingStage: 'Public', lastFunding: 0, competitorType: 'Challenger', geography: ['Global'], valuation: 12000000000, description: 'Telemedicine platform' },
+        { name: 'Veracyte', marketShare: 12.8, fundingStage: 'Public', lastFunding: 0, competitorType: 'Challenger', geography: ['US', 'Global'], valuation: 3500000000, description: 'Genomic diagnostics' },
+        { name: 'Amwell', marketShare: 8.3, fundingStage: 'Public', lastFunding: 0, competitorType: 'Challenger', geography: ['US'], valuation: 2800000000, description: 'Digital healthcare platform' },
+        { name: 'Health Catalyst', marketShare: 6.7, fundingStage: 'Public', lastFunding: 0, competitorType: 'Challenger', geography: ['US'], valuation: 2200000000, description: 'Healthcare data analytics' },
+        { name: 'Emerging HealthTech', marketShare: 22.5, fundingStage: 'Series A', lastFunding: 35000000, competitorType: 'Emerging', geography: ['Global'], valuation: 180000000, description: 'Digital health solutions' }
       ],
       'Hardware': [
         { name: 'Legacy Hardware OEMs', marketShare: 38.5, fundingStage: 'Incumbent', lastFunding: 0, competitorType: 'Incumbent', geography: ['Global'], valuation: 0, description: 'Traditional hardware manufacturers' },
@@ -324,6 +341,8 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     const whitespaceMap: Record<string, string[]> = {
       'E-Commerce': ['Multi-vendor B2B marketplaces', 'Industry-specific verticals', 'Emerging market solutions', 'AI-powered personalization'],
       'Fintech': ['Embedded finance for SMBs', 'Cross-border payment rails', 'Crypto-traditional bridges', 'Regulatory compliance automation'],
+      'Healthcare': ['AI-powered diagnostics', 'Remote patient monitoring', 'Personalized medicine', 'Healthcare interoperability'],
+      'HealthTech': ['AI-powered diagnostics', 'Remote patient monitoring', 'Personalized medicine', 'Healthcare interoperability'],
       'Hardware': ['Edge AI processing', 'Sustainable electronics', 'Modular IoT systems', 'Industry 4.0 integration'],
       'Software': ['No-code automation', 'AI-native applications', 'Real-time collaboration', 'Privacy-first platforms'],
       'Technology': ['AI-native development tools', 'Quantum computing applications', 'Decentralized infrastructure', 'Privacy-preserving analytics', 'Edge computing platforms', 'Sustainable tech solutions']
@@ -337,6 +356,7 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
       'Financial Services': ['Digital transformation', 'Regulatory changes', 'Consumer demand'],
       'Technology': ['AI adoption', 'Cloud migration', 'Digital infrastructure'],
       'Healthcare': ['Aging population', 'Telehealth adoption', 'Precision medicine'],
+      'HealthTech': ['Digital health transformation', 'AI in healthcare', 'Remote patient monitoring'],
       'Fintech': ['Cashless payments', 'DeFi growth', 'Financial inclusion'],
       'SaaS': ['Remote work trends', 'Digital transformation', 'Subscription economy'],
       'E-commerce': ['Mobile commerce', 'Social commerce', 'Cross-border trade'],
