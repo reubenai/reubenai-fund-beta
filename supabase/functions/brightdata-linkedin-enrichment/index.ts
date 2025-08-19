@@ -180,7 +180,9 @@ async function processBrightdataResponse(rawData: any, companyName: string, deal
     description: sourceData.about || sourceData.description || null,
     organization_type: sourceData.organization_type || null,
     industries: sourceData.industries || null,
-    specialties: sourceData.specialties || [],
+    specialties: typeof sourceData.specialties === 'string' ? 
+      sourceData.specialties.split(',').map(s => s.trim()).filter(s => s.length > 0) : 
+      (Array.isArray(sourceData.specialties) ? sourceData.specialties : []),
     slogan: sourceData.slogan || null,
     
     // Metrics and following - direct mapping where possible
