@@ -26,6 +26,14 @@ import { ProductTechnologyDeepDive } from './deep-dive/ProductTechnologyDeepDive
 import { FinancialHealthDeepDive } from './deep-dive/FinancialHealthDeepDive';
 import { BusinessTractionDeepDive } from './deep-dive/BusinessTractionDeepDive';
 
+interface SubCriteriaItem {
+  name: string;
+  score: number;
+  weight: number;
+  confidence?: number;
+  reasoning?: string;
+}
+
 interface CategoryDeepDiveSectionProps {
   category: string;
   score: number;
@@ -35,6 +43,7 @@ interface CategoryDeepDiveSectionProps {
   strengths: string[];
   concerns: string[];
   detailedAnalysis?: CategoryDeepDive;
+  subCriteria?: SubCriteriaItem[];
 }
 
 const getCategoryIcon = (category: string) => {
@@ -99,7 +108,8 @@ export function CategoryDeepDiveSection({
   insights,
   strengths,
   concerns,
-  detailedAnalysis
+  detailedAnalysis,
+  subCriteria
 }: CategoryDeepDiveSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   
@@ -197,6 +207,53 @@ export function CategoryDeepDiveSection({
             )}
           </div>
         </div>
+
+        {/* Sub-Criteria Breakdown Section */}
+        {subCriteria && subCriteria.length > 0 && (
+          <div className="space-y-3">
+            <h4 className="font-semibold text-foreground text-sm flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              Sub-Criteria Breakdown
+            </h4>
+            <div className="grid gap-3">
+              {subCriteria.map((subCriteria, index) => (
+                <div key={index} className="bg-muted/20 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">{subCriteria.name}</span>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {subCriteria.score}/100
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {subCriteria.weight}%
+                      </Badge>
+                    </div>
+                  </div>
+                  {subCriteria.confidence && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Confidence:</span>
+                      <Badge 
+                        variant="outline" 
+                        className={`text-xs ${
+                          subCriteria.confidence >= 80 ? 'text-success' :
+                          subCriteria.confidence >= 60 ? 'text-warning' :
+                          'text-destructive'
+                        }`}
+                      >
+                        {subCriteria.confidence}%
+                      </Badge>
+                    </div>
+                  )}
+                  {subCriteria.reasoning && (
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {subCriteria.reasoning}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Deep Dive Section - Always available but shows real data only */}
         <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>

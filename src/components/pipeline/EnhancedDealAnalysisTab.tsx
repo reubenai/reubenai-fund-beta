@@ -438,13 +438,22 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
             </CardContent>
           </Card>
 
-           {/* CORRECTED: Enhanced Rubric Breakdown with correct detailed analysis mapping */}
+           {/* Enhanced Rubric Breakdown with Sub-Criteria Support */}
            <div className="grid gap-4">
              {(analysis.rubric_breakdown && analysis.rubric_breakdown.length > 0) ? (
                analysis.rubric_breakdown.map((item, index) => {
-                  // Map category names to detailed_breakdown keys correctly for 6-category VC rubric
-                  const categoryKey = item.category.toLowerCase()
-                    .replace(/\s+/g, '_')
+                 // Get sub-criteria from enhanced criteria template
+                 const getSubCriteriaForCategory = (categoryName: string) => {
+                   // This will be populated from the enhanced criteria template
+                   // For now, return empty array - will be enhanced when rubric engine supports sub-criteria
+                   return [];
+                 };
+                 
+                 const subCriteria = getSubCriteriaForCategory(item.category);
+                 
+                 // Map category names to detailed_breakdown keys correctly
+                 const categoryKey = item.category.toLowerCase()
+                   .replace(/\s+/g, '_')
                     .replace('market_opportunity', 'market_opportunity')
                     .replace('product_&_technology', 'product_technology')
                     .replace('team_&_leadership', 'team_leadership')
@@ -452,19 +461,20 @@ export function EnhancedDealAnalysisTab({ deal, onDealUpdated }: EnhancedDealAna
                     .replace('trust_&_transparency', 'trust_transparency')
                     .replace('strategic_timing', 'strategic_timing');
                  
-                 return (
-                   <CategoryDeepDiveSection
-                     key={index}
-                     category={item.category}
-                     score={item.score}
-                     confidence={item.confidence}
-                     weight={item.weight}
-                     insights={item.insights}
-                     strengths={item.strengths}
-                     concerns={item.concerns}
-                     detailedAnalysis={(analysis as any).detailed_breakdown?.[categoryKey] || {}}
-                   />
-                 );
+                  return (
+                    <CategoryDeepDiveSection
+                      key={index}
+                      category={item.category}
+                      score={item.score}
+                      confidence={item.confidence}
+                      weight={item.weight}
+                      insights={item.insights}
+                      strengths={item.strengths}
+                      concerns={item.concerns}
+                      detailedAnalysis={(analysis as any).detailed_breakdown?.[categoryKey] || {}}
+                      subCriteria={subCriteria}
+                    />
+                  );
                })
              ) : (
                <Card className="card-xero">
