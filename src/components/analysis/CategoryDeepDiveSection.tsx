@@ -84,9 +84,9 @@ const getDeepDiveComponent = (category: string, detailedAnalysis?: CategoryDeepD
     return <BusinessTractionDeepDive data={detailedAnalysis.business_traction} />;
   }
   
-  // PE Categories - use PE-specific deep dive components
+  // PE Categories - use existing components until PE data structures are implemented
   if (lowerCategory.includes('performance') && detailedAnalysis.financial_health) {
-    return <PEFinancialPerformanceDeepDive data={detailedAnalysis.financial_health} />;
+    return <FinancialHealthDeepDive data={detailedAnalysis.financial_health} />;
   }
   if (lowerCategory.includes('position') && detailedAnalysis.market_opportunity) {
     return <MarketOpportunityDeepDive data={detailedAnalysis.market_opportunity} />;
