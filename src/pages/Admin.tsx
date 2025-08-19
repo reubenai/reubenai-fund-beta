@@ -47,6 +47,7 @@ import { SafeModeTestPanel } from '@/components/admin/SafeModeTestPanel';
 import { DealAllowlistManager } from '@/components/admin/DealAllowlistManager';
 import { DynamicStuckDocumentRecovery } from '@/components/admin/DynamicStuckDocumentRecovery';
 import { FeatureFlagsPanel } from '@/components/admin/FeatureFlagsPanel';
+import { BrightdataTestPanel } from '@/components/admin/BrightdataTestPanel';
 
 import { useFund } from '@/contexts/FundContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -950,6 +951,7 @@ export default function Admin() {
             companyName="Eluvo Health"
             onRefreshComplete={fetchData}
           />
+          <BrightdataTestPanel />
           <VectorDatabasePanel />
           <AIAgentsHealthPanel />
           <EnhancedPlatformActivity />

@@ -67,16 +67,30 @@ serve(async (req) => {
 
     let enrichmentData: CompanyEnrichmentData = {};
 
-    if (coresignalApiKey) {
-      console.log('Enriching with Coresignal API...');
+    // Enrichment priority: 1. Brightdata (if LinkedIn URL), 2. Coresignal, 3. Google Search
+    if (request.linkedinUrl && Deno.env.get('BRIGHTDATA_API_KEY')) {
+      console.log('🌟 Enriching with Brightdata (LinkedIn URL available)...');
+      try {
+        enrichmentData = await enrichWithBrightdata(request);
+      } catch (error) {
+        console.log('❌ Brightdata failed, falling back to Coresignal...', error.message);
+        try {
+          enrichmentData = await enrichWithCoresignal(request);
+        } catch (coresignalError) {
+          console.log('❌ Coresignal also failed, trying Google Custom Search...', coresignalError.message);
+          enrichmentData = await enrichWithGoogleSearch(request);
+        }
+      }
+    } else if (coresignalApiKey) {
+      console.log('📊 Enriching with Coresignal API...');
       try {
         enrichmentData = await enrichWithCoresignal(request);
       } catch (error) {
-        console.log('Coresignal failed, trying Google Custom Search...', error.message);
+        console.log('❌ Coresignal failed, trying Google Custom Search...', error.message);
         enrichmentData = await enrichWithGoogleSearch(request);
       }
     } else {
-      console.log('No Coresignal API key - using Google Custom Search...');
+      console.log('🔍 No premium APIs available - using Google Custom Search...');
       enrichmentData = await enrichWithGoogleSearch(request);
     }
 
@@ -128,6 +142,78 @@ serve(async (req) => {
     });
   }
 });
+
+async function enrichWithBrightdata(request: EnrichmentRequest): Promise<CompanyEnrichmentData> {
+  const brightdataApiKey = Deno.env.get('BRIGHTDATA_API_KEY');
+  if (!brightdataApiKey) {
+    throw new Error('Brightdata API key not configured');
+  }
+
+  if (!request.linkedinUrl) {
+    throw new Error('LinkedIn URL required for Brightdata enrichment');
+  }
+
+  console.log(`🌟 Brightdata enriching ${request.companyName} with LinkedIn: ${request.linkedinUrl}`);
+
+  // Call Brightdata API
+  const response = await fetch('https://api.brightdata.com/datasets/v3/trigger?dataset_id=gd_l1vikfnt1wgvvqz95w&include_errors=true', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${brightdataApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify([{ url: request.linkedinUrl }])
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`❌ Brightdata API Error: ${response.status} - ${errorText}`);
+    throw new Error(`Brightdata API error: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  console.log(`✅ Brightdata raw response:`, JSON.stringify(data, null, 2));
+
+  // Process Brightdata response
+  let companyData = data;
+  if (Array.isArray(data) && data.length > 0) {
+    companyData = data[0];
+  }
+  if (data.data) {
+    companyData = data.data;
+  }
+
+  // Extract and structure company information
+  const employeeCount = companyData.employee_count || companyData.employees || companyData.company_size || 0;
+  const industry = companyData.industry || companyData.sector || null;
+
+  return {
+    employeeCount: employeeCount || undefined,
+    keyPersonnel: companyData.employees || companyData.leadership || [],
+    competitors: [],
+    trustScore: 95,
+    dataQuality: calculateBrightdataQuality(companyData),
+    source: 'brightdata_linkedin',
+    companyId: companyData.id || companyData.company_id,
+    revenueEstimate: employeeCount ? estimateRevenue(employeeCount, industry) : undefined,
+    fundingHistory: companyData.funding_rounds || [],
+    growthRate: companyData.growth_rate || undefined,
+    marketSize: companyData.market_size || undefined
+  };
+}
+
+function calculateBrightdataQuality(data: any): number {
+  let score = 0;
+  const fields = ['company_name', 'employee_count', 'industry', 'location', 'description', 'website', 'founded'];
+  
+  fields.forEach(field => {
+    if (data[field] && data[field] !== null && data[field] !== '') {
+      score += 1;
+    }
+  });
+  
+  return Math.round((score / fields.length) * 100);
+}
 
 async function enrichWithCoresignal(request: EnrichmentRequest): Promise<CompanyEnrichmentData> {
   try {
