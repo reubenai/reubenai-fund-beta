@@ -57,8 +57,9 @@ serve(async (req) => {
       throw new Error('Brightdata API key not configured');
     }
 
-    // Call Brightdata API with the exact format from the curl command
-    const brightdataResponse = await fetch('https://api.brightdata.com/datasets/v3/trigger?dataset_id=gd_l1vikfnt1wgvvqz95w&include_errors=true', {
+    // Step 1: Trigger Brightdata data collection
+    console.log(`🚀 [Brightdata] Triggering data collection for: ${linkedinUrl}`);
+    const triggerResponse = await fetch('https://api.brightdata.com/datasets/v3/trigger?dataset_id=gd_l1vikfnt1wgvvqz95w&include_errors=true', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${brightdataApiKey}`,
@@ -67,22 +68,32 @@ serve(async (req) => {
       body: JSON.stringify([{ url: linkedinUrl }])
     });
 
-    if (!brightdataResponse.ok) {
-      const errorText = await brightdataResponse.text();
-      console.error(`❌ [Brightdata] API Error: ${brightdataResponse.status} - ${errorText}`);
+    if (!triggerResponse.ok) {
+      const errorText = await triggerResponse.text();
+      console.error(`❌ [Brightdata] Trigger Error: ${triggerResponse.status} - ${errorText}`);
       
       return new Response(JSON.stringify({
         success: false,
-        error: `Brightdata API error: ${brightdataResponse.status} - ${errorText}`,
+        error: `Brightdata trigger error: ${triggerResponse.status} - ${errorText}`,
         dataSource: 'brightdata'
       }), {
-        status: brightdataResponse.status,
+        status: triggerResponse.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    const brightdataData = await brightdataResponse.json();
-    console.log(`✅ [Brightdata] Raw response:`, JSON.stringify(brightdataData, null, 2));
+    const triggerData = await triggerResponse.json();
+    console.log(`✅ [Brightdata] Trigger response:`, JSON.stringify(triggerData, null, 2));
+    
+    const snapshotId = triggerData.snapshot_id;
+    if (!snapshotId) {
+      throw new Error('No snapshot_id returned from Brightdata trigger');
+    }
+
+    // Step 2: Poll for actual data using the snapshot_id
+    console.log(`🔄 [Brightdata] Polling for data with snapshot_id: ${snapshotId}`);
+    const brightdataData = await pollBrightdataSnapshot(snapshotId, brightdataApiKey);
+    console.log(`✅ [Brightdata] Final data retrieved:`, JSON.stringify(brightdataData, null, 2));
 
     // Process and structure the Brightdata response
     const processedData = await processBrightdataResponse(brightdataData, companyName);
@@ -140,16 +151,15 @@ async function processBrightdataResponse(rawData: any, companyName: string): Pro
     companyData = rawData.data;
   }
 
-  // Extract key information from Brightdata response
+  // Extract key information from Brightdata response with proper field mapping
   const processed = {
     company_name: companyData.company_name || companyData.name || companyName,
-    employee_count: companyData.employee_count || companyData.employees || null,
-    industry: companyData.industry || companyData.sector || null,
-    location: companyData.location || companyData.headquarters || null,
-    description: companyData.description || companyData.about || null,
     website: companyData.website || companyData.company_website || null,
-    founded_year: companyData.founded || companyData.founded_year || null,
-    company_size: companyData.company_size || null,
+    Founded: companyData.founded || companyData.founded_year || null,
+    'Team Size': companyData.employee_count || companyData.employees || companyData.company_size || null,
+    Headquarters: companyData.location || companyData.headquarters || null,
+    industry: companyData.industry || companyData.sector || null,
+    description: companyData.description || companyData.about || null,
     specialties: companyData.specialties || [],
     
     // LinkedIn specific data
@@ -171,6 +181,45 @@ async function processBrightdataResponse(rawData: any, companyName: string): Pro
 
   console.log(`✅ [Brightdata] Processed data for ${companyName}:`, JSON.stringify(processed, null, 2));
   return processed;
+}
+
+async function pollBrightdataSnapshot(snapshotId: string, apiKey: string, maxAttempts: number = 10): Promise<any> {
+  console.log(`🔄 [Brightdata] Polling snapshot ${snapshotId}...`);
+  
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    console.log(`📊 [Brightdata] Poll attempt ${attempt}/${maxAttempts}`);
+    
+    try {
+      const response = await fetch(`https://api.brightdata.com/datasets/v3/snapshot/${snapshotId}?format=json`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Check if data is ready
+        if (data && data.length > 0 && data[0] && Object.keys(data[0]).length > 1) {
+          console.log(`✅ [Brightdata] Data ready for snapshot ${snapshotId}`);
+          return data;
+        }
+      }
+      
+      // Wait before next attempt (exponential backoff)
+      const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 30000);
+      console.log(`⏱️ [Brightdata] Waiting ${waitTime}ms before next poll...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      
+    } catch (error) {
+      console.log(`❌ [Brightdata] Poll attempt ${attempt} failed:`, error.message);
+      if (attempt === maxAttempts) {
+        throw new Error(`Failed to retrieve data after ${maxAttempts} attempts: ${error.message}`);
+      }
+    }
+  }
+  
+  throw new Error(`Snapshot data not ready after ${maxAttempts} attempts`);
 }
 
 function estimateRevenue(employeeCount: number | null, industry: string | null): number | null {

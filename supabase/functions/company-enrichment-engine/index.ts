@@ -94,13 +94,16 @@ serve(async (req) => {
       enrichmentData = await enrichWithGoogleSearch(request);
     }
 
-    // Store enrichment data
+    // Update deal fields selectively (only NULL fields) and store enrichment data
+    const updatedFields = await updateDealFieldsSelectively(request.dealId, enrichmentData);
+    
     const updatedEnhancedAnalysis = {
       ...deal.enhanced_analysis,
       company_enrichment: {
         ...enrichmentData,
         last_enriched: new Date().toISOString(),
-        source: enrichmentData.source || (enrichmentData.trustScore >= 70 ? 'coresignal_api' : 'google_custom_search')
+        source: enrichmentData.source || (enrichmentData.trustScore >= 70 ? 'coresignal_api' : 'google_custom_search'),
+        fields_updated: updatedFields
       }
     };
 
@@ -144,62 +147,119 @@ serve(async (req) => {
 });
 
 async function enrichWithBrightdata(request: EnrichmentRequest): Promise<CompanyEnrichmentData> {
-  const brightdataApiKey = Deno.env.get('BRIGHTDATA_API_KEY');
-  if (!brightdataApiKey) {
-    throw new Error('Brightdata API key not configured');
-  }
-
-  if (!request.linkedinUrl) {
-    throw new Error('LinkedIn URL required for Brightdata enrichment');
-  }
-
-  console.log(`🌟 Brightdata enriching ${request.companyName} with LinkedIn: ${request.linkedinUrl}`);
-
-  // Call Brightdata API
-  const response = await fetch('https://api.brightdata.com/datasets/v3/trigger?dataset_id=gd_l1vikfnt1wgvvqz95w&include_errors=true', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${brightdataApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify([{ url: request.linkedinUrl }])
+  // Call the dedicated Brightdata function for async processing
+  const { data, error } = await supabase.functions.invoke('brightdata-linkedin-enrichment', {
+    body: {
+      dealId: request.dealId,
+      companyName: request.companyName,
+      linkedinUrl: request.linkedinUrl
+    }
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`❌ Brightdata API Error: ${response.status} - ${errorText}`);
-    throw new Error(`Brightdata API error: ${response.status} - ${errorText}`);
+  if (error) {
+    console.error('❌ Brightdata function error:', error);
+    throw new Error(`Brightdata enrichment failed: ${error.message}`);
   }
 
-  const data = await response.json();
-  console.log(`✅ Brightdata raw response:`, JSON.stringify(data, null, 2));
-
-  // Process Brightdata response
-  let companyData = data;
-  if (Array.isArray(data) && data.length > 0) {
-    companyData = data[0];
-  }
-  if (data.data) {
-    companyData = data.data;
+  if (!data?.success) {
+    throw new Error(`Brightdata enrichment failed: ${data?.error || 'Unknown error'}`);
   }
 
-  // Extract and structure company information
-  const employeeCount = companyData.employee_count || companyData.employees || companyData.company_size || 0;
-  const industry = companyData.industry || companyData.sector || null;
-
+  const enrichmentData = data.data;
+  
+  // Transform the enrichment data to match our interface
   return {
-    employeeCount: employeeCount || undefined,
-    keyPersonnel: companyData.employees || companyData.leadership || [],
+    employeeCount: enrichmentData['Team Size'] || undefined,
+    website: enrichmentData.website || undefined,
+    foundingYear: enrichmentData.Founded || undefined,
+    location: enrichmentData.Headquarters || undefined,
+    keyPersonnel: enrichmentData.key_personnel || [],
     competitors: [],
-    trustScore: 95,
-    dataQuality: calculateBrightdataQuality(companyData),
+    trustScore: data.trustScore || 95,
+    dataQuality: data.dataQuality || 85,
     source: 'brightdata_linkedin',
-    companyId: companyData.id || companyData.company_id,
-    revenueEstimate: employeeCount ? estimateRevenue(employeeCount, industry) : undefined,
-    fundingHistory: companyData.funding_rounds || [],
-    growthRate: companyData.growth_rate || undefined,
-    marketSize: companyData.market_size || undefined
+    revenueEstimate: enrichmentData.revenue_estimate || undefined,
+    fundingHistory: enrichmentData.funding_rounds || [],
+    rawData: enrichmentData // Store full response for selective updates
   };
+}
+
+async function updateDealFieldsSelectively(dealId: string, enrichmentData: any): Promise<string[]> {
+  console.log('🔄 [Selective Update] Checking fields to update for deal:', dealId);
+  
+  // Get current deal data
+  const { data: deal } = await supabase
+    .from('deals')
+    .select('website, founding_year, employee_count, location')
+    .eq('id', dealId)
+    .single();
+    
+  if (!deal) {
+    throw new Error('Deal not found for selective update');
+  }
+
+  const updates: any = {};
+  const updatedFields: string[] = [];
+  
+  // Map Brightdata JSON fields to deal table fields - only update if NULL
+  const fieldMappings = [
+    { 
+      sourceField: 'website', 
+      targetField: 'website', 
+      currentValue: deal.website 
+    },
+    { 
+      sourceField: 'Founded', 
+      targetField: 'founding_year', 
+      currentValue: deal.founding_year 
+    },
+    { 
+      sourceField: 'Team Size', 
+      targetField: 'employee_count', 
+      currentValue: deal.employee_count 
+    },
+    { 
+      sourceField: 'Headquarters', 
+      targetField: 'location', 
+      currentValue: deal.location 
+    }
+  ];
+
+  // Check each field mapping
+  for (const mapping of fieldMappings) {
+    const sourceValue = enrichmentData.rawData?.[mapping.sourceField];
+    
+    if (sourceValue && !mapping.currentValue) {
+      updates[mapping.targetField] = sourceValue;
+      updatedFields.push(mapping.targetField);
+      console.log(`✅ [Selective Update] Will update ${mapping.targetField}: ${sourceValue}`);
+    } else if (mapping.currentValue) {
+      console.log(`⏭️ [Selective Update] Skipping ${mapping.targetField} (has value: ${mapping.currentValue})`);
+    } else {
+      console.log(`⏭️ [Selective Update] Skipping ${mapping.targetField} (no source data)`);
+    }
+  }
+
+  // Perform the update if we have fields to update
+  if (Object.keys(updates).length > 0) {
+    updates.updated_at = new Date().toISOString();
+    
+    const { error } = await supabase
+      .from('deals')
+      .update(updates)
+      .eq('id', dealId);
+      
+    if (error) {
+      console.error('❌ [Selective Update] Failed to update deal:', error);
+      throw new Error(`Failed to update deal fields: ${error.message}`);
+    }
+    
+    console.log(`✅ [Selective Update] Updated ${updatedFields.length} fields:`, updatedFields);
+  } else {
+    console.log('ℹ️ [Selective Update] No fields needed updating');
+  }
+
+  return updatedFields;
 }
 
 function calculateBrightdataQuality(data: any): number {
