@@ -4837,6 +4837,10 @@ export type Database = {
         | "meeting_scheduled"
         | "investment_decision"
         | "system_event"
+        | "linkedin_enrichment_triggered"
+        | "linkedin_enrichment_api_error"
+        | "linkedin_enrichment_trigger_error"
+        | "linkedin_url_validation_failed"
       deal_score_level:
         | "exciting"
         | "promising"
@@ -5030,6 +5034,10 @@ export const Constants = {
         "meeting_scheduled",
         "investment_decision",
         "system_event",
+        "linkedin_enrichment_triggered",
+        "linkedin_enrichment_api_error",
+        "linkedin_enrichment_trigger_error",
+        "linkedin_url_validation_failed",
       ],
       deal_score_level: [
         "exciting",
