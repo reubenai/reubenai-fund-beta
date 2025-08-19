@@ -146,6 +146,12 @@ class DocumentService {
         });
 
       if (uploadError) {
+        console.error('💾 Storage upload failed:', {
+          error: uploadError,
+          fileName: input.file.name,
+          filePath,
+          bucket: 'deal-documents'
+        });
         throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
