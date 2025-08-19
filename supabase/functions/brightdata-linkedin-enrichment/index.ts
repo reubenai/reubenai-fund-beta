@@ -27,9 +27,10 @@ serve(async (req) => {
   }
 
   try {
+    // Create service role client for internal operations
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
         global: {
           headers: { Authorization: req.headers.get('Authorization')! },
@@ -159,7 +160,9 @@ async function processBrightdataResponse(rawData: any, companyName: string, deal
     
     // Company identification
     company_id: companyData.company_id || companyData.id || null,
-    linkedin_url: `https://www.linkedin.com/company/${companyData.id || companyData.company_id || ''}`,
+    linkedin_url: companyData.linkedin_url || 
+      (companyData.id || companyData.company_id ? 
+        `https://www.linkedin.com/company/${companyData.id || companyData.company_id}` : null),
     company_name: companyData.name || companyName,
     
     // Company description and details
@@ -210,16 +213,51 @@ async function processBrightdataResponse(rawData: any, companyName: string, deal
     processing_status: 'raw'
   };
 
-  // Insert into the new LinkedIn export table
-  const { error: insertError } = await supabaseClient
+  // Insert into the new LinkedIn export table with detailed error handling
+  console.log('🔄 [Brightdata] Attempting to insert LinkedIn export data...');
+  console.log('📋 [Brightdata] Data to insert:', JSON.stringify({
+    deal_id: linkedinExportData.deal_id,
+    snapshot_id: linkedinExportData.snapshot_id,
+    company_name: linkedinExportData.company_name,
+    linkedin_url: linkedinExportData.linkedin_url,
+    has_raw_data: !!linkedinExportData.raw_brightdata_response
+  }, null, 2));
+
+  const { data: insertData, error: insertError } = await supabaseClient
     .from('deal_enrichment_linkedin_export')
-    .insert(linkedinExportData);
+    .insert(linkedinExportData)
+    .select();
 
   if (insertError) {
-    console.error('❌ [Brightdata] Failed to insert LinkedIn export:', insertError);
-    // Continue processing even if structured storage fails
+    console.error('❌ [Brightdata] Failed to insert LinkedIn export:', {
+      error: insertError,
+      code: insertError.code,
+      message: insertError.message,
+      details: insertError.details,
+      hint: insertError.hint
+    });
+    
+    // Try a simpler insert with just required fields
+    console.log('🔄 [Brightdata] Attempting simplified insert...');
+    const simplifiedData = {
+      deal_id: dealId,
+      snapshot_id: snapshotId,
+      raw_brightdata_response: rawData,
+      company_name: companyData.name || companyName,
+      processing_status: 'raw'
+    };
+    
+    const { error: simpleInsertError } = await supabaseClient
+      .from('deal_enrichment_linkedin_export')
+      .insert(simplifiedData);
+    
+    if (simpleInsertError) {
+      console.error('❌ [Brightdata] Simplified insert also failed:', simpleInsertError);
+    } else {
+      console.log('✅ [Brightdata] Simplified LinkedIn export saved');
+    }
   } else {
-    console.log('✅ [Brightdata] Saved structured LinkedIn export for', companyName);
+    console.log('✅ [Brightdata] Full LinkedIn export saved successfully:', insertData);
   }
 
   // Return legacy format for backward compatibility

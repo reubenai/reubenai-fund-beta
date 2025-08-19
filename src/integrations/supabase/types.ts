@@ -4366,6 +4366,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      backfill_linkedin_exports: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          deal_id: string
+          snapshot_id: string
+          status: string
+        }[]
+      }
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
