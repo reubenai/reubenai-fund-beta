@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface VectorSearchOptions {
   contentType?: string;
@@ -20,120 +21,117 @@ interface VectorSearchResult {
 export function useVectorSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<VectorSearchResult[]>([]);
+  const { toast } = useToast();
 
-  const generateEmbedding = async (text: string): Promise<number[] | null> => {
+  const generateEmbedding = useCallback(async (text: string): Promise<number[] | null> => {
     try {
       const { data, error } = await supabase.functions.invoke('vector-embedding-generator', {
-        body: { text, contentType: 'query' }
+        body: { text }
       });
 
-      if (error) {
-        console.error('Failed to generate embedding:', error);
-        return null;
-      }
-
+      if (error) throw error;
       return data.embedding;
     } catch (error) {
       console.error('Error generating embedding:', error);
       return null;
     }
-  };
+  }, []);
 
-  const semanticSearch = async (
+  const semanticSearch = useCallback(async (
     query: string, 
     options: VectorSearchOptions = {}
   ): Promise<VectorSearchResult[]> => {
     setIsSearching(true);
     try {
-      // Generate embedding for the query
+      // Generate embedding for query
       const queryEmbedding = await generateEmbedding(query);
       if (!queryEmbedding) {
         throw new Error('Failed to generate query embedding');
       }
 
-      // Perform vector similarity search
+      // Search for similar vectors - use pgvector format
       const { data, error } = await supabase.rpc('vector_similarity_search', {
-        query_embedding: queryEmbedding,
+        query_embedding: `[${queryEmbedding.join(',')}]`,
         content_type_filter: options.contentType || null,
         fund_id_filter: options.fundId || null,
         similarity_threshold: options.similarityThreshold || 0.7,
         max_results: options.maxResults || 10
       });
 
-      if (error) {
-        console.error('Vector search failed:', error);
-        return [];
-      }
+      if (error) throw error;
 
       const results = data || [];
       setSearchResults(results);
       return results;
     } catch (error) {
-      console.error('Semantic search failed:', error);
+      console.error('Vector search failed:', error);
+      toast({
+        title: "Search Error",
+        description: "Failed to perform semantic search. Please try again.",
+        variant: "destructive"
+      });
       return [];
     } finally {
       setIsSearching(false);
     }
-  };
+  }, [generateEmbedding, toast]);
 
-  const findSimilarDeals = async (dealId: string, fundId?: string): Promise<VectorSearchResult[]> => {
+  const findSimilarDeals = useCallback(async (
+    dealId: string,
+    fundId?: string
+  ): Promise<VectorSearchResult[]> => {
     try {
-      // Get deal details first
-      const { data: deal, error: dealError } = await supabase
+      // Get the deal's content for similarity search
+      const { data: deal, error } = await supabase
         .from('deals')
-        .select('company_name, description, industry')
+        .select('company_name, description, industry, business_model')
         .eq('id', dealId)
         .single();
 
-      if (dealError || !deal) {
-        console.error('Failed to fetch deal:', dealError);
-        return [];
-      }
+      if (error) throw error;
 
-      // Create search query from deal data
-      const searchQuery = `${deal.company_name} ${deal.description} ${deal.industry}`;
-      
-      return await semanticSearch(searchQuery, {
-        contentType: 'deal_document',
+      const searchText = [
+        deal.company_name,
+        deal.description,
+        deal.industry,
+        deal.business_model
+      ].filter(Boolean).join(' ');
+
+      return await semanticSearch(searchText, {
+        contentType: 'deal',
         fundId,
-        similarityThreshold: 0.6,
-        maxResults: 10
+        maxResults: 5
       });
     } catch (error) {
-      console.error('Failed to find similar deals:', error);
+      console.error('Error finding similar deals:', error);
       return [];
     }
-  };
+  }, [semanticSearch]);
 
-  const hybridSearch = async (
+  const hybridSearch = useCallback(async (
     query: string,
     options: VectorSearchOptions = {}
-  ): Promise<{ semantic: VectorSearchResult[], text: any[] }> => {
+  ): Promise<{semantic: VectorSearchResult[], text: any[]}> => {
     try {
-      // Perform semantic search
-      const semanticResults = await semanticSearch(query, options);
-
-      // Perform text-based search in parallel
-      const textSearchPromise = supabase
-        .from('vector_embeddings')
-        .select('*')
-        .textSearch('content_text', query, { 
-          type: 'websearch',
-          config: 'english'
-        })
-        .limit(options.maxResults || 10);
-
-      const { data: textResults } = await textSearchPromise;
+      // Perform both semantic and text search in parallel
+      const [semanticResults, textResults] = await Promise.all([
+        semanticSearch(query, options),
+        supabase
+          .from('deals')
+          .select('*')
+          .or(`company_name.ilike.%${query}%,description.ilike.%${query}%,industry.ilike.%${query}%`)
+          .limit(options.maxResults || 10)
+      ]);
 
       return {
         semantic: semanticResults,
-        text: textResults || []
+        text: textResults.data || []
       };
     } catch (error) {
       console.error('Hybrid search failed:', error);
       return { semantic: [], text: [] };
     }
-  };
+  }, [semanticSearch]);
 
   return {
     isSearching,

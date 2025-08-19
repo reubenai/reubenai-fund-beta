@@ -29,6 +29,7 @@ import { OrganizationOnboarding } from '@/components/admin/OrganizationOnboardin
 import { DealAnalysisPreCheck } from '@/components/admin/DealAnalysisPreCheck';
 import { EnhancedPlatformActivity } from '@/components/admin/EnhancedPlatformActivity';
 import { AIAgentsHealthPanel } from '@/components/admin/AIAgentsHealthPanel';
+import { VectorDatabasePanel } from '@/components/admin/VectorDatabasePanel';
 import { AdminThesisConfigModal } from '@/components/admin/AdminThesisConfigModal';
 import { AdminBulkUploadModal } from '@/components/admin/AdminBulkUploadModal';
 import { AdminInviteUserModal } from '@/components/admin/AdminInviteUserModal';
@@ -940,8 +941,10 @@ export default function Admin() {
           </Tabs>
         </div>
         
-        {/* Platform Activity Sidebar */}
-        <div className="lg:col-span-1">
+        {/* System Health & Analytics Sidebar */}
+        <div className="lg:col-span-1 space-y-6">
+          <VectorDatabasePanel />
+          <AIAgentsHealthPanel />
           <EnhancedPlatformActivity />
         </div>
       </div>
