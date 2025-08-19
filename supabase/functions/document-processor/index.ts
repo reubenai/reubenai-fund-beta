@@ -226,6 +226,37 @@ serve(async (req) => {
       throw new Error('Failed to save analysis results');
     }
 
+    // Generate vector embedding for the extracted text
+    if (extractedText && extractedText.length > 100) {
+      try {
+        console.log(`Generating vector embedding for document: ${document.name}`);
+        const embeddingResult = await supabaseClient.functions.invoke('vector-embedding-generator', {
+          body: {
+            text: extractedText,
+            contentType: 'deal_document',
+            contentId: document.id,
+            fundId: document.fund_id,
+            metadata: {
+              document_name: document.name,
+              document_category: document.document_category,
+              deal_id: document.deal_id,
+              analysis_type: analysisType,
+              extracted_at: new Date().toISOString()
+            }
+          }
+        });
+
+        if (embeddingResult.error) {
+          console.warn('Vector embedding generation failed:', embeddingResult.error);
+        } else {
+          console.log('✅ Vector embedding generated successfully');
+        }
+      } catch (embeddingError) {
+        console.warn('Vector embedding generation failed:', embeddingError);
+        // Don't fail document processing if embedding fails
+      }
+    }
+
     // Log activity
     await supabaseClient.from('activity_events').insert({
       fund_id: document.fund_id,

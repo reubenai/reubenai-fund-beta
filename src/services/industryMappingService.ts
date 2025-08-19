@@ -23,7 +23,10 @@ class IndustryMappingService {
         "fintech", "payments", "lending", "insurance", "wealth management",
         "cryptocurrency", "blockchain", "trading", "neobank", "regtech",
         "insurtech", "wealthtech", "payment processing", "digital banking",
-        "peer-to-peer lending", "robo-advisor", "credit scoring", "personal finance"
+        "peer-to-peer lending", "robo-advisor", "credit scoring", "personal finance",
+        "digital payments & processing", "lending & credit solutions", "digital banking & neobanks",
+        "insurance technology (insurtech)", "wealth management & investment", "regulatory technology (regtech)",
+        "cryptocurrency & blockchain", "personal finance management", "trade finance & b2b payments"
       ],
       relatedTerms: ["digital finance", "financial technology", "capital markets"]
     },
@@ -35,18 +38,24 @@ class IndustryMappingService {
         "artificial intelligence", "machine learning", "cloud computing",
         "mobile apps", "web platforms", "api services", "automation",
         "devops", "data analytics", "business intelligence", "crm",
-        "erp", "productivity software", "collaboration tools"
+        "erp", "productivity software", "collaboration tools",
+        "saas & cloud software", "artificial intelligence & machine learning", "developer tools & infrastructure",
+        "cybersecurity & data privacy", "enterprise software", "api & integration platforms",
+        "low-code/no-code platforms", "database & analytics", "devops & automation"
       ],
       relatedTerms: ["information technology", "software development", "digital platforms"]
     },
     {
-      canonical: "Healthcare",
-      aliases: ["health", "medical", "pharma", "pharmaceutical"],
+      canonical: "Healthcare & Life Sciences",
+      aliases: ["health", "medical", "pharma", "pharmaceutical", "healthcare", "life sciences"],
       subcategories: [
         "healthtech", "digital health", "telemedicine", "medical devices",
         "biotechnology", "diagnostics", "therapeutics", "health records",
         "patient care", "medical imaging", "clinical trials", "precision medicine",
-        "mental health", "wellness", "fitness", "nutrition", "eldercare"
+        "mental health", "wellness", "fitness", "nutrition", "eldercare",
+        "digital health & telemedicine", "medical devices & diagnostics", "biotechnology & pharmaceuticals",
+        "health records & data management", "mental health & wellness", "precision medicine & genomics",
+        "medical imaging & ai diagnostics", "therapeutic development", "clinical trial technology"
       ],
       relatedTerms: ["life sciences", "medical technology", "health services"]
     },
