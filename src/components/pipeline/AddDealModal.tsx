@@ -40,7 +40,9 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
     crunchbase_url: '',
     current_round_size: '',
     valuation: '',
-    currency: 'USD'
+    currency: 'USD',
+    founder_name: '',
+    founder_email: ''
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -51,8 +53,16 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
 
   // Memoize form validation to prevent unnecessary re-renders
   const isFormValid = useMemo(() => {
-    return formData.company_name.trim().length > 0;
-  }, [formData.company_name]);
+    return (
+      formData.company_name.trim().length > 0 &&
+      formData.industry.length > 0 &&
+      formData.specialized_sectors.length > 0 &&
+      formData.location.length > 0 &&
+      formData.founder_name.trim().length > 0 &&
+      formData.founder_email.trim().length > 0 &&
+      formData.website.trim().length > 0
+    );
+  }, [formData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,13 +72,27 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
       return;
     }
     
-    if (!formData.company_name.trim()) {
-      toast({
-        title: "Error",
-        description: "Company name is required",
-        variant: "destructive"
-      });
-      return;
+    // Validate required fields
+    const requiredFields = [
+      { field: 'company_name', label: 'Company name' },
+      { field: 'industry', label: 'Primary industries' },
+      { field: 'specialized_sectors', label: 'Specialized sectors' },
+      { field: 'location', label: 'Location' },
+      { field: 'founder_name', label: 'Founder name' },
+      { field: 'founder_email', label: 'Founder email' },
+      { field: 'website', label: 'Company website' }
+    ];
+
+    for (const { field, label } of requiredFields) {
+      const value = formData[field as keyof typeof formData];
+      if (Array.isArray(value) ? value.length === 0 : !value?.toString().trim()) {
+        toast({
+          title: "Error",
+          description: `${label} is required`,
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     // Set submission guard and loading state immediately
@@ -99,7 +123,9 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
         crunchbase_url: formData.crunchbase_url || undefined,
         current_round_size: formData.current_round_size ? parseInt(formData.current_round_size) : undefined,
         valuation: formData.valuation ? parseInt(formData.valuation) : undefined,
-        currency: formData.currency || undefined
+        currency: formData.currency || undefined,
+        founder_name: formData.founder_name || undefined,
+        founder_email: formData.founder_email || undefined
       };
 
       // Fallback to original method first, then enhance
@@ -167,7 +193,9 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
       crunchbase_url: '',
       current_round_size: '',
       valuation: '',
-      currency: 'USD'
+      currency: 'USD',
+      founder_name: '',
+      founder_email: ''
     });
     submissionInProgress.current = false;
     onClose();
@@ -220,7 +248,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
               {/* Industry & Location */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="industry">Primary Industries</Label>
+                  <Label htmlFor="industry">Primary Industries *</Label>
                   <MultiSelect
                     options={COMPREHENSIVE_INDUSTRY_OPTIONS.filter(opt => !opt.value.includes('_sector_'))}
                     value={formData.industry}
@@ -234,7 +262,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
                   </p>
                 </div>
                 <div>
-                  <Label htmlFor="location">Location</Label>
+                  <Label htmlFor="location">Location *</Label>
                   <MultiSelect
                     options={LOCATION_OPTIONS}
                     value={formData.location}
@@ -251,7 +279,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
 
               {/* Specialized Sectors */}
               <div>
-                <Label htmlFor="specialized_sectors">Specialized Sectors</Label>
+                <Label htmlFor="specialized_sectors">Specialized Sectors *</Label>
                 <MultiSelect
                   options={COMPREHENSIVE_INDUSTRY_OPTIONS.filter(opt => opt.value.includes('_sector_'))}
                   value={formData.specialized_sectors}
@@ -265,15 +293,41 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
                 </p>
               </div>
 
+              {/* Founder Information */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="founder_name">Founder Name *</Label>
+                  <Input
+                    id="founder_name"
+                    value={formData.founder_name}
+                    onChange={(e) => handleInputChange('founder_name', e.target.value)}
+                    placeholder="Enter founder's name"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="founder_email">Founder Email *</Label>
+                  <Input
+                    id="founder_email"
+                    type="email"
+                    value={formData.founder_email}
+                    onChange={(e) => handleInputChange('founder_email', e.target.value)}
+                    placeholder="founder@company.com"
+                    required
+                  />
+                </div>
+              </div>
+
               {/* Website & Social URLs */}
               <div>
-                <Label htmlFor="website">Website</Label>
+                <Label htmlFor="website">Company Website *</Label>
                 <Input
                   id="website"
                   type="url"
                   value={formData.website}
                   onChange={(e) => handleInputChange('website', e.target.value)}
                   placeholder="https://company.com"
+                  required
                 />
               </div>
               

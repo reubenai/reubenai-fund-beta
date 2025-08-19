@@ -148,11 +148,6 @@ export function HierarchicalSectorSelector({
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-medium text-sm">{industry.canonical}</h3>
-                        {fundType && (
-                          <span className="text-xs text-muted-foreground">
-                            {fundType.toUpperCase()} {fundType === 'vc' ? industry.vcRelevance : industry.peRelevance}/10
-                          </span>
-                        )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">{industry.description}</p>
                     </div>
