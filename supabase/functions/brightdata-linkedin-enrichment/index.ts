@@ -152,65 +152,77 @@ async function processBrightdataResponse(rawData: any, companyName: string, deal
     companyData = rawData.data;
   }
 
-  // Store structured LinkedIn export data
+  // Extract from raw response structure - use direct field mapping where possible
+  let sourceData = companyData;
+  
+  // If raw_response exists and has data, extract from it
+  if (rawData.raw_response && Array.isArray(rawData.raw_response) && rawData.raw_response.length > 0) {
+    sourceData = rawData.raw_response[0];
+  } else if (Array.isArray(rawData) && rawData.length > 0) {
+    sourceData = rawData[0];
+  }
+  
+  // Store structured LinkedIn export data with proper field mapping
   const linkedinExportData = {
     deal_id: dealId,
     snapshot_id: snapshotId,
     timestamp: new Date().toISOString(),
     
-    // Company identification
-    company_id: companyData.company_id || companyData.id || null,
-    linkedin_url: companyData.linkedin_url || 
-      (companyData.id || companyData.company_id ? 
-        `https://www.linkedin.com/company/${companyData.id || companyData.company_id}` : null),
-    company_name: companyData.name || companyName,
+    // Company identification - direct mapping where field names match
+    company_id: sourceData.company_id || sourceData.id || null,
+    linkedin_url: sourceData.linkedin_url || 
+      (sourceData.id || sourceData.company_id ? 
+        `https://www.linkedin.com/company/${sourceData.id || sourceData.company_id}` : null),
+    company_name: sourceData.company_name || sourceData.name || companyName,
     
-    // Company description and details
-    about: companyData.about || null,
-    description: companyData.about || null,
-    organization_type: companyData.organization_type || null,
-    industries: companyData.industries || null,
-    specialties: companyData.specialties || [],
+    // Company description and details - direct mapping
+    about: sourceData.about || null,
+    description: sourceData.about || sourceData.description || null,
+    organization_type: sourceData.organization_type || null,
+    industries: sourceData.industries || null,
+    specialties: sourceData.specialties || [],
+    slogan: sourceData.slogan || null,
     
-    // Metrics and following
-    followers: companyData.followers || null,
-    employees_in_linkedin: companyData.employees_in_linkedin || null,
-    company_size: companyData.company_size || null,
+    // Metrics and following - direct mapping where possible
+    followers: sourceData.followers || null,
+    employees_in_linkedin: sourceData.employees_in_linkedin || null,
+    company_size: sourceData.company_size || null,
     
-    // Location information
-    headquarters: companyData.headquarters || null,
-    country_code: companyData.country_code || null,
-    country_codes_array: companyData.country_codes || [],
-    locations: companyData.locations || [],
-    formatted_locations: companyData.formatted_locations || [],
+    // Location information - direct mapping
+    headquarters: sourceData.headquarters || null,
+    country_code: sourceData.country_code || null,
+    country_codes_array: sourceData.country_codes || [],
+    locations: sourceData.locations || [],
+    formatted_locations: sourceData.formatted_locations || [],
+    get_directions_url: sourceData.get_directions_url || null,
     
-    // Web presence
-    website: companyData.website || null,
-    website_simplified: companyData.website_simplified || null,
+    // Web presence - direct mapping
+    website: sourceData.website || null,
+    website_simplified: sourceData.website_simplified || null,
+    crunchbase_url: sourceData.crunchbase_url || null,
     
-    // Financial and company data
-    founded: companyData.founded || null,
-    funding: companyData.funding || {},
-    investors: companyData.investors || [],
-    crunchbase_url: companyData.crunchbase_url || null,
-    stock_info: companyData.stock_info || {},
+    // Financial and company data - direct mapping
+    founded: sourceData.founded || null,
+    funding: sourceData.funding || {},
+    investors: sourceData.investors || [],
+    stock_info: sourceData.stock_info || {},
     
-    // Social and network data
-    employees: companyData.employees || [],
-    alumni: companyData.alumni || [],
-    alumni_information: companyData.alumni_information || {},
-    updates: companyData.updates || [],
-    similar_companies: companyData.similar || [],
-    affiliated: companyData.affiliated || [],
+    // Social and network data - direct mapping
+    employees: sourceData.employees || [],
+    alumni: sourceData.alumni || [],
+    alumni_information: sourceData.alumni_information || {},
+    updates: sourceData.updates || [],
+    similar_companies: sourceData.similar_companies || sourceData.similar || [],
+    affiliated: sourceData.affiliated || [],
     
-    // Visual assets
-    image: companyData.image || null,
-    logo: companyData.logo || null,
+    // Visual assets - direct mapping
+    image: sourceData.image || null,
+    logo: sourceData.logo || null,
     
     // Raw data and processing
     raw_brightdata_response: rawData,
-    unformatted_about: companyData.about || null,
-    processing_status: 'raw'
+    unformatted_about: sourceData.about || null,
+    processing_status: 'processed'
   };
 
   // Insert into the new LinkedIn export table with detailed error handling
