@@ -57,7 +57,7 @@ export interface TractionDeepDive {
   growth_trajectory?: GrowthMetric[];
 }
 
-// Supporting data structures
+// Enhanced supporting data structures for multi-industry analysis
 export interface CompetitorAnalysis {
   name: string;
   market_share?: string;
@@ -65,6 +65,40 @@ export interface CompetitorAnalysis {
   strengths: string[];
   weaknesses: string[];
   funding_stage?: string;
+  valuation?: number;
+  last_funding?: number;
+  geography: string[];
+  competitor_type: 'Incumbent' | 'Challenger' | 'Emerging' | 'Whitespace';
+}
+
+export interface IndustryCompetitiveAnalysis {
+  industry: string;
+  weight: number;
+  competitors: CompetitorAnalysis[];
+  hhi_index: number;
+  competitive_tension: 'High' | 'Medium' | 'Low';
+  whitespace_opportunities: string[];
+  market_fragmentation: 'Concentrated' | 'Moderate' | 'Fragmented';
+  citation: any;
+}
+
+export interface IndustryGrowthAnalysis {
+  industry: string;
+  weight: number;
+  cagr: number;
+  growth_drivers: string[];
+  market_cycle: 'Early Adopter' | 'Early Majority' | 'Late Majority' | 'Laggards';
+  citation: any;
+}
+
+export interface IndustryMarketSizing {
+  industry: string;
+  weight: number;
+  tam: number;
+  sam: number;
+  som: number;
+  market_maturity: 'Emerging' | 'Growth' | 'Mature' | 'Declining';
+  citation: any;
 }
 
 export interface CustomerInsight {

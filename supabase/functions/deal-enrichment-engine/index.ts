@@ -353,6 +353,13 @@ async function enrichMarketOpportunity(dealData: any, fundData: any, request: En
       financial: Object.keys(extractedFinancialMetrics),
       competitive: Object.keys(extractedCompetitiveData)
     });
+
+    // Enhanced multi-industry competitive analysis
+    const enhancedCompetitiveData = await enrichCompetitiveIntelligence(
+      dealData, 
+      competitive_research.insights || '', 
+      extractedCompetitiveData
+    );
     
     return {
       pack_name: 'vc_market_opportunity',
@@ -373,7 +380,8 @@ async function enrichMarketOpportunity(dealData: any, fundData: any, request: En
           top_players: extractedCompetitiveData.competitors || ['Competitive analysis pending'],
           market_position: extractedCompetitiveData.market_position || 'unknown',
           competitive_advantages: extractedCompetitiveData.competitive_advantages || ['Competitive advantage analysis pending'],
-          funding_trends: extractedFinancialMetrics.funding || { value: 0, unit: 'unknown', raw_text: 'Funding trend analysis pending' }
+          funding_trends: extractedFinancialMetrics.funding || { value: 0, unit: 'unknown', raw_text: 'Funding trend analysis pending' },
+          enhanced_competitive_data: enhancedCompetitiveData
         },
         financial_context: {
           revenue_data: extractedFinancialMetrics.revenue || { value: 0, unit: 'unknown', raw_text: 'Revenue analysis pending' },

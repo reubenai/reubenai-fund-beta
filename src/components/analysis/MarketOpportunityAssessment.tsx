@@ -22,6 +22,8 @@ import { Deal } from '@/hooks/usePipelineDeals';
 import { supabase } from '@/integrations/supabase/client';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ScatterChart, Scatter, ResponsiveContainer } from 'recharts';
+import { EnhancedCompetitivePosition } from './deep-dive/EnhancedCompetitivePosition';
+import { CompetitorAnalysis } from '@/types/enhanced-deal-analysis';
 
 interface MarketOpportunityAssessmentProps {
   deal: Deal;
@@ -234,6 +236,21 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
       }
     }
     return 8.0; // Default CAGR
+  };
+
+  const convertToEnhancedCompetitors = (competitors: CompetitorProfile[]): CompetitorAnalysis[] => {
+    return competitors.map(comp => ({
+      name: comp.name,
+      market_share: comp.marketShare.toString(),
+      positioning: comp.description || 'Market player',
+      strengths: [`${comp.competitorType} in market`, 'Established presence'],
+      weaknesses: ['Legacy constraints', 'Innovation gaps'],
+      funding_stage: comp.fundingStage,
+      valuation: comp.valuation,
+      last_funding: comp.lastFunding,
+      geography: comp.geography,
+      competitor_type: comp.competitorType as 'Incumbent' | 'Challenger' | 'Emerging' | 'Whitespace'
+    }));
   };
 
   const getRelevantCompetitorsForIndustry = (industry: string): CompetitorProfile[] => {
