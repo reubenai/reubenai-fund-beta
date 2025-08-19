@@ -45,7 +45,7 @@ export function useAnalysisScheduler({
 
       console.log('📬 Found queued analyses - triggering processor');
 
-      const { data, error } = await supabase.functions.invoke('analysis-queue-processor');
+      const { data, error } = await supabase.functions.invoke('universal-analysis-processor');
 
       if (error) {
         console.error('❌ Queue processing failed:', error);

@@ -29,6 +29,7 @@ import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import OnboardingDemo from "./pages/OnboardingDemo";
 import { PostHogRouterTracker } from "@/components/analytics/PostHogRouterTracker";
+import { useAnalysisScheduler } from "@/hooks/useAnalysisScheduler";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,12 +49,19 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <GlobalErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <FundProvider>
-          <TooltipProvider>
+const App = () => {
+  // Global analysis queue scheduler - runs automatically in the background
+  useAnalysisScheduler({ 
+    enabled: true, 
+    intervalMinutes: 1 // Check every minute for maximum responsiveness
+  });
+
+  return (
+    <GlobalErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <FundProvider>
+            <TooltipProvider>
             <Toaster />
             <Sonner />
             <BrowserRouter>
@@ -187,6 +195,7 @@ const App = () => (
       </AuthProvider>
     </QueryClientProvider>
   </GlobalErrorBoundary>
-);
+  );
+};
 
 export default App;
