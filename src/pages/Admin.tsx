@@ -39,6 +39,7 @@ import { EnhancedOrganizationsTable } from '@/components/admin/EnhancedOrganizat
 import { AdminSupportTickets } from '@/components/admin/AdminSupportTickets';
 import { ForceAnalysisProcessor } from '@/components/admin/ForceAnalysisProcessor';
 import { ComprehensiveFixVerifier } from '@/components/admin/ComprehensiveFixVerifier';
+import { ForceAnalysisRefresh } from '@/components/admin/ForceAnalysisRefresh';
 import { APIConfigurationPanel } from '@/components/admin/APIConfigurationPanel';
 import { DealDataRepairTool } from '@/components/admin/DealDataRepairTool';
 import { AnalysisQueueDashboard } from '@/components/admin/AnalysisQueueDashboard';
@@ -943,6 +944,12 @@ export default function Admin() {
         
         {/* System Health & Analytics Sidebar */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Force Refresh for Eluvo Health */}
+          <ForceAnalysisRefresh 
+            dealId="81c22db4-51bb-4c8a-b8e0-ec17918af497"
+            companyName="Eluvo Health"
+            onRefreshComplete={fetchData}
+          />
           <VectorDatabasePanel />
           <AIAgentsHealthPanel />
           <EnhancedPlatformActivity />
