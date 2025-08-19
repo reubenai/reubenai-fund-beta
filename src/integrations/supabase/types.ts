@@ -1506,6 +1506,7 @@ export type Database = {
           organization_id: string | null
           overall_score: number | null
           previous_funding_amount: number | null
+          primary_industry: string | null
           primary_source: string | null
           priority: string | null
           rag_confidence: number | null
@@ -1515,6 +1516,7 @@ export type Database = {
           score_level: Database["public"]["Enums"]["deal_score_level"] | null
           source_confidence_score: number | null
           source_method: string | null
+          specialized_sectors: string[] | null
           status: Database["public"]["Enums"]["deal_status"] | null
           target_market: string | null
           technology_stack: string[] | null
@@ -1563,6 +1565,7 @@ export type Database = {
           organization_id?: string | null
           overall_score?: number | null
           previous_funding_amount?: number | null
+          primary_industry?: string | null
           primary_source?: string | null
           priority?: string | null
           rag_confidence?: number | null
@@ -1572,6 +1575,7 @@ export type Database = {
           score_level?: Database["public"]["Enums"]["deal_score_level"] | null
           source_confidence_score?: number | null
           source_method?: string | null
+          specialized_sectors?: string[] | null
           status?: Database["public"]["Enums"]["deal_status"] | null
           target_market?: string | null
           technology_stack?: string[] | null
@@ -1620,6 +1624,7 @@ export type Database = {
           organization_id?: string | null
           overall_score?: number | null
           previous_funding_amount?: number | null
+          primary_industry?: string | null
           primary_source?: string | null
           priority?: string | null
           rag_confidence?: number | null
@@ -1629,6 +1634,7 @@ export type Database = {
           score_level?: Database["public"]["Enums"]["deal_score_level"] | null
           source_confidence_score?: number | null
           source_method?: string | null
+          specialized_sectors?: string[] | null
           status?: Database["public"]["Enums"]["deal_status"] | null
           target_market?: string | null
           technology_stack?: string[] | null
