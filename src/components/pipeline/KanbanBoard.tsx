@@ -19,7 +19,9 @@ interface KanbanBoardState {
   filters: {
     status?: string;
     ragStatus?: string;
-    industry?: string;
+    industry?: string[];
+    primaryIndustry?: string[];
+    specializedSectors?: string[];
     dealSizeMin?: number;
     dealSizeMax?: number;
     scoreMin?: number;
@@ -158,9 +160,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
           }
         }
 
-        // Industry filter
-        if (filters.industry && deal.industry && !deal.industry.toLowerCase().includes(filters.industry.toLowerCase())) {
-          return false;
+        // Industry filter (updated for hierarchical)
+        if (filters.primaryIndustry?.length && deal.industry) {
+          const dealIndustry = deal.industry.toLowerCase();
+          const hasMatch = filters.primaryIndustry.some(fi => dealIndustry.includes(fi.toLowerCase()));
+          if (!hasMatch) return false;
         }
 
         // Deal size range filter

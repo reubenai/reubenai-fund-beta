@@ -6,11 +6,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { X, Filter } from 'lucide-react';
+import { MultiSelect } from '@/components/ui/multi-select';
+import { COMPREHENSIVE_INDUSTRY_OPTIONS } from '@/constants/enhancedIndustries';
 
 interface Filters {
   status?: string;
   ragStatus?: string;
-  industry?: string;
+  industry?: string[];
+  primaryIndustry?: string[];
+  specializedSectors?: string[];
   currentRoundSizeMin?: number;
   currentRoundSizeMax?: number;
   scoreMin?: number;
@@ -108,14 +112,16 @@ export const PipelineFilters: React.FC<PipelineFiltersProps> = ({
             </Select>
           </div>
 
-          {/* Industry Filter */}
+          {/* Primary Industry Filter */}
           <div className="space-y-2">
-            <Label className="text-xs font-medium">Industry</Label>
-            <Input
-              placeholder="Filter by industry"
-              value={filters.industry || ''}
-              onChange={(e) => updateFilter('industry', e.target.value)}
-              className="h-8 text-xs"
+            <Label className="text-xs font-medium">Primary Industries</Label>
+            <MultiSelect
+              options={COMPREHENSIVE_INDUSTRY_OPTIONS.filter(opt => !opt.value.includes('_sector_'))}
+              value={filters.primaryIndustry || []}
+              onValueChange={(value) => updateFilter('primaryIndustry', value.length > 0 ? value : undefined)}
+              placeholder="Select industries..."
+              searchPlaceholder="Search industries..."
+              maxDisplay={1}
             />
           </div>
 
@@ -145,7 +151,20 @@ export const PipelineFilters: React.FC<PipelineFiltersProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Specialized Sectors Filter */}
+          <div className="space-y-2">
+            <Label className="text-xs font-medium">Specialized Sectors</Label>
+            <MultiSelect
+              options={COMPREHENSIVE_INDUSTRY_OPTIONS.filter(opt => opt.value.includes('_sector_'))}
+              value={filters.specializedSectors || []}
+              onValueChange={(value) => updateFilter('specializedSectors', value.length > 0 ? value : undefined)}
+              placeholder="Select sectors..."
+              searchPlaceholder="Search sectors..."
+              maxDisplay={1}
+            />
+          </div>
+
           {/* Current Round Size Range */}
           <div className="space-y-2">
             <Label className="text-xs font-medium">Current Round Size Range (USD)</Label>
@@ -196,11 +215,22 @@ export const PipelineFilters: React.FC<PipelineFiltersProps> = ({
                   </button>
                 </Badge>
               )}
-              {filters.industry && (
+              {filters.primaryIndustry && filters.primaryIndustry.length > 0 && (
                 <Badge variant="outline" className="text-xs">
-                  Industry: {filters.industry}
+                  Industries: {filters.primaryIndustry.join(', ')}
                   <button
-                    onClick={() => updateFilter('industry', undefined)}
+                    onClick={() => updateFilter('primaryIndustry', undefined)}
+                    className="ml-1 hover:bg-muted rounded-full"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {filters.specializedSectors && filters.specializedSectors.length > 0 && (
+                <Badge variant="outline" className="text-xs">
+                  Sectors: {filters.specializedSectors.join(', ')}
+                  <button
+                    onClick={() => updateFilter('specializedSectors', undefined)}
                     className="ml-1 hover:bg-muted rounded-full"
                   >
                     <X className="h-3 w-3" />

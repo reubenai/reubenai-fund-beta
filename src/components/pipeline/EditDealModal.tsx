@@ -8,11 +8,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { MultiSelect } from '@/components/ui/multi-select';
+import { COMPREHENSIVE_INDUSTRY_OPTIONS } from '@/constants/enhancedIndustries';
 
 interface Deal {
   id: string;
   company_name: string;
   industry?: string;
+  primary_industry?: string;
+  specialized_sectors?: string[];
   location?: string;
   headquarters?: string;
   deal_size?: number;
@@ -59,7 +63,8 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
   const [formData, setFormData] = useState({
     company_name: '',
     description: '',
-    industry: '',
+    industry: [] as string[],
+    specialized_sectors: [] as string[],
     location: '',
     headquarters: '',
     website: '',
@@ -97,7 +102,8 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
       setFormData({
         company_name: deal.company_name || '',
         description: deal.description || '',
-        industry: deal.industry || '',
+        industry: deal.industry ? deal.industry.split(';').filter(Boolean) : [],
+        specialized_sectors: deal.specialized_sectors || [],
         location: deal.location || '',
         headquarters: deal.headquarters || '',
         website: deal.website || '',
@@ -148,7 +154,9 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
       const updateData = {
         company_name: formData.company_name,
         description: formData.description || null,
-        industry: formData.industry || null,
+        industry: Array.isArray(formData.industry) && formData.industry.length > 0 ? formData.industry.join(';') : null,
+        primary_industry: Array.isArray(formData.industry) && formData.industry.length > 0 ? formData.industry[0] : null,
+        specialized_sectors: Array.isArray(formData.specialized_sectors) && formData.specialized_sectors.length > 0 ? formData.specialized_sectors : null,
         location: formData.location || null,
         headquarters: formData.headquarters || null,
         website: formData.website || null,
@@ -205,7 +213,7 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -252,12 +260,14 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
             {/* Industry & Location */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="industry">Industry</Label>
-                <Input
-                  id="industry"
-                  value={formData.industry}
-                  onChange={(e) => handleInputChange('industry', e.target.value)}
-                  placeholder="e.g. SaaS, Fintech"
+                <Label htmlFor="industry">Primary Industries</Label>
+                <MultiSelect
+                  options={COMPREHENSIVE_INDUSTRY_OPTIONS.filter(opt => !opt.value.includes('_sector_'))}
+                  value={Array.isArray(formData.industry) ? formData.industry : []}
+                  onValueChange={(value) => handleInputChange('industry', value)}
+                  placeholder="Select primary industries..."
+                  searchPlaceholder="Search industries..."
+                  maxDisplay={2}
                 />
               </div>
               <div>
@@ -269,6 +279,19 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
                   placeholder="e.g. San Francisco, CA"
                 />
               </div>
+            </div>
+
+            {/* Specialized Sectors */}
+            <div>
+              <Label htmlFor="specialized_sectors">Specialized Sectors</Label>
+              <MultiSelect
+                options={COMPREHENSIVE_INDUSTRY_OPTIONS.filter(opt => opt.value.includes('_sector_'))}
+                value={Array.isArray(formData.specialized_sectors) ? formData.specialized_sectors : []}
+                onValueChange={(value) => handleInputChange('specialized_sectors', value)}
+                placeholder="Select specialized sectors..."
+                searchPlaceholder="Search specialized sectors..."
+                maxDisplay={3}
+              />
             </div>
 
             {/* Headquarters & Target Market */}

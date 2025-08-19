@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAnalysisIntegration } from '@/hooks/useAnalysisIntegration';
 import { Building2 } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { STANDARDIZED_SECTORS, sectorsToString } from '@/constants/sectors';
+import { COMPREHENSIVE_INDUSTRY_OPTIONS } from '@/constants/enhancedIndustries';
 import { LOCATION_OPTIONS, locationsToString, stringToLocations } from '@/constants/locations';
 
 interface AddDealModalProps {
@@ -32,7 +32,8 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
   const [formData, setFormData] = useState({
     company_name: '',
     description: '',
-    industry: [] as string[], // Changed to array for multi-select
+    industry: [] as string[], // Array for hierarchical industry selection
+    specialized_sectors: [] as string[], // Array for specialized sectors
     location: [] as string[], // Changed to array for multi-select
     website: '',
     linkedin_url: '',
@@ -89,7 +90,9 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
         company_name: formData.company_name,
         created_by: user.id,
         description: formData.description || undefined,
-        industry: formData.industry.length > 0 ? sectorsToString(formData.industry) : undefined, // Convert array to string
+        industry: formData.industry.length > 0 ? formData.industry.join(';') : undefined, // Convert array to string
+        primary_industry: formData.industry.length > 0 ? formData.industry[0] : undefined, // First selected as primary
+        specialized_sectors: formData.specialized_sectors.length > 0 ? formData.specialized_sectors : undefined,
         location: formData.location.length > 0 ? locationsToString(formData.location) : undefined, // Convert array to string
         website: formData.website || undefined,
         linkedin_url: formData.linkedin_url || undefined,
@@ -157,6 +160,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
       company_name: '',
       description: '',
       industry: [], // Reset to empty array
+      specialized_sectors: [], // Reset specialized sectors
       location: [], // Reset to empty array
       website: '',
       linkedin_url: '',
@@ -216,17 +220,17 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
               {/* Industry & Location */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="industry">Industry / Sectors</Label>
+                  <Label htmlFor="industry">Primary Industries</Label>
                   <MultiSelect
-                    options={STANDARDIZED_SECTORS}
+                    options={COMPREHENSIVE_INDUSTRY_OPTIONS.filter(opt => !opt.value.includes('_sector_'))}
                     value={formData.industry}
                     onValueChange={(value) => handleInputChange('industry', value)}
-                    placeholder="Select industries..."
-                    searchPlaceholder="Search sectors..."
+                    placeholder="Select primary industries..."
+                    searchPlaceholder="Search industries..."
                     maxDisplay={2}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Select multiple sectors that best describe the company
+                    Select primary industries (e.g., Technology, Healthcare)
                   </p>
                 </div>
                 <div>
@@ -243,6 +247,22 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
                     Select countries or startup ecosystems
                   </p>
                 </div>
+              </div>
+
+              {/* Specialized Sectors */}
+              <div>
+                <Label htmlFor="specialized_sectors">Specialized Sectors</Label>
+                <MultiSelect
+                  options={COMPREHENSIVE_INDUSTRY_OPTIONS.filter(opt => opt.value.includes('_sector_'))}
+                  value={formData.specialized_sectors}
+                  onValueChange={(value) => handleInputChange('specialized_sectors', value)}
+                  placeholder="Select specialized sectors..."
+                  searchPlaceholder="Search specialized sectors..."
+                  maxDisplay={3}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Select specific sectors (e.g., SaaS & Cloud Software, Digital Health)
+                </p>
               </div>
 
               {/* Website & Social URLs */}

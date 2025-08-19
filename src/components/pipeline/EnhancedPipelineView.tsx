@@ -21,7 +21,9 @@ interface PipelineViewState {
   filters: {
     status?: string;
     ragStatus?: string;
-    industry?: string;
+    industry?: string[];
+    primaryIndustry?: string[];
+    specializedSectors?: string[];
     currentRoundSizeMin?: number;
     currentRoundSizeMax?: number;
     scoreMin?: number;
@@ -146,9 +148,11 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fund
           }
         }
 
-        // Industry filter
-        if (filters.industry && deal.industry && !deal.industry.toLowerCase().includes(filters.industry.toLowerCase())) {
-          return false;
+        // Industry filter (using existing industry field for now)
+        if (filters.primaryIndustry?.length && deal.industry) {
+          const dealIndustry = deal.industry.toLowerCase();
+          const hasMatch = filters.primaryIndustry.some(fi => dealIndustry.includes(fi.toLowerCase()));
+          if (!hasMatch) return false;
         }
 
         // Current round size range filter
