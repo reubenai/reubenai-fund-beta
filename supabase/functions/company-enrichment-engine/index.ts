@@ -167,30 +167,59 @@ async function enrichWithBrightdata(request: EnrichmentRequest): Promise<Company
 
   const enrichmentData = data.data;
   
-  // Transform the enrichment data to match our interface
+  // Enhanced data extraction from Brightdata response
+  const extractEmployeeCount = (teamData: any): number | undefined => {
+    if (Array.isArray(teamData)) return teamData.length;
+    if (typeof teamData === 'number') return teamData;
+    if (typeof teamData === 'string') {
+      const match = teamData.match(/(\d+)/);
+      return match ? parseInt(match[1]) : undefined;
+    }
+    return undefined;
+  };
+
+  const extractWebsite = (rawResponse: any): string | undefined => {
+    // Try multiple possible website fields from Brightdata
+    return rawResponse?.website || 
+           rawResponse?.company_website || 
+           rawResponse?.url ||
+           undefined;
+  };
+
+  const extractDescription = (rawResponse: any): string | undefined => {
+    return rawResponse?.about || 
+           rawResponse?.description || 
+           rawResponse?.summary ||
+           undefined;
+  };
+
+  // Transform the enrichment data with intelligent extraction
   return {
-    employeeCount: enrichmentData['Team Size'] || undefined,
-    website: enrichmentData.website || undefined,
-    foundingYear: enrichmentData.Founded || undefined,
-    location: enrichmentData.Headquarters || undefined,
+    employeeCount: extractEmployeeCount(enrichmentData['Team Size'] || enrichmentData.employees),
+    website: extractWebsite(enrichmentData.raw_response?.[0] || enrichmentData),
+    foundingYear: enrichmentData.Founded || enrichmentData.founded,
+    location: enrichmentData.Headquarters || enrichmentData.headquarters || enrichmentData.location,
     keyPersonnel: enrichmentData.key_personnel || [],
-    competitors: [],
+    competitors: enrichmentData.competitors || [],
     trustScore: data.trustScore || 95,
     dataQuality: data.dataQuality || 85,
     source: 'brightdata_linkedin',
-    revenueEstimate: enrichmentData.revenue_estimate || undefined,
+    revenueEstimate: enrichmentData.revenue_estimate || 
+                    (extractEmployeeCount(enrichmentData['Team Size']) ? 
+                     estimateRevenue(extractEmployeeCount(enrichmentData['Team Size'])!, enrichmentData.specialties) : 
+                     undefined),
     fundingHistory: enrichmentData.funding_rounds || [],
-    rawData: enrichmentData // Store full response for selective updates
+    rawData: enrichmentData.raw_response?.[0] || enrichmentData // Store the actual Brightdata response
   };
 }
 
 async function updateDealFieldsSelectively(dealId: string, enrichmentData: any): Promise<string[]> {
   console.log('🔄 [Selective Update] Checking fields to update for deal:', dealId);
   
-  // Get current deal data
+  // Get current deal data with more fields
   const { data: deal } = await supabase
     .from('deals')
-    .select('website, founding_year, employee_count, location')
+    .select('website, founding_year, employee_count, location, description, industry, fund_id')
     .eq('id', dealId)
     .single();
     
@@ -201,38 +230,96 @@ async function updateDealFieldsSelectively(dealId: string, enrichmentData: any):
   const updates: any = {};
   const updatedFields: string[] = [];
   
-  // Map Brightdata JSON fields to deal table fields - only update if NULL
+  // Process Brightdata data with proper extraction
+  const rawData = enrichmentData.rawData;
+  if (!rawData) {
+    console.log('⚠️ [Selective Update] No raw data available for field mapping');
+    return updatedFields;
+  }
+
+  // Enhanced field mappings with proper data processing
   const fieldMappings = [
     { 
       sourceField: 'website', 
       targetField: 'website', 
-      currentValue: deal.website 
+      currentValue: deal.website,
+      processor: (value: any) => typeof value === 'string' ? value : null
     },
     { 
-      sourceField: 'Founded', 
+      sourceField: 'founded', 
       targetField: 'founding_year', 
-      currentValue: deal.founding_year 
+      currentValue: deal.founding_year,
+      processor: (value: any) => typeof value === 'number' ? value : parseInt(value)
     },
     { 
-      sourceField: 'Team Size', 
+      sourceField: 'employees', 
       targetField: 'employee_count', 
-      currentValue: deal.employee_count 
+      currentValue: deal.employee_count,
+      processor: (value: any) => {
+        // Handle different Brightdata formats for employee count
+        if (Array.isArray(value)) return value.length;
+        if (typeof value === 'number') return value;
+        if (typeof value === 'string' && value.includes('-')) {
+          // Handle ranges like "51-200 employees"
+          const match = value.match(/(\d+)-(\d+)/);
+          if (match) return parseInt(match[1]); // Use lower bound
+        }
+        return parseInt(value) || null;
+      }
     },
     { 
-      sourceField: 'Headquarters', 
+      sourceField: 'headquarters', 
       targetField: 'location', 
-      currentValue: deal.location 
+      currentValue: deal.location,
+      processor: (value: any) => typeof value === 'string' ? value : null
+    },
+    { 
+      sourceField: 'about', 
+      targetField: 'description', 
+      currentValue: deal.description,
+      processor: (value: any) => typeof value === 'string' ? value.substring(0, 1000) : null
+    },
+    { 
+      sourceField: 'industries', 
+      targetField: 'industry', 
+      currentValue: deal.industry,
+      processor: (value: any) => {
+        if (typeof value === 'string') return value;
+        if (Array.isArray(value) && value.length > 0) return value[0];
+        return null;
+      }
     }
   ];
 
-  // Check each field mapping
+  // Check each field mapping with intelligent processing
   for (const mapping of fieldMappings) {
-    const sourceValue = enrichmentData.rawData?.[mapping.sourceField];
+    // Try multiple source field variations
+    const possibleSources = [
+      mapping.sourceField,
+      mapping.sourceField.charAt(0).toUpperCase() + mapping.sourceField.slice(1), // Capitalize
+      mapping.sourceField.replace('_', ' '), // Space instead of underscore
+      mapping.sourceField.replace(/([A-Z])/g, ' $1').toLowerCase().trim() // camelCase to words
+    ];
     
-    if (sourceValue && !mapping.currentValue) {
-      updates[mapping.targetField] = sourceValue;
-      updatedFields.push(mapping.targetField);
-      console.log(`✅ [Selective Update] Will update ${mapping.targetField}: ${sourceValue}`);
+    let sourceValue = null;
+    for (const source of possibleSources) {
+      if (rawData[source] !== undefined && rawData[source] !== null) {
+        sourceValue = rawData[source];
+        break;
+      }
+    }
+    
+    // Process the value if found
+    if (sourceValue !== null && !mapping.currentValue) {
+      const processedValue = mapping.processor(sourceValue);
+      
+      if (processedValue !== null && processedValue !== undefined) {
+        updates[mapping.targetField] = processedValue;
+        updatedFields.push(mapping.targetField);
+        console.log(`✅ [Selective Update] Will update ${mapping.targetField}: ${processedValue}`);
+      } else {
+        console.log(`⏭️ [Selective Update] Skipping ${mapping.targetField} (processing failed for: ${sourceValue})`);
+      }
     } else if (mapping.currentValue) {
       console.log(`⏭️ [Selective Update] Skipping ${mapping.targetField} (has value: ${mapping.currentValue})`);
     } else {
@@ -259,7 +346,107 @@ async function updateDealFieldsSelectively(dealId: string, enrichmentData: any):
     console.log('ℹ️ [Selective Update] No fields needed updating');
   }
 
+  // Generate and store vector embeddings for the enrichment data
+  if (deal.fund_id) {
+    await generateVectorEmbeddings(dealId, deal.fund_id, rawData);
+  }
+
   return updatedFields;
+}
+
+async function generateVectorEmbeddings(dealId: string, fundId: string, rawData: any): Promise<void> {
+  try {
+    console.log('🔮 [Vector Storage] Generating embeddings for enrichment data...');
+    
+    // Create comprehensive text for embedding from Brightdata data
+    const embeddingTexts = [];
+    
+    // Company description embedding
+    if (rawData.about || rawData.description) {
+      const description = rawData.about || rawData.description;
+      embeddingTexts.push({
+        text: description,
+        contentType: 'company_description',
+        metadata: {
+          source: 'brightdata',
+          industry: rawData.industries || rawData.specialties,
+          founded: rawData.founded,
+          employee_count: Array.isArray(rawData.employees) ? rawData.employees.length : rawData.employees_in_linkedin
+        }
+      });
+    }
+    
+    // Team and personnel embedding
+    if (rawData.employees && Array.isArray(rawData.employees)) {
+      const teamText = rawData.employees
+        .map(emp => `${emp.title || ''} ${emp.subtitle || ''} - ${emp.title || 'Employee'}`)
+        .join('. ');
+      
+      if (teamText.trim()) {
+        embeddingTexts.push({
+          text: teamText,
+          contentType: 'team_personnel',
+          metadata: {
+            source: 'brightdata',
+            team_size: rawData.employees.length,
+            key_roles: rawData.employees.map(emp => emp.subtitle).filter(Boolean)
+          }
+        });
+      }
+    }
+    
+    // Company updates and insights embedding
+    if (rawData.updates && Array.isArray(rawData.updates) && rawData.updates.length > 0) {
+      const updatesText = rawData.updates
+        .slice(0, 3) // Latest 3 updates
+        .map(update => update.text || update.title || '')
+        .filter(Boolean)
+        .join('. ');
+      
+      if (updatesText.trim()) {
+        embeddingTexts.push({
+          text: updatesText,
+          contentType: 'company_updates',
+          metadata: {
+            source: 'brightdata',
+            updates_count: rawData.updates.length,
+            latest_update: rawData.updates[0]?.time || rawData.updates[0]?.date
+          }
+        });
+      }
+    }
+    
+    // Generate embeddings for each text
+    for (const embeddingData of embeddingTexts) {
+      try {
+        const { data, error } = await supabase.functions.invoke('vector-embedding-generator', {
+          body: {
+            text: embeddingData.text,
+            contentType: embeddingData.contentType,
+            contentId: dealId,
+            fundId: fundId,
+            metadata: {
+              ...embeddingData.metadata,
+              brightdata_enrichment: true,
+              generated_at: new Date().toISOString()
+            }
+          }
+        });
+        
+        if (error) {
+          console.error(`❌ [Vector Storage] Failed to generate ${embeddingData.contentType} embedding:`, error);
+        } else {
+          console.log(`✅ [Vector Storage] Generated ${embeddingData.contentType} embedding with ${data?.dimensions || 'unknown'} dimensions`);
+        }
+      } catch (error) {
+        console.error(`❌ [Vector Storage] Error generating ${embeddingData.contentType} embedding:`, error.message);
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ [Vector Storage] Error in vector embedding generation:', error.message);
+    // Don't fail the main process if vector generation fails
+  }
 }
 
 function calculateBrightdataQuality(data: any): number {
