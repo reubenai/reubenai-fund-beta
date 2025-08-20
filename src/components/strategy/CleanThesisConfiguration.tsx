@@ -73,7 +73,9 @@ export function CleanThesisConfiguration({
     try {
       const updatesWithId = {
         ...editedStrategy,
-        id: strategy.id
+        id: strategy.id,
+        fund_id: fundId, // Ensure fund_id is always present
+        fund_type: strategy.fund_type || 'vc' // Ensure fund_type is present
       };
       
       console.log('Calling updateStrategy with:', updatesWithId);

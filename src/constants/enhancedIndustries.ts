@@ -181,7 +181,7 @@ export const ENHANCED_INDUSTRY_OPTIONS: MultiSelectOption[] = ENHANCED_INDUSTRIE
 export const SECTOR_OPTIONS: MultiSelectOption[] = ENHANCED_INDUSTRIES.flatMap(industry =>
   industry.sectors.map(sector => ({
     label: sector,
-    value: sector.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''),
+    value: `${sector.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')}_sector_`,
     category: industry.canonical
   }))
 );
