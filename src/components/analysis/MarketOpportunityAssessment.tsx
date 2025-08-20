@@ -1611,7 +1611,21 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                       <div className="bg-muted/30 rounded-lg p-6 space-y-6">
                         <p className="text-muted-foreground">Loading enhanced competitive analysis...</p>
                       </div>
-                    ) : null}
+                    ) : (
+                      <div className="bg-muted/30 rounded-lg p-6 space-y-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="font-medium text-card-foreground">Enhanced Competitive Intelligence</h4>
+                          <button
+                            onClick={() => runCompetitiveAnalysis(deal.id, deal.fund_id)}
+                            disabled={isAnalyzing}
+                            className="px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 disabled:opacity-50"
+                          >
+                            {isAnalyzing ? 'Analyzing...' : 'Run Analysis'}
+                          </button>
+                        </div>
+                        <p className="text-muted-foreground">Click "Run Analysis" to get detailed competitive intelligence with real competitor data, market positioning, and whitespace opportunities.</p>
+                      </div>
+                    )}
                   </div>
                 )}
                 
