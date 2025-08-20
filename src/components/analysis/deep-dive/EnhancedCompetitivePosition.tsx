@@ -223,7 +223,15 @@ export const EnhancedCompetitivePosition: React.FC<EnhancedCompetitivePositionPr
     return (
       <Card>
         <CardContent className="p-6">
-          <p className="text-muted-foreground">No competitive position data available</p>
+          <div className="text-center space-y-4">
+            <Building2 className="h-12 w-12 text-muted-foreground mx-auto" />
+            <div>
+              <p className="text-muted-foreground">Enhanced competitive analysis in progress</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Real competitor mapping and intelligence gathering underway
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     );

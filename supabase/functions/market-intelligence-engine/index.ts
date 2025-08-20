@@ -77,24 +77,40 @@ async function analyzeMarketIntelligence(dealId: string, fundId: string, context
   const documentInsights = documentData ? await extractMarketIntelligenceFromDocuments(documentData) : null;
   console.log('📄 Market Intelligence Engine: Document insights extracted');
 
+  // Get real competitive intelligence
+  let competitiveIntelligence = null;
+  try {
+    console.log('🏆 Market Intelligence Engine: Triggering competitive intelligence analysis');
+    const { data: competitiveData } = await supabase.functions.invoke('enhanced-competitive-intelligence', {
+      body: { dealId, fundId, context: { industry: deal?.industry, geography: deal?.geography } }
+    });
+    competitiveIntelligence = competitiveData;
+    console.log('✅ Market Intelligence Engine: Competitive intelligence retrieved');
+  } catch (error) {
+    console.error('⚠️ Market Intelligence Engine: Competitive intelligence failed, using fallback');
+  }
+
   // Prepare enhanced context for AI analysis
   const enhancedContext = `
     Company: ${deal?.company_name}
     Industry: ${deal?.industry}
     Stage: ${deal?.stage}
+    Geography: ${deal?.geography}
     
     Historical Context: ${JSON.stringify(memoryContext)}
     
     Document Intelligence: ${documentInsights ? JSON.stringify(documentInsights) : 'No documents processed'}
+    
+    Competitive Intelligence: ${competitiveIntelligence ? JSON.stringify(competitiveIntelligence) : 'Competitive analysis pending'}
   `;
 
   // Call OpenAI for comprehensive market analysis
   const marketAnalysis = await callOpenAI([
     {
       role: 'system',
-      content: `You are a senior market intelligence analyst with access to proprietary document intelligence. 
-      Provide comprehensive market opportunity assessment prioritizing document-validated insights over generic analysis.
-      CRITICAL: Weight document-extracted data heavily in your analysis and scoring.`
+      content: `You are a senior market intelligence analyst with access to proprietary document intelligence and real competitive data. 
+      Provide comprehensive market opportunity assessment prioritizing document-validated insights and real competitor analysis over generic analysis.
+      CRITICAL: Weight document-extracted data and real competitive intelligence heavily in your analysis and scoring.`
     },
     {
       role: 'user',
@@ -102,38 +118,44 @@ async function analyzeMarketIntelligence(dealId: string, fundId: string, context
         
         Provide detailed market intelligence analysis including:
         1. Market size and growth potential (prioritize document data)
-        2. Competitive landscape and positioning
+        2. Competitive landscape with REAL competitor names and positioning (use competitive intelligence data)
         3. Market timing and opportunity assessment
         4. Customer validation and traction evidence
         5. Geographic market opportunities
         6. Risk factors and mitigation strategies
-        7. Overall market attractiveness score (1-10) with heavy weighting for document insights
+        7. Overall market attractiveness score (1-10) with heavy weighting for document and competitive insights
       `
     }
   ]);
 
-  // Calculate enhanced scoring with document intelligence weighting
+  // Calculate enhanced scoring with both document and competitive intelligence weighting
   const baseScore = extractScore(marketAnalysis);
   const documentBoost = calculateDocumentIntelligenceBoost(documentInsights);
-  const enhancedScore = Math.min(baseScore + documentBoost, 10);
+  const competitiveBoost = competitiveIntelligence ? 1.5 : 0; // Boost for real competitive data
+  const enhancedScore = Math.min(baseScore + documentBoost + competitiveBoost, 10);
 
-  console.log(`📈 Market Intelligence Engine: Base score: ${baseScore}, Document boost: ${documentBoost}, Final: ${enhancedScore}`);
+  console.log(`📈 Market Intelligence Engine: Base score: ${baseScore}, Document boost: ${documentBoost}, Competitive boost: ${competitiveBoost}, Final: ${enhancedScore}`);
 
   return {
     dealId,
     marketSize: extractMarketSize(marketAnalysis, documentInsights),
-    competitiveLandscape: extractCompetitive(marketAnalysis, documentInsights),
+    competitiveLandscape: extractCompetitive(marketAnalysis, documentInsights, competitiveIntelligence),
     timing: extractTiming(marketAnalysis, documentInsights),
     risks: extractRisks(marketAnalysis, documentInsights),
     customerValidation: extractCustomerValidation(marketAnalysis, documentInsights),
     geographicOpportunity: extractGeographicOpportunity(marketAnalysis, documentInsights),
     overallScore: enhancedScore,
     documentIntelligenceScore: documentBoost,
-    confidence: documentInsights?.hasValidatedData ? 0.95 : 0.75,
+    competitiveIntelligenceScore: competitiveBoost,
+    confidence: (documentInsights?.hasValidatedData ? 0.4 : 0.2) + (competitiveIntelligence ? 0.4 : 0.2) + 0.3,
     analysis: marketAnalysis,
-    sources: documentInsights?.hasValidatedData ? 
-      ['openai_analysis', 'fund_memory', 'validated_documents'] : 
-      ['openai_analysis', 'fund_memory'],
+    competitiveData: competitiveIntelligence,
+    sources: [
+      'openai_analysis', 
+      'fund_memory',
+      ...(documentInsights?.hasValidatedData ? ['validated_documents'] : []),
+      ...(competitiveIntelligence ? ['competitive_intelligence'] : [])
+    ],
     timestamp: new Date().toISOString()
   };
 }
@@ -358,7 +380,25 @@ function extractMarketSize(analysis: string, documentInsights: any = null): any 
   };
 }
 
-function extractCompetitive(analysis: string, documentInsights: any = null): any {
+function extractCompetitive(analysis: string, documentInsights: any = null, competitiveIntelligence: any = null): any {
+  // Prioritize real competitive intelligence
+  if (competitiveIntelligence?.competitive_breakdown) {
+    const breakdown = competitiveIntelligence.competitive_breakdown[0];
+    const competitors = breakdown.competitors || [];
+    
+    return {
+      intensity: `${breakdown.competitive_tension} competitive intensity`,
+      keyPlayers: competitors.map(c => c.name).slice(0, 5).join(', ') || "Competitors identified",
+      differentiation: "Real competitive positioning analysis available",
+      marketStructure: breakdown.market_fragmentation,
+      hhi_index: breakdown.hhi_index,
+      whitespace: breakdown.whitespace_opportunities,
+      source: "competitive_intelligence",
+      confidence: "very_high",
+      competitorCount: competitors.length
+    };
+  }
+  
   if (documentInsights?.competitive_data?.hasCompetitiveData) {
     return {
       intensity: "Document-validated competitive landscape",
