@@ -125,8 +125,10 @@ export function useAnalysisQueue() {
     }
   }, [queueDealAnalysis, toast]);
 
-  const toggleAutoAnalysis = useCallback(async (dealId: string, enabled: boolean) => {
+  const toggleAutoAnalysis = useCallback(async (dealId: string, enabled: boolean, onSuccess?: () => void) => {
     try {
+      console.log(`🔄 Toggling auto-analysis for deal ${dealId} to ${enabled}`);
+      
       const { error } = await supabase
         .from('deals')
         .update({ auto_analysis_enabled: enabled })
@@ -134,6 +136,8 @@ export function useAnalysisQueue() {
 
       if (error) throw error;
 
+      console.log(`✅ Auto-analysis successfully toggled for deal ${dealId}`);
+      
       toast({
         title: enabled ? "Auto-Analysis Enabled" : "Auto-Analysis Disabled",
         description: enabled 
@@ -142,12 +146,17 @@ export function useAnalysisQueue() {
         variant: "default"
       });
 
+      // Call success callback to trigger data refresh
+      if (onSuccess) {
+        onSuccess();
+      }
+
       return { success: true };
     } catch (error) {
       console.error('Error toggling auto-analysis:', error);
       toast({
         title: "Update Error",
-        description: "Failed to update auto-analysis setting",
+        description: `Failed to update auto-analysis setting: ${error.message}`,
         variant: "destructive"
       });
       return { success: false, error: error.message };

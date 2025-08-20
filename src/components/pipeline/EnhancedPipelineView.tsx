@@ -233,6 +233,7 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fund
             onDealEdit={handleDealEdit}
             onStageChange={permissions.canMoveDealsBetweenStages ? moveDeal : undefined}
             loading={loading}
+            onRefreshDeals={forceRefresh}
           />
         </div>
       </div>

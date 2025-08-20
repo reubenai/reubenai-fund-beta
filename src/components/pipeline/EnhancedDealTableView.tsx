@@ -64,6 +64,7 @@ interface EnhancedDealTableViewProps {
   onStageChange?: (dealId: string, fromStage: string, toStage: string) => void;
   stages: Array<{ id: string; name: string; color: string }>;
   loading?: boolean;
+  onRefreshDeals?: () => void;
 }
 
 type SortField = 'company_name' | 'industry' | 'current_round_size' | 'overall_score' | 'updated_at' | 'status';
@@ -159,7 +160,8 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
   onDealEdit,
   onStageChange,
   stages,
-  loading = false
+  loading = false,
+  onRefreshDeals
 }) => {
   const [sortField, setSortField] = useState<SortField>('updated_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -168,6 +170,7 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
   const [pageSize, setPageSize] = useState(20);
   const [triggeringAnalysis, setTriggeringAnalysis] = useState<Set<string>>(new Set());
   const [togglingAnalysis, setTogglingAnalysis] = useState<Set<string>>(new Set());
+  const [optimisticToggles, setOptimisticToggles] = useState<Map<string, boolean>>(new Map());
   
   const { triggerAnalysis } = useControlledAnalysis();
   const { toggleAutoAnalysis } = useAnalysisQueue();
@@ -267,11 +270,50 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
   };
 
   const handleToggleAutoAnalysis = async (dealId: string, enabled: boolean) => {
+    // Set loading state
     setTogglingAnalysis(prev => new Set(prev).add(dealId));
     
+    // Optimistic update - immediately show the new state
+    setOptimisticToggles(prev => new Map(prev).set(dealId, enabled));
+    
     try {
-      await toggleAutoAnalysis(dealId, enabled);
+      console.log(`🔄 Attempting to toggle auto-analysis for deal ${dealId} to ${enabled}`);
+      
+      const result = await toggleAutoAnalysis(dealId, enabled, () => {
+        // Success callback - refresh data to ensure UI syncs with backend
+        console.log(`✅ Refreshing deals data after successful toggle for ${dealId}`);
+        if (onRefreshDeals) {
+          onRefreshDeals(); // Use callback prop to refresh data
+        }
+      });
+      
+      if (result.success) {
+        console.log(`✅ Toggle successful for deal ${dealId}`);
+        // Clear optimistic state since real data will come from refresh
+        setOptimisticToggles(prev => {
+          const updated = new Map(prev);
+          updated.delete(dealId);
+          return updated;
+        });
+      } else {
+        // Revert optimistic update on failure
+        console.error(`❌ Toggle failed for deal ${dealId}:`, result.error);
+        setOptimisticToggles(prev => {
+          const updated = new Map(prev);
+          updated.delete(dealId);
+          return updated;
+        });
+      }
+    } catch (error) {
+      console.error(`❌ Toggle error for deal ${dealId}:`, error);
+      // Revert optimistic update on error
+      setOptimisticToggles(prev => {
+        const updated = new Map(prev);
+        updated.delete(dealId);
+        return updated;
+      });
     } finally {
+      // Clear loading state
       setTogglingAnalysis(prev => {
         const updated = new Set(prev);
         updated.delete(dealId);
@@ -577,14 +619,24 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                 <td className="p-4 align-middle text-center" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center justify-center">
                     <Switch
-                      checked={deal.auto_analysis_enabled !== false}
+                      checked={optimisticToggles.has(deal.id) 
+                        ? optimisticToggles.get(deal.id)! 
+                        : deal.auto_analysis_enabled !== false}
                       onCheckedChange={(checked) => handleToggleAutoAnalysis(deal.id, checked)}
                       disabled={togglingAnalysis.has(deal.id)}
-                      className={`${deal.auto_analysis_enabled !== false 
+                      className={`transition-all duration-200 ${
+                        (optimisticToggles.has(deal.id) 
+                          ? optimisticToggles.get(deal.id)! 
+                          : deal.auto_analysis_enabled !== false)
                         ? '!bg-emerald-600 data-[state=checked]:!bg-emerald-600' 
                         : '!bg-gray-300 data-[state=unchecked]:!bg-gray-300'
-                      }`}
+                      } ${togglingAnalysis.has(deal.id) ? 'opacity-50' : ''}`}
                     />
+                    {togglingAnalysis.has(deal.id) && (
+                      <div className="ml-2 text-xs text-muted-foreground">
+                        Updating...
+                      </div>
+                    )}
                   </div>
                 </td>
                 
