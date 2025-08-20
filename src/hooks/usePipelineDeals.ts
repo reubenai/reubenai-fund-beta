@@ -216,7 +216,15 @@ export const usePipelineDeals = (fundId?: string) => {
     }
   }, [stages, toast, fetchDeals, deals, fundId]);
 
-  const addDeal = useCallback(async (dealData: Partial<Deal> & { company_name: string; created_by: string }) => {
+  const addDeal = useCallback(async (dealData: Partial<Deal> & { 
+    company_name: string; 
+    created_by: string;
+    founder_name?: string;
+    founder_email?: string;
+    primary_industry?: string;
+    specialized_sectors?: string[];
+    current_round_size?: number;
+  }) => {
     if (!fundId) return;
 
     try {
@@ -227,13 +235,18 @@ export const usePipelineDeals = (fundId?: string) => {
         status: 'sourced',
         description: dealData.description || null,
         industry: dealData.industry || null,
+        primary_industry: dealData.primary_industry || null,
+        specialized_sectors: dealData.specialized_sectors || null,
         location: dealData.location || null,
         website: dealData.website || null,
         linkedin_url: dealData.linkedin_url || null,
         crunchbase_url: dealData.crunchbase_url || null,
         deal_size: dealData.deal_size || null,
         valuation: dealData.valuation || null,
-        currency: dealData.currency || null
+        current_round_size: dealData.current_round_size || null,
+        currency: dealData.currency || null,
+        founder: dealData.founder_name || null,
+        founder_email: dealData.founder_email || null
       };
 
       const { data, error } = await supabase
@@ -273,12 +286,19 @@ export const usePipelineDeals = (fundId?: string) => {
 
       return data;
     } catch (error) {
+      console.error('=== ADD DEAL ERROR ===');
       console.error('Error adding deal:', error);
+      console.error('Deal data:', dealData);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
       toast({
         title: "Error",
-        description: "Failed to add deal",
+        description: `Failed to add deal: ${errorMessage}`,
         variant: "destructive"
       });
+      
+      throw error; // Re-throw to allow caller to handle
     }
   }, [fundId, toast]);
 

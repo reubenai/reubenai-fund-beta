@@ -128,12 +128,15 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
         founder_email: formData.founder_email || undefined
       };
 
-      // Fallback to original method first, then enhance
+      // Create deal first, then enhance (enhancement failures shouldn't block deal creation)
       const newDeal = await onAddDeal(dealData);
       
       if (newDeal) {
-        // Now process through universal processor for enhancement
+        console.log('✅ Deal created successfully:', newDeal.company_name);
+        
+        // Now process through universal processor for enhancement (non-blocking)
         try {
+          console.log('🔄 Starting deal enhancement...');
           const { data: processedResult, error: processingError } = await supabase.functions.invoke('universal-deal-processor', {
             body: {
               dealId: newDeal.id,
@@ -153,10 +156,20 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
           }
         } catch (error) {
           console.warn('Enhancement failed but deal created:', error);
+          toast({
+            title: "Info",
+            description: "Deal created successfully, but enhancement is pending",
+            variant: "default"
+          });
         }
 
-        // Trigger initial analysis with enforcement
-        await triggerDealAnalysis(newDeal.id, 'initial', newDeal.fund_id);
+        // Trigger initial analysis (optional, don't fail deal creation if this fails)
+        try {
+          await triggerDealAnalysis(newDeal.id, 'initial', newDeal.fund_id);
+          console.log('✅ Initial analysis triggered');
+        } catch (error) {
+          console.warn('Initial analysis trigger failed but deal created:', error);
+        }
 
         toast({
           title: "Success",
