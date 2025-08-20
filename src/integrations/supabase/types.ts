@@ -479,6 +479,56 @@ export type Database = {
         }
         Relationships: []
       }
+      analysis_governance: {
+        Row: {
+          analysis_enabled: boolean | null
+          created_at: string | null
+          daily_analysis_count: number | null
+          daily_analysis_limit: number | null
+          daily_cost_limit: number | null
+          daily_cost_spent: number | null
+          fund_id: string
+          id: string
+          last_reset_date: string | null
+          organization_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          analysis_enabled?: boolean | null
+          created_at?: string | null
+          daily_analysis_count?: number | null
+          daily_analysis_limit?: number | null
+          daily_cost_limit?: number | null
+          daily_cost_spent?: number | null
+          fund_id: string
+          id?: string
+          last_reset_date?: string | null
+          organization_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          analysis_enabled?: boolean | null
+          created_at?: string | null
+          daily_analysis_count?: number | null
+          daily_analysis_limit?: number | null
+          daily_cost_limit?: number | null
+          daily_cost_spent?: number | null
+          fund_id?: string
+          id?: string
+          last_reset_date?: string | null
+          organization_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_governance_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       analysis_quality_monitor: {
         Row: {
           analysis_type: string
@@ -3653,6 +3703,39 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_cost_monitor: {
+        Row: {
+          cost_amount: number
+          cost_category: string
+          created_at: string | null
+          date: string
+          fund_id: string | null
+          id: string
+          organization_id: string
+          usage_metrics: Json | null
+        }
+        Insert: {
+          cost_amount?: number
+          cost_category: string
+          created_at?: string | null
+          date?: string
+          fund_id?: string | null
+          id?: string
+          organization_id: string
+          usage_metrics?: Json | null
+        }
+        Update: {
+          cost_amount?: number
+          cost_category?: string
+          created_at?: string | null
+          date?: string
+          fund_id?: string | null
+          id?: string
+          organization_id?: string
+          usage_metrics?: Json | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -4422,6 +4505,10 @@ export type Database = {
           traction_score?: number
         }
         Returns: number
+      }
+      check_analysis_limits: {
+        Args: { p_fund_id: string }
+        Returns: boolean
       }
       check_cost_limits: {
         Args: {
