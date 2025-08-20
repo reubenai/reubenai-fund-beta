@@ -304,8 +304,8 @@ class UnifiedStrategyService {
       
       console.log('📝 Transformed update data:', JSON.stringify(transformedData, null, 2));
       
-      // Validate data before update
-      const validation = DataTransformationUtils.validateStrategyData(transformedData);
+      // Validate data before update (partial update - skip fund_id/fund_type requirements)
+      const validation = DataTransformationUtils.validateStrategyData(transformedData, true);
       if (!validation.isValid) {
         console.error('❌ Validation errors:', validation.errors);
         throw new Error(`Validation failed: ${validation.errors.join(', ')}`);

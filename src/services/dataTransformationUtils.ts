@@ -193,16 +193,18 @@ export class DataTransformationUtils {
   /**
    * Validate strategy data before save
    */
-  static validateStrategyData(data: any): { isValid: boolean; errors: string[] } {
+  static validateStrategyData(data: any, isPartialUpdate: boolean = false): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
 
-    // Check required fields
-    if (!data.fund_id) {
-      errors.push('Fund ID is required');
-    }
+    // Check required fields (skip for partial updates like RAG thresholds)
+    if (!isPartialUpdate) {
+      if (!data.fund_id) {
+        errors.push('Fund ID is required');
+      }
 
-    if (!data.fund_type) {
-      errors.push('Fund type is required');
+      if (!data.fund_type) {
+        errors.push('Fund type is required');
+      }
     }
 
     // Validate arrays
