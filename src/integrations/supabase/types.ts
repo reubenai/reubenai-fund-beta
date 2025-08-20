@@ -4890,6 +4890,7 @@ export type Database = {
         | "linkedin_enrichment_api_error"
         | "linkedin_enrichment_trigger_error"
         | "linkedin_url_validation_failed"
+        | "analysis_triggered"
       deal_score_level:
         | "exciting"
         | "promising"
@@ -5087,6 +5088,7 @@ export const Constants = {
         "linkedin_enrichment_api_error",
         "linkedin_enrichment_trigger_error",
         "linkedin_url_validation_failed",
+        "analysis_triggered",
       ],
       deal_score_level: [
         "exciting",
