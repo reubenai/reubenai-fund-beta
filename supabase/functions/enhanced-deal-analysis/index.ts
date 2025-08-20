@@ -114,6 +114,18 @@ serve(async (req) => {
       throw new Error(`Deal not found: ${dealError?.message}`);
     }
 
+    // Check if analysis is enabled for this deal
+    if (deal.auto_analysis_enabled === false) {
+      console.log('🚫 Enhanced Deal Analysis: Auto analysis disabled for deal:', dealId);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Analysis disabled for this deal',
+        analysis: null 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Fetch fund strategy for context including enhanced criteria
     const { data: fund, error: fundError } = await supabase
       .from('funds')

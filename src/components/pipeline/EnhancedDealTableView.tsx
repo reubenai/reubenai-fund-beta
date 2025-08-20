@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useControlledAnalysis } from '@/hooks/useControlledAnalysis';
+import { useAnalysisQueue } from '@/hooks/useAnalysisQueue';
+import { Switch } from '@/components/ui/switch';
 import {
   Table,
   TableBody,
@@ -165,8 +167,10 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [triggeringAnalysis, setTriggeringAnalysis] = useState<Set<string>>(new Set());
+  const [togglingAnalysis, setTogglingAnalysis] = useState<Set<string>>(new Set());
   
   const { triggerAnalysis } = useControlledAnalysis();
+  const { toggleAutoAnalysis } = useAnalysisQueue();
 
   // Flatten deals from all stages
   const allDeals = useMemo(() => {
@@ -255,6 +259,20 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
       });
     } finally {
       setTriggeringAnalysis(prev => {
+        const updated = new Set(prev);
+        updated.delete(dealId);
+        return updated;
+      });
+    }
+  };
+
+  const handleToggleAutoAnalysis = async (dealId: string, enabled: boolean) => {
+    setTogglingAnalysis(prev => new Set(prev).add(dealId));
+    
+    try {
+      await toggleAutoAnalysis(dealId, enabled);
+    } finally {
+      setTogglingAnalysis(prev => {
         const updated = new Set(prev);
         updated.delete(dealId);
         return updated;
@@ -404,6 +422,12 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                 </div>
               </th>
               
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground text-center min-w-[120px]">
+                <div className="flex items-center justify-center">
+                  Live Analysis
+                </div>
+              </th>
+              
               <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground min-w-[120px]">Location</th>
               
               <th 
@@ -544,9 +568,25 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                 
                 <td className="p-4 align-middle text-center">
                   <div className="flex items-center justify-center space-x-2">
-                    <Badge variant="outline" className="text-muted-foreground">
-                      Coming Soon
-                    </Badge>
+                    <span className="font-medium">
+                      {formatScore(deal.overall_score)}
+                    </span>
+                    {deal.rag_status && (
+                      <Badge variant={getRAGBadgeVariant(deal.rag_status)} className="text-xs">
+                        {deal.rag_status.charAt(0).toUpperCase() + deal.rag_status.slice(1)}
+                      </Badge>
+                    )}
+                  </div>
+                </td>
+                
+                <td className="p-4 align-middle text-center" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-center">
+                    <Switch
+                      checked={deal.auto_analysis_enabled !== false}
+                      onCheckedChange={(checked) => handleToggleAutoAnalysis(deal.id, checked)}
+                      disabled={togglingAnalysis.has(deal.id)}
+                      className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-muted"
+                    />
                   </div>
                 </td>
                 

@@ -49,6 +49,17 @@ serve(async (req) => {
       throw new Error('Deal not found');
     }
 
+    // Check if analysis is enabled for this deal
+    if (deal.auto_analysis_enabled === false) {
+      console.log('🚫 Enhanced Competitive Intelligence: Auto analysis disabled for deal:', dealId);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Analysis disabled for this deal' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Extract context from deal
     const competitiveContext = await extractCompetitiveContext(deal);
     console.log('📋 Context extracted:', competitiveContext);

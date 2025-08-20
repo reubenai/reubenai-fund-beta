@@ -67,6 +67,17 @@ serve(async (req) => {
       throw new Error(`Deal not found or error fetching deal data: ${dealError?.message || 'Unknown error'}`);
     }
 
+    // Check if analysis is enabled for this deal
+    if (dealData.auto_analysis_enabled === false) {
+      console.log('🚫 AI Memo Generator: Auto analysis disabled for deal:', dealId);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Analysis disabled for this deal' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     console.log('📊 Retrieved deal data for:', dealData.company_name);
 
     // 2. Fetch fund data with enhanced strategy context

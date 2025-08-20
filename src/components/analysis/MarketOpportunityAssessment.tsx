@@ -24,6 +24,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ScatterChart, Scatter, ResponsiveContainer } from 'recharts';
 import { EnhancedCompetitivePosition } from './deep-dive/EnhancedCompetitivePosition';
 import { CompetitorAnalysis } from '@/types/enhanced-deal-analysis';
+import { useEnhancedCompetitiveAnalysis } from '@/hooks/useEnhancedCompetitiveAnalysis';
 
 interface MarketOpportunityAssessmentProps {
   deal: Deal;
@@ -169,6 +170,15 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
   const [loading, setLoading] = useState(true);
   const [assessment, setAssessment] = useState<MarketAssessment | null>(null);
   const [expandedCriteria, setExpandedCriteria] = useState<string[]>([]);
+  
+  // Enhanced competitive analysis hook
+  const { 
+    isAnalyzing, 
+    competitiveData, 
+    runCompetitiveAnalysis,
+    getCompetitorSummary,
+    getMarketStructureInsight 
+  } = useEnhancedCompetitiveAnalysis();
 
   const fetchMarketDataAndAssess = React.useCallback(async () => {
     try {
@@ -1582,8 +1592,31 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                   </div>
                 )}
 
-                {/* Enhanced Competitive Breakdown with Clean Layout */}
-                {check.competitiveBreakdown && expandedCriteria.includes(check.criterion) && (
+                {/* Enhanced Competitive Position Analysis */}
+                {check.criterion === 'Competitive Position' && expandedCriteria.includes(check.criterion) && (
+                  <div className="mt-4">
+                    {competitiveData?.competitive_breakdown ? (
+                      <EnhancedCompetitivePosition 
+                        data={{
+                          competitive_breakdown: competitiveData.competitive_breakdown.map(breakdown => ({
+                            ...breakdown,
+                            competitors: breakdown.competitors?.map(comp => ({
+                              ...comp,
+                              market_share: typeof comp.market_share === 'string' ? comp.market_share : comp.market_share?.toString() || '0'
+                            })) || []
+                          }))
+                        }}
+                      />
+                    ) : isAnalyzing ? (
+                      <div className="bg-muted/30 rounded-lg p-6 space-y-6">
+                        <p className="text-muted-foreground">Loading enhanced competitive analysis...</p>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+                
+                {/* Other competitive breakdown visualization */}
+                {check.competitiveBreakdown && check.criterion !== 'Competitive Position' && expandedCriteria.includes(check.criterion) && (
                   <div className="mt-4 space-y-8">
                     {check.competitiveBreakdown.map((breakdown, index) => (
                       <div key={index} className="bg-muted/30 rounded-lg p-6 space-y-6">
