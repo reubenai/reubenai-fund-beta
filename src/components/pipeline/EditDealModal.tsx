@@ -150,67 +150,145 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
     }
 
     setLoading(true);
+    
+    // Step 1: Check if deal is currently being analyzed
     try {
-      const updateData = {
-        company_name: formData.company_name,
-        description: formData.description || null,
-        industry: Array.isArray(formData.industry) && formData.industry.length > 0 ? formData.industry.join(';') : null,
-        primary_industry: Array.isArray(formData.industry) && formData.industry.length > 0 ? formData.industry[0] : null,
-        specialized_sectors: Array.isArray(formData.specialized_sectors) && formData.specialized_sectors.length > 0 ? formData.specialized_sectors : null,
-        location: formData.location || null,
-        headquarters: formData.headquarters || null,
-        website: formData.website || null,
-        linkedin_url: formData.linkedin_url || null,
-        crunchbase_url: formData.crunchbase_url || null,
-        founder: formData.founder || null,
-        founder_email: formData.founder_email || null,
-        co_founders: formData.co_founders ? formData.co_founders.split(',').map(s => s.trim()).filter(s => s) : null,
-        business_model: formData.business_model || null,
-        revenue_model: formData.revenue_model || null,
-        target_market: formData.target_market || null,
-        company_stage: formData.company_stage || null,
-        funding_stage: formData.funding_stage || null,
-        founding_year: formData.founding_year ? parseInt(formData.founding_year) : null,
-        employee_count: formData.employee_count ? parseInt(formData.employee_count) : null,
-        current_round_size: formData.current_round_size ? parseInt(formData.current_round_size) : null,
-        capital_raised_to_date: formData.capital_raised_to_date ? parseInt(formData.capital_raised_to_date) : null,
-        previous_funding_amount: formData.previous_funding_amount ? parseInt(formData.previous_funding_amount) : null,
-        countries_of_operation: formData.countries_of_operation ? formData.countries_of_operation.split(',').map(s => s.trim()).filter(s => s) : null,
-        competitors: formData.competitors ? formData.competitors.split(',').map(s => s.trim()).filter(s => s) : null,
-        key_customers: formData.key_customers ? formData.key_customers.split(',').map(s => s.trim()).filter(s => s) : null,
-        technology_stack: formData.technology_stack ? formData.technology_stack.split(',').map(s => s.trim()).filter(s => s) : null,
-        next_action: formData.next_action || null,
-        priority: formData.priority || null,
-        deal_size: formData.deal_size ? parseInt(formData.deal_size) : null,
-        valuation: formData.valuation ? parseInt(formData.valuation) : null,
-        currency: formData.currency || null,
-        updated_at: new Date().toISOString()
-      };
+      const { data: queueStatus } = await supabase
+        .from('analysis_queue')
+        .select('id, status')
+        .eq('deal_id', deal.id)
+        .in('status', ['queued', 'processing'])
+        .limit(1)
+        .single();
 
-      const { error } = await supabase
-        .from('deals')
-        .update(updateData)
-        .eq('id', deal.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Deal updated successfully",
-      });
-
-      onUpdateComplete();
-      onClose();
+      if (queueStatus) {
+        toast({
+          title: "Analysis in Progress",
+          description: "Cannot edit deal while analysis is running. Please wait for analysis to complete.",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
     } catch (error) {
-      console.error('Error updating deal:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update deal",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+      // No queue item found, safe to proceed
+      console.log('No active analysis found, proceeding with edit');
     }
+
+    // Step 2: Temporarily disable auto-analysis to prevent conflicts
+    try {
+      await supabase
+        .from('deals')
+        .update({ auto_analysis_enabled: false })
+        .eq('id', deal.id);
+    } catch (error) {
+      console.warn('Could not disable auto-analysis:', error);
+    }
+
+    // Step 3: Perform the actual update with optimistic locking
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        const updateData = {
+          company_name: formData.company_name,
+          description: formData.description || null,
+          industry: Array.isArray(formData.industry) && formData.industry.length > 0 ? formData.industry.join(';') : null,
+          primary_industry: Array.isArray(formData.industry) && formData.industry.length > 0 ? formData.industry[0] : null,
+          specialized_sectors: Array.isArray(formData.specialized_sectors) && formData.specialized_sectors.length > 0 ? formData.specialized_sectors : null,
+          location: formData.location || null,
+          headquarters: formData.headquarters || null,
+          website: formData.website || null,
+          linkedin_url: formData.linkedin_url || null,
+          crunchbase_url: formData.crunchbase_url || null,
+          founder: formData.founder || null,
+          founder_email: formData.founder_email || null,
+          co_founders: formData.co_founders ? formData.co_founders.split(',').map(s => s.trim()).filter(s => s) : null,
+          business_model: formData.business_model || null,
+          revenue_model: formData.revenue_model || null,
+          target_market: formData.target_market || null,
+          company_stage: formData.company_stage || null,
+          funding_stage: formData.funding_stage || null,
+          founding_year: formData.founding_year ? parseInt(formData.founding_year) : null,
+          employee_count: formData.employee_count ? parseInt(formData.employee_count) : null,
+          current_round_size: formData.current_round_size ? parseInt(formData.current_round_size) : null,
+          capital_raised_to_date: formData.capital_raised_to_date ? parseInt(formData.capital_raised_to_date) : null,
+          previous_funding_amount: formData.previous_funding_amount ? parseInt(formData.previous_funding_amount) : null,
+          countries_of_operation: formData.countries_of_operation ? formData.countries_of_operation.split(',').map(s => s.trim()).filter(s => s) : null,
+          competitors: formData.competitors ? formData.competitors.split(',').map(s => s.trim()).filter(s => s) : null,
+          key_customers: formData.key_customers ? formData.key_customers.split(',').map(s => s.trim()).filter(s => s) : null,
+          technology_stack: formData.technology_stack ? formData.technology_stack.split(',').map(s => s.trim()).filter(s => s) : null,
+          next_action: formData.next_action || null,
+          priority: formData.priority || null,
+          deal_size: formData.deal_size ? parseInt(formData.deal_size) : null,
+          valuation: formData.valuation ? parseInt(formData.valuation) : null,
+          currency: formData.currency || null
+          // Remove manual updated_at - let database trigger handle this
+        };
+
+        const { error } = await supabase
+          .from('deals')
+          .update(updateData)
+          .eq('id', deal.id);
+
+        if (error) {
+          // Check for specific conflict errors
+          if (error.code === '42P10' || error.message.includes('conflict')) {
+            retryCount++;
+            if (retryCount < maxRetries) {
+              console.log(`Retry attempt ${retryCount} due to conflict`);
+              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+              continue;
+            }
+          }
+          throw error;
+        }
+
+        // Step 4: Re-enable auto-analysis if it was previously enabled
+        if (deal.auto_analysis_enabled !== false) {
+          await supabase
+            .from('deals')
+            .update({ auto_analysis_enabled: true })
+            .eq('id', deal.id);
+        }
+
+        toast({
+          title: "Success",
+          description: "Deal updated successfully",
+        });
+
+        onUpdateComplete();
+        onClose();
+        return;
+
+      } catch (error) {
+        console.error(`Error updating deal (attempt ${retryCount + 1}):`, error);
+        
+        if (retryCount === maxRetries - 1) {
+          // Final attempt failed
+          let errorMessage = "Failed to update deal";
+          
+          if (error.message?.includes('constraint')) {
+            errorMessage = "Data validation failed. Please check your inputs.";
+          } else if (error.code === '42P10') {
+            errorMessage = "Conflict detected. Another process may be updating this deal.";
+          }
+          
+          toast({
+            title: "Error",
+            description: errorMessage,
+            variant: "destructive"
+          });
+          break;
+        }
+        
+        retryCount++;
+        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+      }
+    }
+    
+    setLoading(false);
   };
 
   const handleInputChange = (field: string, value: string | string[]) => {
