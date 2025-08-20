@@ -21,7 +21,6 @@ import { EnhancedCriteriaEditor } from './EnhancedCriteriaEditor';
 import { AnalysisStatusIndicator } from './AnalysisStatusIndicator';
 import { getTemplateByFundType } from '@/types/vc-pe-criteria';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useAutoSave } from '@/hooks/useAutoSave';
 import { useToast } from '@/hooks/use-toast';
 
 interface CleanThesisConfigurationProps {
@@ -123,34 +122,6 @@ export function CleanThesisConfiguration({
     setEditedStrategy(prev => ({ ...prev, [field]: value }));
   };
 
-  // Auto-save for Investment Thesis with proper data preservation
-  const handleAutoSave = useCallback(async () => {
-    try {
-      console.log('🔄 Auto-saving strategy:', editedStrategy);
-      
-      // Preserve existing enhanced criteria during auto-save
-      const preservedStrategy = {
-        ...editedStrategy,
-        // Ensure enhanced criteria is preserved
-        enhanced_criteria: editedStrategy.enhanced_criteria || strategy.enhanced_criteria || {}
-      };
-      
-      await updateStrategy(preservedStrategy);
-      toast({
-        title: "Auto-saved",
-        description: "Changes saved automatically",
-        duration: 2000,
-      });
-    } catch (error) {
-      console.error('Auto-save failed:', error);
-    }
-  }, [editedStrategy, strategy, updateStrategy, toast]);
-
-  useAutoSave(editedStrategy.strategy_notes, {
-    onSave: handleAutoSave,
-    delay: 3000,
-    enabled: canConfigureStrategy && !!editedStrategy.strategy_notes
-  });
 
   return (
     <Tabs defaultValue="overview" className="space-y-6">
