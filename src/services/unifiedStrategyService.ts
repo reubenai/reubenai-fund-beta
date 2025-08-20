@@ -224,6 +224,8 @@ class UnifiedStrategyService {
   // Create initial strategy with comprehensive enhanced criteria
   async createFundStrategy(fundId: string, fundType: 'vc' | 'pe', wizardData: EnhancedWizardData): Promise<EnhancedStrategy | null> {
     try {
+      console.log('🚀 Creating fund strategy:', { fundId, fundType, wizardData });
+      
       // Get the appropriate template and apply specializations
       let baseTemplate = getTemplateByFundType(fundType);
       
@@ -245,7 +247,7 @@ class UnifiedStrategyService {
         enhanced_criteria: JSON.parse(JSON.stringify(enhancedCriteria)) as any
       };
 
-      console.log('Creating strategy with data:', strategyData);
+      console.log('💾 Creating strategy with data:', strategyData);
 
       const { data, error } = await supabase
         .from('investment_strategies')
@@ -254,15 +256,21 @@ class UnifiedStrategyService {
         .single();
 
       if (error) {
-        console.error('Error creating strategy:', error);
-        return null;
+        console.error('❌ Error creating strategy:', error);
+        throw error;
       }
 
-      console.log('Successfully created strategy:', data);
+      console.log('✅ Successfully created strategy:', data);
+      
+      // Dispatch strategy creation event
+      window.dispatchEvent(new CustomEvent('strategyCreated', { 
+        detail: { fundId, strategy: data } 
+      }));
+      
       return data as EnhancedStrategy;
     } catch (error) {
-      console.error('Unexpected error in createFundStrategy:', error);
-      return null;
+      console.error('💥 Unexpected error in createFundStrategy:', error);
+      throw error;
     }
   }
 

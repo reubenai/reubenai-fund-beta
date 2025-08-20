@@ -1630,29 +1630,31 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                           </div>
                         );
                       } else {
-                        console.log('🔲 Showing Run Analysis button');
+                        // Show built-in competitive analysis automatically like Market Growth Rate
+                        console.log('🏗️ Showing built-in competitive analysis');
+                        const industry = getPrimaryIndustryFromDeal(deal);
+                        const competitors = getRelevantCompetitorsForIndustry(industry);
+                        const hhi = calculateHHI(competitors);
+                        const competitiveTension = getCompetitiveTension(hhi);
+                        const whitespaceOpportunities = getWhitespaceOpportunities(industry, competitors);
+                        
+                        const competitiveBreakdown = {
+                          industry,
+                          weight: 20,
+                          competitors: convertToEnhancedCompetitors(competitors),
+                          hhi_index: Math.round(hhi),
+                          competitive_tension: competitiveTension,
+                          whitespace_opportunities: whitespaceOpportunities,
+                          market_fragmentation: getMarketFragmentation(hhi),
+                          citation: {}
+                        };
+                        
                         return (
-                          <div className="bg-muted/30 rounded-lg p-6 space-y-6">
-                            <div className="flex items-center justify-between mb-4">
-                              <h4 className="font-medium text-card-foreground">Enhanced Competitive Intelligence</h4>
-                              <button
-                                onClick={async () => {
-                                  console.log('🚀 Starting competitive analysis for:', { dealId: deal.id, fundId: deal.fund_id });
-                                  try {
-                                    await runCompetitiveAnalysis(deal.id, deal.fund_id);
-                                    console.log('✅ Competitive analysis completed');
-                                  } catch (error) {
-                                    console.error('❌ Competitive analysis failed:', error);
-                                  }
-                                }}
-                                disabled={isAnalyzing}
-                                className="px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
-                              >
-                                {isAnalyzing ? 'Analyzing...' : 'Run Analysis'}
-                              </button>
-                            </div>
-                            <p className="text-muted-foreground">Click "Run Analysis" to get detailed competitive intelligence with real competitor data, market positioning, and whitespace opportunities.</p>
-                          </div>
+                          <EnhancedCompetitivePosition 
+                            data={{ 
+                              competitive_breakdown: [competitiveBreakdown]
+                            }} 
+                          />
                         );
                       }
                     })()}
