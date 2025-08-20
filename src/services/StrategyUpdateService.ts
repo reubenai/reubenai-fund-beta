@@ -22,6 +22,9 @@ interface EnhancedStrategy {
 export class StrategyUpdateService {
   private static instance: StrategyUpdateService;
   private subscriptions: Map<string, any> = new Map();
+  
+  // Emergency fix: Disable auto-reanalysis to prevent OpenAI cascade
+  private readonly AUTO_REANALYSIS_ENABLED = false;
 
   static getInstance(): StrategyUpdateService {
     if (!StrategyUpdateService.instance) {
@@ -56,8 +59,13 @@ export class StrategyUpdateService {
             const updatedStrategy = payload.new as EnhancedStrategy;
             onUpdate(updatedStrategy);
             
-            // Trigger re-analysis for all deals in this fund
-            this.triggerDealReanalysis(fundId, updatedStrategy);
+            // Emergency fix: Disable auto-reanalysis to prevent OpenAI flooding
+            if (this.AUTO_REANALYSIS_ENABLED) {
+              this.triggerDealReanalysis(fundId, updatedStrategy);
+            } else {
+              console.log('🚫 Auto-reanalysis disabled - strategy updated but deals not re-analyzed automatically');
+              console.log(`💡 To manually reanalyze deals, use the manual reanalysis option in the UI`);
+            }
           }
         }
       )
