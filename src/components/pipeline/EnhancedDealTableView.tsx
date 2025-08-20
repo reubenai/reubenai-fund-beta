@@ -580,9 +580,10 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                       checked={deal.auto_analysis_enabled !== false}
                       onCheckedChange={(checked) => handleToggleAutoAnalysis(deal.id, checked)}
                       disabled={togglingAnalysis.has(deal.id)}
-                      style={{
-                        backgroundColor: deal.auto_analysis_enabled !== false ? '#059669' : '#d1d5db'
-                      }}
+                      className={`${deal.auto_analysis_enabled !== false 
+                        ? '!bg-emerald-600 data-[state=checked]:!bg-emerald-600' 
+                        : '!bg-gray-300 data-[state=unchecked]:!bg-gray-300'
+                      }`}
                     />
                   </div>
                 </td>
