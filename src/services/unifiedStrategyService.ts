@@ -46,6 +46,7 @@ export interface EnhancedWizardData {
     riskTolerance: string;
     investmentHorizon: string;
     valueCreationApproach: string[];
+    diversityPreference?: string[];
   };
   
   // Research and Due Diligence Approach

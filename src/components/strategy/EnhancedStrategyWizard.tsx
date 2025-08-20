@@ -169,7 +169,8 @@ export function EnhancedStrategyWizard({
       investmentDrivers: [],
       riskTolerance: 'balanced',
       investmentHorizon: '5-7 years',
-      valueCreationApproach: []
+      valueCreationApproach: [],
+      diversityPreference: []
     }
   });
   
@@ -858,6 +859,45 @@ export function EnhancedStrategyWizard({
                             }}
                           >
                             {approach}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Founder & Diversity Preference */}
+                  <div className="space-y-4">
+                    <Label className="text-base font-medium">Founder & Diversity Preference</Label>
+                    <p className="text-sm text-muted-foreground">Select founder diversity criteria that align with your investment focus</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {[
+                        'Women-led',
+                        'Minority-led', 
+                        'Veteran-led',
+                        'LGBTQ+-led',
+                        'Immigrant Entrepreneur-led',
+                        'Other Underrepresented Founders'
+                      ].map(diversity => {
+                        const isSelected = wizardData.philosophyConfig?.diversityPreference?.includes(diversity);
+                        return (
+                          <Button
+                            key={diversity}
+                            variant={isSelected ? "default" : "outline"}
+                            className="h-12 justify-start text-left"
+                            onClick={() => {
+                              const current = wizardData.philosophyConfig?.diversityPreference || [];
+                              const updated = isSelected 
+                                ? current.filter(d => d !== diversity)
+                                : [...current, diversity];
+                              updateWizardData({ 
+                                philosophyConfig: { 
+                                  ...wizardData.philosophyConfig, 
+                                  diversityPreference: updated 
+                                } 
+                              });
+                            }}
+                          >
+                            {diversity}
                           </Button>
                         );
                       })}
