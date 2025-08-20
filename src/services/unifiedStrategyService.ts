@@ -332,9 +332,13 @@ class UnifiedStrategyService {
       
       console.log('Upsert data:', upsertData);
       
+      // Use the unique constraint that we just created
       const { data, error } = await supabase
         .from('investment_strategies')
-        .upsert(upsertData)
+        .upsert(upsertData, { 
+          onConflict: 'fund_id',
+          ignoreDuplicates: false 
+        })
         .select()
         .single();
 
@@ -342,6 +346,12 @@ class UnifiedStrategyService {
 
       if (error) {
         console.error('Supabase error upserting strategy:', error);
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
         throw new Error(`Database upsert failed: ${error.message}`);
       }
 
