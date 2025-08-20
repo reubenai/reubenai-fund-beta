@@ -361,11 +361,11 @@ class UnifiedStrategyService {
       
       console.log('Upsert data:', upsertData);
       
-      // Use the unique constraint that we just created
+      // Use the specific unique constraint name that exists in the database
       const { data, error } = await supabase
         .from('investment_strategies')
         .upsert(upsertData, { 
-          onConflict: 'fund_id',
+          onConflict: 'investment_strategies_fund_id_unique',
           ignoreDuplicates: false 
         })
         .select()
