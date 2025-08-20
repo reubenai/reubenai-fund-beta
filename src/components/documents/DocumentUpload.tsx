@@ -139,7 +139,7 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
         const uploadInput: UploadDocumentInput = {
           dealId,
           file: selectedFile.file,
-          documentType: selectedFile.documentType || undefined,
+          documentType: selectedFile.documentType && selectedFile.documentType.trim() !== '' ? selectedFile.documentType : undefined,
           documentCategory: selectedFile.documentCategory,
           tags: selectedFile.tags ? selectedFile.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined
         };

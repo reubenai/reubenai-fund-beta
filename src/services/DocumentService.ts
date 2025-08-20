@@ -173,7 +173,7 @@ class DocumentService {
 
       onProgress?.({ progress: 60, status: 'processing', message: 'Creating document record...' });
 
-      // Create document record with enhanced logging
+      // Create document record with enhanced logging and proper data sanitization
       const documentData: DealDocumentInsert = {
         deal_id: input.dealId,
         fund_id: dealData.fund_id,
@@ -184,7 +184,7 @@ class DocumentService {
         bucket_name: 'deal-documents',
         content_type: input.file.type,
         file_size: input.file.size,
-        document_type: input.documentType,
+        document_type: input.documentType && input.documentType.trim() !== '' ? input.documentType : null,
         document_category: input.documentCategory || 'other',
         tags: input.tags || [],
         uploaded_by: userData.user.id,
