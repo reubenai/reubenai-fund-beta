@@ -197,8 +197,11 @@ class UnifiedStrategyService {
   // Strategy retrieval with template fallback
   async getFundStrategy(fundId: string): Promise<EnhancedStrategy | null> {
     try {
-      console.log('=== FETCHING STRATEGY ===');
-      console.log('Fund ID:', fundId);
+      console.log('🎯 FETCHING STRATEGY FOR FUND:', fundId);
+      
+      // Check authentication context first
+      const { data: user } = await supabase.auth.getUser();
+      console.log('🔐 Current user:', user?.user?.email);
       
       const { data, error } = await supabase
         .from('investment_strategies')
@@ -206,18 +209,44 @@ class UnifiedStrategyService {
         .eq('fund_id', fundId)
         .maybeSingle();
 
-      console.log('Strategy query result:', { data, error });
+      console.log('📊 Strategy query result:', { data, error });
 
       if (error) {
-        console.error('Error fetching strategy:', error);
-        return null;
+        console.error('❌ Database error:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        
+        // Check for RLS policy errors
+        if (error.code === '42501' || error.message?.includes('permission')) {
+          console.error('🚫 RLS POLICY ERROR: User cannot access investment strategies');
+          throw new Error('Access denied: You do not have permission to view strategies for this fund. Please check your organization membership.');
+        }
+        
+        // For other errors, throw with context
+        throw new Error(`Failed to fetch strategy: ${error.message}`);
       }
 
-      console.log('Returning strategy data:', data);
+      if (data) {
+        console.log('✅ Strategy found and loaded:', data.id);
+      } else {
+        console.log('ℹ️ No strategy found for fund (this is OK for new funds)');
+      }
+      
       return data as EnhancedStrategy;
     } catch (error) {
-      console.error('Unexpected error in getFundStrategy:', error);
-      return null;
+      console.error('💥 Unexpected error in getFundStrategy:', error);
+      
+      // Re-throw known errors
+      if (error instanceof Error && error.message.includes('Access denied')) {
+        throw error;
+      }
+      
+      // Log and handle unknown errors
+      console.error('Unknown error type:', typeof error, error);
+      throw new Error(`Unexpected error loading strategy: ${error}`);
     }
   }
 

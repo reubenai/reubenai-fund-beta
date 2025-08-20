@@ -16,23 +16,34 @@ export function useUnifiedStrategy(fundId?: string) {
   }, [fundId]);
 
   const loadStrategy = async () => {
-    if (!fundId) return;
+    if (!fundId) {
+      console.log('⚠️ No fund ID provided to loadStrategy');
+      return;
+    }
     
-    // Loading strategy
+    console.log('🔄 Loading strategy for fund:', fundId);
     
     setLoading(true);
     setError(null);
     
     try {
       const data = await unifiedStrategyService.getFundStrategy(fundId);
-      // Strategy data loaded successfully
+      console.log('✅ Strategy loaded in hook:', data);
       setStrategy(data);
+      
+      if (data) {
+        console.log('🎯 Investment thesis should now be visible!');
+      } else {
+        console.log('ℹ️ No strategy found - user needs to configure it');
+      }
     } catch (err) {
-      console.error('Strategy loading error:', err);
-      const errorMessage = 'Failed to load strategy';
+      console.error('❌ Strategy loading error in hook:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load strategy';
       setError(errorMessage);
+      
+      // Show user-friendly toast
       toast({
-        title: 'Error',
+        title: 'Error Loading Strategy',
         description: errorMessage,
         variant: 'destructive'
       });
