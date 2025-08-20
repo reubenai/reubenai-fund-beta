@@ -144,6 +144,7 @@ export function EnhancedStrategyWizard({
 }: EnhancedStrategyWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [isProcessing, setIsProcessing] = useState(false);
   const [enhancedCriteria, setEnhancedCriteria] = useState<EnhancedCriteriaCategory[]>(
     getTemplateByFundType(fundType).categories
   );
@@ -384,34 +385,104 @@ export function EnhancedStrategyWizard({
       return;
     }
     
-    // Convert enhanced criteria to the format expected by the service
-    const enhancedCriteriaData = {
-      fundType: wizardData.fundType,
-      categories: enhancedCriteria,
-      totalWeight: enhancedCriteria.reduce((sum, cat) => sum + (cat.enabled ? cat.weight : 0), 0)
-    };
-
-    const strategyData = {
-      fund_id: fundId,
-      fund_type: wizardData.fundType,
-      industries: wizardData.sectors,
-      geography: wizardData.geographies,
-      min_investment_amount: wizardData.checkSizeRange?.min,
-      max_investment_amount: wizardData.checkSizeRange?.max,
-      key_signals: wizardData.keySignals,
-      exciting_threshold: wizardData.dealThresholds?.exciting,
-      promising_threshold: wizardData.dealThresholds?.promising,
-      needs_development_threshold: wizardData.dealThresholds?.needs_development,
-      strategy_notes: wizardData.strategyDescription,
-      enhanced_criteria: enhancedCriteriaData
-    };
-
-    const result = existingStrategy?.id 
-      ? await updateStrategy(strategyData)
-      : await createStrategy(wizardData.fundType, wizardData as EnhancedWizardData);
+    console.log('🚀 === STARTING STRATEGY SAVE PROCESS ===');
+    console.log('Fund ID:', fundId);
+    console.log('Fund Type:', wizardData.fundType);
+    console.log('Existing Strategy:', existingStrategy?.id ? 'EXISTS' : 'NEW');
+    
+    try {
+      setIsProcessing(true);
       
-    if (result) {
-      onComplete();
+      // Convert enhanced criteria to the format expected by the service
+      const enhancedCriteriaData = {
+        fundType: wizardData.fundType,
+        categories: enhancedCriteria,
+        totalWeight: enhancedCriteria.reduce((sum, cat) => sum + (cat.enabled ? cat.weight : 0), 0)
+      };
+
+      const strategyData = {
+        fund_id: fundId,
+        fund_type: wizardData.fundType,
+        industries: wizardData.sectors,
+        geography: wizardData.geographies,
+        min_investment_amount: wizardData.checkSizeRange?.min,
+        max_investment_amount: wizardData.checkSizeRange?.max,
+        key_signals: wizardData.keySignals,
+        exciting_threshold: wizardData.dealThresholds?.exciting,
+        promising_threshold: wizardData.dealThresholds?.promising,
+        needs_development_threshold: wizardData.dealThresholds?.needs_development,
+        strategy_notes: wizardData.strategyDescription,
+        enhanced_criteria: enhancedCriteriaData
+      };
+
+      console.log('📊 Strategy Data to Save:', strategyData);
+      
+      let result;
+      
+      if (existingStrategy?.id) {
+        console.log('🔄 Updating existing strategy...');
+        result = await updateStrategy(strategyData);
+      } else {
+        console.log('✨ Creating new strategy...');
+        result = await createStrategy(wizardData.fundType, wizardData as EnhancedWizardData);
+      }
+      
+      console.log('📈 Save Result:', result);
+      
+      if (result) {
+        // Show success message with delay before redirect
+        toast.success('Investment strategy saved successfully!', {
+          description: 'Your strategy configuration has been applied to the fund.',
+          duration: 3000,
+        });
+        
+        console.log('✅ Strategy saved successfully, redirecting in 2 seconds...');
+        
+        // Add a small delay so user sees the success message
+        setTimeout(() => {
+          onComplete();
+        }, 2000);
+      } else {
+        console.error('❌ Strategy save returned null/undefined');
+        toast.error('Strategy save failed', {
+          description: 'The strategy was not saved. Please try again.',
+          duration: 5000,
+        });
+      }
+      
+    } catch (error: any) {
+      console.error('💥 Strategy save error:', error);
+      
+      // Parse error message for user-friendly display
+      let errorMessage = 'Failed to save strategy';
+      let errorDescription = 'Please try again or contact support if the issue persists.';
+      
+      if (error?.message) {
+        if (error.message.includes('Database')) {
+          errorMessage = 'Database Error';
+          errorDescription = 'There was an issue saving to the database. Please try again.';
+        } else if (error.message.includes('validation')) {
+          errorMessage = 'Validation Error';
+          errorDescription = 'Please check your strategy configuration and try again.';
+        } else if (error.message.includes('permission') || error.message.includes('Access denied')) {
+          errorMessage = 'Permission Error';
+          errorDescription = 'You do not have permission to save strategies for this fund.';
+        } else {
+          errorDescription = error.message;
+        }
+      }
+      
+      toast.error(errorMessage, {
+        description: errorDescription,
+        duration: 8000,
+        action: {
+          label: 'Retry',
+          onClick: () => handleComplete(),
+        },
+      });
+      
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -1200,11 +1271,20 @@ export function EnhancedStrategyWizard({
         {currentStep === WIZARD_STEPS.length - 1 ? (
           <Button 
             onClick={handleComplete} 
-            disabled={loading}
+            disabled={isProcessing || loading}
             className="px-6"
           >
-            {loading ? 'Launching...' : 'Launch Strategy'}
-            <CheckCircle className="h-4 w-4 ml-2" />
+            {isProcessing ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                Saving Strategy...
+              </>
+            ) : (
+              <>
+                Launch Strategy
+                <CheckCircle className="h-4 w-4 ml-2" />
+              </>
+            )}
           </Button>
         ) : (
           <Button 
