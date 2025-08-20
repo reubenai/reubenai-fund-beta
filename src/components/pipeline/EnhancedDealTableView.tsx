@@ -568,14 +568,9 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                 
                 <td className="p-4 align-middle text-center">
                   <div className="flex items-center justify-center space-x-2">
-                    <span className="font-medium">
-                      {formatScore(deal.overall_score)}
-                    </span>
-                    {deal.rag_status && (
-                      <Badge variant={getRAGBadgeVariant(deal.rag_status)} className="text-xs">
-                        {deal.rag_status.charAt(0).toUpperCase() + deal.rag_status.slice(1)}
-                      </Badge>
-                    )}
+                    <Badge variant="outline" className="text-muted-foreground">
+                      Coming Soon
+                    </Badge>
                   </div>
                 </td>
                 
@@ -585,7 +580,7 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                       checked={deal.auto_analysis_enabled !== false}
                       onCheckedChange={(checked) => handleToggleAutoAnalysis(deal.id, checked)}
                       disabled={togglingAnalysis.has(deal.id)}
-                      className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-muted"
+                      className="data-[state=checked]:bg-emerald-600 data-[state=unchecked]:bg-gray-300"
                     />
                   </div>
                 </td>
