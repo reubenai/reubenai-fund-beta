@@ -286,6 +286,8 @@ class UnifiedStrategyService {
 
       console.log('Supabase update result:', { data, error });
 
+      console.log('Supabase update result:', { data, error });
+
       if (error) {
         console.error('Supabase error updating strategy:', error);
         throw new Error(`Database update failed: ${error.message}`);

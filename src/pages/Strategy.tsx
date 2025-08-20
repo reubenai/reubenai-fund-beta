@@ -122,14 +122,12 @@ export default function Strategy() {
         </TabsList>
 
         <TabsContent value="configuration">
-          <Card className="shadow-sm border-0">
-            <InvestmentStrategyManager 
-              fundId={selectedFund.id} 
-              fundName={selectedFund.name}
-              fundType={selectedFund.fund_type === 'venture_capital' ? 'vc' : 'pe'}
-              key={selectedFund.id} // Force re-render when fund changes
-            />
-          </Card>
+          <InvestmentStrategyManager 
+            fundId={selectedFund.id} 
+            fundName={selectedFund.name}
+            fundType={selectedFund.fund_type === 'venture_capital' ? 'vc' : 'pe'}
+            key={selectedFund.id} // Force re-render when fund changes
+          />
         </TabsContent>
 
         <TabsContent value="thresholds">
