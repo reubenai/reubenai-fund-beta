@@ -334,9 +334,7 @@ class UnifiedStrategyService {
       
       const { data, error } = await supabase
         .from('investment_strategies')
-        .upsert(upsertData, {
-          onConflict: 'fund_id'
-        })
+        .upsert(upsertData)
         .select()
         .single();
 
