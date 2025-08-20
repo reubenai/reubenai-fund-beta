@@ -4530,6 +4530,10 @@ export type Database = {
         }
         Returns: number
       }
+      can_user_update_strategy: {
+        Args: { target_fund_id: string }
+        Returns: boolean
+      }
       check_analysis_limits: {
         Args: { p_fund_id: string }
         Returns: boolean
