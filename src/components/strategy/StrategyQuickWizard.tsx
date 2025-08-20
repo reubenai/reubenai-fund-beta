@@ -96,7 +96,7 @@ export function StrategyQuickWizard({
     }
   });
   
-  const { createStrategy, loading, getDefaultTemplate } = useUnifiedStrategy(fundId);
+  const { saveStrategy, loading, getDefaultTemplate } = useUnifiedStrategy(fundId);
 
   const validateStep = (stepIndex: number): boolean => {
     const step = WIZARD_STEPS[stepIndex];
@@ -168,7 +168,7 @@ export function StrategyQuickWizard({
       strategicFitConfig: convertCriteriaToConfig(criteria.find(c => c.id === 'strategic-fit'))
     } as EnhancedWizardData;
 
-    const result = await createStrategy(wizardData.fundType, completeData);
+    const result = await saveStrategy(wizardData.fundType, completeData);
     if (result) {
       onComplete();
     }

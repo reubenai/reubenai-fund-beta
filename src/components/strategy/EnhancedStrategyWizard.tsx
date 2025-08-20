@@ -176,7 +176,7 @@ export function EnhancedStrategyWizard({
     }
   });
   
-  const { createStrategy, updateStrategy, loading, getDefaultTemplate } = useUnifiedStrategy(fundId);
+  const { saveStrategy, updateStrategy, loading, getDefaultTemplate } = useUnifiedStrategy(fundId);
 
   // Enhanced criteria are initialized based on fund type - no manual fund type changes allowed
   useEffect(() => {
@@ -419,14 +419,9 @@ export function EnhancedStrategyWizard({
       
       let result;
       
-      if (existingStrategy?.id) {
-        console.log('🔄 Updating existing strategy with ID:', existingStrategy.id);
-        // Phase 3: Fix wizard data flow - pass the strategy ID properly
-        result = await updateStrategy(existingStrategy.id, strategyData);
-      } else {
-        console.log('✨ Creating new strategy...');
-        result = await createStrategy(wizardData.fundType, wizardData as EnhancedWizardData);
-      }
+      // Always save (UPDATE) since funds automatically have default strategies
+      console.log('💾 Saving strategy with UPDATE-only logic');
+      result = await saveStrategy(wizardData.fundType, wizardData as EnhancedWizardData);
       
       console.log('📈 Save Result:', result);
       

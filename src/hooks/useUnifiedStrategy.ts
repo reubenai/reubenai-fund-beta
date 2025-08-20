@@ -52,10 +52,10 @@ export function useUnifiedStrategy(fundId?: string) {
     }
   };
 
-  const createStrategy = async (fundType: 'vc' | 'pe', wizardData: EnhancedWizardData) => {
+  const saveStrategy = async (fundType: 'vc' | 'pe', wizardData: EnhancedWizardData) => {
     if (!fundId) return null;
     
-    // Creating strategy
+    console.log('💾 Save strategy (always UPDATE)');
     
     setLoading(true);
     setError(null);
@@ -64,7 +64,6 @@ export function useUnifiedStrategy(fundId?: string) {
       // Validate wizard data
       const validation = unifiedStrategyService.validateStrategy(wizardData);
       if (!validation.isValid) {
-        // Validation failed
         setError(validation.errors.join(', '));
         toast({
           title: 'Validation Error',
@@ -74,20 +73,34 @@ export function useUnifiedStrategy(fundId?: string) {
         return null;
       }
 
-      const newStrategy = await unifiedStrategyService.createFundStrategy(fundId, fundType, wizardData);
-      // Strategy created successfully
+      // Convert wizard data to update format
+      const updates = {
+        fund_type: fundType,
+        industries: wizardData.sectors,
+        geography: wizardData.geographies,
+        min_investment_amount: wizardData.checkSizeRange?.min,
+        max_investment_amount: wizardData.checkSizeRange?.max,
+        key_signals: wizardData.keySignals,
+        exciting_threshold: wizardData.dealThresholds?.exciting,
+        promising_threshold: wizardData.dealThresholds?.promising,
+        needs_development_threshold: wizardData.dealThresholds?.needs_development,
+        strategy_notes: wizardData.strategyDescription,
+        enhanced_criteria: wizardData.enhancedCriteria
+      };
+
+      const savedStrategy = await unifiedStrategyService.saveStrategy(fundId, updates);
       
-      if (newStrategy) {
-        setStrategy(newStrategy);
+      if (savedStrategy) {
+        setStrategy(savedStrategy);
         toast({
           title: 'Success',
-          description: 'Investment strategy created successfully'
+          description: 'Investment strategy saved successfully'
         });
       }
-      return newStrategy;
+      return savedStrategy;
     } catch (err) {
-      console.error('Strategy creation error:', err);
-      const errorMessage = 'Failed to create strategy';
+      console.error('Strategy save error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save strategy';
       setError(errorMessage);
       toast({
         title: 'Error',
@@ -281,7 +294,7 @@ export function useUnifiedStrategy(fundId?: string) {
     error,
     loadStrategy,
     refreshStrategy,
-    createStrategy,
+    saveStrategy,
     updateStrategy,
     getDefaultTemplate,
     getSpecializedTemplate,

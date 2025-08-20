@@ -251,55 +251,24 @@ class UnifiedStrategyService {
     }
   }
 
-  // Create initial strategy with comprehensive enhanced criteria
-  async createFundStrategy(fundId: string, fundType: 'vc' | 'pe', wizardData: EnhancedWizardData): Promise<EnhancedStrategy | null> {
+  // Save strategy (always UPDATE since funds automatically get default strategies)
+  async saveStrategy(fundId: string, updates: any): Promise<EnhancedStrategy | null> {
+    console.log('💾 === SAVE STRATEGY (UPDATE-ONLY) ===');
+    console.log('Fund ID:', fundId);
+    console.log('Updates:', updates);
+    
     try {
-      console.log('🚀 Creating fund strategy:', { fundId, fundType, wizardData });
+      // First, get the existing strategy for this fund
+      const existingStrategy = await this.getFundStrategy(fundId);
       
-      // Get the appropriate template and apply specializations
-      let baseTemplate = getTemplateByFundType(fundType);
-      
-      // Apply fund-specific specializations
-      const enhancedCriteria = this.applyFundSpecializations(baseTemplate, wizardData);
-      
-      const strategyData = {
-        fund_id: fundId,
-        fund_type: fundType,
-        industries: wizardData.sectors,
-        geography: wizardData.geographies,
-        min_investment_amount: wizardData.checkSizeRange?.min,
-        max_investment_amount: wizardData.checkSizeRange?.max,
-        key_signals: wizardData.keySignals,
-        exciting_threshold: wizardData.dealThresholds?.exciting,
-        promising_threshold: wizardData.dealThresholds?.promising,
-        needs_development_threshold: wizardData.dealThresholds?.needs_development,
-        strategy_notes: wizardData.strategyDescription,
-        enhanced_criteria: JSON.parse(JSON.stringify(enhancedCriteria)) as any
-      };
-
-      console.log('💾 Creating strategy with data:', strategyData);
-
-      const { data, error } = await supabase
-        .from('investment_strategies')
-        .insert(strategyData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('❌ Error creating strategy:', error);
-        throw error;
+      if (!existingStrategy) {
+        throw new Error('Strategy not found for fund. All funds should have default strategies.');
       }
-
-      console.log('✅ Successfully created strategy:', data);
       
-      // Dispatch strategy creation event
-      window.dispatchEvent(new CustomEvent('strategyCreated', { 
-        detail: { fundId, strategy: data } 
-      }));
-      
-      return data as EnhancedStrategy;
+      console.log('✅ Found existing strategy, performing UPDATE');
+      return await this.updateFundStrategy(existingStrategy.id!, updates);
     } catch (error) {
-      console.error('💥 Unexpected error in createFundStrategy:', error);
+      console.error('💥 Error in saveStrategy:', error);
       throw error;
     }
   }
