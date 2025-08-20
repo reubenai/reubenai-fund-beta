@@ -1,6 +1,7 @@
 // Updated strategy service with explicit SELECT-UPDATE/INSERT pattern 
 import { supabase } from '@/integrations/supabase/client';
 import { EnhancedCriteriaTemplate, getTemplateByFundType, validateCriteriaWeights } from '@/types/vc-pe-criteria';
+import { DataTransformationUtils } from './dataTransformationUtils';
 import { 
   applySpecializations, 
   getStageSpecialization, 
@@ -253,22 +254,38 @@ class UnifiedStrategyService {
 
   // Save strategy (always UPDATE since funds automatically get default strategies)
   async saveStrategy(fundId: string, updates: any): Promise<EnhancedStrategy | null> {
-    console.log('💾 === SAVE STRATEGY (UPDATE-ONLY) ===');
+    console.log('💾 === SAVE STRATEGY SERVICE (UPDATE-ONLY) ===');
     console.log('Fund ID:', fundId);
-    console.log('Updates:', updates);
+    console.log('Updates received:', JSON.stringify(updates, null, 2));
     
     try {
+      console.log('🔍 Getting existing strategy for fund...');
+      
       // First, get the existing strategy for this fund
       const existingStrategy = await this.getFundStrategy(fundId);
       
+      console.log('📊 Existing strategy result:', existingStrategy ? 'FOUND' : 'NOT FOUND');
+      console.log('Existing strategy ID:', existingStrategy?.id);
+      
       if (!existingStrategy) {
-        throw new Error('Strategy not found for fund. All funds should have default strategies.');
+        const error = 'Strategy not found for fund. All funds should have default strategies.';
+        console.error('❌', error);
+        throw new Error(error);
       }
       
-      console.log('✅ Found existing strategy, performing UPDATE');
-      return await this.updateFundStrategy(existingStrategy.id!, updates);
+      console.log('✅ Found existing strategy, calling updateFundStrategy...');
+      console.log('Strategy ID to update:', existingStrategy.id);
+      
+      const result = await this.updateFundStrategy(existingStrategy.id!, updates);
+      
+      console.log('📈 Update result:', result ? 'SUCCESS' : 'FAILED');
+      console.log('Updated strategy ID:', result?.id);
+      
+      return result;
     } catch (error) {
-      console.error('💥 Error in saveStrategy:', error);
+      console.error('💥 Error in saveStrategy service:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
@@ -280,27 +297,7 @@ class UnifiedStrategyService {
     console.log('Updates received:', JSON.stringify(updates, null, 2));
     
     try {
-      // Import transformation utility
-      const { DataTransformationUtils } = await import('./dataTransformationUtils');
-      
-      // Phase 2: Enhanced error logging - check if strategy exists first
-      const { data: existingStrategy, error: checkError } = await supabase
-        .from('investment_strategies')
-        .select('id, fund_id')
-        .eq('id', strategyId)
-        .maybeSingle();
-        
-      console.log('🔍 Existing strategy check:', { existingStrategy, checkError });
-      
-      if (checkError) {
-        console.error('❌ Error checking existing strategy:', checkError);
-        throw new Error(`Failed to verify strategy exists: ${checkError.message}`);
-      }
-      
-      if (!existingStrategy) {
-        console.error('❌ Strategy not found with ID:', strategyId);
-        throw new Error(`Strategy with ID ${strategyId} not found`);
-      }
+      console.log('🔍 Transforming update data...');
       
       // Transform UI data to database format
       const transformedData = DataTransformationUtils.transformUIToDatabase(updates);
