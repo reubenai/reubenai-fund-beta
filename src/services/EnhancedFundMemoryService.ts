@@ -64,7 +64,7 @@ class EnhancedFundMemoryService {
           fund_id: fundId,
           deal_id: context.deal_id,
           ic_meeting_id: context.ic_session_id,
-          memory_type: 'decision_context',
+          memory_type: 'investment_decision', // Use valid constraint value
           title: `Enhanced Decision: ${context.decision_type} - ${context.decision_outcome}`,
           description: `Decision context with ${context.confidence_level}% confidence and learning metadata`,
           memory_content: {
