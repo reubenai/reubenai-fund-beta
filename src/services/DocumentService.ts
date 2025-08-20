@@ -206,7 +206,7 @@ class DocumentService {
         .from('deal_documents')
         .insert(documentData)
         .select()
-        .maybeSingle();
+        .single();
 
       if (dbError) {
         console.error('💾 Database insert failed:', {
