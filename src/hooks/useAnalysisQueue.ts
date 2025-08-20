@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAnalysisSystemKillSwitch } from './useAnalysisSystemKillSwitch';
 
 interface AnalysisQueueOptions {
   priority?: 'high' | 'normal' | 'low';
@@ -10,11 +11,22 @@ interface AnalysisQueueOptions {
 
 export function useAnalysisQueue() {
   const { toast } = useToast();
+  const { isAnalysisDisabled } = useAnalysisSystemKillSwitch();
 
   const queueDealAnalysis = useCallback(async (
     dealId: string,
     options: AnalysisQueueOptions = {}
   ) => {
+    // HARD SHUTDOWN: Analysis system disabled
+    if (isAnalysisDisabled) {
+      toast({
+        title: "Analysis System Disabled",
+        description: "Deal analysis has been shut down",
+        variant: "destructive"
+      });
+      return { success: false, error: "Analysis system disabled" };
+    }
+
     const {
       priority = 'normal',
       delayMinutes = 5,
@@ -102,6 +114,16 @@ export function useAnalysisQueue() {
   }, [toast]);
 
   const forceAnalysisNow = useCallback(async (dealId: string) => {
+    // HARD SHUTDOWN: Analysis system disabled
+    if (isAnalysisDisabled) {
+      toast({
+        title: "Analysis System Disabled",
+        description: "Deal analysis has been shut down",
+        variant: "destructive"
+      });
+      return { success: false, error: "Analysis system disabled" };
+    }
+
     try {
       // Queue with 0 delay and high priority
       const result = await queueDealAnalysis(dealId, {
