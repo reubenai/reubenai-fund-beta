@@ -246,174 +246,191 @@ export function EnhancedTractionFinancialFeasibilityAssessment({ deal }: Tractio
   }
 
   return (
-    <div className="space-y-6">
-      {/* Traction & Financial Feasibility Summary Score */}
-      <Card className="bg-muted/30">
-        <CardContent className="p-6">
-          <div className="flex items-start gap-3">
-            <div className="text-muted-foreground mt-1">
-              <BarChart3 className="h-5 w-5" />
+    <Collapsible>
+      <CollapsibleTrigger className="w-full">
+        <Card className="hover:bg-muted/50 transition-colors">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-lg">Traction & Financial Feasibility</h3>
+              <ChevronDown className="h-5 w-5 transform transition-transform data-[state=open]:rotate-180" />
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg mb-1">Traction & Financial Feasibility Score</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Based on {assessment?.checks.length || 0} financial factors • Sources: Data Unavailable
-              </p>
-              <div className="flex items-center gap-4">
-                <Badge 
-                  className={`${getStatusColor(assessment?.overallStatus || 'Poor')} border px-3 py-1`}
-                >
-                  {assessment?.overallStatus || 'Poor'}
-                </Badge>
-                <span className="font-bold text-xl min-w-[60px] text-right">
-                  N/A
-                </span>
+          </CardContent>
+        </Card>
+      </CollapsibleTrigger>
+      
+      <CollapsibleContent className="space-y-4 mt-4">
+        {/* Traction & Financial Feasibility Summary Score */}
+        <Card className="bg-muted/30">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-3">
+              <div className="text-muted-foreground mt-1">
+                <BarChart3 className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg mb-1">Traction & Financial Feasibility</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Based on {assessment?.checks.length || 0} financial factors
+                </p>
+                <div className="flex items-center gap-4">
+                  <Badge 
+                    className={`${getStatusColor(assessment?.overallStatus || 'Poor')} border px-3 py-1`}
+                  >
+                    {assessment?.overallStatus || 'Poor'}
+                  </Badge>
+                  <div className="flex-1 max-w-32">
+                    <Progress 
+                      value={assessment?.overallScore || 0} 
+                      className="h-2 bg-muted"
+                    />
+                  </div>
+                  <span className="font-bold text-xl min-w-[60px] text-right">
+                    {assessment?.overallScore ? `${assessment.overallScore}%` : 'N/A'}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Financial Factors */}
-      <div>
-        <h3 className="font-semibold text-lg mb-4">Financial Factors</h3>
-        <div className="space-y-3">
-          {assessment?.checks.map((check, index) => (
-            <Card key={index} className="bg-muted/20">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="mt-1">
-                      {getStatusIcon(check.aligned)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium">{check.criterion}</h4>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Weight: {check.weight}%</span>
-                          <span className="font-semibold text-sm">
-                            {check.score !== undefined ? `${check.score}/100` : 'N/A'}
-                          </span>
-                          <button
-                            onClick={() => toggleExpanded(check.criterion)}
-                            className="p-1 hover:bg-muted rounded"
-                          >
-                            {expandedCriteria.includes(check.criterion) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {check.reasoning}
-                      </p>
-                      
-                      {/* Expanded Analysis Framework */}
-                      {expandedCriteria.includes(check.criterion) && (
-                        <div className="mt-4 pt-4 border-t">
-                          <div className="space-y-4">
-                            <div className="bg-muted/50 p-3 rounded-lg">
-                              <h5 className="font-medium text-sm mb-2 flex items-center gap-2">
-                                <FileText className="h-4 w-4" />
-                                Analysis Framework
-                              </h5>
-                              <div className="text-xs text-muted-foreground space-y-1">
-                                {check.criterion === 'Revenue Quality & Growth' && (
-                                  <>
-                                    <p>• Revenue streams analysis and diversification</p>
-                                    <p>• Growth rate benchmarking and sustainability</p>
-                                    <p>• Customer concentration risk assessment</p>
-                                    <p>• Revenue predictability and recurring nature</p>
-                                  </>
-                                )}
-                                {check.criterion === 'Customer Acquisition & Unit Economics' && (
-                                  <>
-                                    <p>• Customer acquisition cost (CAC) analysis</p>
-                                    <p>• Lifetime value (LTV) calculations</p>
-                                    <p>• LTV/CAC ratio optimization</p>
-                                    <p>• Cohort analysis and retention metrics</p>
-                                  </>
-                                )}
-                                {check.criterion === 'Cash Flow & Burn Analysis' && (
-                                  <>
-                                    <p>• Operating cash flow sustainability</p>
-                                    <p>• Burn rate trajectory and efficiency</p>
-                                    <p>• Runway calculation and milestones</p>
-                                    <p>• Working capital management</p>
-                                  </>
-                                )}
-                                {check.criterion === 'Market Validation & Traction' && (
-                                  <>
-                                    <p>• Product-market fit indicators</p>
-                                    <p>• Customer adoption and engagement metrics</p>
-                                    <p>• Market penetration analysis</p>
-                                    <p>• Competitive positioning validation</p>
-                                  </>
-                                )}
-                                {check.criterion === 'Capital Efficiency & Scaling' && (
-                                  <>
-                                    <p>• Capital deployment effectiveness</p>
-                                    <p>• Scaling efficiency metrics</p>
-                                    <p>• ROI on investments and initiatives</p>
-                                    <p>• Operational leverage analysis</p>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                            
-                            <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
-                              <h5 className="font-medium text-sm mb-2 text-amber-800">Data Requirements</h5>
-                              <div className="text-xs text-amber-700 space-y-1">
-                                {check.criterion === 'Revenue Quality & Growth' && (
-                                  <>
-                                    <p>• Financial statements and revenue breakdowns</p>
-                                    <p>• Historical revenue data and growth trends</p>
-                                    <p>• Customer contracts and recurring revenue details</p>
-                                  </>
-                                )}
-                                {check.criterion === 'Customer Acquisition & Unit Economics' && (
-                                  <>
-                                    <p>• Customer acquisition data and costs</p>
-                                    <p>• Customer lifetime value calculations</p>
-                                    <p>• Cohort analysis and retention data</p>
-                                  </>
-                                )}
-                                {check.criterion === 'Cash Flow & Burn Analysis' && (
-                                  <>
-                                    <p>• Cash flow statements and projections</p>
-                                    <p>• Monthly burn rate and expense breakdown</p>
-                                    <p>• Funding history and runway calculations</p>
-                                  </>
-                                )}
-                                {check.criterion === 'Market Validation & Traction' && (
-                                  <>
-                                    <p>• Customer feedback and testimonials</p>
-                                    <p>• Usage analytics and engagement metrics</p>
-                                    <p>• Market research and validation studies</p>
-                                  </>
-                                )}
-                                {check.criterion === 'Capital Efficiency & Scaling' && (
-                                  <>
-                                    <p>• Investment tracking and ROI metrics</p>
-                                    <p>• Operational efficiency indicators</p>
-                                    <p>• Scaling milestones and projections</p>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+        {/* Financial Factors */}
+        <div>
+          <h4 className="text-muted-foreground font-medium mb-4">Financial Factors</h4>
+          <div className="space-y-3">
+            {assessment?.checks.map((check, index) => (
+              <div key={index} className="flex items-center gap-3 p-3 border border-border rounded-lg bg-background">
+                <div className="text-muted-foreground">
+                  {check.icon}
+                </div>
+                <div className="text-red-500">
+                  {getStatusIcon(check.aligned)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium">{check.criterion}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {check.reasoning}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-muted-foreground">Weight: {check.weight}%</div>
+                  <div className="font-semibold text-sm">
+                    {check.score !== undefined ? `${check.score}/100` : 'N/A'}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+                <button
+                  onClick={() => toggleExpanded(check.criterion)}
+                  className="p-1 hover:bg-muted rounded"
+                >
+                  {expandedCriteria.includes(check.criterion) ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-    </div>
+
+        {/* Render expanded content for any expanded criteria */}
+        {expandedCriteria.map(criterion => {
+          const check = assessment?.checks.find(c => c.criterion === criterion);
+          if (!check) return null;
+          
+          return (
+            <div key={criterion} className="space-y-4">
+              <div className="bg-muted/50 p-3 rounded-lg">
+                <h5 className="font-medium text-sm mb-2 flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Analysis Framework
+                </h5>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  {criterion === 'Revenue Quality & Growth' && (
+                    <>
+                      <p>• Revenue streams analysis and diversification</p>
+                      <p>• Growth rate benchmarking and sustainability</p>
+                      <p>• Customer concentration risk assessment</p>
+                      <p>• Revenue predictability and recurring nature</p>
+                    </>
+                  )}
+                  {criterion === 'Customer Acquisition & Unit Economics' && (
+                    <>
+                      <p>• Customer acquisition cost (CAC) analysis</p>
+                      <p>• Lifetime value (LTV) calculations</p>
+                      <p>• LTV/CAC ratio optimization</p>
+                      <p>• Cohort analysis and retention metrics</p>
+                    </>
+                  )}
+                  {criterion === 'Cash Flow & Burn Analysis' && (
+                    <>
+                      <p>• Operating cash flow sustainability</p>
+                      <p>• Burn rate trajectory and efficiency</p>
+                      <p>• Runway calculation and milestones</p>
+                      <p>• Working capital management</p>
+                    </>
+                  )}
+                  {criterion === 'Market Validation & Traction' && (
+                    <>
+                      <p>• Product-market fit indicators</p>
+                      <p>• Customer adoption and engagement metrics</p>
+                      <p>• Market penetration analysis</p>
+                      <p>• Competitive positioning validation</p>
+                    </>
+                  )}
+                  {criterion === 'Capital Efficiency & Scaling' && (
+                    <>
+                      <p>• Capital deployment effectiveness</p>
+                      <p>• Scaling efficiency metrics</p>
+                      <p>• ROI on investments and initiatives</p>
+                      <p>• Operational leverage analysis</p>
+                    </>
+                  )}
+                </div>
+              </div>
+              
+              <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                <h5 className="font-medium text-sm mb-2 text-amber-800">Data Requirements</h5>
+                <div className="text-xs text-amber-700 space-y-1">
+                  {criterion === 'Revenue Quality & Growth' && (
+                    <>
+                      <p>• Financial statements and revenue breakdowns</p>
+                      <p>• Historical revenue data and growth trends</p>
+                      <p>• Customer contracts and recurring revenue details</p>
+                    </>
+                  )}
+                  {criterion === 'Customer Acquisition & Unit Economics' && (
+                    <>
+                      <p>• Customer acquisition data and costs</p>
+                      <p>• Customer lifetime value calculations</p>
+                      <p>• Cohort analysis and retention data</p>
+                    </>
+                  )}
+                  {criterion === 'Cash Flow & Burn Analysis' && (
+                    <>
+                      <p>• Cash flow statements and projections</p>
+                      <p>• Monthly burn rate and expense breakdown</p>
+                      <p>• Funding history and runway calculations</p>
+                    </>
+                  )}
+                  {criterion === 'Market Validation & Traction' && (
+                    <>
+                      <p>• Customer feedback and testimonials</p>
+                      <p>• Usage analytics and engagement metrics</p>
+                      <p>• Market research and validation studies</p>
+                    </>
+                  )}
+                  {criterion === 'Capital Efficiency & Scaling' && (
+                    <>
+                      <p>• Investment tracking and ROI metrics</p>
+                      <p>• Operational efficiency indicators</p>
+                      <p>• Scaling milestones and projections</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
