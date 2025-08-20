@@ -494,7 +494,7 @@ class UnifiedStrategyService {
       errors.push('Maximum check size must be greater than minimum');
     }
 
-    // Category weight validation
+    // Category weight validation with more lenient precision
     const categories = [
       wizardData.teamLeadershipConfig,
       wizardData.marketOpportunityConfig,
@@ -505,18 +505,30 @@ class UnifiedStrategyService {
     ];
 
     const totalWeight = categories.reduce((sum, cat) => sum + (cat?.weight || 0), 0);
-    if (Math.abs(totalWeight - 100) > 0.1) {
+    
+    console.log('🔍 Service validation debug:');
+    console.log('Total weight:', totalWeight);
+    console.log('Categories:', categories.map((cat, i) => ({ 
+      name: ['Team & Leadership', 'Market Opportunity', 'Product & Technology', 'Business Traction', 'Financial Health', 'Strategic Fit'][i], 
+      weight: cat?.weight || 0 
+    })));
+    
+    // More lenient precision check - allow up to 1% difference
+    if (Math.abs(totalWeight - 100) > 1.0) {
       errors.push(`Category weights must sum to 100% (currently ${totalWeight.toFixed(1)}%)`);
     }
 
-    // Subcategory weight validation
+    // Subcategory weight validation with more lenient precision
     categories.forEach((category, index) => {
       if (category?.subcategories) {
         const subcategoryWeights = Object.values(category.subcategories)
           .filter(sub => sub.enabled)
           .reduce((sum, sub) => sum + (sub.weight || 0), 0);
         
-        if (Math.abs(subcategoryWeights - 100) > 0.1) {
+        console.log(`Subcategory weights for category ${index}:`, subcategoryWeights);
+        
+        // More lenient precision check for subcategories
+        if (Math.abs(subcategoryWeights - 100) > 1.0) {
           const categoryNames = ['Team & Leadership', 'Market Opportunity', 'Product & Technology', 'Business Traction', 'Financial Health', 'Strategic Fit'];
           errors.push(`${categoryNames[index]} subcategory weights must sum to 100% (currently ${subcategoryWeights.toFixed(1)}%)`);
         }

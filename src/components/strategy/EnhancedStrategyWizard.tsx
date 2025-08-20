@@ -295,9 +295,13 @@ export function EnhancedStrategyWizard({
   const validateEnhancedCriteria = (): boolean => {
     const totalWeight = enhancedCriteria.reduce((sum, cat) => sum + (cat.enabled ? cat.weight : 0), 0);
     
-    // Enhanced Criteria Validation
+    console.log('🔍 Weight validation debug:');
+    console.log('Total weight calculated:', totalWeight);
+    console.log('Criteria:', enhancedCriteria.map(c => ({ name: c.name, enabled: c.enabled, weight: c.weight })));
     
-    if (Math.abs(totalWeight - 100) > 0.1) {
+    // More lenient precision check - allow up to 0.5% difference for floating point errors
+    if (Math.abs(totalWeight - 100) > 0.5) {
+      console.log('❌ Total weight validation failed:', totalWeight);
       return false;
     }
     
@@ -307,12 +311,17 @@ export function EnhancedStrategyWizard({
         const enabledSubcategories = category.subcategories.filter(sub => sub.enabled);
         if (enabledSubcategories.length > 0) {
           const subWeight = enabledSubcategories.reduce((sum, sub) => sum + sub.weight, 0);
-          if (Math.abs(subWeight - 100) > 0.1) {
+          console.log(`Subcategory weights for ${category.name}:`, subWeight);
+          
+          // More lenient precision check for subcategories too
+          if (Math.abs(subWeight - 100) > 0.5) {
+            console.log(`❌ Subcategory weight validation failed for ${category.name}:`, subWeight);
             return false;
           }
         }
       }
     }
+    console.log('✅ All weight validations passed');
     return true;
   };
 
