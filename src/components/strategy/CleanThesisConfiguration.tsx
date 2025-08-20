@@ -59,12 +59,23 @@ export function CleanThesisConfiguration({
     console.log('Strategy ID:', strategy?.id);
     console.log('Edited Strategy:', editedStrategy);
     console.log('Current Strategy:', strategy);
+    console.log('Fund ID:', fundId);
     
     if (!strategy?.id) {
       console.error('No strategy ID found - cannot save');
       toast({
         title: 'Error',
         description: 'Strategy not properly initialized. Please refresh the page.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!fundId) {
+      console.error('No fund ID provided - cannot save');
+      toast({
+        title: 'Error',
+        description: 'Fund ID is missing. Please refresh the page.',
         variant: 'destructive'
       });
       return;
@@ -83,6 +94,10 @@ export function CleanThesisConfiguration({
       
       if (result) {
         console.log('Save successful:', result);
+        toast({
+          title: 'Success',
+          description: 'Strategy configuration saved successfully.',
+        });
         onSave(); // Use the parent callback instead of forcing page reload
       } else {
         console.error('Save failed - no result returned');
@@ -94,9 +109,10 @@ export function CleanThesisConfiguration({
       }
     } catch (error) {
       console.error('Save error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: 'Error',
-        description: 'An unexpected error occurred while saving.',
+        description: `An error occurred while saving: ${errorMessage}`,
         variant: 'destructive'
       });
     }

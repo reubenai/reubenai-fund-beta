@@ -97,7 +97,7 @@ export function useUnifiedStrategy(fundId?: string) {
     
     if (!fundId) {
       console.error('No fund ID provided to updateStrategy');
-      return null;
+      throw new Error('Fund ID is required for strategy updates');
     }
     
     setLoading(true);
@@ -112,37 +112,48 @@ export function useUnifiedStrategy(fundId?: string) {
       if (strategyId) {
         // Update existing strategy
         console.log('Updating existing strategy with ID:', strategyId);
-        updatedStrategy = await unifiedStrategyService.updateFundStrategy(strategyId, updates);
+        
+        // Ensure we have all required fields for the update
+        const updatePayload = {
+          ...updates,
+          fund_id: fundId, // Always include fund_id
+          fund_type: updates.fund_type || strategy?.fund_type || 'vc' // Ensure fund_type is present
+        };
+        
+        console.log('Update payload:', updatePayload);
+        updatedStrategy = await unifiedStrategyService.updateFundStrategy(strategyId, updatePayload);
         console.log('Update result:', updatedStrategy);
       } else {
         // Use upsert for creating/updating when no strategy exists
         console.log('Using upsert for fund:', fundId);
-        updatedStrategy = await unifiedStrategyService.upsertFundStrategy(fundId, updates);
+        
+        const upsertPayload = {
+          ...updates,
+          fund_id: fundId,
+          fund_type: updates.fund_type || 'vc'
+        };
+        
+        console.log('Upsert payload:', upsertPayload);
+        updatedStrategy = await unifiedStrategyService.upsertFundStrategy(fundId, upsertPayload);
         console.log('Upsert result:', updatedStrategy);
       }
       
       if (updatedStrategy) {
         console.log('Setting new strategy state:', updatedStrategy);
         setStrategy(updatedStrategy);
-        toast({
-          title: 'Success',
-          description: strategyId ? 'Strategy updated successfully' : 'Strategy created successfully'
-        });
+        return updatedStrategy;
       } else {
         console.error('No strategy returned from service');
         throw new Error('Update operation failed - no data returned');
       }
-      return updatedStrategy;
     } catch (err) {
       console.error('Update strategy error:', err);
-      const errorMessage = strategy?.id ? 'Failed to update strategy' : 'Failed to create strategy';
-      setError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive'
-      });
-      return null;
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      const contextualMessage = strategy?.id ? 'Failed to update strategy' : 'Failed to create strategy';
+      const fullMessage = `${contextualMessage}: ${errorMessage}`;
+      
+      setError(fullMessage);
+      throw new Error(fullMessage); // Re-throw for the calling component to handle
     } finally {
       setLoading(false);
     }

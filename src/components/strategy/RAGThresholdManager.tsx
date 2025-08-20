@@ -29,26 +29,46 @@ export const RAGThresholdManager: React.FC = () => {
   const handleSave = async () => {
     if (!selectedFund?.id) return;
 
+    console.log('=== RAG THRESHOLD SAVE ATTEMPT ===');
+    console.log('Selected Fund ID:', selectedFund.id);
+    console.log('Local Thresholds:', localThresholds);
+
     setSaving(true);
     try {
       // Fetch the current strategy to get the strategy ID
       const strategy = await unifiedStrategyService.getFundStrategy(selectedFund.id);
-      if (!strategy?.id) throw new Error('No strategy found for this fund');
+      console.log('Current strategy:', strategy);
+      
+      if (!strategy?.id) {
+        console.error('No strategy found for fund:', selectedFund.id);
+        throw new Error('No strategy found for this fund');
+      }
 
-      await unifiedStrategyService.updateFundStrategy(strategy.id, {
+      console.log('Updating strategy with ID:', strategy.id);
+      const updatePayload = {
         exciting_threshold: localThresholds.exciting,
         promising_threshold: localThresholds.promising,
         needs_development_threshold: localThresholds.needs_development
-      });
+      };
+      console.log('Update payload:', updatePayload);
 
-      toast({
-        title: "Thresholds Updated",
-        description: "RAG thresholds have been saved successfully.",
-      });
+      const result = await unifiedStrategyService.updateFundStrategy(strategy.id, updatePayload);
+      console.log('Update result:', result);
+
+      if (result) {
+        toast({
+          title: "Thresholds Updated",
+          description: "RAG thresholds have been saved successfully.",
+        });
+      } else {
+        throw new Error('Update returned no result');
+      }
     } catch (error) {
+      console.error('RAG threshold save error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: "Update Failed",
-        description: "Failed to update RAG thresholds. Please try again.",
+        description: `Failed to update RAG thresholds: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
