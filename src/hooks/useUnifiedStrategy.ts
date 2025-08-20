@@ -101,13 +101,14 @@ export function useUnifiedStrategy(fundId?: string) {
   };
 
   const updateStrategy = async (updates: Partial<EnhancedStrategy>) => {
-    console.log('=== UPDATE STRATEGY CALLED ===');
+    console.log('🔧 === UPDATE STRATEGY CALLED (FIXED VERSION) ===');
     console.log('Fund ID:', fundId);
-    console.log('Current strategy:', strategy);
+    console.log('Current strategy state:', strategy);
+    console.log('Strategy ID from state:', strategy?.id);
     console.log('Updates received:', updates);
     
     if (!fundId) {
-      console.error('No fund ID provided to updateStrategy');
+      console.error('❌ No fund ID provided to updateStrategy');
       throw new Error('Fund ID is required for strategy updates');
     }
     
@@ -115,56 +116,51 @@ export function useUnifiedStrategy(fundId?: string) {
     setError(null);
     
     try {
-      let updatedStrategy;
-      const strategyId = updates.id || strategy?.id;
+      let strategyId = updates.id || strategy?.id;
       
-      console.log('Strategy ID for update:', strategyId);
-      
-      if (strategyId) {
-        // Update existing strategy
-        console.log('Updating existing strategy with ID:', strategyId);
-        
-        // Ensure we have all required fields for the update
-        const updatePayload = {
-          ...updates,
-          fund_id: fundId, // Always include fund_id
-          fund_type: updates.fund_type || strategy?.fund_type || 'vc' // Ensure fund_type is present
-        };
-        
-        console.log('Update payload:', updatePayload);
-        updatedStrategy = await unifiedStrategyService.updateFundStrategy(strategyId, updatePayload);
-        console.log('Update result:', updatedStrategy);
-      } else {
-        // Use upsert for creating/updating when no strategy exists
-        console.log('Using upsert for fund:', fundId);
-        
-        const upsertPayload = {
-          ...updates,
-          fund_id: fundId,
-          fund_type: updates.fund_type || 'vc'
-        };
-        
-        console.log('Upsert payload:', upsertPayload);
-        updatedStrategy = await unifiedStrategyService.upsertFundStrategy(fundId, upsertPayload);
-        console.log('Upsert result:', updatedStrategy);
+      // If we don't have a strategy ID, fetch it from the database
+      if (!strategyId) {
+        console.log('⚠️ No strategy ID found, fetching from database...');
+        const existingStrategy = await unifiedStrategyService.getFundStrategy(fundId);
+        strategyId = existingStrategy?.id;
+        console.log('💾 Fetched strategy ID from database:', strategyId);
       }
       
+      console.log('🎯 Final strategy ID for update:', strategyId);
+      
+      if (!strategyId) {
+        console.error('❌ No strategy found for fund. This should not happen as all funds have default strategies.');
+        throw new Error('Strategy not found for fund. Please contact support.');
+      }
+
+      // Always use UPDATE path since all funds should have strategies
+      console.log('✅ Updating existing strategy with ID:', strategyId);
+      
+      const updatePayload = {
+        ...updates,
+        fund_id: fundId, // Always include fund_id
+        fund_type: updates.fund_type || strategy?.fund_type || 'vc'
+      };
+      
+      console.log('📝 Update payload:', updatePayload);
+      const updatedStrategy = await unifiedStrategyService.updateFundStrategy(strategyId, updatePayload);
+      console.log('✅ Update successful:', updatedStrategy);
+      
       if (updatedStrategy) {
-        console.log('Setting new strategy state:', updatedStrategy);
+        console.log('🔄 Setting new strategy state:', updatedStrategy);
         setStrategy(updatedStrategy);
         return updatedStrategy;
       } else {
-        console.error('No strategy returned from service');
+        console.error('❌ No strategy returned from service');
         throw new Error('Update operation failed - no data returned');
       }
     } catch (err) {
-      console.error('Update strategy error:', err);
+      console.error('❌ Update strategy error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      const contextualMessage = strategy?.id ? 'Failed to update strategy' : 'Failed to create strategy';
-      const fullMessage = `${contextualMessage}: ${errorMessage}`;
+      const fullMessage = `Failed to update strategy: ${errorMessage}`;
       
       setError(fullMessage);
-      throw new Error(fullMessage); // Re-throw for the calling component to handle
+      throw new Error(fullMessage);
     } finally {
       setLoading(false);
     }

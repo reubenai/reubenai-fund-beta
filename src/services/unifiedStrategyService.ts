@@ -304,44 +304,54 @@ class UnifiedStrategyService {
     }
   }
 
-  // Comprehensive strategy updates
+  // Comprehensive strategy updates - FIXED VERSION
   async updateFundStrategy(strategyId: string, updates: any): Promise<EnhancedStrategy | null> {
+    console.log('🔧 === UPDATE FUND STRATEGY SERVICE (FIXED) ===');
+    console.log('Strategy ID:', strategyId);
+    console.log('Updates received:', updates);
+    
     try {
-      console.log('=== UPDATE FUND STRATEGY SERVICE ===');
-      console.log('Strategy ID:', strategyId);
-      console.log('Updates:', updates);
-      
       // Remove the id from updates to avoid conflicts
       const { id, ...updateData } = updates;
       
-      console.log('Clean update data:', updateData);
+      console.log('📝 Clean update data:', updateData);
       
+      // Use simple UPDATE query without any ON CONFLICT clause
       const { data, error } = await supabase
         .from('investment_strategies')
-        .update(updateData)
+        .update({
+          fund_type: updateData.fund_type,
+          industries: updateData.industries || [],
+          geography: updateData.geography || [],
+          key_signals: updateData.key_signals || [],
+          exciting_threshold: updateData.exciting_threshold || 85,
+          promising_threshold: updateData.promising_threshold || 70,
+          needs_development_threshold: updateData.needs_development_threshold || 50,
+          strategy_notes: updateData.strategy_notes || '',
+          enhanced_criteria: updateData.enhanced_criteria || {},
+          updated_at: new Date().toISOString()
+        })
         .eq('id', strategyId)
         .select()
         .single();
 
-      console.log('Supabase update result:', { data, error });
-
-      console.log('Supabase update result:', { data, error });
+      console.log('📊 Supabase update result:', { data, error });
 
       if (error) {
-        console.error('Supabase error updating strategy:', error);
+        console.error('❌ Supabase error updating strategy:', error);
         throw new Error(`Database update failed: ${error.message}`);
       }
 
       if (!data) {
-        console.error('No data returned from update');
+        console.error('❌ No data returned from update');
         throw new Error('Update succeeded but no data returned');
       }
 
-      console.log('Successfully updated strategy:', data);
+      console.log('✅ Successfully updated strategy:', data);
       return data as EnhancedStrategy;
     } catch (error) {
-      console.error('Unexpected error in updateFundStrategy:', error);
-      throw error; // Re-throw to preserve error handling in hook
+      console.error('❌ Unexpected error in updateFundStrategy:', error);
+      throw error;
     }
   }
 
