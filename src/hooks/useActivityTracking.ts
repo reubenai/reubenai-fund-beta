@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 import { captureEvent } from '@/lib/analytics/posthog';
 import { useFund } from '@/contexts/FundContext';
+import { useActivityTrackingKillSwitch } from '@/hooks/useActivityTrackingKillSwitch';
 
 interface UserActivity {
   event: string;
@@ -15,8 +16,14 @@ interface UserActivity {
 export function useActivityTracking() {
   const { user } = useAuth();
   const { selectedFund } = useFund();
+  const { shouldSkipEvent } = useActivityTrackingKillSwitch();
 
   const trackEvent = useCallback(async (event: string, metadata?: Record<string, any>) => {
+    // Check if this event should be skipped
+    if (shouldSkipEvent(event, window.location.pathname)) {
+      return;
+    }
+
     const activity: UserActivity = {
       event,
       timestamp: new Date().toISOString(),
@@ -69,7 +76,7 @@ export function useActivityTracking() {
     }
     
     localStorage.setItem('user-activities', JSON.stringify(activities));
-  }, [user?.id, selectedFund?.id]);
+  }, [user?.id, selectedFund?.id, shouldSkipEvent]);
 
   // Track page views
   useEffect(() => {

@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { useFund } from '@/contexts/FundContext';
+import { useActivityTrackingKillSwitch } from '@/hooks/useActivityTrackingKillSwitch';
 
 interface UserActivity {
   event: string;
@@ -27,6 +28,7 @@ export function useEnhancedActivityTracking() {
   const { user } = useAuth();
   const { profile, isSuperAdmin } = useUserRole();
   const { selectedFund, funds } = useFund();
+  const { shouldSkipEvent } = useActivityTrackingKillSwitch();
 
   const trackBusinessEvent = useCallback(async (event: BusinessEvent) => {
     if (!user) return;
@@ -113,6 +115,11 @@ export function useEnhancedActivityTracking() {
     metadata?: Record<string, any>
   ) => {
     if (!user) return;
+    
+    // Check if this event should be skipped
+    if (shouldSkipEvent(event, window.location.pathname)) {
+      return;
+    }
 
     const activity: UserActivity = {
       event,
@@ -165,7 +172,7 @@ export function useEnhancedActivityTracking() {
     }
     
     localStorage.setItem('user-activities', JSON.stringify(activities));
-  }, [user, selectedFund, profile, isSuperAdmin, trackCrossOrganizationActivity]);
+  }, [user, selectedFund, profile, isSuperAdmin, trackCrossOrganizationActivity, shouldSkipEvent]);
 
   const triggerFundMemoryCapture = useCallback(async (
     fundId: string, 
