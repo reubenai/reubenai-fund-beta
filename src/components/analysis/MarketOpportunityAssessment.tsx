@@ -1168,11 +1168,20 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
   };
 
   const toggleCriteriaExpansion = (criterion: string) => {
-    setExpandedCriteria(prev => 
-      prev.includes(criterion) 
-        ? prev.filter(c => c !== criterion)
-        : [...prev, criterion]
-    );
+    setExpandedCriteria(prev => {
+      const isExpanding = !prev.includes(criterion);
+      const newExpanded = isExpanding 
+        ? [...prev, criterion]
+        : prev.filter(c => c !== criterion);
+      
+      // Trigger competitive analysis when Competitive Position is expanded for the first time
+      if (isExpanding && criterion === 'Competitive Position' && !competitiveData) {
+        console.log('🏆 Triggering competitive analysis for expanded view');
+        runCompetitiveAnalysis(deal.id, deal.fund_id);
+      }
+      
+      return newExpanded;
+    });
   };
 
   if (loading) {
