@@ -3176,6 +3176,8 @@ export type Database = {
       investment_strategies: {
         Row: {
           created_at: string
+          deal_sourcing_strategy: Json | null
+          decision_making_process: Json | null
           enhanced_criteria: Json | null
           exciting_threshold: number | null
           fund_id: string
@@ -3183,17 +3185,24 @@ export type Database = {
           geography: string[] | null
           id: string
           industries: string[] | null
+          investment_philosophy: string | null
+          investment_stages: string[] | null
           key_signals: string[] | null
           max_investment_amount: number | null
           min_investment_amount: number | null
           needs_development_threshold: number | null
+          philosophy_config: Json | null
           promising_threshold: number | null
           recency_thresholds: Json | null
+          research_approach: Json | null
+          specialized_sectors: string[] | null
           strategy_notes: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          deal_sourcing_strategy?: Json | null
+          decision_making_process?: Json | null
           enhanced_criteria?: Json | null
           exciting_threshold?: number | null
           fund_id: string
@@ -3201,17 +3210,24 @@ export type Database = {
           geography?: string[] | null
           id?: string
           industries?: string[] | null
+          investment_philosophy?: string | null
+          investment_stages?: string[] | null
           key_signals?: string[] | null
           max_investment_amount?: number | null
           min_investment_amount?: number | null
           needs_development_threshold?: number | null
+          philosophy_config?: Json | null
           promising_threshold?: number | null
           recency_thresholds?: Json | null
+          research_approach?: Json | null
+          specialized_sectors?: string[] | null
           strategy_notes?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          deal_sourcing_strategy?: Json | null
+          decision_making_process?: Json | null
           enhanced_criteria?: Json | null
           exciting_threshold?: number | null
           fund_id?: string
@@ -3219,12 +3235,17 @@ export type Database = {
           geography?: string[] | null
           id?: string
           industries?: string[] | null
+          investment_philosophy?: string | null
+          investment_stages?: string[] | null
           key_signals?: string[] | null
           max_investment_amount?: number | null
           min_investment_amount?: number | null
           needs_development_threshold?: number | null
+          philosophy_config?: Json | null
           promising_threshold?: number | null
           recency_thresholds?: Json | null
+          research_approach?: Json | null
+          specialized_sectors?: string[] | null
           strategy_notes?: string | null
           updated_at?: string
         }

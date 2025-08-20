@@ -304,33 +304,61 @@ class UnifiedStrategyService {
     }
   }
 
-  // Comprehensive strategy updates - FIXED VERSION
+  // Comprehensive strategy updates - FIXED VERSION with proper data transformation
   async updateFundStrategy(strategyId: string, updates: any): Promise<EnhancedStrategy | null> {
-    console.log('🔧 === UPDATE FUND STRATEGY SERVICE (FIXED) ===');
+    console.log('🔧 === UPDATE FUND STRATEGY SERVICE (ENHANCED) ===');
     console.log('Strategy ID:', strategyId);
     console.log('Updates received:', updates);
     
     try {
-      // Remove the id from updates to avoid conflicts
-      const { id, ...updateData } = updates;
+      // Import transformation utility
+      const { DataTransformationUtils } = await import('./dataTransformationUtils');
       
-      console.log('📝 Clean update data:', updateData);
+      // Transform UI data to database format
+      const transformedData = DataTransformationUtils.transformUIToDatabase(updates);
+      
+      console.log('📝 Transformed update data:', transformedData);
+      
+      // Validate data before update
+      const validation = DataTransformationUtils.validateStrategyData(transformedData);
+      if (!validation.isValid) {
+        console.error('❌ Validation errors:', validation.errors);
+        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      }
+      
+      // Build update object with all possible fields
+      const updateObject: any = {
+        updated_at: new Date().toISOString()
+      };
+      
+      // Only include fields that are provided in the update
+      if (transformedData.fund_type !== undefined) updateObject.fund_type = transformedData.fund_type;
+      if (transformedData.industries !== undefined) updateObject.industries = transformedData.industries;
+      if (transformedData.geography !== undefined) updateObject.geography = transformedData.geography;
+      if (transformedData.key_signals !== undefined) updateObject.key_signals = transformedData.key_signals;
+      if (transformedData.exciting_threshold !== undefined) updateObject.exciting_threshold = transformedData.exciting_threshold;
+      if (transformedData.promising_threshold !== undefined) updateObject.promising_threshold = transformedData.promising_threshold;
+      if (transformedData.needs_development_threshold !== undefined) updateObject.needs_development_threshold = transformedData.needs_development_threshold;
+      if (transformedData.strategy_notes !== undefined) updateObject.strategy_notes = transformedData.strategy_notes;
+      if (transformedData.enhanced_criteria !== undefined) updateObject.enhanced_criteria = transformedData.enhanced_criteria;
+      
+      // New fields from database expansion
+      if (transformedData.investment_philosophy !== undefined) updateObject.investment_philosophy = transformedData.investment_philosophy;
+      if (transformedData.philosophy_config !== undefined) updateObject.philosophy_config = transformedData.philosophy_config;
+      if (transformedData.research_approach !== undefined) updateObject.research_approach = transformedData.research_approach;
+      if (transformedData.deal_sourcing_strategy !== undefined) updateObject.deal_sourcing_strategy = transformedData.deal_sourcing_strategy;
+      if (transformedData.decision_making_process !== undefined) updateObject.decision_making_process = transformedData.decision_making_process;
+      if (transformedData.investment_stages !== undefined) updateObject.investment_stages = transformedData.investment_stages;
+      if (transformedData.specialized_sectors !== undefined) updateObject.specialized_sectors = transformedData.specialized_sectors;
+      if (transformedData.min_investment_amount !== undefined) updateObject.min_investment_amount = transformedData.min_investment_amount;
+      if (transformedData.max_investment_amount !== undefined) updateObject.max_investment_amount = transformedData.max_investment_amount;
+      
+      console.log('🎯 Final update object:', updateObject);
       
       // Use simple UPDATE query without any ON CONFLICT clause
       const { data, error } = await supabase
         .from('investment_strategies')
-        .update({
-          fund_type: updateData.fund_type,
-          industries: updateData.industries || [],
-          geography: updateData.geography || [],
-          key_signals: updateData.key_signals || [],
-          exciting_threshold: updateData.exciting_threshold || 85,
-          promising_threshold: updateData.promising_threshold || 70,
-          needs_development_threshold: updateData.needs_development_threshold || 50,
-          strategy_notes: updateData.strategy_notes || '',
-          enhanced_criteria: updateData.enhanced_criteria || {},
-          updated_at: new Date().toISOString()
-        })
+        .update(updateObject)
         .eq('id', strategyId)
         .select()
         .single();

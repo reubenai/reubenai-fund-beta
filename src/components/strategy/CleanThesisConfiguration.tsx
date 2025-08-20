@@ -122,10 +122,19 @@ export function CleanThesisConfiguration({
     setEditedStrategy(prev => ({ ...prev, [field]: value }));
   };
 
-  // Auto-save for Investment Thesis
+  // Auto-save for Investment Thesis with proper data preservation
   const handleAutoSave = useCallback(async () => {
     try {
-      await updateStrategy(editedStrategy);
+      console.log('🔄 Auto-saving strategy:', editedStrategy);
+      
+      // Preserve existing enhanced criteria during auto-save
+      const preservedStrategy = {
+        ...editedStrategy,
+        // Ensure enhanced criteria is preserved
+        enhanced_criteria: editedStrategy.enhanced_criteria || strategy.enhanced_criteria || {}
+      };
+      
+      await updateStrategy(preservedStrategy);
       toast({
         title: "Auto-saved",
         description: "Changes saved automatically",
@@ -134,7 +143,7 @@ export function CleanThesisConfiguration({
     } catch (error) {
       console.error('Auto-save failed:', error);
     }
-  }, [editedStrategy, updateStrategy, toast]);
+  }, [editedStrategy, strategy, updateStrategy, toast]);
 
   useAutoSave(editedStrategy.strategy_notes, {
     onSave: handleAutoSave,
