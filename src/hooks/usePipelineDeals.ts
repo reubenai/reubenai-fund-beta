@@ -266,18 +266,23 @@ export const usePipelineDeals = (fundId?: string) => {
         [stageName]: [...(prev[stageName] || []), data]
       }));
 
-      // Log activity
-      await activityService.logDealCreated(
-        fundId,
-        data.id,
-        data.company_name,
-        {
-          industry: data.industry,
-          location: data.location,
-          deal_size: data.deal_size,
-          valuation: data.valuation
-        }
-      );
+      // Temporarily disable activity logging to isolate database issue
+      try {
+        console.log('⏭️ Skipping activity logging temporarily for debugging');
+        // await activityService.logDealCreated(
+        //   fundId,
+        //   data.id,
+        //   data.company_name,
+        //   {
+        //     industry: data.industry,
+        //     location: data.location,
+        //     deal_size: data.deal_size,
+        //     valuation: data.valuation
+        //   }
+        // );
+      } catch (activityError) {
+        console.warn('Activity logging failed but deal created:', activityError);
+      }
 
       toast({
         title: "Deal added",

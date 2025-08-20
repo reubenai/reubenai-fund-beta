@@ -110,22 +110,30 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
         return;
       }
 
+      // Sanitize form data to remove malformed objects
+      const sanitizeValue = (value: any) => {
+        if (value && typeof value === 'object' && value._type === 'undefined') {
+          return undefined;
+        }
+        return value || undefined;
+      };
+
       const dealData = {
         company_name: formData.company_name,
         created_by: user.id,
-        description: formData.description || undefined,
-        industry: formData.industry.length > 0 ? formData.industry.join(';') : undefined, // Convert array to string
-        primary_industry: formData.industry.length > 0 ? formData.industry[0] : undefined, // First selected as primary
+        description: sanitizeValue(formData.description),
+        industry: formData.industry.length > 0 ? formData.industry.join(';') : undefined,
+        primary_industry: formData.industry.length > 0 ? formData.industry[0] : undefined,
         specialized_sectors: formData.specialized_sectors.length > 0 ? formData.specialized_sectors : undefined,
-        location: formData.location.length > 0 ? locationsToString(formData.location) : undefined, // Convert array to string
-        website: formData.website || undefined,
-        linkedin_url: formData.linkedin_url || undefined,
-        crunchbase_url: formData.crunchbase_url || undefined,
-        current_round_size: formData.current_round_size ? parseInt(formData.current_round_size) : undefined,
-        valuation: formData.valuation ? parseInt(formData.valuation) : undefined,
-        currency: formData.currency || undefined,
-        founder_name: formData.founder_name || undefined,
-        founder_email: formData.founder_email || undefined
+        location: formData.location.length > 0 ? locationsToString(formData.location) : undefined,
+        website: sanitizeValue(formData.website),
+        linkedin_url: sanitizeValue(formData.linkedin_url),
+        crunchbase_url: sanitizeValue(formData.crunchbase_url),
+        current_round_size: sanitizeValue(formData.current_round_size) ? parseInt(sanitizeValue(formData.current_round_size)) : undefined,
+        valuation: sanitizeValue(formData.valuation) ? parseInt(sanitizeValue(formData.valuation)) : undefined,
+        currency: formData.currency || 'USD',
+        founder_name: sanitizeValue(formData.founder_name),
+        founder_email: sanitizeValue(formData.founder_email)
       };
 
       // Create deal first, then enhance (enhancement failures shouldn't block deal creation)
