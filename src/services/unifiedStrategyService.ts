@@ -347,50 +347,80 @@ class UnifiedStrategyService {
   // Upsert strategy for fund (create if doesn't exist, update if it does)
   async upsertFundStrategy(fundId: string, updates: any): Promise<EnhancedStrategy | null> {
     try {
-      console.log('=== UPSERT FUND STRATEGY SERVICE ===');
+      console.log('=== UPSERT FUND STRATEGY SERVICE (SELECT THEN UPDATE/INSERT) ===');
       console.log('Fund ID:', fundId);
       console.log('Updates:', updates);
       
-      // Remove the id from updates to avoid conflicts in upsert
+      // Remove the id from updates to avoid conflicts
       const { id, ...updateData } = updates;
       
-      const upsertData = {
-        fund_id: fundId,
-        ...updateData
-      };
-      
-      console.log('Upsert data:', upsertData);
-      
-      // Use the specific unique constraint name that exists in the database
-      const { data, error } = await supabase
+      // First, check if a strategy already exists for this fund
+      const { data: existingStrategy, error: selectError } = await supabase
         .from('investment_strategies')
-        .upsert(upsertData, { 
-          onConflict: 'investment_strategies_fund_id_unique',
-          ignoreDuplicates: false 
-        })
-        .select()
-        .single();
+        .select('*')
+        .eq('fund_id', fundId)
+        .maybeSingle();
 
-      console.log('Supabase upsert result:', { data, error });
+      console.log('Existing strategy check:', { existingStrategy, selectError });
 
-      if (error) {
-        console.error('Supabase error upserting strategy:', error);
-        console.error('Error details:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        });
-        throw new Error(`Database upsert failed: ${error.message}`);
+      if (selectError) {
+        console.error('Error checking existing strategy:', selectError);
+        throw new Error(`Failed to check existing strategy: ${selectError.message}`);
       }
 
-      if (!data) {
-        console.error('No data returned from upsert');
-        throw new Error('Upsert succeeded but no data returned');
+      let result;
+      
+      if (existingStrategy) {
+        // Strategy exists, perform UPDATE
+        console.log('Strategy exists, performing UPDATE');
+        
+        const { data: updatedData, error: updateError } = await supabase
+          .from('investment_strategies')
+          .update(updateData)
+          .eq('fund_id', fundId)
+          .select()
+          .single();
+
+        console.log('Update result:', { updatedData, updateError });
+
+        if (updateError) {
+          console.error('Update error:', updateError);
+          throw new Error(`Failed to update strategy: ${updateError.message}`);
+        }
+
+        result = updatedData;
+      } else {
+        // Strategy doesn't exist, perform INSERT
+        console.log('Strategy does not exist, performing INSERT');
+        
+        const insertData = {
+          fund_id: fundId,
+          ...updateData
+        };
+
+        const { data: insertedData, error: insertError } = await supabase
+          .from('investment_strategies')
+          .insert(insertData)
+          .select()
+          .single();
+
+        console.log('Insert result:', { insertedData, insertError });
+
+        if (insertError) {
+          console.error('Insert error:', insertError);
+          throw new Error(`Failed to insert strategy: ${insertError.message}`);
+        }
+
+        result = insertedData;
       }
 
-      console.log('Successfully upserted strategy:', data);
-      return data as EnhancedStrategy;
+      if (!result) {
+        console.error('No data returned from operation');
+        throw new Error('Operation succeeded but no data returned');
+      }
+
+      console.log('Successfully saved strategy:', result);
+      return result as EnhancedStrategy;
     } catch (error) {
       console.error('Unexpected error in upsertFundStrategy:', error);
       throw error; // Re-throw to preserve error handling in hook
