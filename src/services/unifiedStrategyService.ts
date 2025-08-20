@@ -375,49 +375,16 @@ class UnifiedStrategyService {
       console.log('🎯 Final update object:', JSON.stringify(updateObject, null, 2));
       console.log('🚀 CODE VERSION: 2025-08-20-v3 - ENHANCED ERROR HANDLING');
       
-      // Phase 5: Implement fallback upsert mechanism
-      let data, error;
-      
-      try {
-        // First attempt: Simple UPDATE
-        const updateResult = await supabase
-          .from('investment_strategies')
-          .update(updateObject)
-          .eq('id', strategyId)
-          .select()
-          .single();
-          
-        data = updateResult.data;
-        error = updateResult.error;
+      // Perform the UPDATE operation
+      console.log('🚀 Updating strategy with ID:', strategyId);
+      const { data, error } = await supabase
+        .from('investment_strategies')
+        .update(updateObject)
+        .eq('id', strategyId)
+        .select()
+        .single();
         
-        console.log('📊 Primary update result:', { data, error });
-        
-      } catch (primaryError: any) {
-        console.warn('⚠️ Primary update failed, attempting fallback upsert:', primaryError);
-        
-        // Fallback: Try upsert by fund_id
-        try {
-          const upsertResult = await supabase
-            .from('investment_strategies')
-            .upsert({
-              fund_id: existingStrategy.fund_id,
-              ...updateObject
-            })
-            .select()
-            .single();
-            
-          data = upsertResult.data;
-          error = upsertResult.error;
-          
-          console.log('📊 Fallback upsert result:', { data, error });
-          
-        } catch (fallbackError: any) {
-          console.error('❌ Both primary and fallback operations failed');
-          console.error('Primary error:', primaryError);
-          console.error('Fallback error:', fallbackError);
-          throw new Error(`Database update failed: ${primaryError.message}. Fallback also failed: ${fallbackError.message}`);
-        }
-      }
+      console.log('📊 Update result:', { data, error });
 
       if (error) {
         console.error('❌ Supabase error updating strategy:', error);
