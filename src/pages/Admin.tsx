@@ -135,14 +135,7 @@ export default function Admin() {
   useEffect(() => {
     if (user) {
       fetchData();
-      // Auto-run safe mode test on load
-      autoSelectVCDealAndRunSafeModeTest().then(result => {
-        if (result.success) {
-          console.log('✅ Auto safe mode test completed:', result);
-        } else {
-          console.warn('⚠️ Auto safe mode test failed:', result.error);
-        }
-      });
+      // Note: Auto-run safe mode test disabled during system emergency mode
     }
   }, [user]);
 
