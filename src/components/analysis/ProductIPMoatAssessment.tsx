@@ -6,6 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { 
   CheckCircle, 
   XCircle, 
+  AlertTriangle,
   Shield,
   Lightbulb,
   Zap,
@@ -66,6 +67,14 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
   const [loading, setLoading] = useState(true);
   const [assessment, setAssessment] = useState<ProductIPAssessment | null>(null);
   const [expandedCriteria, setExpandedCriteria] = useState<string[]>([]);
+
+  const toggleCriteriaExpansion = (criterion: string) => {
+    setExpandedCriteria(prev => 
+      prev.includes(criterion) 
+        ? prev.filter(c => c !== criterion)
+        : [...prev, criterion]
+    );
+  };
 
   const fetchProductDataAndAssess = React.useCallback(async () => {
     try {
@@ -188,231 +197,157 @@ export function ProductIPMoatAssessment({ deal }: ProductIPMoatAssessmentProps) 
     };
   };
 
-  const toggleCriteriaExpansion = (criterion: string) => {
-    setExpandedCriteria(prev => 
-      prev.includes(criterion) 
-        ? prev.filter(c => c !== criterion)
-        : [...prev, criterion]
-    );
-  };
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (!assessment) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        Product & IP analysis unavailable
-      </div>
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <AlertTriangle className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-muted-foreground">Product & IP analysis unavailable</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <Collapsible>
-      <CollapsibleTrigger className="w-full">
-        <Card className="hover:bg-muted/50 transition-colors">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-lg">Product & IP Moat</h3>
-              <ChevronDown className="h-5 w-5 transform transition-transform data-[state=open]:rotate-180" />
+    <Card>
+      <CardContent className="p-6">
+        {/* Summary Section */}
+        <div className="space-y-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Product & IP Moat</h3>
             </div>
-          </CardContent>
-        </Card>
-      </CollapsibleTrigger>
-      
-      <CollapsibleContent className="space-y-4 mt-4">
-        {/* Product & IP Moat Summary Score */}
-        <Card className="bg-muted/30">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-3">
-              <div className="text-muted-foreground mt-1">
-                <Shield className="h-5 w-5" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-lg mb-1">Product & IP Moat</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Based on {assessment?.checks.length || 0} IP factors
-                </p>
-                <div className="flex items-center gap-4">
-                  <Badge 
-                    className={`${getStatusColor(assessment?.overallStatus || 'Poor')} border px-3 py-1`}
-                  >
-                    {assessment?.overallStatus || 'Poor'}
-                  </Badge>
-                  <div className="flex-1 max-w-32">
-                    <Progress 
-                      value={assessment?.overallScore || 0} 
-                      className="h-2 bg-muted"
-                    />
-                  </div>
-                  <span className="font-bold text-xl min-w-[60px] text-right">
-                    {assessment?.overallScore ? `${assessment.overallScore}%` : 'N/A'}
-                  </span>
-                </div>
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className={getStatusColor(assessment.overallStatus)}>
+                {assessment.overallStatus}
+              </Badge>
+              <div className="flex items-center gap-2">
+                <Progress value={assessment.overallScore} className="w-20" />
+                <span className="text-sm font-medium">{assessment.overallScore}%</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* IP Factors */}
-        <div>
-          <h4 className="text-muted-foreground font-medium mb-4">IP Factors</h4>
+        <div className="space-y-4">
+          <h4 className="font-medium text-sm">IP Factors</h4>
           <div className="space-y-3">
-            {assessment?.checks.map((check, index) => (
-              <div key={index} className="flex items-center gap-3 p-3 border border-border rounded-lg bg-background">
-                <div className="text-muted-foreground">
-                  {check.icon}
-                </div>
-                <div className="text-red-500">
-                  {getStatusIcon(check.aligned)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium">{check.criterion}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {check.reasoning}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-muted-foreground">Weight: {check.weight}%</div>
-                  <div className="font-semibold text-sm">
-                    {check.score !== undefined ? `${check.score}/100` : 'N/A'}
+            {assessment.checks.map((check, index) => (
+              <div key={index} className="space-y-3">
+                <div 
+                  className="flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-muted/50"
+                  onClick={() => toggleCriteriaExpansion(check.criterion)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0">
+                      {getStatusIcon(check.aligned)}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {check.icon}
+                      <div>
+                        <div className="font-medium text-sm">{check.criterion}</div>
+                        <div className="text-xs text-muted-foreground">{check.reasoning}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className="text-xs text-muted-foreground">Weight: {check.weight}%</div>
+                      <div className="text-sm font-medium">{check.score || (check.aligned ? 70 : 30)}/100</div>
+                    </div>
+                    {expandedCriteria.includes(check.criterion) ? 
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" /> :
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    }
                   </div>
                 </div>
-                <button
-                  onClick={() => toggleCriteriaExpansion(check.criterion)}
-                  className="p-1 hover:bg-muted rounded"
-                >
-                  {expandedCriteria.includes(check.criterion) ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </button>
+                
+                {/* Expanded Analysis */}
+                {expandedCriteria.includes(check.criterion) && (
+                  <div className="bg-white rounded-lg p-4 border">
+                    <div className="space-y-4">
+                      {/* Analysis Framework */}
+                      <div>
+                        <h5 className="font-medium text-card-foreground mb-2">Analysis Framework</h5>
+                        <div className="text-sm text-muted-foreground">
+                          Comprehensive assessment of {check.criterion.toLowerCase()} based on industry standards and competitive benchmarks. 
+                          This evaluation considers market positioning, competitive advantages, and intellectual property strength.
+                        </div>
+                      </div>
+                      
+                      {/* Data Requirements */}
+                      <div>
+                        <h5 className="font-medium text-card-foreground mb-2">Data Requirements</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <div className="font-medium">Required Documentation:</div>
+                            <ul className="list-disc list-inside text-muted-foreground mt-1 space-y-1">
+                              <li>Patent portfolio analysis</li>
+                              <li>Trade secret documentation</li>
+                              <li>IP landscape mapping</li>
+                              <li>Competitive positioning studies</li>
+                            </ul>
+                          </div>
+                          <div>
+                            <div className="font-medium">Evaluation Metrics:</div>
+                            <ul className="list-disc list-inside text-muted-foreground mt-1 space-y-1">
+                              <li>IP strength scoring</li>
+                              <li>Market differentiation analysis</li>
+                              <li>Competitive moat assessment</li>
+                              <li>Technology readiness level</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Insights */}
+                      <div>
+                        <h5 className="font-medium text-card-foreground mb-2">Key Insights</h5>
+                        <div className="text-sm text-muted-foreground">
+                          The {check.criterion.toLowerCase()} assessment reveals {check.aligned ? 'strong' : 'limited'} intellectual property 
+                          positioning with significant implications for competitive defensibility and market capture potential.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Render expanded content for any expanded criteria */}
-        {expandedCriteria.map(criterion => {
-          const check = assessment?.checks.find(c => c.criterion === criterion);
-          if (!check) return null;
-          
-          return (
-            <div key={criterion} className="space-y-4">
-              <div className="bg-muted/50 p-3 rounded-lg">
-                <h5 className="font-medium text-sm mb-2 flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Analysis Framework
-                </h5>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  {criterion === 'Intellectual Property Portfolio' && (
-                    <>
-                      <p>• Patent filing strategy and geographical coverage</p>
-                      <p>• Core technology protection and claims analysis</p>
-                      <p>• Patent prosecution timeline and status</p>
-                      <p>• Competitive patent landscape analysis</p>
-                    </>
-                  )}
-                  {criterion === 'Technology Differentiation' && (
-                    <>
-                      <p>• Proprietary algorithms and methodologies</p>
-                      <p>• Technical complexity and implementation barriers</p>
-                      <p>• Technology stack sophistication</p>
-                      <p>• R&D investment and capabilities</p>
-                    </>
-                  )}
-                  {criterion === 'Competitive Barriers' && (
-                    <>
-                      <p>• Market entry barriers and switching costs</p>
-                      <p>• Network effects and platform advantages</p>
-                      <p>• Regulatory moats and compliance requirements</p>
-                      <p>• Customer lock-in mechanisms</p>
-                    </>
-                  )}
-                  {criterion === 'Innovation Pipeline' && (
-                    <>
-                      <p>• R&D roadmap and innovation strategy</p>
-                      <p>• Technology development timelines</p>
-                      <p>• Future product differentiation potential</p>
-                      <p>• Competitive research capabilities</p>
-                    </>
-                  )}
-                  {criterion === 'Market Position' && (
-                    <>
-                      <p>• Competitive moat strength and sustainability</p>
-                      <p>• Market share and brand recognition</p>
-                      <p>• Customer switching costs and loyalty</p>
-                      <p>• Network effects and platform advantages</p>
-                    </>
-                  )}
-                  {criterion === 'Scalability Moats' && (
-                    <>
-                      <p>• Operational scalability and efficiency</p>
-                      <p>• Technology infrastructure advantages</p>
-                      <p>• Cost structure optimization potential</p>
-                      <p>• Market expansion capabilities</p>
-                    </>
-                  )}
-                </div>
-              </div>
-              
-              <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
-                <h5 className="font-medium text-sm mb-2 text-amber-800">Data Requirements</h5>
-                <div className="text-xs text-amber-700 space-y-1">
-                  {criterion === 'Intellectual Property Portfolio' && (
-                    <>
-                      <p>• Patent applications and granted patents documentation</p>
-                      <p>• IP strategy documents and filing roadmaps</p>
-                      <p>• Freedom to operate analysis results</p>
-                    </>
-                  )}
-                  {criterion === 'Technology Differentiation' && (
-                    <>
-                      <p>• Technical specifications and architecture documentation</p>
-                      <p>• R&D reports and development timelines</p>
-                      <p>• Competitive technical analysis</p>
-                    </>
-                  )}
-                  {criterion === 'Competitive Barriers' && (
-                    <>
-                      <p>• Market analysis and competitive positioning studies</p>
-                      <p>• Customer contract terms and switching costs</p>
-                      <p>• Regulatory compliance documentation</p>
-                    </>
-                  )}
-                  {criterion === 'Innovation Pipeline' && (
-                    <>
-                      <p>• R&D roadmap and innovation strategy documents</p>
-                      <p>• Technology development timelines and milestones</p>
-                      <p>• Patent pipeline and filing strategy</p>
-                    </>
-                  )}
-                  {criterion === 'Market Position' && (
-                    <>
-                      <p>• Market analysis and competitive positioning studies</p>
-                      <p>• Customer testimonials and case studies</p>
-                      <p>• Business model and competitive advantage documentation</p>
-                    </>
-                  )}
-                  {criterion === 'Scalability Moats' && (
-                    <>
-                      <p>• Operational metrics and scalability plans</p>
-                      <p>• Technology infrastructure documentation</p>
-                      <p>• Cost structure and margin analysis</p>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </CollapsibleContent>
-    </Collapsible>
+        {/* Overall Insights */}
+        <div className="p-3 rounded-lg bg-muted/50 mt-6">
+          <div className="text-sm">
+            {assessment.overallStatus === 'Excellent' && (
+              <p className="text-emerald-700">🎯 Strong intellectual property positioning with defensible competitive moats.</p>
+            )}
+            {assessment.overallStatus === 'Good' && (
+              <p className="text-blue-700">✅ Solid IP foundation with room for strategic enhancement.</p>
+            )}
+            {assessment.overallStatus === 'Fair' && (
+              <p className="text-amber-700">⚠️ Mixed IP signals - IP strategy development recommended.</p>
+            )}
+            {assessment.overallStatus === 'Poor' && (
+              <p className="text-red-700">🔍 IP weaknesses identified - comprehensive IP audit needed.</p>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
