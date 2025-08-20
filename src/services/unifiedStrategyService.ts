@@ -354,6 +354,7 @@ class UnifiedStrategyService {
       if (transformedData.max_investment_amount !== undefined) updateObject.max_investment_amount = transformedData.max_investment_amount;
       
       console.log('🎯 Final update object:', updateObject);
+      console.log('🚀 CODE VERSION: 2025-08-20-v2 - USING SIMPLE UPDATE WITHOUT ON CONFLICT');
       
       // Use simple UPDATE query without any ON CONFLICT clause
       const { data, error } = await supabase
