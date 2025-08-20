@@ -3861,6 +3861,36 @@ export type Database = {
         }
         Relationships: []
       }
+      rls_policy_logs: {
+        Row: {
+          context_data: Json | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          operation: string
+          table_name: string
+          user_id: string | null
+        }
+        Insert: {
+          context_data?: Json | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          operation: string
+          table_name: string
+          user_id?: string | null
+        }
+        Update: {
+          context_data?: Json | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          operation?: string
+          table_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       roles_catalog: {
         Row: {
           role: string
@@ -4529,6 +4559,18 @@ export type Database = {
           traction_score?: number
         }
         Returns: number
+      }
+      can_user_access_fund: {
+        Args: { target_fund_id: string }
+        Returns: boolean
+      }
+      can_user_access_profile: {
+        Args: { target_org_id: string; target_user_id: string }
+        Returns: boolean
+      }
+      can_user_manage_fund: {
+        Args: { target_org_id: string }
+        Returns: boolean
       }
       can_user_update_strategy: {
         Args: { target_fund_id: string }
