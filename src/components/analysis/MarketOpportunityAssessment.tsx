@@ -1595,37 +1595,67 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                 {/* Enhanced Competitive Position Analysis */}
                 {check.criterion === 'Competitive Position' && expandedCriteria.includes(check.criterion) && (
                   <div className="mt-4">
-                    {competitiveData?.competitive_breakdown ? (
-                      <EnhancedCompetitivePosition 
-                        data={{
-                          competitive_breakdown: competitiveData.competitive_breakdown.map(breakdown => ({
-                            ...breakdown,
-                            competitors: breakdown.competitors?.map(comp => ({
-                              ...comp,
-                              market_share: typeof comp.market_share === 'string' ? comp.market_share : comp.market_share?.toString() || '0'
-                            })) || []
-                          }))
-                        }}
-                      />
-                    ) : isAnalyzing ? (
-                      <div className="bg-muted/30 rounded-lg p-6 space-y-6">
-                        <p className="text-muted-foreground">Loading enhanced competitive analysis...</p>
-                      </div>
-                    ) : (
-                      <div className="bg-muted/30 rounded-lg p-6 space-y-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="font-medium text-card-foreground">Enhanced Competitive Intelligence</h4>
-                          <button
-                            onClick={() => runCompetitiveAnalysis(deal.id, deal.fund_id)}
-                            disabled={isAnalyzing}
-                            className="px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 disabled:opacity-50"
-                          >
-                            {isAnalyzing ? 'Analyzing...' : 'Run Analysis'}
-                          </button>
-                        </div>
-                        <p className="text-muted-foreground">Click "Run Analysis" to get detailed competitive intelligence with real competitor data, market positioning, and whitespace opportunities.</p>
-                      </div>
-                    )}
+                    {(() => {
+                      console.log('🔍 Competitive Position Debug:', {
+                        hasCompetitiveData: !!competitiveData,
+                        hasBreakdown: !!competitiveData?.competitive_breakdown,
+                        isAnalyzing,
+                        dealId: deal.id,
+                        fundId: deal.fund_id
+                      });
+                      
+                      if (competitiveData?.competitive_breakdown && competitiveData.competitive_breakdown.length > 0) {
+                        console.log('✅ Showing EnhancedCompetitivePosition with data:', competitiveData.competitive_breakdown);
+                        return (
+                          <EnhancedCompetitivePosition 
+                            data={{
+                              competitive_breakdown: competitiveData.competitive_breakdown.map(breakdown => ({
+                                ...breakdown,
+                                competitors: breakdown.competitors?.map(comp => ({
+                                  ...comp,
+                                  market_share: typeof comp.market_share === 'string' ? comp.market_share : comp.market_share?.toString() || '0'
+                                })) || []
+                              }))
+                            }}
+                          />
+                        );
+                      } else if (isAnalyzing) {
+                        console.log('⏳ Showing loading state');
+                        return (
+                          <div className="bg-muted/30 rounded-lg p-6 space-y-6">
+                            <div className="flex items-center gap-2">
+                              <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                              <p className="text-muted-foreground">Loading enhanced competitive analysis...</p>
+                            </div>
+                          </div>
+                        );
+                      } else {
+                        console.log('🔲 Showing Run Analysis button');
+                        return (
+                          <div className="bg-muted/30 rounded-lg p-6 space-y-6">
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="font-medium text-card-foreground">Enhanced Competitive Intelligence</h4>
+                              <button
+                                onClick={async () => {
+                                  console.log('🚀 Starting competitive analysis for:', { dealId: deal.id, fundId: deal.fund_id });
+                                  try {
+                                    await runCompetitiveAnalysis(deal.id, deal.fund_id);
+                                    console.log('✅ Competitive analysis completed');
+                                  } catch (error) {
+                                    console.error('❌ Competitive analysis failed:', error);
+                                  }
+                                }}
+                                disabled={isAnalyzing}
+                                className="px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                              >
+                                {isAnalyzing ? 'Analyzing...' : 'Run Analysis'}
+                              </button>
+                            </div>
+                            <p className="text-muted-foreground">Click "Run Analysis" to get detailed competitive intelligence with real competitor data, market positioning, and whitespace opportunities.</p>
+                          </div>
+                        );
+                      }
+                    })()}
                   </div>
                 )}
                 

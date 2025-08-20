@@ -34,7 +34,7 @@ export interface CompetitiveAnalysisResult {
 export class CompetitiveIntelligenceService {
   static async analyzeCompetitors(dealId: string, fundId: string): Promise<CompetitiveAnalysisResult | null> {
     try {
-      console.log('🏆 Starting enhanced competitive intelligence analysis for deal:', dealId);
+      console.log('🏆 CompetitiveIntelligenceService: Starting analysis for deal:', dealId);
       
       const { data, error } = await supabase.functions.invoke('enhanced-competitive-intelligence', {
         body: {
@@ -47,12 +47,19 @@ export class CompetitiveIntelligenceService {
         }
       });
 
+      console.log('📡 Edge function response:', { hasData: !!data, error, dataType: typeof data });
+
       if (error) {
-        console.error('❌ Competitive intelligence error:', error);
+        console.error('❌ Competitive intelligence edge function error:', error);
         return null;
       }
 
-      console.log('✅ Competitive intelligence analysis completed');
+      if (!data) {
+        console.log('⚠️ No data returned from edge function');
+        return null;
+      }
+
+      console.log('✅ Competitive intelligence analysis completed, data:', data);
       return data as CompetitiveAnalysisResult;
     } catch (error) {
       console.error('❌ Competitive intelligence service error:', error);
