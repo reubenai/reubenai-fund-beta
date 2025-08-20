@@ -45,6 +45,7 @@ interface Deal {
   technology_stack?: string[];
   next_action?: string;
   priority?: string;
+  auto_analysis_enabled?: boolean;
 }
 
 interface EditDealModalProps {

@@ -1522,6 +1522,7 @@ export type Database = {
           technology_stack: string[] | null
           updated_at: string
           valuation: number | null
+          version: number | null
           web_presence_confidence: number | null
           website: string | null
         }
@@ -1581,6 +1582,7 @@ export type Database = {
           technology_stack?: string[] | null
           updated_at?: string
           valuation?: number | null
+          version?: number | null
           web_presence_confidence?: number | null
           website?: string | null
         }
@@ -1640,6 +1642,7 @@ export type Database = {
           technology_stack?: string[] | null
           updated_at?: string
           valuation?: number | null
+          version?: number | null
           web_presence_confidence?: number | null
           website?: string | null
         }
@@ -4432,6 +4435,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      cleanup_stalled_analysis_queue: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          cleaned_count: number
+          processing_count: number
+        }[]
+      }
       cleanup_vector_search_cache: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -4620,6 +4630,10 @@ export type Database = {
       }
       is_admin_by_email: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_deal_safe_to_edit: {
+        Args: { deal_id_param: string }
         Returns: boolean
       }
       is_reuben_admin: {
