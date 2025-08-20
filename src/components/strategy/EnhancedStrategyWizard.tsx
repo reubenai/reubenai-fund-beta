@@ -420,8 +420,9 @@ export function EnhancedStrategyWizard({
       let result;
       
       if (existingStrategy?.id) {
-        console.log('🔄 Updating existing strategy...');
-        result = await updateStrategy(strategyData);
+        console.log('🔄 Updating existing strategy with ID:', existingStrategy.id);
+        // Phase 3: Fix wizard data flow - pass the strategy ID properly
+        result = await updateStrategy(existingStrategy.id, strategyData);
       } else {
         console.log('✨ Creating new strategy...');
         result = await createStrategy(wizardData.fundType, wizardData as EnhancedWizardData);

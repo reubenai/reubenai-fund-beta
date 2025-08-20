@@ -50,9 +50,12 @@ export class DataTransformationUtils {
   }
 
   /**
-   * Transform UI field updates to database format
+   * Transform UI field updates to database format with enhanced error handling
    */
   static transformUIToDatabase(updates: any): any {
+    console.log('🔄 === DATA TRANSFORMATION (ENHANCED) ===');
+    console.log('Input updates:', JSON.stringify(updates, null, 2));
+    
     const transformed = { ...updates };
     
     // Handle field name mappings for direct UI updates
@@ -105,9 +108,15 @@ export class DataTransformationUtils {
       delete transformed.decisionMakingProcess;
     }
 
-    // Always remove id to avoid conflicts
+    // Phase 2: Enhanced ID handling - preserve fund_id but remove id
+    if (updates.fund_id) {
+      transformed.fund_id = updates.fund_id;
+    }
+    
+    // Always remove id to avoid conflicts (strategy ID should be handled by the service layer)
     delete transformed.id;
     
+    console.log('🎯 Transformed output:', JSON.stringify(transformed, null, 2));
     return transformed;
   }
 

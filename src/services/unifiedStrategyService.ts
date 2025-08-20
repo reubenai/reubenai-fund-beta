@@ -304,20 +304,39 @@ class UnifiedStrategyService {
     }
   }
 
-  // Comprehensive strategy updates - FIXED VERSION with proper data transformation
+  // Phase 2: Enhanced strategy updates with comprehensive error logging
   async updateFundStrategy(strategyId: string, updates: any): Promise<EnhancedStrategy | null> {
-    console.log('🔧 === UPDATE FUND STRATEGY SERVICE (ENHANCED) ===');
+    console.log('🔧 === UPDATE FUND STRATEGY SERVICE (ENHANCED v2) ===');
     console.log('Strategy ID:', strategyId);
-    console.log('Updates received:', updates);
+    console.log('Updates received:', JSON.stringify(updates, null, 2));
     
     try {
       // Import transformation utility
       const { DataTransformationUtils } = await import('./dataTransformationUtils');
       
+      // Phase 2: Enhanced error logging - check if strategy exists first
+      const { data: existingStrategy, error: checkError } = await supabase
+        .from('investment_strategies')
+        .select('id, fund_id')
+        .eq('id', strategyId)
+        .maybeSingle();
+        
+      console.log('🔍 Existing strategy check:', { existingStrategy, checkError });
+      
+      if (checkError) {
+        console.error('❌ Error checking existing strategy:', checkError);
+        throw new Error(`Failed to verify strategy exists: ${checkError.message}`);
+      }
+      
+      if (!existingStrategy) {
+        console.error('❌ Strategy not found with ID:', strategyId);
+        throw new Error(`Strategy with ID ${strategyId} not found`);
+      }
+      
       // Transform UI data to database format
       const transformedData = DataTransformationUtils.transformUIToDatabase(updates);
       
-      console.log('📝 Transformed update data:', transformedData);
+      console.log('📝 Transformed update data:', JSON.stringify(transformedData, null, 2));
       
       // Validate data before update
       const validation = DataTransformationUtils.validateStrategyData(transformedData);
@@ -353,22 +372,67 @@ class UnifiedStrategyService {
       if (transformedData.min_investment_amount !== undefined) updateObject.min_investment_amount = transformedData.min_investment_amount;
       if (transformedData.max_investment_amount !== undefined) updateObject.max_investment_amount = transformedData.max_investment_amount;
       
-      console.log('🎯 Final update object:', updateObject);
-      console.log('🚀 CODE VERSION: 2025-08-20-v2 - USING SIMPLE UPDATE WITHOUT ON CONFLICT');
+      console.log('🎯 Final update object:', JSON.stringify(updateObject, null, 2));
+      console.log('🚀 CODE VERSION: 2025-08-20-v3 - ENHANCED ERROR HANDLING');
       
-      // Use simple UPDATE query without any ON CONFLICT clause
-      const { data, error } = await supabase
-        .from('investment_strategies')
-        .update(updateObject)
-        .eq('id', strategyId)
-        .select()
-        .single();
-
-      console.log('📊 Supabase update result:', { data, error });
+      // Phase 5: Implement fallback upsert mechanism
+      let data, error;
+      
+      try {
+        // First attempt: Simple UPDATE
+        const updateResult = await supabase
+          .from('investment_strategies')
+          .update(updateObject)
+          .eq('id', strategyId)
+          .select()
+          .single();
+          
+        data = updateResult.data;
+        error = updateResult.error;
+        
+        console.log('📊 Primary update result:', { data, error });
+        
+      } catch (primaryError: any) {
+        console.warn('⚠️ Primary update failed, attempting fallback upsert:', primaryError);
+        
+        // Fallback: Try upsert by fund_id
+        try {
+          const upsertResult = await supabase
+            .from('investment_strategies')
+            .upsert({
+              fund_id: existingStrategy.fund_id,
+              ...updateObject
+            })
+            .select()
+            .single();
+            
+          data = upsertResult.data;
+          error = upsertResult.error;
+          
+          console.log('📊 Fallback upsert result:', { data, error });
+          
+        } catch (fallbackError: any) {
+          console.error('❌ Both primary and fallback operations failed');
+          console.error('Primary error:', primaryError);
+          console.error('Fallback error:', fallbackError);
+          throw new Error(`Database update failed: ${primaryError.message}. Fallback also failed: ${fallbackError.message}`);
+        }
+      }
 
       if (error) {
         console.error('❌ Supabase error updating strategy:', error);
-        throw new Error(`Database update failed: ${error.message}`);
+        // Phase 4: Enhanced error messages
+        let errorMessage = 'Database update failed';
+        if (error.message.includes('foreign key')) {
+          errorMessage = 'Invalid fund reference - the fund may not exist';
+        } else if (error.message.includes('unique')) {
+          errorMessage = 'Strategy already exists for this fund';
+        } else if (error.message.includes('permission')) {
+          errorMessage = 'Permission denied - you may not have access to modify this strategy';
+        } else if (error.message.includes('column')) {
+          errorMessage = 'Invalid data format - some fields may be incorrectly formatted';
+        }
+        throw new Error(`${errorMessage}: ${error.message}`);
       }
 
       if (!data) {
@@ -378,9 +442,10 @@ class UnifiedStrategyService {
 
       console.log('✅ Successfully updated strategy:', data);
       return data as EnhancedStrategy;
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Unexpected error in updateFundStrategy:', error);
-      throw error;
+      // Preserve the original error message for better debugging
+      throw new Error(error.message || 'Unknown error occurred during strategy update');
     }
   }
 

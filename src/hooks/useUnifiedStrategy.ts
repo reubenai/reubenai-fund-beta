@@ -100,12 +100,32 @@ export function useUnifiedStrategy(fundId?: string) {
     }
   };
 
-  const updateStrategy = async (updates: Partial<EnhancedStrategy>) => {
-    console.log('🔧 === UPDATE STRATEGY WITH CONFLICT PREVENTION ===');
+  // Phase 3: Enhanced updateStrategy with flexible signature for backward compatibility
+  const updateStrategy = async (strategyIdOrUpdates: string | Partial<EnhancedStrategy>, updatesArg?: Partial<EnhancedStrategy>) => {
+    console.log('🔧 === UPDATE STRATEGY WITH ENHANCED ERROR HANDLING ===');
+    console.log('Arguments received:', { strategyIdOrUpdates, updatesArg });
+    
+    // Handle flexible call signatures for backward compatibility
+    let strategyId: string | undefined;
+    let updates: Partial<EnhancedStrategy>;
+    
+    if (typeof strategyIdOrUpdates === 'string' && updatesArg) {
+      // New signature: updateStrategy(strategyId, updates)
+      strategyId = strategyIdOrUpdates;
+      updates = updatesArg;
+      console.log('📝 New signature detected - Strategy ID:', strategyId, 'Updates:', updates);
+    } else if (typeof strategyIdOrUpdates === 'object') {
+      // Old signature: updateStrategy(updates)
+      updates = strategyIdOrUpdates;
+      strategyId = updates.id || strategy?.id;
+      console.log('📝 Legacy signature detected - Updates:', updates, 'Strategy ID from state:', strategyId);
+    } else {
+      throw new Error('Invalid arguments provided to updateStrategy');
+    }
+    
     console.log('Fund ID:', fundId);
-    console.log('Current strategy state:', strategy);
-    console.log('Strategy ID from state:', strategy?.id);
-    console.log('Updates received:', updates);
+    console.log('Final strategy ID:', strategyId);
+    console.log('Final updates:', updates);
     
     if (!fundId) {
       console.error('❌ No fund ID provided to updateStrategy');
@@ -116,27 +136,27 @@ export function useUnifiedStrategy(fundId?: string) {
     setError(null);
     
     try {
-      // Define the actual update operation
+      // Define the actual update operation with enhanced error handling
       const performUpdate = async () => {
-        let strategyId = updates.id || strategy?.id;
+        let finalStrategyId = strategyId;
         
         // If we don't have a strategy ID, fetch it from the database
-        if (!strategyId) {
+        if (!finalStrategyId) {
           console.log('⚠️ No strategy ID found, fetching from database...');
           const existingStrategy = await unifiedStrategyService.getFundStrategy(fundId);
-          strategyId = existingStrategy?.id;
-          console.log('💾 Fetched strategy ID from database:', strategyId);
+          finalStrategyId = existingStrategy?.id;
+          console.log('💾 Fetched strategy ID from database:', finalStrategyId);
         }
         
-        console.log('🎯 Final strategy ID for update:', strategyId);
+        console.log('🎯 Final strategy ID for update:', finalStrategyId);
         
-        if (!strategyId) {
+        if (!finalStrategyId) {
           console.error('❌ No strategy found for fund. This should not happen as all funds have default strategies.');
           throw new Error('Strategy not found for fund. Please contact support.');
         }
 
         // Always use UPDATE path since all funds should have strategies
-        console.log('✅ Updating existing strategy with ID:', strategyId);
+        console.log('✅ Updating existing strategy with ID:', finalStrategyId);
         
         const updatePayload = {
           ...updates,
@@ -145,7 +165,7 @@ export function useUnifiedStrategy(fundId?: string) {
         };
         
         console.log('📝 Update payload:', updatePayload);
-        const updatedStrategy = await unifiedStrategyService.updateFundStrategy(strategyId, updatePayload);
+        const updatedStrategy = await unifiedStrategyService.updateFundStrategy(finalStrategyId, updatePayload);
         console.log('✅ Update successful:', updatedStrategy);
         
         if (updatedStrategy) {
