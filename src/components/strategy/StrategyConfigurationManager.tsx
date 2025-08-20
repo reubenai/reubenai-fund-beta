@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useUnifiedStrategy } from '@/hooks/useUnifiedStrategy';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
 import { 
   Settings, 
   Wand2, 
@@ -29,6 +31,7 @@ export function StrategyConfigurationManager({ fundId, fundName, fundType }: Str
   
   const { strategy, loading, error, refreshStrategy } = useUnifiedStrategy(fundId);
   const [showWizard, setShowWizard] = useState(false);
+  const navigate = useNavigate();
 
   const handleWizardComplete = () => {
     setShowWizard(false);
@@ -36,6 +39,9 @@ export function StrategyConfigurationManager({ fundId, fundName, fundType }: Str
     if (refreshStrategy) {
       refreshStrategy();
     }
+    // Navigate to home page after successful strategy launch
+    toast.success('Strategy launched successfully!');
+    navigate('/');
   };
 
   const handleStrategySave = () => {

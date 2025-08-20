@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { 
   Target, 
   Globe, 
@@ -1158,14 +1159,39 @@ export function EnhancedStrategyWizard({
 
       {/* Navigation */}
       <div className="flex justify-between items-center">
-        <Button 
-          variant="outline" 
-          onClick={currentStep === 0 ? onCancel : handlePrevious}
-          className="px-6"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {currentStep === 0 ? 'Cancel' : 'Previous'}
-        </Button>
+        <div className="flex gap-3">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="px-6">
+                <X className="h-4 w-4 mr-2" />
+                Cancel Wizard
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancel Strategy Configuration?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to cancel? All progress in this wizard will be lost.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Continue Wizard</AlertDialogCancel>
+                <AlertDialogAction onClick={onCancel}>Cancel Wizard</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          
+          {currentStep > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={handlePrevious}
+              className="px-6"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Previous
+            </Button>
+          )}
+        </div>
         
         <div className="text-center text-sm text-muted-foreground">
           Step {currentStep + 1} of {WIZARD_STEPS.length}
