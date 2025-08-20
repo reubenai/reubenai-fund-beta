@@ -29,7 +29,8 @@ import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import OnboardingDemo from "./pages/OnboardingDemo";
 import { PostHogRouterTracker } from "@/components/analytics/PostHogRouterTracker";
-import { useAnalysisScheduler } from "@/hooks/useAnalysisScheduler";
+// Analysis scheduler removed for system shutdown
+// import { useAnalysisScheduler } from "@/hooks/useAnalysisScheduler";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,11 +51,11 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  // Global analysis queue scheduler - runs automatically in the background
-  useAnalysisScheduler({ 
-    enabled: true, 
-    intervalMinutes: 1 // Check every minute for maximum responsiveness
-  });
+  // ANALYSIS SYSTEM SHUT DOWN - Scheduler disabled
+  // useAnalysisScheduler({ 
+  //   enabled: false, 
+  //   intervalMinutes: 1
+  // });
 
   return (
     <GlobalErrorBoundary>
