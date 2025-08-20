@@ -1613,7 +1613,8 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                                 ...breakdown,
                                 competitors: breakdown.competitors?.map(comp => ({
                                   ...comp,
-                                  market_share: typeof comp.market_share === 'string' ? comp.market_share : comp.market_share?.toString() || '0'
+                                  market_share: typeof comp.market_share === 'string' ? parseFloat(comp.market_share) : comp.market_share || 0,
+                                  description: comp.positioning || 'Market competitor'
                                 })) || []
                               }))
                             }}
@@ -1640,8 +1641,19 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
                         
                         const competitiveBreakdown = {
                           industry,
-                          weight: 20,
-                          competitors: convertToEnhancedCompetitors(competitors),
+                          weight: 0.2, // 20% as decimal
+                          competitors: competitors.map(comp => ({
+                            name: comp.name,
+                            market_share: comp.marketShare,
+                            description: comp.description || 'Market competitor',
+                            positioning: comp.description || 'Market player',
+                            strengths: [`${comp.competitorType} in market`, 'Established presence'],
+                            weaknesses: ['Legacy constraints', 'Innovation gaps'],
+                            funding_stage: comp.fundingStage,
+                            valuation: comp.valuation,
+                            geography: comp.geography,
+                            competitor_type: comp.competitorType as 'Incumbent' | 'Challenger' | 'Emerging' | 'Whitespace'
+                          })),
                           hhi_index: Math.round(hhi),
                           competitive_tension: competitiveTension,
                           whitespace_opportunities: whitespaceOpportunities,
