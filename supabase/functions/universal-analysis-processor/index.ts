@@ -10,6 +10,31 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// SYSTEM KILL SWITCH - Check if analysis system is globally disabled
+async function isSystemDisabled(): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('ops_control_switches')
+      .select('switch_value')
+      .eq('switch_name', 'analysis_system_enabled')
+      .single();
+    
+    if (error) {
+      console.log('⚠️ Kill switch check failed, assuming system disabled for safety');
+      return true; // Fail safe - disable if we can't check
+    }
+    
+    const systemEnabled = data?.switch_value === true;
+    if (!systemEnabled) {
+      console.log('🚫 ANALYSIS SYSTEM DISABLED via ops control switch');
+    }
+    return !systemEnabled;
+  } catch (error) {
+    console.log('⚠️ Kill switch error, assuming system disabled for safety:', error);
+    return true; // Fail safe
+  }
+}
+
 interface QueueItem {
   id: string;
   deal_id: string;
@@ -178,6 +203,19 @@ serve(async (req) => {
   }
 
   try {
+    // CHECK SYSTEM KILL SWITCH FIRST
+    if (await isSystemDisabled()) {
+      console.log('🚫 Universal Analysis Processor: SYSTEM DISABLED - Exiting immediately');
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Analysis system disabled via kill switch',
+        processed: 0,
+        systemDisabled: true
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     console.log('🚀 Universal Analysis Processor: Starting enhanced queue processing...');
     const overallStartTime = Date.now();
 

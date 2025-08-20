@@ -4,13 +4,16 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useEnhancedAnalysisQueue } from '@/hooks/useEnhancedAnalysisQueue';
 import { useAnalysisScheduler } from '@/hooks/useAnalysisScheduler';
+import { useAnalysisSystemKillSwitch } from '@/hooks/useAnalysisSystemKillSwitch';
 import { ChevronDown, Activity, RotateCcw, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 export function AnalysisQueueMonitor() {
   const [queueStats, setQueueStats] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [isSchedulerEnabled, setIsSchedulerEnabled] = useState(true);
+  const [isSchedulerEnabled, setIsSchedulerEnabled] = useState(false); // SYSTEM SHUTDOWN: Default to disabled
+  
+  const { isAnalysisDisabled } = useAnalysisSystemKillSwitch();
   
   const { 
     processBacklog, 
@@ -23,7 +26,7 @@ export function AnalysisQueueMonitor() {
     stopScheduler, 
     forceProcessing 
   } = useAnalysisScheduler({
-    enabled: isSchedulerEnabled,
+    enabled: isSchedulerEnabled && !isAnalysisDisabled, // Respect system-wide kill switch
     intervalMinutes: 2,
     onProcessingUpdate: () => refreshStats()
   });
