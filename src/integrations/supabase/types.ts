@@ -1865,6 +1865,30 @@ export type Database = {
           },
         ]
       }
+      emergency_ops_control: {
+        Row: {
+          control_key: string
+          control_value: string
+          created_at: string | null
+          enabled: boolean
+          id: string
+        }
+        Insert: {
+          control_key: string
+          control_value: string
+          created_at?: string | null
+          enabled?: boolean
+          id?: string
+        }
+        Update: {
+          control_key?: string
+          control_value?: string
+          created_at?: string | null
+          enabled?: boolean
+          id?: string
+        }
+        Relationships: []
+      }
       evidence_appendix: {
         Row: {
           appendix_data: Json
