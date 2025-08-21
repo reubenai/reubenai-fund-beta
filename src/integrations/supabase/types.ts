@@ -804,6 +804,36 @@ export type Database = {
         }
         Relationships: []
       }
+      circuit_breaker_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          function_name: string
+          id: string
+          metadata: Json | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          function_name: string
+          id?: string
+          metadata?: Json | null
+          status: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+        }
+        Relationships: []
+      }
       data_lineage_log: {
         Row: {
           approved: boolean
@@ -3199,6 +3229,39 @@ export type Database = {
           },
         ]
       }
+      idempotency_keys: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          key: string
+          metadata: Json | null
+          result: Json | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          key: string
+          metadata?: Json | null
+          result?: Json | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          key?: string
+          metadata?: Json | null
+          result?: Json | null
+          status?: string
+        }
+        Relationships: []
+      }
       investment_outcomes: {
         Row: {
           actual_outcome: string | null
@@ -3356,6 +3419,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      kill_switches: {
+        Row: {
+          activated_at: string | null
+          activated_by: string | null
+          created_at: string
+          deactivated_at: string | null
+          deactivated_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          reason: string | null
+          switch_name: string
+          updated_at: string
+        }
+        Insert: {
+          activated_at?: string | null
+          activated_by?: string | null
+          created_at?: string
+          deactivated_at?: string | null
+          deactivated_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          reason?: string | null
+          switch_name: string
+          updated_at?: string
+        }
+        Update: {
+          activated_at?: string | null
+          activated_by?: string | null
+          created_at?: string
+          deactivated_at?: string | null
+          deactivated_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          reason?: string | null
+          switch_name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       llm_cache: {
         Row: {

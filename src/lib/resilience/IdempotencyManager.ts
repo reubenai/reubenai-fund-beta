@@ -30,13 +30,13 @@ export class IdempotencyManager {
       
       // Check for existing key
       const { data: existing, error: checkError } = await supabase
-        .from('idempotency_keys')
+        .from('idempotency_keys' as any)
         .select('*')
         .eq('key', key)
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (checkError && checkError.code !== 'PGRST116') {
         console.error('Idempotency check failed:', checkError);
@@ -44,22 +44,27 @@ export class IdempotencyManager {
       }
 
       if (existing) {
-        if (existing.status === 'completed') {
+        const status = (existing as any).status;
+        const result = (existing as any).result;
+        const completedAt = (existing as any).completed_at;
+        const createdAt = (existing as any).created_at;
+
+        if (status === 'completed') {
           return { 
             exists: true, 
-            result: existing.result, 
+            result, 
             canProceed: false 
           };
-        } else if (existing.status === 'pending') {
+        } else if (status === 'pending') {
           // Operation in progress, reject duplicate
           return { 
             exists: true, 
             result: { error: 'Operation in progress' }, 
             canProceed: false 
           };
-        } else if (existing.status === 'failed') {
+        } else if (status === 'failed') {
           // Allow retry for failed operations after some time
-          const failedAt = new Date(existing.completed_at || existing.created_at);
+          const failedAt = new Date(completedAt || createdAt);
           const retryAfter = new Date(failedAt.getTime() + 5 * 60 * 1000); // 5 min retry delay
           
           if (new Date() > retryAfter) {
@@ -76,7 +81,7 @@ export class IdempotencyManager {
 
       // Create new idempotency key
       const { error: createError } = await supabase
-        .from('idempotency_keys')
+        .from('idempotency_keys' as any)
         .insert({
           key,
           status: 'pending',
@@ -101,7 +106,7 @@ export class IdempotencyManager {
   static async markCompleted(key: string, result: any): Promise<void> {
     try {
       const { error } = await supabase
-        .from('idempotency_keys')
+        .from('idempotency_keys' as any)
         .update({
           status: 'completed',
           result,
@@ -124,7 +129,7 @@ export class IdempotencyManager {
   static async markFailed(key: string, error: any): Promise<void> {
     try {
       const { error: updateError } = await supabase
-        .from('idempotency_keys')
+        .from('idempotency_keys' as any)
         .update({
           status: 'failed',
           result: { error: error?.message || 'Operation failed' },
@@ -155,7 +160,7 @@ export class IdempotencyManager {
   static async cleanup(): Promise<void> {
     try {
       const { error } = await supabase
-        .from('idempotency_keys')
+        .from('idempotency_keys' as any)
         .delete()
         .lt('expires_at', new Date().toISOString());
 

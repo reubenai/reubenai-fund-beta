@@ -35,11 +35,11 @@ export class KillSwitchManager {
     // Fetch from database
     try {
       const { data, error } = await supabase
-        .from('kill_switches')
+        .from('kill_switches' as any)
         .select('*')
         .eq('switch_name', switchName)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.error(`Kill switch check failed for ${switchName}:`, error);
@@ -47,12 +47,12 @@ export class KillSwitchManager {
       }
 
       const state: KillSwitchState = data ? {
-        switchName: data.switch_name,
-        isActive: data.is_active,
-        reason: data.reason,
-        activatedBy: data.activated_by,
-        activatedAt: data.activated_at,
-        expiresAt: data.expires_at
+        switchName: (data as any).switch_name,
+        isActive: (data as any).is_active,
+        reason: (data as any).reason,
+        activatedBy: (data as any).activated_by,
+        activatedAt: (data as any).activated_at,
+        expiresAt: (data as any).expires_at
       } : {
         switchName,
         isActive: false
@@ -88,7 +88,7 @@ export class KillSwitchManager {
         : undefined;
 
       const { error } = await supabase
-        .from('kill_switches')
+        .from('kill_switches' as any)
         .upsert({
           switch_name: switchName,
           is_active: true,
@@ -122,7 +122,7 @@ export class KillSwitchManager {
   static async deactivate(switchName: string, deactivatedBy: string): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from('kill_switches')
+        .from('kill_switches' as any)
         .update({
           is_active: false,
           deactivated_by: deactivatedBy,
@@ -196,7 +196,7 @@ export class KillSwitchManager {
   static async getActiveKillSwitches(): Promise<KillSwitchState[]> {
     try {
       const { data, error } = await supabase
-        .from('kill_switches')
+        .from('kill_switches' as any)
         .select('*')
         .eq('is_active', true);
 
@@ -205,7 +205,7 @@ export class KillSwitchManager {
         return [];
       }
 
-      return data?.map(row => ({
+      return data?.map((row: any) => ({
         switchName: row.switch_name,
         isActive: row.is_active,
         reason: row.reason,
@@ -225,7 +225,7 @@ export class KillSwitchManager {
   static async cleanupExpired(): Promise<void> {
     try {
       const { error } = await supabase
-        .from('kill_switches')
+        .from('kill_switches' as any)
         .update({ is_active: false })
         .eq('is_active', true)
         .lt('expires_at', new Date().toISOString());

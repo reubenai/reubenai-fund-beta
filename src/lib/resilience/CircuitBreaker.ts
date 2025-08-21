@@ -156,7 +156,7 @@ export class CircuitBreaker {
       const since = new Date(Date.now() - windowMs).toISOString();
       
       const { data, error } = await supabase
-        .from('circuit_breaker_logs')
+        .from('circuit_breaker_logs' as any)
         .select('id')
         .eq('function_name', functionName)
         .gte('created_at', since);
@@ -184,7 +184,7 @@ export class CircuitBreaker {
   ): Promise<void> {
     try {
       const { error: insertError } = await supabase
-        .from('circuit_breaker_logs')
+        .from('circuit_breaker_logs' as any)
         .insert({
           function_name: functionName,
           status,
@@ -235,7 +235,7 @@ export class CircuitBreaker {
       const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(); // 24 hours
       
       const { error } = await supabase
-        .from('circuit_breaker_logs')
+        .from('circuit_breaker_logs' as any)
         .delete()
         .lt('created_at', cutoff);
 
