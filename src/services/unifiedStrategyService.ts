@@ -156,6 +156,13 @@ class UnifiedStrategyService {
   validateStrategy(wizardData: EnhancedWizardData): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
 
+    console.log('🔍 VALIDATION DEBUG - Wizard Data Keys:', Object.keys(wizardData));
+    console.log('🔍 VALIDATION DEBUG - enhancedCriteria exists:', !!wizardData.enhancedCriteria);
+    
+    if (wizardData.enhancedCriteria && Array.isArray(wizardData.enhancedCriteria)) {
+      console.log('🔍 VALIDATION DEBUG - enhancedCriteria structure:', wizardData.enhancedCriteria.map(c => ({name: c.name, enabled: c.enabled, weight: c.weight})));
+    }
+
     if (!wizardData.fundName?.trim()) errors.push('Fund name is required');
     if (!wizardData.sectors?.length) errors.push('At least one sector must be selected');
     if (!wizardData.stages?.length) errors.push('At least one stage must be selected');
@@ -166,10 +173,13 @@ class UnifiedStrategyService {
         .filter(criteria => criteria.enabled)
         .reduce((sum, criteria) => sum + (criteria.weight || 0), 0);
       
+      console.log('🔍 VALIDATION DEBUG - Enhanced criteria total weight:', totalWeight);
+      
       if (Math.abs(totalWeight - 100) > 1.0) {
         errors.push(`Category weights must sum to 100% (currently ${totalWeight.toFixed(1)}%)`);
       }
     } else {
+      console.log('🔍 VALIDATION DEBUG - Falling back to old category structure');
       // Fallback to old category structure for backward compatibility
       const categories = [
         wizardData.teamLeadershipConfig,
@@ -182,11 +192,14 @@ class UnifiedStrategyService {
 
       const totalWeight = categories.reduce((sum, cat) => sum + (cat?.weight || 0), 0);
       
+      console.log('🔍 VALIDATION DEBUG - Legacy categories total weight:', totalWeight);
+      
       if (Math.abs(totalWeight - 100) > 1.0) {
         errors.push(`Category weights must sum to 100% (currently ${totalWeight.toFixed(1)}%)`);
       }
     }
 
+    console.log('🔍 VALIDATION DEBUG - Final errors:', errors);
     return { isValid: errors.length === 0, errors };
   }
 
