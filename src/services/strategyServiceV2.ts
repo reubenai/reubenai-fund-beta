@@ -53,78 +53,118 @@ class StrategyServiceV2 {
   }
 
   async saveStrategy(fundId: string, wizardData: EnhancedWizardData): Promise<StrategyV2> {
-    console.log('💾 [V2] Saving strategy with direct mapping...');
+    console.log('💾 [V2] Saving strategy with retry logic...');
     console.log('Fund ID:', fundId);
     console.log('Wizard Data Keys:', Object.keys(wizardData));
 
-    // Direct 1:1 mapping from wizard to database - no transformations!
-    const strategyData: any = {
-      fund_id: fundId,
-      fund_name: wizardData.fundName,
-      strategy_description: wizardData.strategyDescription,
-      fund_type: wizardData.fundType,
-      sectors: wizardData.sectors || [],
-      stages: wizardData.stages || [],
-      geographies: wizardData.geographies || [],
-      check_size_min: wizardData.checkSizeRange?.min,
-      check_size_max: wizardData.checkSizeRange?.max,
-      key_signals: wizardData.keySignals || [],
-      investment_philosophy: wizardData.investmentPhilosophy,
-      philosophy_config: wizardData.philosophyConfig || {},
-      research_approach: wizardData.researchApproach || {},
-      deal_sourcing_strategy: wizardData.dealSourcingStrategy || {},
-      decision_making_process: wizardData.decisionMakingProcess || {},
-      team_leadership_config: wizardData.teamLeadershipConfig || {},
-      market_opportunity_config: wizardData.marketOpportunityConfig || {},
-      product_technology_config: wizardData.productTechnologyConfig || {},
-      business_traction_config: wizardData.businessTractionConfig || {},
-      financial_health_config: wizardData.financialHealthConfig || {},
-      strategic_fit_config: wizardData.strategicFitConfig || {},
-      exciting_threshold: wizardData.dealThresholds?.exciting || 85,
-      promising_threshold: wizardData.dealThresholds?.promising || 70,
-      needs_development_threshold: wizardData.dealThresholds?.needs_development || 50,
-      enhanced_criteria: wizardData.enhancedCriteria || [],
-    };
-
-    console.log('🚀 [V2] Direct mapped data:', strategyData);
-
-    // Check if strategy exists
-    const existing = await this.getFundStrategy(fundId);
+    let attempt = 0;
+    const maxAttempts = 3;
     
-    if (existing) {
-      // Update existing
-      console.log('🔄 [V2] Updating existing strategy:', existing.id);
-      const { data, error } = await supabase
-        .from('investment_strategies_v2')
-        .update(strategyData)
-        .eq('fund_id', fundId)
-        .select()
-        .single();
+    while (attempt < maxAttempts) {
+      try {
+        console.log(`🔄 [V2] Save attempt ${attempt + 1}/${maxAttempts}`);
         
-      if (error) {
-        console.error('❌ [V2] Update error:', error);
-        throw new Error(`Failed to update strategy: ${error.message}`);
-      }
-      
-      console.log('✅ [V2] Strategy updated successfully');
-      return data as StrategyV2;
-    } else {
-      // Insert new
-      console.log('➕ [V2] Creating new strategy');
-      const { data, error } = await supabase
-        .from('investment_strategies_v2')
-        .insert(strategyData)
-        .select()
-        .single();
+        // Direct 1:1 mapping from wizard to database - no transformations!
+        const strategyData: any = {
+          fund_id: fundId,
+          fund_name: wizardData.fundName,
+          strategy_description: wizardData.strategyDescription,
+          fund_type: wizardData.fundType,
+          sectors: wizardData.sectors || [],
+          stages: wizardData.stages || [],
+          geographies: wizardData.geographies || [],
+          check_size_min: wizardData.checkSizeRange?.min,
+          check_size_max: wizardData.checkSizeRange?.max,
+          key_signals: wizardData.keySignals || [],
+          investment_philosophy: wizardData.investmentPhilosophy,
+          philosophy_config: wizardData.philosophyConfig || {},
+          research_approach: wizardData.researchApproach || {},
+          deal_sourcing_strategy: wizardData.dealSourcingStrategy || {},
+          decision_making_process: wizardData.decisionMakingProcess || {},
+          team_leadership_config: wizardData.teamLeadershipConfig || {},
+          market_opportunity_config: wizardData.marketOpportunityConfig || {},
+          product_technology_config: wizardData.productTechnologyConfig || {},
+          business_traction_config: wizardData.businessTractionConfig || {},
+          financial_health_config: wizardData.financialHealthConfig || {},
+          strategic_fit_config: wizardData.strategicFitConfig || {},
+          exciting_threshold: wizardData.dealThresholds?.exciting || 85,
+          promising_threshold: wizardData.dealThresholds?.promising || 70,
+          needs_development_threshold: wizardData.dealThresholds?.needs_development || 50,
+          enhanced_criteria: wizardData.enhancedCriteria || [],
+        };
+
+        console.log('🚀 [V2] Direct mapped data:', strategyData);
+
+        // Check if strategy exists
+        const existing = await this.getFundStrategy(fundId);
         
-      if (error) {
-        console.error('❌ [V2] Insert error:', error);
-        throw new Error(`Failed to create strategy: ${error.message}`);
+        let result;
+        if (existing) {
+          // Update existing
+          console.log('🔄 [V2] Updating existing strategy:', existing.id);
+          const { data, error } = await supabase
+            .from('investment_strategies_v2')
+            .update(strategyData)
+            .eq('fund_id', fundId)
+            .select()
+            .single();
+            
+          if (error) {
+            throw error;
+          }
+          
+          result = data;
+        } else {
+          // Insert new
+          console.log('➕ [V2] Creating new strategy');
+          const { data, error } = await supabase
+            .from('investment_strategies_v2')
+            .insert(strategyData)
+            .select()
+            .single();
+            
+          if (error) {
+            throw error;
+          }
+          
+          result = data;
+        }
+        
+        console.log('✅ [V2] Strategy saved successfully');
+        return result as StrategyV2;
+        
+      } catch (error: any) {
+        attempt++;
+        console.error(`❌ [V2] Save attempt ${attempt} failed:`, error);
+        
+        // Check if it's a retryable error (network/connectivity issues)
+        const isRetryableError = (
+          error.message?.includes('Failed to fetch') ||
+          error.message?.includes('NetworkError') ||
+          error.message?.includes('timeout') ||
+          error.message?.includes('violates row-level security') ||
+          error.code === 'PGRST301' ||
+          error.status === 0 ||
+          error.status === 500 ||
+          error.status === 502 ||
+          error.status === 503 ||
+          error.status === 504
+        );
+        
+        if (attempt < maxAttempts && isRetryableError) {
+          const delay = 1000 * attempt; // Increasing delay: 1s, 2s, 3s
+          console.log(`🔄 [V2] Retryable error detected, waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        // If not retryable or out of attempts, throw the error
+        console.error(`💥 [V2] ${isRetryableError ? 'All retry attempts exhausted' : 'Non-retryable error'}`);
+        throw new Error(`Failed to save strategy: ${error.message}`);
       }
-      
-      console.log('✅ [V2] Strategy created successfully');
-      return data as StrategyV2;
     }
+    
+    throw new Error('Failed to save strategy after all retry attempts');
   }
 
   async updateStrategy(strategyId: string, updates: Partial<StrategyV2>): Promise<StrategyV2> {

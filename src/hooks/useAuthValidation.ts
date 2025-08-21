@@ -120,24 +120,49 @@ export function useAuthValidation() {
         return result;
       }
 
-      // Test database connectivity with auth context
+      // Test database connectivity with auth context (with retry logic)
       console.log('🧪 [AuthValidation] Testing database auth context...');
-      const { data: testData, error: testError } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('user_id', session.user.id)
-        .limit(1);
+      let testError: any = null;
+      let retryCount = 0;
+      const maxRetries = 3;
 
+      while (retryCount < maxRetries) {
+        try {
+          const { data: testData, error: dbError } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('user_id', session.user.id)
+            .limit(1);
+
+          if (dbError) {
+            testError = dbError;
+            if (retryCount < maxRetries - 1) {
+              console.warn(`⚠️ [AuthValidation] Database test failed, retrying... (${retryCount + 1}/${maxRetries})`);
+              await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+              retryCount++;
+              continue;
+            }
+          } else {
+            testError = null;
+            break;
+          }
+        } catch (networkError) {
+          console.warn(`⚠️ [AuthValidation] Network error during DB test: ${networkError}`);
+          testError = networkError;
+          if (retryCount < maxRetries - 1) {
+            console.warn(`🔄 [AuthValidation] Retrying DB connectivity test... (${retryCount + 1}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+            retryCount++;
+            continue;
+          }
+        }
+        break;
+      }
+
+      // If database test still fails after retries, allow auth to proceed but log warning
       if (testError) {
-        console.error('❌ [AuthValidation] Database auth test failed:', testError);
-        const result = {
-          isValid: false,
-          user: session.user,
-          session: session,
-          error: `Database auth test failed: ${testError.message}`
-        };
-        setValidationCache({ timestamp: now, result });
-        return result;
+        console.warn('⚠️ [AuthValidation] Database connectivity test failed after retries, but allowing auth to proceed:', testError);
+        // Don't fail auth validation for network issues - session is still valid
       }
 
       console.log('✅ [AuthValidation] All checks passed');

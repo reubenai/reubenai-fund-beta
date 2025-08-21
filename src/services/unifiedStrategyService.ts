@@ -127,16 +127,45 @@ class UnifiedStrategyService {
   async saveStrategy(fundId: string, updates: any): Promise<EnhancedStrategy | null> {
     console.log('💾 === SAVE STRATEGY SERVICE (V2 Backend) ===');
     
-    try {
-      const strategyV2 = await strategyServiceV2.saveStrategy(fundId, updates);
-      const legacyStrategy = strategyServiceV2.convertToLegacyFormat(strategyV2);
-      console.log('✅ Strategy saved via V2 service:', legacyStrategy.id);
-      
-      return legacyStrategy as EnhancedStrategy;
-    } catch (error: any) {
-      console.error('❌ Error saving strategy:', error);
-      throw error;
+    let attempt = 0;
+    const maxAttempts = 3;
+    
+    while (attempt < maxAttempts) {
+      try {
+        console.log(`🔄 [SaveStrategy] Attempt ${attempt + 1}/${maxAttempts}`);
+        
+        const strategyV2 = await strategyServiceV2.saveStrategy(fundId, updates);
+        const legacyStrategy = strategyServiceV2.convertToLegacyFormat(strategyV2);
+        console.log('✅ Strategy saved via V2 service:', legacyStrategy.id);
+        
+        return legacyStrategy as EnhancedStrategy;
+      } catch (error: any) {
+        attempt++;
+        console.error(`❌ [SaveStrategy] Attempt ${attempt} failed:`, error);
+        
+        // If it's a network error and we have retries left, wait and retry
+        if (attempt < maxAttempts && (
+          error.message?.includes('Failed to fetch') ||
+          error.message?.includes('NetworkError') ||
+          error.message?.includes('timeout') ||
+          error.code === 'PGRST301' || // Connection error
+          error.status === 0 // Network unavailable
+        )) {
+          const delay = 1000 * attempt; // Increasing delay
+          console.log(`🔄 [SaveStrategy] Network error detected, retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        // If not a retryable error or out of attempts, throw
+        if (attempt >= maxAttempts) {
+          console.error('💥 [SaveStrategy] All retry attempts exhausted');
+        }
+        throw error;
+      }
     }
+    
+    return null;
   }
 
   async updateFundStrategy(strategyId: string, updates: any): Promise<EnhancedStrategy | null> {
