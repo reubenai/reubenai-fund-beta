@@ -100,21 +100,19 @@ const getDeepDiveComponent = (category: string, detailedAnalysis?: CategoryDeepD
         current_revenue: detailedAnalysis.financial_health.revenue_breakdown?.[0]?.source || 'Revenue data pending',
         growth_rate: 15,
         three_year_cagr: 12,
-        historical_trends: [{ period: '2023', metric: 'Revenue', value: '$10M', trend: 'up' as const }]
+        historical_trends: [{ label: 'Revenue 2023', value: '$10M', change: 15, trend: 'up' as const }]
       },
       profitability: {
         ebitda_margin: 15,
         net_margin: 10,
         gross_margin: parseFloat(detailedAnalysis.financial_health.unit_economics?.gross_margin?.replace('%', '') || '45'),
-        margin_trends: 'stable' as const,
-        profitability_drivers: ['Revenue growth', 'Cost optimization']
+        margin_trends: [{ label: 'EBITDA Trend', value: '15%', trend: 'stable' as const }]
       },
       cash_flow: {
         operating_cash_flow: 'Positive',
         free_cash_flow: 'Generating',
-        cash_conversion_cycle: 30,
-        working_capital_efficiency: 85,
-        cash_flow_predictability: 'high' as const
+        cash_conversion: 30,
+        seasonal_patterns: ['Q4 strong', 'Q1 slower']
       },
       financial_stability: {
         debt_to_equity: 0.3,
@@ -142,16 +140,15 @@ const getDeepDiveComponent = (category: string, detailedAnalysis?: CategoryDeepD
           sustainability: 75,
           description: c.positioning
         })) || [],
-        moat_strength: 'moderate' as const,
-        differentiation_factors: ['Market position', 'Product quality'],
-        competitive_response_time: '12-18 months'
+        moat_strength: 70,
+        differentiation_score: 75,
+        barriers_to_entry: ['Market position', 'Product quality']
       },
       brand_strength: {
         brand_recognition: 70,
         customer_loyalty: 75,
-        market_reputation: 80,
-        brand_equity_trends: 'growing' as const,
-        brand_metrics: [{ metric: 'Brand Recognition', score: 70, trend: 'growing' as const }]
+        net_promoter_score: 65,
+        brand_value_metrics: [{ metric: 'Brand Recognition', value: '70%', trend: 'up' as const }]
       },
       customer_base: {
         total_customers: '10,000+',
@@ -176,21 +173,33 @@ const getDeepDiveComponent = (category: string, detailedAnalysis?: CategoryDeepD
           experience_years: 10,
           performance_rating: 85,
           retention_risk: 'low' as const,
-          track_record: f.background || 'Strong background',
+          track_record: 'excellent' as const,
           leadership_score: 85
         })) || []
       },
       operational_efficiency: {
-        process_maturity: 75,
-        automation_level: 60,
-        cost_efficiency: 80,
-        quality_metrics: [{ area: 'Operations', maturity_level: 75, automation_score: 60, compliance_status: 'compliant' as const, improvement_opportunities: ['Further automation'] }]
+        overall_efficiency: 75,
+        cost_optimization: 80,
+        resource_utilization: 70,
+        key_metrics: [{ 
+          metric: 'Process Efficiency',
+          current_value: '75%', 
+          benchmark: '70%', 
+          performance: 'above' as const, 
+          trend: 'improving' as const 
+        }]
       },
       process_quality: {
-        iso_compliance: true,
-        quality_certifications: ['ISO 9001'],
-        process_improvement_score: 80,
-        operational_metrics: [{ metric: 'Process Quality', score: 80, benchmark: 'Industry Average' }]
+        process_maturity: 80,
+        quality_systems: 75,
+        continuous_improvement: 70,
+        processes: [{ 
+          area: 'Operations Management', 
+          maturity_level: 80, 
+          automation_score: 60, 
+          compliance_status: 'compliant' as const,
+          improvement_opportunities: ['Process standardization', 'Automation enhancement']
+        }]
       },
       technology_systems: {
         technology_adoption: 75,
@@ -214,26 +223,41 @@ const getDeepDiveComponent = (category: string, detailedAnalysis?: CategoryDeepD
           timeline: '12-18 months',
           feasibility: 70,
           risk_level: 'medium' as const,
-          expected_return: 3.5,
+          expected_return: '3.5x',
+          investment_required: '$2M',
           key_requirements: ['Market entry strategy', 'Local partnerships']
         }]
       },
       product_development: {
         innovation_capability: 75,
-        r_and_d_efficiency: 70,
-        product_roadmap_strength: 80,
-        development_metrics: [{ product: 'Core Product', development_stage: 'Growth', market_readiness: 85, competitive_advantage: 'high' as const }]
+        r_and_d_investment: 12,
+        product_pipeline: [{ 
+          product: 'Core Product V2', 
+          development_stage: 'development' as const, 
+          market_potential: 85, 
+          investment_required: '$1M',
+          expected_launch: '2024 Q3',
+          resource_requirements: 'Engineering team, Market research',
+          competitive_advantage: 'First-to-market features'
+        }]
       },
       value_creation: {
-        operational_improvement_potential: 70,
-        revenue_enhancement_opportunities: 75,
-        cost_optimization_potential: 65,
-        value_levers: [{ lever: 'Operational Efficiency', impact: 'high' as const, timeline: '6-12 months', investment_required: '$500K' }]
+        value_creation_score: 75,
+        operational_improvement: 70,
+        initiatives: [{ 
+          initiative: 'Operational Efficiency Improvements',
+          type: 'efficiency' as const, 
+          impact_potential: 85, 
+          implementation_difficulty: 'medium' as const, 
+          estimated_value: '$2M annual savings',
+          timeline: '6-12 months'
+        }]
       },
       exit_strategy: {
         exit_readiness: 60,
         market_timing: 70,
         strategies: [{ 
+          strategy_type: 'strategic_sale' as const,
           strategy: 'strategic_sale' as const, 
           feasibility: 75, 
           timeline: '3-5 years',
