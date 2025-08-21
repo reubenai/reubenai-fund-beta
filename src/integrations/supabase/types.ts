@@ -894,6 +894,51 @@ export type Database = {
           },
         ]
       }
+      dead_letter_queue: {
+        Row: {
+          can_retry: boolean
+          created_at: string
+          engine: string
+          failure_context: Json | null
+          failure_reason: string
+          id: string
+          last_retry_at: string | null
+          original_job_id: string
+          original_payload: Json
+          queue_name: string
+          retry_attempts: number
+          tenant_id: string
+        }
+        Insert: {
+          can_retry?: boolean
+          created_at?: string
+          engine: string
+          failure_context?: Json | null
+          failure_reason: string
+          id?: string
+          last_retry_at?: string | null
+          original_job_id: string
+          original_payload: Json
+          queue_name: string
+          retry_attempts?: number
+          tenant_id: string
+        }
+        Update: {
+          can_retry?: boolean
+          created_at?: string
+          engine?: string
+          failure_context?: Json | null
+          failure_reason?: string
+          id?: string
+          last_retry_at?: string | null
+          original_job_id?: string
+          original_payload?: Json
+          queue_name?: string
+          retry_attempts?: number
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       deal_analyses: {
         Row: {
           analysis_version: number | null
@@ -1940,6 +1985,42 @@ export type Database = {
         }
         Relationships: []
       }
+      engine_registry: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          engine_id: string
+          feature_flag: string | null
+          id: string
+          job_ttl_minutes: number
+          max_concurrency: number
+          queue_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          engine_id: string
+          feature_flag?: string | null
+          id?: string
+          job_ttl_minutes?: number
+          max_concurrency?: number
+          queue_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          engine_id?: string
+          feature_flag?: string | null
+          id?: string
+          job_ttl_minutes?: number
+          max_concurrency?: number
+          queue_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       evidence_appendix: {
         Row: {
           appendix_data: Json
@@ -1988,6 +2069,45 @@ export type Database = {
           id?: string
           org_id?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      field_catalog: {
+        Row: {
+          created_at: string
+          default_value: Json | null
+          field_key: string
+          field_type: string
+          id: string
+          is_nullable: boolean
+          is_required: boolean
+          updated_at: string
+          used_in_entities: string[]
+          validation_rules: Json | null
+        }
+        Insert: {
+          created_at?: string
+          default_value?: Json | null
+          field_key: string
+          field_type: string
+          id?: string
+          is_nullable?: boolean
+          is_required?: boolean
+          updated_at?: string
+          used_in_entities?: string[]
+          validation_rules?: Json | null
+        }
+        Update: {
+          created_at?: string
+          default_value?: Json | null
+          field_key?: string
+          field_type?: string
+          id?: string
+          is_nullable?: boolean
+          is_required?: boolean
+          updated_at?: string
+          used_in_entities?: string[]
+          validation_rules?: Json | null
         }
         Relationships: []
       }
@@ -3420,6 +3540,78 @@ export type Database = {
           },
         ]
       }
+      job_queues: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          engine: string
+          error_message: string | null
+          expires_at: string
+          id: string
+          idempotency_key: string
+          job_id: string
+          job_payload: Json
+          max_retries: number
+          metadata: Json | null
+          queue_name: string
+          related_ids: Json
+          retry_count: number
+          scheduled_for: string
+          source: string
+          started_at: string | null
+          status: string
+          tenant_id: string
+          trigger_reason: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          engine: string
+          error_message?: string | null
+          expires_at: string
+          id?: string
+          idempotency_key: string
+          job_id: string
+          job_payload: Json
+          max_retries?: number
+          metadata?: Json | null
+          queue_name: string
+          related_ids?: Json
+          retry_count?: number
+          scheduled_for?: string
+          source: string
+          started_at?: string | null
+          status?: string
+          tenant_id: string
+          trigger_reason: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          engine?: string
+          error_message?: string | null
+          expires_at?: string
+          id?: string
+          idempotency_key?: string
+          job_id?: string
+          job_payload?: Json
+          max_retries?: number
+          metadata?: Json | null
+          queue_name?: string
+          related_ids?: Json
+          retry_count?: number
+          scheduled_for?: string
+          source?: string
+          started_at?: string | null
+          status?: string
+          tenant_id?: string
+          trigger_reason?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       kill_switches: {
         Row: {
           activated_at: string | null
@@ -3960,6 +4152,33 @@ export type Database = {
           metric_name?: string
           metric_value?: number
           recorded_at?: string
+        }
+        Relationships: []
+      }
+      queue_processing_locks: {
+        Row: {
+          acquired_at: string
+          expires_at: string
+          id: string
+          metadata: Json | null
+          queue_name: string
+          worker_id: string
+        }
+        Insert: {
+          acquired_at?: string
+          expires_at: string
+          id?: string
+          metadata?: Json | null
+          queue_name: string
+          worker_id: string
+        }
+        Update: {
+          acquired_at?: string
+          expires_at?: string
+          id?: string
+          metadata?: Json | null
+          queue_name?: string
+          worker_id?: string
         }
         Relationships: []
       }
