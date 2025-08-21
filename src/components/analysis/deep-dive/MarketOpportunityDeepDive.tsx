@@ -26,28 +26,149 @@ export function MarketOpportunityDeepDive({ data }: MarketOpportunityDeepDivePro
         <h3 className="text-lg font-semibold">Market Opportunity Deep Dive</h3>
       </div>
 
-      {/* TAM/SAM/SOM Analysis */}
+      {/* Enhanced TAM/SAM/SOM Analysis with Global/Regional/Local Breakdown */}
       {data.tam_sam_som && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Globe className="h-4 w-4" />
-              Market Sizing (TAM/SAM/SOM)
+              Market Sizing Analysis (TAM/SAM/SOM)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Primary Market Size Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="text-center p-4 bg-muted/30 rounded-lg">
                 <div className="text-2xl font-bold text-primary">{data.tam_sam_som.tam}</div>
-                <div className="text-sm text-muted-foreground">Total Addressable Market</div>
+                <div className="text-sm text-muted-foreground">Total Addressable Market (Global)</div>
               </div>
               <div className="text-center p-4 bg-muted/30 rounded-lg">
                 <div className="text-2xl font-bold text-secondary">{data.tam_sam_som.sam}</div>
-                <div className="text-sm text-muted-foreground">Serviceable Addressable Market</div>
+                <div className="text-sm text-muted-foreground">Serviceable Addressable Market (Regional)</div>
               </div>
               <div className="text-center p-4 bg-muted/30 rounded-lg">
                 <div className="text-2xl font-bold text-accent">{data.tam_sam_som.som}</div>
-                <div className="text-sm text-muted-foreground">Serviceable Obtainable Market</div>
+                <div className="text-sm text-muted-foreground">Serviceable Obtainable Market (Local)</div>
+              </div>
+            </div>
+
+            {/* Global/Regional/Local Market Breakdown */}
+            <div className="space-y-4">
+              <div className="border border-border rounded-lg p-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Global Market Analysis (TAM)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <h5 className="font-medium text-primary mb-2">Global Drivers</h5>
+                    <ul className="space-y-1">
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                        Worldwide digital transformation trends
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                        Cross-border regulatory harmonization
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                        International adoption patterns
+                      </li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-warning mb-2">Global Challenges</h5>
+                    <ul className="space-y-1">
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                        Regulatory complexity across regions
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                        Cultural adaptation requirements
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border border-border rounded-lg p-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Regional Market Focus (SAM)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <h5 className="font-medium text-secondary mb-2">Regional Opportunities</h5>
+                    <ul className="space-y-1">
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-secondary rounded-full mt-2 flex-shrink-0" />
+                        Targeted regulatory environment
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-secondary rounded-full mt-2 flex-shrink-0" />
+                        Regional partnership networks
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-secondary rounded-full mt-2 flex-shrink-0" />
+                        Market maturity advantages
+                      </li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-warning mb-2">Regional Barriers</h5>
+                    <ul className="space-y-1">
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                        Regional competitive pressure
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                        Local market preferences
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border border-border rounded-lg p-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  Local Market Penetration (SOM)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <h5 className="font-medium text-accent mb-2">Local Advantages</h5>
+                    <ul className="space-y-1">
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-accent rounded-full mt-2 flex-shrink-0" />
+                        Direct market access and presence
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-accent rounded-full mt-2 flex-shrink-0" />
+                        Local customer relationships
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-accent rounded-full mt-2 flex-shrink-0" />
+                        Operational infrastructure
+                      </li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-warning mb-2">Penetration Constraints</h5>
+                    <ul className="space-y-1">
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                        Resource allocation limits
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                        Market capture timeline
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
