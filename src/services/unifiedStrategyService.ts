@@ -160,19 +160,31 @@ class UnifiedStrategyService {
     if (!wizardData.sectors?.length) errors.push('At least one sector must be selected');
     if (!wizardData.stages?.length) errors.push('At least one stage must be selected');
 
-    const categories = [
-      wizardData.teamLeadershipConfig,
-      wizardData.marketOpportunityConfig,
-      wizardData.productTechnologyConfig,
-      wizardData.businessTractionConfig,
-      wizardData.financialHealthConfig,
-      wizardData.strategicFitConfig
-    ];
+    // Check enhanced criteria structure (used by wizard)
+    if (wizardData.enhancedCriteria && Array.isArray(wizardData.enhancedCriteria)) {
+      const totalWeight = wizardData.enhancedCriteria
+        .filter(criteria => criteria.enabled)
+        .reduce((sum, criteria) => sum + (criteria.weight || 0), 0);
+      
+      if (Math.abs(totalWeight - 100) > 1.0) {
+        errors.push(`Category weights must sum to 100% (currently ${totalWeight.toFixed(1)}%)`);
+      }
+    } else {
+      // Fallback to old category structure for backward compatibility
+      const categories = [
+        wizardData.teamLeadershipConfig,
+        wizardData.marketOpportunityConfig,
+        wizardData.productTechnologyConfig,
+        wizardData.businessTractionConfig,
+        wizardData.financialHealthConfig,
+        wizardData.strategicFitConfig
+      ];
 
-    const totalWeight = categories.reduce((sum, cat) => sum + (cat?.weight || 0), 0);
-    
-    if (Math.abs(totalWeight - 100) > 1.0) {
-      errors.push(`Category weights must sum to 100% (currently ${totalWeight.toFixed(1)}%)`);
+      const totalWeight = categories.reduce((sum, cat) => sum + (cat?.weight || 0), 0);
+      
+      if (Math.abs(totalWeight - 100) > 1.0) {
+        errors.push(`Category weights must sum to 100% (currently ${totalWeight.toFixed(1)}%)`);
+      }
     }
 
     return { isValid: errors.length === 0, errors };
