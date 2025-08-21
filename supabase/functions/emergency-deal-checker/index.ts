@@ -20,16 +20,19 @@ serve(async (req) => {
 
     const { dealId } = await req.json()
 
-    // EMERGENCY BLACKLIST CHECK - HARD CODED FOR CRITICAL DEAL
-    const criticalBlacklistedDealId = '7ac26a5f-34c9-4d30-b09c-c05d1d1df81d'
+    // EMERGENCY BLACKLIST CHECK - HARD CODED FOR BOTH CRITICAL DEALS
+    const criticalBlacklistedDeals = [
+      '7ac26a5f-34c9-4d30-b09c-c05d1d1df81d', // Kernel - excessive activity
+      '98c22f44-87c7-4808-be1c-31929c3da52f'  // Astro - excessive activity
+    ]
     
-    if (dealId === criticalBlacklistedDealId) {
+    if (criticalBlacklistedDeals.includes(dealId)) {
       console.log(`🚨 EMERGENCY BRAKE: Deal ${dealId} is HARD BLOCKED - excessive activity detected`)
       return new Response(
         JSON.stringify({ 
           blocked: true, 
           reason: 'EMERGENCY_SHUTDOWN_EXCESSIVE_ACTIVITY',
-          message: 'This deal has been emergency blocked due to excessive engine activity (13,455+ hits in 30 minutes)'
+          message: 'This deal has been emergency blocked due to excessive engine activity (protection plan active)'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )

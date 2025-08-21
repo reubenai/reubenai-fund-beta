@@ -18,15 +18,18 @@ export function useEmergencyDealChecker() {
     setIsChecking(true);
     
     try {
-      // EMERGENCY HARD-CODED CHECK for the problematic deal
-      const criticalBlacklistedDealId = '7ac26a5f-34c9-4d30-b09c-c05d1d1df81d';
+      // EMERGENCY HARD-CODED CHECK for BOTH problematic deals
+      const criticalBlacklistedDeals = [
+        '7ac26a5f-34c9-4d30-b09c-c05d1d1df81d', // Kernel - excessive activity
+        '98c22f44-87c7-4808-be1c-31929c3da52f'  // Astro - excessive activity
+      ];
       
-      if (dealId === criticalBlacklistedDealId) {
+      if (criticalBlacklistedDeals.includes(dealId)) {
         console.log(`🚨 EMERGENCY CIRCUIT BREAKER: Deal ${dealId} is HARD BLOCKED`);
         return {
           blocked: true,
           reason: 'EMERGENCY_SHUTDOWN_EXCESSIVE_ACTIVITY',
-          message: 'This deal has been emergency blocked due to excessive engine activity'
+          message: 'This deal has been emergency blocked due to excessive engine activity (manual protection plan)'
         };
       }
 
@@ -52,9 +55,12 @@ export function useEmergencyDealChecker() {
   }, []);
 
   const isBlacklisted = useCallback((dealId: string): boolean => {
-    // EMERGENCY HARD-CODED CHECK - no async needed
-    const criticalBlacklistedDealId = '7ac26a5f-34c9-4d30-b09c-c05d1d1df81d';
-    return dealId === criticalBlacklistedDealId;
+    // EMERGENCY HARD-CODED CHECK - no async needed for BOTH blocked deals
+    const criticalBlacklistedDeals = [
+      '7ac26a5f-34c9-4d30-b09c-c05d1d1df81d', // Kernel - excessive activity
+      '98c22f44-87c7-4808-be1c-31929c3da52f'  // Astro - excessive activity  
+    ];
+    return criticalBlacklistedDeals.includes(dealId);
   }, []);
 
   return {
