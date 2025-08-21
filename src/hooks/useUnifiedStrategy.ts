@@ -143,7 +143,6 @@ export function useUnifiedStrategy(fundId?: string) {
     }
   };
 
-  // Phase 3: Enhanced updateStrategy with flexible signature for backward compatibility
   const updateStrategy = async (strategyIdOrUpdates: string | Partial<EnhancedStrategy>, updatesArg?: Partial<EnhancedStrategy>) => {
     console.log('🔧 === UPDATE STRATEGY WITH ENHANCED ERROR HANDLING ===');
     console.log('Arguments received:', { strategyIdOrUpdates, updatesArg });
@@ -172,6 +171,11 @@ export function useUnifiedStrategy(fundId?: string) {
     
     if (!fundId) {
       console.error('❌ No fund ID provided to updateStrategy');
+      toast({
+        title: 'Error',
+        description: 'Fund ID is required for strategy updates. Please refresh the page.',
+        variant: 'destructive'
+      });
       throw new Error('Fund ID is required for strategy updates');
     }
     
@@ -194,8 +198,25 @@ export function useUnifiedStrategy(fundId?: string) {
         console.log('🎯 Final strategy ID for update:', finalStrategyId);
         
         if (!finalStrategyId) {
-          console.error('❌ No strategy found for fund. This should not happen as all funds have default strategies.');
-          throw new Error('Strategy not found for fund. Please contact support.');
+          console.error('❌ No strategy found for fund. Creating new strategy...');
+          // Try to create a new strategy if none exists
+          const newStrategy = await unifiedStrategyService.saveStrategy(fundId, {
+            fund_type: updates.fund_type || 'vc',
+            industries: updates.industries || [],
+            geography: updates.geography || [],
+            ...updates
+          });
+          
+          if (newStrategy) {
+            setStrategy(newStrategy);
+            toast({
+              title: 'Success',
+              description: 'New investment strategy created and saved successfully.',
+            });
+            return newStrategy;
+          } else {
+            throw new Error('Failed to create new strategy for fund. Please contact support.');
+          }
         }
 
         // Always use UPDATE path since all funds should have strategies
@@ -221,20 +242,33 @@ export function useUnifiedStrategy(fundId?: string) {
         }
       };
 
-      // Execute with retry logic for conflict prevention
+      // Execute with enhanced retry logic for conflict prevention
       let lastError: Error | null = null;
-      const maxRetries = 3;
-      const retryDelay = 1500;
+      const maxRetries = 5; // Increased retries
+      const baseDelay = 1000; // Base delay
       
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           console.log(`Strategy save attempt ${attempt}/${maxRetries}`);
+          
+          // Add a small delay for first retry to avoid immediate conflicts
+          if (attempt > 1) {
+            const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+            console.log(`Waiting ${delay}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+          
           const result = await performUpdate();
           
           if (attempt > 1) {
             toast({
               title: 'Save Successful',
-              description: `Strategy saved after ${attempt} attempts.`,
+              description: `Strategy saved successfully after ${attempt} attempts.`,
+            });
+          } else {
+            toast({
+              title: 'Success',
+              description: 'Investment strategy saved successfully.',
             });
           }
           
@@ -248,26 +282,31 @@ export function useUnifiedStrategy(fundId?: string) {
             error.message.includes('conflict') ||
             error.message.includes('concurrent') ||
             error.message.includes('blocked') ||
-            error.message.includes('invalidate_deal_analyses_on_strategy_change')
+            error.message.includes('invalidate_deal_analyses_on_strategy_change') ||
+            error.message.includes('duplicate key') ||
+            error.message.includes('violates foreign key')
           );
           
-          if (isConflictError && attempt < maxRetries) {
-            const delay = retryDelay * attempt; // Exponential backoff
-            console.log(`Retrying in ${delay}ms due to conflict...`);
+          const isTemporaryError = error instanceof Error && (
+            error.message.includes('network') ||
+            error.message.includes('timeout') ||
+            error.message.includes('connection')
+          );
+          
+          if ((isConflictError || isTemporaryError) && attempt < maxRetries) {
+            const delay = baseDelay * Math.pow(2, attempt); // Exponential backoff
+            console.log(`Retrying in ${delay}ms due to ${isConflictError ? 'conflict' : 'temporary error'}...`);
             
-            // Import toast dynamically
-            const { toast } = await import('@/hooks/use-toast');
             toast({
-              title: 'Conflict Detected',
-              description: `Analysis is running. Retrying save in ${delay/1000}s... (${attempt}/${maxRetries})`,
+              title: isConflictError ? 'Conflict Detected' : 'Temporary Error',
+              description: `${isConflictError ? 'Analysis is running.' : 'Network issue detected.'} Retrying save in ${delay/1000}s... (${attempt}/${maxRetries})`,
               duration: 2000,
             });
             
-            await new Promise(resolve => setTimeout(resolve, delay));
             continue;
           }
           
-          // If it's not a conflict error or we've exhausted retries, throw
+          // If it's not a retryable error or we've exhausted retries, throw
           if (attempt === maxRetries) {
             throw lastError;
           }
@@ -280,12 +319,21 @@ export function useUnifiedStrategy(fundId?: string) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       let fullMessage = `Failed to update strategy: ${errorMessage}`;
       
-      // Provide specific guidance for common conflict scenarios
+      // Provide specific guidance for common scenarios
       if (errorMessage.includes('conflict') || errorMessage.includes('concurrent')) {
-        fullMessage = `Strategy update conflict detected. This happens when deal analysis is running. The system automatically retried but still failed. Please wait a moment and try again.`;
+        fullMessage = `Strategy update conflict: Deal analysis is currently running. Please wait a moment and try again.`;
+      } else if (errorMessage.includes('not found')) {
+        fullMessage = `Strategy not found. Please refresh the page and try again.`;
+      } else if (errorMessage.includes('permission')) {
+        fullMessage = `Permission denied. Please check your access rights.`;
       }
       
       setError(fullMessage);
+      toast({
+        title: 'Save Failed',
+        description: fullMessage,
+        variant: 'destructive'
+      });
       throw new Error(fullMessage);
     } finally {
       setLoading(false);

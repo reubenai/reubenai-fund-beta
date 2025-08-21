@@ -712,14 +712,15 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
               </Button>
               <Button
                 variant="destructive"
-                onClick={() => deleteNote(deletingNote)}
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+                 onClick={() => deleteNote(deletingNote)}
+               >
+                 Delete
+               </Button>
+             </div>
+           </div>
+         </div>
+       )}
+     </div>
+    </DealPermissionGuard>
   );
 }
