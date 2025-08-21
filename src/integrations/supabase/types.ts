@@ -3584,6 +3584,110 @@ export type Database = {
           },
         ]
       }
+      investment_strategies_v2: {
+        Row: {
+          business_traction_config: Json | null
+          check_size_max: number | null
+          check_size_min: number | null
+          created_at: string
+          deal_sourcing_strategy: Json | null
+          decision_making_process: Json | null
+          enhanced_criteria: Json | null
+          exciting_threshold: number | null
+          financial_health_config: Json | null
+          fund_id: string
+          fund_name: string
+          fund_type: string
+          geographies: string[] | null
+          id: string
+          investment_philosophy: string | null
+          key_signals: string[] | null
+          market_opportunity_config: Json | null
+          needs_development_threshold: number | null
+          organization_id: string
+          philosophy_config: Json | null
+          product_technology_config: Json | null
+          promising_threshold: number | null
+          research_approach: Json | null
+          sectors: string[] | null
+          stages: string[] | null
+          strategic_fit_config: Json | null
+          strategy_description: string | null
+          team_leadership_config: Json | null
+          updated_at: string
+        }
+        Insert: {
+          business_traction_config?: Json | null
+          check_size_max?: number | null
+          check_size_min?: number | null
+          created_at?: string
+          deal_sourcing_strategy?: Json | null
+          decision_making_process?: Json | null
+          enhanced_criteria?: Json | null
+          exciting_threshold?: number | null
+          financial_health_config?: Json | null
+          fund_id: string
+          fund_name: string
+          fund_type: string
+          geographies?: string[] | null
+          id?: string
+          investment_philosophy?: string | null
+          key_signals?: string[] | null
+          market_opportunity_config?: Json | null
+          needs_development_threshold?: number | null
+          organization_id: string
+          philosophy_config?: Json | null
+          product_technology_config?: Json | null
+          promising_threshold?: number | null
+          research_approach?: Json | null
+          sectors?: string[] | null
+          stages?: string[] | null
+          strategic_fit_config?: Json | null
+          strategy_description?: string | null
+          team_leadership_config?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          business_traction_config?: Json | null
+          check_size_max?: number | null
+          check_size_min?: number | null
+          created_at?: string
+          deal_sourcing_strategy?: Json | null
+          decision_making_process?: Json | null
+          enhanced_criteria?: Json | null
+          exciting_threshold?: number | null
+          financial_health_config?: Json | null
+          fund_id?: string
+          fund_name?: string
+          fund_type?: string
+          geographies?: string[] | null
+          id?: string
+          investment_philosophy?: string | null
+          key_signals?: string[] | null
+          market_opportunity_config?: Json | null
+          needs_development_threshold?: number | null
+          organization_id?: string
+          philosophy_config?: Json | null
+          product_technology_config?: Json | null
+          promising_threshold?: number | null
+          research_approach?: Json | null
+          sectors?: string[] | null
+          stages?: string[] | null
+          strategic_fit_config?: Json | null
+          strategy_description?: string | null
+          team_leadership_config?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_strategies_v2_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: true
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       investment_strategy_versions: {
         Row: {
           change_reason: string | null
