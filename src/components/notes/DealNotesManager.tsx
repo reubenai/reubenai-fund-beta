@@ -37,6 +37,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useDealPermissions } from '@/hooks/useDealPermissions';
+import { DealPermissionGuard } from '@/components/deals/DealPermissionGuard';
 
 interface DealNote {
   id: string;
@@ -97,6 +99,7 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
   const { user } = useAuth();
   const { toast } = useToast();
   const permissions = usePermissions();
+  const { canPerformAction } = useDealPermissions(dealId);
 
   useEffect(() => {
     loadNotes();
@@ -373,10 +376,11 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
   }
 
   return (
-    <div className="space-y-6">
-      {/* Add New Note */}
-      {permissions.canCreateNotes && (
-        <Card>
+    <DealPermissionGuard dealId={dealId} requiredAction="view">
+      <div className="space-y-6">
+        {/* Add New Note */}
+        <DealPermissionGuard dealId={dealId} requiredAction="create_note" fallback={null}>
+          <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />
@@ -456,10 +460,10 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
               {isAdding ? 'Adding...' : 'Add Note'}
             </Button>
           </CardContent>
-        </Card>
-      )}
+          </Card>
+        </DealPermissionGuard>
 
-      {/* Filters */}
+        {/* Filters */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">

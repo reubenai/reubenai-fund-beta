@@ -48,6 +48,8 @@ import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { useEnhancedDealActivities } from '@/hooks/useEnhancedDealActivities';
+import { ShareDealModal } from '@/components/deals/ShareDealModal';
+import { DealPermissionGuard, DealActionGuard } from '@/components/deals/DealPermissionGuard';
 import { EnhancedActivityTable } from '@/components/activities/EnhancedActivityTable';
 import { ThesisAlignmentSection } from '@/components/analysis/ThesisAlignmentSection';
 import { MarketOpportunityAssessment } from '@/components/analysis/MarketOpportunityAssessment';
@@ -462,9 +464,28 @@ export function EnhancedDealDetailsModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <Building2 className="h-6 w-6" />
-            {deal.company_name}
+          <DialogTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Building2 className="h-6 w-6" />
+              {deal.company_name}
+            </div>
+            <div className="flex items-center gap-2">
+              <DealActionGuard dealId={deal.id} action="manage">
+                {(canManage) => canManage && (
+                  <ShareDealModal dealId={deal.id} dealName={deal.company_name} />
+                )}
+              </DealActionGuard>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshAnalysis}
+                disabled={isRefreshing}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh Analysis'}
+              </Button>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
@@ -665,17 +686,21 @@ export function EnhancedDealDetailsModal({
           )}
 
           <TabsContent value="documents" className="space-y-6">
-            <DocumentManager
-              dealId={deal.id}
-              companyName={deal.company_name}
-            />
+            <DealPermissionGuard dealId={deal.id} requiredAction="view">
+              <DocumentManager
+                dealId={deal.id}
+                companyName={deal.company_name}
+              />
+            </DealPermissionGuard>
           </TabsContent>
 
           <TabsContent value="notes" className="space-y-6">
-            <DealNotesManager
-              dealId={deal.id}
-              companyName={deal.company_name}
-            />
+            <DealPermissionGuard dealId={deal.id} requiredAction="view">
+              <DealNotesManager
+                dealId={deal.id}
+                companyName={deal.company_name}
+              />
+            </DealPermissionGuard>
           </TabsContent>
 
           {canViewActivities && (

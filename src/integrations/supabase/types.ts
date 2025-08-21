@@ -1539,6 +1539,47 @@ export type Database = {
           },
         ]
       }
+      deal_permissions: {
+        Row: {
+          access_granted_by: string
+          access_type: string
+          created_at: string | null
+          deal_id: string
+          id: string
+          role: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_granted_by: string
+          access_type: string
+          created_at?: string | null
+          deal_id: string
+          id?: string
+          role: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_granted_by?: string
+          access_type?: string
+          created_at?: string | null
+          deal_id?: string
+          id?: string
+          role?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_permissions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_scores: {
         Row: {
           category: string
@@ -5089,6 +5130,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_user_deal_role: {
+        Args: { target_deal_id: string }
+        Returns: string
+      }
       halfvec_avg: {
         Args: { "": number[] }
         Returns: unknown
@@ -5307,6 +5352,10 @@ export type Database = {
       }
       user_can_access_activity: {
         Args: { activity_deal_id: string; activity_fund_id: string }
+        Returns: boolean
+      }
+      user_can_access_deal: {
+        Args: { required_role?: string; target_deal_id: string }
         Returns: boolean
       }
       user_can_access_fund: {
