@@ -174,18 +174,43 @@ class StrategyServiceV2 {
   convertLegacyUpdates(legacyUpdates: any): Partial<StrategyV2> {
     const v2Updates: Partial<StrategyV2> = {};
 
+    // Basic field mappings
     if (legacyUpdates.fund_type) v2Updates.fund_type = legacyUpdates.fund_type;
+    if (legacyUpdates.fund_name) v2Updates.fund_name = legacyUpdates.fund_name;
     if (legacyUpdates.industries) v2Updates.sectors = legacyUpdates.industries;
     if (legacyUpdates.geography) v2Updates.geographies = legacyUpdates.geography;
+    if (legacyUpdates.stages) v2Updates.stages = legacyUpdates.stages;
     if (legacyUpdates.min_investment_amount) v2Updates.check_size_min = legacyUpdates.min_investment_amount;
     if (legacyUpdates.max_investment_amount) v2Updates.check_size_max = legacyUpdates.max_investment_amount;
     if (legacyUpdates.key_signals) v2Updates.key_signals = legacyUpdates.key_signals;
+    if (legacyUpdates.strategy_notes) v2Updates.strategy_description = legacyUpdates.strategy_notes;
+    if (legacyUpdates.investment_philosophy) v2Updates.investment_philosophy = legacyUpdates.investment_philosophy;
+
+    // Threshold mappings
     if (legacyUpdates.exciting_threshold) v2Updates.exciting_threshold = legacyUpdates.exciting_threshold;
     if (legacyUpdates.promising_threshold) v2Updates.promising_threshold = legacyUpdates.promising_threshold;
     if (legacyUpdates.needs_development_threshold) v2Updates.needs_development_threshold = legacyUpdates.needs_development_threshold;
-    if (legacyUpdates.strategy_notes) v2Updates.strategy_description = legacyUpdates.strategy_notes;
-    if (legacyUpdates.enhanced_criteria?.categories) v2Updates.enhanced_criteria = legacyUpdates.enhanced_criteria.categories;
 
+    // Enhanced criteria mapping - handle both formats
+    if (legacyUpdates.enhanced_criteria?.categories) {
+      v2Updates.enhanced_criteria = legacyUpdates.enhanced_criteria.categories;
+    } else if (legacyUpdates.enhanced_criteria && Array.isArray(legacyUpdates.enhanced_criteria)) {
+      v2Updates.enhanced_criteria = legacyUpdates.enhanced_criteria;
+    }
+
+    // Category config mappings
+    if (legacyUpdates.team_leadership_config) v2Updates.team_leadership_config = legacyUpdates.team_leadership_config;
+    if (legacyUpdates.market_opportunity_config) v2Updates.market_opportunity_config = legacyUpdates.market_opportunity_config;
+    if (legacyUpdates.product_technology_config) v2Updates.product_technology_config = legacyUpdates.product_technology_config;
+    if (legacyUpdates.business_traction_config) v2Updates.business_traction_config = legacyUpdates.business_traction_config;
+    if (legacyUpdates.financial_health_config) v2Updates.financial_health_config = legacyUpdates.financial_health_config;
+    if (legacyUpdates.strategic_fit_config) v2Updates.strategic_fit_config = legacyUpdates.strategic_fit_config;
+    if (legacyUpdates.philosophy_config) v2Updates.philosophy_config = legacyUpdates.philosophy_config;
+    if (legacyUpdates.research_approach) v2Updates.research_approach = legacyUpdates.research_approach;
+    if (legacyUpdates.deal_sourcing_strategy) v2Updates.deal_sourcing_strategy = legacyUpdates.deal_sourcing_strategy;
+    if (legacyUpdates.decision_making_process) v2Updates.decision_making_process = legacyUpdates.decision_making_process;
+
+    console.log('🔄 [V2] Legacy updates converted:', { legacyUpdates, v2Updates });
     return v2Updates;
   }
 }

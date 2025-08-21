@@ -153,34 +153,92 @@ class UnifiedStrategyService {
     }
   }
 
-  validateStrategy(wizardData: EnhancedWizardData): { isValid: boolean; errors: string[] } {
+  validateStrategy(wizardData: EnhancedWizardData | any): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
 
-    console.log('🔍 VALIDATION DEBUG - Wizard Data Keys:', Object.keys(wizardData));
-    console.log('🔍 VALIDATION DEBUG - enhancedCriteria exists:', !!wizardData.enhancedCriteria);
-    
-    if (wizardData.enhancedCriteria && Array.isArray(wizardData.enhancedCriteria)) {
-      console.log('🔍 VALIDATION DEBUG - enhancedCriteria structure:', wizardData.enhancedCriteria.map(c => ({name: c.name, enabled: c.enabled, weight: c.weight})));
+    console.log('🔍 VALIDATION DEBUG - Input data keys:', Object.keys(wizardData));
+    console.log('🔍 VALIDATION DEBUG - Data type check:', {
+      hasId: !!wizardData.id,
+      isWizardFormat: !!wizardData.fundName,
+      isLegacyFormat: !!wizardData.fund_id || !!wizardData.industries
+    });
+
+    // Handle both wizard format and Investment Strategy page format
+    const fundName = wizardData.fundName || wizardData.fund_name;
+    const fundType = wizardData.fundType || wizardData.fund_type;
+    const sectors = wizardData.sectors || wizardData.industries;
+    const geographies = wizardData.geographies || wizardData.geography;
+    const stages = wizardData.stages;
+    const enhancedCriteria = wizardData.enhancedCriteria || wizardData.enhanced_criteria?.categories || wizardData.enhanced_criteria;
+
+    // Required fields (more lenient for Investment Strategy page updates with existing ID)
+    const isUpdate = !!wizardData.id;
+
+    if (!fundName?.trim() && !isUpdate) {
+      errors.push('Fund name is required');
     }
 
-    if (!wizardData.fundName?.trim()) errors.push('Fund name is required');
-    if (!wizardData.sectors?.length) errors.push('At least one sector must be selected');
-    if (!wizardData.stages?.length) errors.push('At least one stage must be selected');
+    if (!fundType && !isUpdate) {
+      errors.push('Fund type is required');
+    }
 
-    // Check enhanced criteria structure (used by wizard)
-    if (wizardData.enhancedCriteria && Array.isArray(wizardData.enhancedCriteria)) {
-      const totalWeight = wizardData.enhancedCriteria
-        .filter(criteria => criteria.enabled)
-        .reduce((sum, criteria) => sum + (criteria.weight || 0), 0);
+    if (!sectors?.length && !isUpdate) {
+      errors.push('At least one sector must be selected');
+    }
+
+    if (!geographies?.length && !isUpdate) {
+      errors.push('At least one geography must be selected');
+    }
+
+    // For wizard format, stages are required
+    if (!stages?.length && !isUpdate && wizardData.fundName) {
+      errors.push('At least one stage must be selected');
+    }
+
+    // Validate enhanced criteria if present
+    if (enhancedCriteria && Array.isArray(enhancedCriteria) && enhancedCriteria.length > 0) {
+      console.log('🔍 VALIDATION DEBUG - Enhanced criteria structure:', enhancedCriteria.map(c => ({
+        name: c.name, 
+        enabled: c.enabled, 
+        weight: c.weight
+      })));
+
+      const enabledCriteria = enhancedCriteria.filter(criteria => criteria.enabled !== false);
+      const totalWeight = enabledCriteria.reduce((sum, criteria) => sum + (criteria.weight || 0), 0);
       
       console.log('🔍 VALIDATION DEBUG - Enhanced criteria total weight:', totalWeight);
       
       if (Math.abs(totalWeight - 100) > 1.0) {
         errors.push(`Category weights must sum to 100% (currently ${totalWeight.toFixed(1)}%)`);
       }
-    } else {
+
+      // Validate subcategories
+      enabledCriteria.forEach((category) => {
+        if (category.subcategories) {
+          let subcategoryWeights = 0;
+          
+          // Handle both object and array formats for subcategories
+          if (Array.isArray(category.subcategories)) {
+            subcategoryWeights = category.subcategories
+              .filter((sub: any) => sub.enabled !== false)
+              .reduce((sum, sub) => sum + (sub.weight || 0), 0);
+          } else if (typeof category.subcategories === 'object' && category.subcategories !== null) {
+            const subcategoryValues = Object.values(category.subcategories) as any[];
+            subcategoryWeights = subcategoryValues
+              .filter((sub: any) => sub.enabled !== false)
+              .reduce((sum: number, sub: any) => {
+                return sum + (sub.weight || 0);
+              }, 0);
+          }
+
+          if (subcategoryWeights > 0 && Math.abs(subcategoryWeights - 100) > 1.0) {
+            errors.push(`Subcategory weights in "${category.name}" must sum to 100% (currently ${subcategoryWeights.toFixed(1)}%)`);
+          }
+        }
+      });
+    } else if (!isUpdate) {
+      // Fallback to old category structure for backward compatibility (wizard format only)
       console.log('🔍 VALIDATION DEBUG - Falling back to old category structure');
-      // Fallback to old category structure for backward compatibility
       const categories = [
         wizardData.teamLeadershipConfig,
         wizardData.marketOpportunityConfig,
@@ -188,14 +246,16 @@ class UnifiedStrategyService {
         wizardData.businessTractionConfig,
         wizardData.financialHealthConfig,
         wizardData.strategicFitConfig
-      ];
+      ].filter(Boolean); // Remove undefined categories
 
-      const totalWeight = categories.reduce((sum, cat) => sum + (cat?.weight || 0), 0);
-      
-      console.log('🔍 VALIDATION DEBUG - Legacy categories total weight:', totalWeight);
-      
-      if (Math.abs(totalWeight - 100) > 1.0) {
-        errors.push(`Category weights must sum to 100% (currently ${totalWeight.toFixed(1)}%)`);
+      if (categories.length > 0) {
+        const totalWeight = categories.reduce((sum, cat) => sum + (cat?.weight || 0), 0);
+        
+        console.log('🔍 VALIDATION DEBUG - Legacy categories total weight:', totalWeight);
+        
+        if (Math.abs(totalWeight - 100) > 1.0) {
+          errors.push(`Category weights must sum to 100% (currently ${totalWeight.toFixed(1)}%)`);
+        }
       }
     }
 

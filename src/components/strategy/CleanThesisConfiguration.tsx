@@ -77,15 +77,40 @@ export function CleanThesisConfiguration({
       // Check if we have an existing strategy with ID (update) or need to create new (save)
       if (strategy?.id) {
         console.log('📝 Updating existing strategy with ID:', strategy.id);
-        const updatesWithId = {
+        
+        // Prepare comprehensive update data including all V2 fields
+        const comprehensiveUpdates = {
           ...editedStrategy,
           id: strategy.id,
           fund_id: fundId,
-          fund_type: strategy.fund_type || 'vc'
+          fund_type: strategy.fund_type || 'vc',
+          // Map legacy field names to V2 format - use safe access
+          fund_name: `Fund ${fundId}`, // Default fund name
+          sectors: editedStrategy.industries || strategy.industries || [],
+          stages: ['Series A'], // Default stage since it's not in EnhancedStrategy
+          geographies: editedStrategy.geography || strategy.geography || [],
+          check_size_min: editedStrategy.min_investment_amount,
+          check_size_max: editedStrategy.max_investment_amount,
+          key_signals: editedStrategy.key_signals || [],
+          strategy_description: editedStrategy.strategy_notes,
+          investment_philosophy: editedStrategy.strategy_notes, // Use strategy_notes as fallback
+          // Include category configs with defaults
+          team_leadership_config: {},
+          market_opportunity_config: {},
+          product_technology_config: {},
+          business_traction_config: {},
+          financial_health_config: {},
+          strategic_fit_config: {},
+          philosophy_config: {},
+          research_approach: {},
+          deal_sourcing_strategy: {},
+          decision_making_process: {},
+          // Enhanced criteria - handle both formats
+          enhanced_criteria: strategy.enhanced_criteria?.categories || strategy.enhanced_criteria || []
         };
         
-        console.log('Calling updateStrategy with:', updatesWithId);
-        result = await updateStrategy(updatesWithId);
+        console.log('Calling updateStrategy with comprehensive data:', comprehensiveUpdates);
+        result = await updateStrategy(comprehensiveUpdates);
       } else {
         console.log('✨ Creating new strategy');
         // Convert form data to wizard format for saveStrategy
@@ -97,10 +122,10 @@ export function CleanThesisConfiguration({
         };
         
         const wizardData = {
-          fundName: fundId, // Use fundId as fallback
+          fundName: `Fund ${fundId}`,
           fundType: (strategy.fund_type || 'vc') as 'vc' | 'pe',
           sectors: editedStrategy.industries || [],
-          stages: ['Series A'], // Default stage
+          stages: ['Series A'],
           geographies: editedStrategy.geography || [],
           checkSizeRange: {
             min: editedStrategy.min_investment_amount || 0,
@@ -115,7 +140,7 @@ export function CleanThesisConfiguration({
           investmentThesis: editedStrategy.strategy_notes || '',
           strategyDescription: editedStrategy.strategy_notes || '',
           enhancedCriteria: strategy.enhanced_criteria?.categories || [],
-          // Required wizard config fields with proper CategoryCustomization objects
+          // Required wizard config fields
           teamLeadershipConfig: { ...defaultCategoryConfig, weight: 20 },
           marketOpportunityConfig: { ...defaultCategoryConfig, weight: 25 },
           productTechnologyConfig: { ...defaultCategoryConfig, weight: 20 },
