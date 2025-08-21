@@ -430,12 +430,21 @@ export function EnhancedStrategyWizard({
       
       // Always save (UPDATE) since funds automatically have default strategies
       console.log('💾 Saving strategy with UPDATE-only logic');
+      console.log('📊 Enhanced Criteria State:', enhancedCriteria);
+      console.log('📊 Wizard Data Before Merge:', wizardData);
+      
+      // Use the most current enhanced criteria (prioritize the state variable)
+      const finalEnhancedCriteria = enhancedCriteria.length > 0 ? enhancedCriteria : wizardData.enhancedCriteria || [];
       
       // Merge enhanced criteria into wizard data for proper saving
       const completeWizardData = {
         ...wizardData,
-        enhancedCriteria
+        enhancedCriteria: finalEnhancedCriteria
       } as EnhancedWizardData;
+      
+      console.log('📊 Complete Wizard Data After Merge:', completeWizardData);
+      console.log('📊 Enhanced Criteria in Complete Data:', completeWizardData.enhancedCriteria);
+      console.log('📊 Enhanced Criteria Array Length:', completeWizardData.enhancedCriteria?.length || 0);
       
       result = await saveStrategy(wizardData.fundType, completeWizardData);
       
@@ -1023,6 +1032,12 @@ export function EnhancedStrategyWizard({
                                       const newCriteria = [...enhancedCriteria];
                                       newCriteria[categoryIndex] = { ...category, enabled: checked };
                                       setEnhancedCriteria(newCriteria);
+                                      
+                                      // Sync to wizard data for proper save
+                                      setWizardData(prev => ({
+                                        ...prev,
+                                        enhancedCriteria: newCriteria
+                                      }));
                                     }}
                                   />
                                 </div>
