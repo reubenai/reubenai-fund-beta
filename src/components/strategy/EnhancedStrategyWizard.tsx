@@ -430,7 +430,14 @@ export function EnhancedStrategyWizard({
       
       // Always save (UPDATE) since funds automatically have default strategies
       console.log('💾 Saving strategy with UPDATE-only logic');
-      result = await saveStrategy(wizardData.fundType, wizardData as EnhancedWizardData);
+      
+      // Merge enhanced criteria into wizard data for proper saving
+      const completeWizardData = {
+        ...wizardData,
+        enhancedCriteria
+      } as EnhancedWizardData;
+      
+      result = await saveStrategy(wizardData.fundType, completeWizardData);
       
       console.log('📈 Save Result:', result);
       
