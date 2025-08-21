@@ -12,6 +12,21 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 serve(async (req) => {
+  // 🚨 HARDCODED KILL SWITCH - EMERGENCY QUEUE PROCESSOR SHUTDOWN
+  console.log('🛑 EMERGENCY: Analysis Queue Processor DISABLED by hardcoded kill switch');
+  return new Response(JSON.stringify({
+    success: false,
+    error: 'HARDCODED_KILL_SWITCH_ACTIVE',
+    message: 'Analysis queue processor has been disabled via emergency hardcoded kill switch',
+    timestamp: new Date().toISOString(),
+    processed_count: 0,
+    failed_count: 0,
+    results: []
+  }), {
+    status: 503, // Service Unavailable
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });

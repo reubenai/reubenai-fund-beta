@@ -83,6 +83,18 @@ interface AnalysisResult {
 }
 
 serve(async (req) => {
+  // 🚨 HARDCODED KILL SWITCH - EMERGENCY ANALYSIS SHUTDOWN
+  console.log('🛑 EMERGENCY: Enhanced Deal Analysis DISABLED by hardcoded kill switch');
+  return new Response(JSON.stringify({
+    success: false,
+    error: 'HARDCODED_KILL_SWITCH_ACTIVE',
+    message: 'Enhanced deal analysis has been disabled via emergency hardcoded kill switch',
+    timestamp: new Date().toISOString()
+  }), {
+    status: 503, // Service Unavailable
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });

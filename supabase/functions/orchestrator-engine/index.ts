@@ -64,6 +64,18 @@ interface StepContext {
 }
 
 serve(async (req) => {
+  // 🚨 HARDCODED KILL SWITCH - EMERGENCY ORCHESTRATOR SHUTDOWN
+  console.log('🛑 EMERGENCY: Orchestrator Engine DISABLED by hardcoded kill switch');
+  return new Response(JSON.stringify({
+    success: false,
+    error: 'HARDCODED_KILL_SWITCH_ACTIVE',
+    message: 'Orchestrator engine has been disabled via emergency hardcoded kill switch',
+    timestamp: new Date().toISOString()
+  }), {
+    status: 503, // Service Unavailable
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
