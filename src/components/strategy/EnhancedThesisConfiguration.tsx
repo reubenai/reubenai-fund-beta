@@ -59,13 +59,26 @@ export function EnhancedThesisConfiguration({
 
   const handleCriteriaUpdate = (newCriteria: InvestmentCriteria[]) => {
     setCriteria(newCriteria);
-    // Here you would also update the strategy with the new criteria
-    // This might involve converting the criteria to the format expected by the strategy
+    // Update the strategy with the new criteria
+    setEditedStrategy(prev => ({
+      ...prev,
+      enhanced_criteria: {
+        ...prev.enhanced_criteria,
+        categories: newCriteria
+      }
+    }));
   };
 
   const handleTargetParametersUpdate = (newTargetParameters: TargetParameter[]) => {
     setTargetParameters(newTargetParameters);
-    // Here you would also update the strategy with the new target parameters
+    // Update the strategy with the new target parameters
+    setEditedStrategy(prev => ({
+      ...prev,
+      enhanced_criteria: {
+        ...prev.enhanced_criteria,
+        targetParameters: newTargetParameters
+      }
+    }));
   };
 
   return (
@@ -325,7 +338,10 @@ export function EnhancedThesisConfiguration({
             targetParameters={targetParameters}
             isEditing={isCriteriaEditing}
             onEdit={() => setIsCriteriaEditing(true)}
-            onSave={() => setIsCriteriaEditing(false)}
+            onSave={() => {
+              setIsCriteriaEditing(false);
+              handleSave(); // Actually save to database
+            }}
             onCancel={() => setIsCriteriaEditing(false)}
             onUpdateCriteria={handleCriteriaUpdate}
             onUpdateTargetParameters={handleTargetParametersUpdate}
