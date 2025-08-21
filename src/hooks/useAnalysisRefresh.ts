@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useEmergencyDealChecker } from './useEmergencyDealChecker';
 
 interface AnalysisRefreshOptions {
   dealId: string;
@@ -16,6 +17,7 @@ export function useAnalysisRefresh({
   autoRefresh = false
 }: AnalysisRefreshOptions) {
   const { toast } = useToast();
+  const { checkDealStatus } = useEmergencyDealChecker();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastCheckedRef = useRef<Date>(new Date());
 
@@ -55,6 +57,18 @@ export function useAnalysisRefresh({
 
   const triggerAnalysisRefresh = useCallback(async () => {
     try {
+      // 🚨 EMERGENCY CHECK: Block if deal is blacklisted
+      const emergencyStatus = await checkDealStatus(dealId);
+      if (emergencyStatus.blocked) {
+        console.log(`🚫 EMERGENCY BLOCK: Analysis refresh blocked for deal ${dealId} - ${emergencyStatus.reason}`);
+        toast({
+          title: "Analysis Blocked",
+          description: emergencyStatus.message || "Analysis is currently blocked for this deal",
+          variant: "destructive"
+        });
+        return false;
+      }
+
       const { data, error } = await supabase.functions.invoke('enhanced-deal-analysis', {
         body: { 
           dealId,
@@ -84,7 +98,7 @@ export function useAnalysisRefresh({
       });
       return false;
     }
-  }, [dealId, toast]);
+  }, [dealId, toast, checkDealStatus]);
 
   const startMonitoring = useCallback(() => {
     if (intervalRef.current) return;

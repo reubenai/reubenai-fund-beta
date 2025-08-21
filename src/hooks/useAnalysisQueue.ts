@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAnalysisSystemKillSwitch } from './useAnalysisSystemKillSwitch';
+import { useEmergencyDealChecker } from './useEmergencyDealChecker';
 
 interface AnalysisQueueOptions {
   priority?: 'high' | 'normal' | 'low';
@@ -11,12 +12,24 @@ interface AnalysisQueueOptions {
 
 export function useAnalysisQueue() {
   const { toast } = useToast();
-  const { isAnalysisDisabled } = useAnalysisSystemKillSwitch();
+  const { isAnalysisDisabled, isDealBlocked } = useAnalysisSystemKillSwitch();
+  const { checkDealStatus } = useEmergencyDealChecker();
 
   const queueDealAnalysis = useCallback(async (
     dealId: string,
     options: AnalysisQueueOptions = {}
   ) => {
+    // 🚨 EMERGENCY CHECK: Hard block for blacklisted deals
+    if (isDealBlocked(dealId)) {
+      console.log(`🚫 EMERGENCY BLOCK: Queue blocked for blacklisted deal ${dealId}`);
+      toast({
+        title: "Analysis Blocked",
+        description: "This deal is currently blocked from analysis due to system protection",
+        variant: "destructive"
+      });
+      return { success: false, error: 'Deal is emergency blocked' };
+    }
+
     // HARD SHUTDOWN: Analysis system disabled
     if (isAnalysisDisabled) {
       toast({
@@ -25,6 +38,23 @@ export function useAnalysisQueue() {
         variant: "destructive"
       });
       return { success: false, error: "Analysis system disabled" };
+    }
+
+    // Double-check with comprehensive emergency status
+    try {
+      const emergencyStatus = await checkDealStatus(dealId);
+      if (emergencyStatus.blocked) {
+        console.log(`🚫 COMPREHENSIVE BLOCK: Deal ${dealId} blocked - ${emergencyStatus.reason}`);
+        toast({
+          title: "Analysis Blocked",
+          description: emergencyStatus.message || "Analysis is currently blocked for this deal",
+          variant: "destructive"
+        });
+        return { success: false, error: emergencyStatus.reason };
+      }
+    } catch (error) {
+      console.error('Emergency check failed:', error);
+      // Continue with fallback for non-critical errors
     }
 
     const {
@@ -60,7 +90,7 @@ export function useAnalysisQueue() {
       });
       return { success: false, error: error.message };
     }
-  }, [toast]);
+  }, [toast, isDealBlocked, isAnalysisDisabled, checkDealStatus]);
 
   const getQueueStatus = useCallback(async (dealId: string) => {
     try {
@@ -114,6 +144,17 @@ export function useAnalysisQueue() {
   }, [toast]);
 
   const forceAnalysisNow = useCallback(async (dealId: string) => {
+    // 🚨 EMERGENCY CHECK: Hard block for blacklisted deals
+    if (isDealBlocked(dealId)) {
+      console.log(`🚫 EMERGENCY BLOCK: Force analysis blocked for blacklisted deal ${dealId}`);
+      toast({
+        title: "Analysis Blocked",
+        description: "This deal is currently blocked from analysis due to system protection",
+        variant: "destructive"
+      });
+      return { success: false, error: 'Deal is emergency blocked' };
+    }
+
     // HARD SHUTDOWN: Analysis system disabled
     if (isAnalysisDisabled) {
       toast({
@@ -145,7 +186,7 @@ export function useAnalysisQueue() {
       console.error('Error forcing immediate analysis:', error);
       return { success: false, error: error.message };
     }
-  }, [queueDealAnalysis, toast]);
+  }, [queueDealAnalysis, toast, isDealBlocked, isAnalysisDisabled]);
 
   const toggleAutoAnalysis = useCallback(async (dealId: string, enabled: boolean, onSuccess?: () => void) => {
     try {

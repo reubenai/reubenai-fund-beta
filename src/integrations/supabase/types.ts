@@ -1865,6 +1865,27 @@ export type Database = {
           },
         ]
       }
+      emergency_deal_blacklist: {
+        Row: {
+          blocked_at: string | null
+          blocked_by: string | null
+          deal_id: string
+          reason: string
+        }
+        Insert: {
+          blocked_at?: string | null
+          blocked_by?: string | null
+          deal_id: string
+          reason: string
+        }
+        Update: {
+          blocked_at?: string | null
+          blocked_by?: string | null
+          deal_id?: string
+          reason?: string
+        }
+        Relationships: []
+      }
       emergency_ops_control: {
         Row: {
           control_key: string
@@ -4089,6 +4110,48 @@ export type Database = {
           subject?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      system_maintenance_config: {
+        Row: {
+          affected_services: string[] | null
+          analysis_engines_disabled: boolean
+          background_tasks_disabled: boolean
+          created_at: string
+          disabled_at: string | null
+          disabled_by: string | null
+          estimated_completion: string | null
+          id: string
+          maintenance_mode: boolean
+          maintenance_reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          affected_services?: string[] | null
+          analysis_engines_disabled?: boolean
+          background_tasks_disabled?: boolean
+          created_at?: string
+          disabled_at?: string | null
+          disabled_by?: string | null
+          estimated_completion?: string | null
+          id?: string
+          maintenance_mode?: boolean
+          maintenance_reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          affected_services?: string[] | null
+          analysis_engines_disabled?: boolean
+          background_tasks_disabled?: boolean
+          created_at?: string
+          disabled_at?: string | null
+          disabled_by?: string | null
+          estimated_completion?: string | null
+          id?: string
+          maintenance_mode?: boolean
+          maintenance_reason?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

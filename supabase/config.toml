@@ -187,3 +187,6 @@ verify_jwt = false
 
 [functions.enhanced-analysis-data-mapper]
 verify_jwt = false
+
+[functions.emergency-deal-checker]
+verify_jwt = false
