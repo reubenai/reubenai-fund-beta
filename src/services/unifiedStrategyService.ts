@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { EnhancedCriteriaTemplate, getTemplateByFundType, validateCriteriaWeights } from '@/types/vc-pe-criteria';
 import { DataTransformationUtils } from './dataTransformationUtils';
+import { strategyVersioningService } from './strategyVersioningService';
 import { 
   applySpecializations, 
   getStageSpecialization, 
