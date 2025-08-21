@@ -14,9 +14,9 @@ export class DataTransformationUtils {
       strategy_notes: wizardData.strategyDescription || '',
       investment_philosophy: wizardData.strategyDescription || '', // Use strategy description as philosophy for now
       
-      // Investment parameters - Use correct field names from interface
-      min_investment_amount: wizardData.checkSizeMin || null,
-      max_investment_amount: wizardData.checkSizeMax || null,
+      // Investment parameters - Use correct field names from wizard
+      min_investment_amount: wizardData.checkSizeRange?.min || null,
+      max_investment_amount: wizardData.checkSizeRange?.max || null,
       
       // Geography and industry mappings - Use correct field names
       geography: wizardData.geographies || [],
@@ -31,8 +31,11 @@ export class DataTransformationUtils {
       investment_stages: wizardData.stages || [],
       specialized_sectors: wizardData.sectors || [], // Use sectors as specialized sectors for now
       
-      // Key signals - not in wizard interface yet, use empty array
-      key_signals: [],
+      // Key signals from wizard
+      key_signals: wizardData.keySignals || [],
+      
+      // Fund name for enhanced strategies
+      fund_name: wizardData.fundName || '',
       exciting_threshold: wizardData.dealThresholds?.exciting || 85,
       promising_threshold: wizardData.dealThresholds?.promising || 70,
       needs_development_threshold: wizardData.dealThresholds?.needs_development || 50,
@@ -126,12 +129,10 @@ export class DataTransformationUtils {
   static transformDatabaseToUI(strategy: any): any {
     return {
       ...strategy,
-      // Map database fields back to UI field names
-      checkSizeMin: strategy.min_investment_amount || 0,
-      checkSizeMax: strategy.max_investment_amount || 0,
+      // Map database fields back to UI field names (checkSizeRange is primary)
       checkSizeRange: {
-        min: strategy.min_investment_amount,
-        max: strategy.max_investment_amount
+        min: strategy.min_investment_amount || 0,
+        max: strategy.max_investment_amount || 0
       },
       geographies: strategy.geography || [],
       sectors: strategy.industries || [],

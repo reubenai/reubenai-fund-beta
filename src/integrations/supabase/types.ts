@@ -3503,6 +3503,7 @@ export type Database = {
           enhanced_criteria: Json | null
           exciting_threshold: number | null
           fund_id: string
+          fund_name: string | null
           fund_type: string
           geography: string[] | null
           id: string
@@ -3528,6 +3529,7 @@ export type Database = {
           enhanced_criteria?: Json | null
           exciting_threshold?: number | null
           fund_id: string
+          fund_name?: string | null
           fund_type?: string
           geography?: string[] | null
           id?: string
@@ -3553,6 +3555,7 @@ export type Database = {
           enhanced_criteria?: Json | null
           exciting_threshold?: number | null
           fund_id?: string
+          fund_name?: string | null
           fund_type?: string
           geography?: string[] | null
           id?: string
@@ -3577,6 +3580,44 @@ export type Database = {
             columns: ["fund_id"]
             isOneToOne: true
             referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investment_strategy_versions: {
+        Row: {
+          change_reason: string | null
+          changed_by: string
+          created_at: string | null
+          id: string
+          strategy_id: string
+          strategy_snapshot: Json
+          version_number: number
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_by: string
+          created_at?: string | null
+          id?: string
+          strategy_id: string
+          strategy_snapshot: Json
+          version_number: number
+        }
+        Update: {
+          change_reason?: string | null
+          changed_by?: string
+          created_at?: string | null
+          id?: string
+          strategy_id?: string
+          strategy_snapshot?: Json
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_strategy_versions_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "investment_strategies"
             referencedColumns: ["id"]
           },
         ]

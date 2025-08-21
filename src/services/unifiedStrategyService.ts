@@ -252,42 +252,65 @@ class UnifiedStrategyService {
     }
   }
 
-  // Save strategy (always UPDATE since funds automatically get default strategies)
+  // Robust save strategy with upsert capability
   async saveStrategy(fundId: string, updates: any): Promise<EnhancedStrategy | null> {
-    console.log('💾 === SAVE STRATEGY SERVICE (UPDATE-ONLY) ===');
+    console.log('💾 === ROBUST SAVE STRATEGY SERVICE (UPSERT) ===');
     console.log('Fund ID:', fundId);
     console.log('Updates received:', JSON.stringify(updates, null, 2));
     
     try {
-      console.log('🔍 Getting existing strategy for fund...');
+      // Transform wizard data to database format first
+      const transformedData = DataTransformationUtils.transformWizardToDatabase(updates);
+      console.log('🔄 Transformed data:', JSON.stringify(transformedData, null, 2));
       
-      // First, get the existing strategy for this fund
-      const existingStrategy = await this.getFundStrategy(fundId);
-      
-      console.log('📊 Existing strategy result:', existingStrategy ? 'FOUND' : 'NOT FOUND');
-      console.log('Existing strategy ID:', existingStrategy?.id);
-      
-      if (!existingStrategy) {
-        const error = 'Strategy not found for fund. All funds should have default strategies.';
-        console.error('❌', error);
-        throw new Error(error);
+      // Validate the transformed data
+      const validation = DataTransformationUtils.validateStrategyData(transformedData, false);
+      if (!validation.isValid) {
+        console.error('❌ Validation errors:', validation.errors);
+        throw new Error(`Data validation failed: ${validation.errors.join(', ')}`);
       }
       
-      console.log('✅ Found existing strategy, calling updateFundStrategy...');
-      console.log('Strategy ID to update:', existingStrategy.id);
+      console.log('🔍 Checking for existing strategy...');
+      const existingStrategy = await this.getFundStrategy(fundId);
       
-      const result = await this.updateFundStrategy(existingStrategy.id!, updates);
-      
-      console.log('📈 Update result:', result ? 'SUCCESS' : 'FAILED');
-      console.log('Updated strategy ID:', result?.id);
-      
-      return result;
+      if (existingStrategy) {
+        console.log('✅ Found existing strategy, performing UPDATE');
+        return await this.updateFundStrategy(existingStrategy.id!, transformedData);
+      } else {
+        console.log('🆕 No existing strategy, performing INSERT');
+        return await this.createFundStrategy(fundId, transformedData);
+      }
     } catch (error) {
-      console.error('💥 Error in saveStrategy service:', error);
-      console.error('Error type:', typeof error);
-      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      console.error('💥 Error in robust saveStrategy:', error);
       throw error;
     }
+  }
+  
+  // Create new strategy for fund
+  private async createFundStrategy(fundId: string, strategyData: any): Promise<EnhancedStrategy | null> {
+    console.log('🆕 Creating new strategy for fund:', fundId);
+    
+    const insertData = {
+      fund_id: fundId,
+      fund_type: strategyData.fund_type || 'vc',
+      ...strategyData,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    const { data, error } = await supabase
+      .from('investment_strategies')
+      .insert(insertData)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('❌ Error creating strategy:', error);
+      throw new Error(`Failed to create strategy: ${error.message}`);
+    }
+    
+    console.log('✅ Successfully created strategy:', data.id);
+    return data as EnhancedStrategy;
   }
 
   // Phase 2: Enhanced strategy updates with comprehensive error logging

@@ -18,11 +18,21 @@ export interface EnhancedWizardData {
   fundName: string;
   strategyDescription: string;
   fundType: 'vc' | 'pe';
-  checkSizeMin: number;
-  checkSizeMax: number;
+  checkSizeRange: { min: number; max: number };
   sectors: string[];
   stages: string[];
   geographies: string[];
+  keySignals: string[];
+  
+  // Enhanced philosophy data
+  investmentPhilosophy?: string;
+  philosophyConfig?: {
+    investmentDrivers: string[];
+    riskTolerance: string;
+    investmentHorizon: string;
+    valueCreationApproach: string[];
+    diversityPreference?: string[];
+  };
   
   // Category Configurations (Steps 3-8)
   teamLeadershipConfig: CategoryCustomization;
