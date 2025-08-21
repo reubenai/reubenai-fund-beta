@@ -29,6 +29,22 @@ serve(async (req) => {
   try {
     const { dealData, researchType, searchDepth = 'detailed' }: WebResearchRequest = await req.json();
     
+    // 🚨 EMERGENCY HARDCODED BLOCK FOR KERNEL & ASTRO DEALS
+    const BLOCKED_DEALS = ['7ac26a5f-34c9-4d30-b09c-c05d1d1df81d', '98c22f44-87c7-4808-be1c-31929c3da52f'];
+    if (BLOCKED_DEALS.includes(dealData.id)) {
+      console.log(`🛑 EMERGENCY BLOCK: Web research terminated for blocked deal: ${dealData.id}`);
+      return new Response(JSON.stringify({
+        success: false,
+        data: { emergency_block: true },
+        sources: [],
+        confidence: 0,
+        error: 'EMERGENCY_SHUTDOWN_ACTIVE: Deal processing blocked by emergency protocol'
+      }), {
+        status: 423, // Locked status
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
     console.log('🔍 Web Research Engine: Conducting', researchType, 'research for:', dealData.company_name);
     
     // Conduct comprehensive web research

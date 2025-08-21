@@ -71,6 +71,23 @@ serve(async (req) => {
   try {
     const request: OrchestrationRequest = await req.json();
     
+    // 🚨 EMERGENCY HARDCODED BLOCK FOR KERNEL & ASTRO DEALS
+    const BLOCKED_DEALS = ['7ac26a5f-34c9-4d30-b09c-c05d1d1df81d', '98c22f44-87c7-4808-be1c-31929c3da52f'];
+    if (BLOCKED_DEALS.includes(request.deal_id)) {
+      console.log(`🛑 EMERGENCY BLOCK: Orchestrator terminated for blocked deal: ${request.deal_id}`);
+      return new Response(JSON.stringify({
+        success: false,
+        workflow_id: request.workflow_id || 'unknown',
+        status: 'emergency_blocked',
+        error: 'EMERGENCY_SHUTDOWN_ACTIVE: Deal processing blocked by emergency protocol',
+        steps_completed: 0,
+        total_steps: 0
+      }), {
+        status: 423, // Locked status
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
     console.log(`🎼 [Orchestrator] Starting workflow: ${request.workflow_type}`);
     console.log(`📍 [Orchestrator] Context: org=${request.org_id}, fund=${request.fund_id}, deal=${request.deal_id}`);
 

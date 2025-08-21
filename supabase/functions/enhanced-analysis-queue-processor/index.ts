@@ -77,6 +77,26 @@ serve(async (req) => {
       const itemStartTime = Date.now();
       
       try {
+        // 🚨 EMERGENCY HARDCODED BLOCK FOR KERNEL & ASTRO DEALS
+        const BLOCKED_DEALS = ['7ac26a5f-34c9-4d30-b09c-c05d1d1df81d', '98c22f44-87c7-4808-be1c-31929c3da52f'];
+        if (BLOCKED_DEALS.includes(item.deal_id)) {
+          console.log(`🛑 EMERGENCY BLOCK: Queue processor skipping blocked deal: ${item.deal_id}`);
+          
+          // Mark as failed with emergency block reason
+          await supabase
+            .from('analysis_queue')
+            .update({
+              status: 'failed',
+              error_message: 'EMERGENCY_SHUTDOWN_ACTIVE: Deal processing blocked by emergency protocol',
+              completed_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', item.id);
+            
+          failedCount++;
+          continue; // Skip to next item
+        }
+        
         console.log(`🔄 Processing queue item ${item.id} for deal ${item.deal_id}`);
 
         // Mark as processing

@@ -29,6 +29,23 @@ serve(async (req) => {
   try {
     const { dealData, strategyData, documentData }: ThesisAnalysisRequest = await req.json();
     
+    // 🚨 EMERGENCY HARDCODED BLOCK FOR KERNEL & ASTRO DEALS
+    const BLOCKED_DEALS = ['7ac26a5f-34c9-4d30-b09c-c05d1d1df81d', '98c22f44-87c7-4808-be1c-31929c3da52f'];
+    if (BLOCKED_DEALS.includes(dealData.id)) {
+      console.log(`🛑 EMERGENCY BLOCK: Thesis alignment terminated for blocked deal: ${dealData.id}`);
+      return new Response(JSON.stringify({
+        score: 0,
+        analysis: 'EMERGENCY_SHUTDOWN_ACTIVE: Deal processing blocked by emergency protocol',
+        confidence: 0,
+        sources: [],
+        data: { emergency_block: true },
+        validation_status: 'emergency_blocked'
+      }), {
+        status: 423, // Locked status
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
     console.log('🎯 Investment Thesis Alignment Engine: Analyzing deal:', dealData.company_name);
     
     // Analyze alignment with fund strategy
