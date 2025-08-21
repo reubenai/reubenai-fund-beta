@@ -40,7 +40,7 @@ export function CleanThesisConfiguration({
 }: CleanThesisConfigurationProps) {
   const [editedStrategy, setEditedStrategy] = useState<Partial<EnhancedStrategy>>(strategy);
   const [criteriaEditing, setCriteriaEditing] = useState(false);
-  const { updateStrategy, loading } = useUnifiedStrategy(fundId); // Pass fundId to hook
+  const { updateStrategy, saveStrategy, loading } = useUnifiedStrategy(fundId); // Pass fundId to hook
   const { canConfigureStrategy } = usePermissions();
   const { toast } = useToast();
 
@@ -60,16 +60,6 @@ export function CleanThesisConfiguration({
     console.log('Edited Strategy:', editedStrategy);
     console.log('Current Strategy:', strategy);
     console.log('Fund ID:', fundId);
-    
-    if (!strategy?.id) {
-      console.error('No strategy ID found - cannot save');
-      toast({
-        title: 'Error',
-        description: 'Strategy not properly initialized. Please refresh the page.',
-        variant: 'destructive'
-      });
-      return;
-    }
 
     if (!fundId) {
       console.error('No fund ID provided - cannot save');
@@ -82,15 +72,61 @@ export function CleanThesisConfiguration({
     }
 
     try {
-      const updatesWithId = {
-        ...editedStrategy,
-        id: strategy.id,
-        fund_id: fundId, // Ensure fund_id is always present
-        fund_type: strategy.fund_type || 'vc' // Ensure fund_type is present
-      };
+      let result;
       
-      console.log('Calling updateStrategy with:', updatesWithId);
-      const result = await updateStrategy(updatesWithId);
+      // Check if we have an existing strategy with ID (update) or need to create new (save)
+      if (strategy?.id) {
+        console.log('📝 Updating existing strategy with ID:', strategy.id);
+        const updatesWithId = {
+          ...editedStrategy,
+          id: strategy.id,
+          fund_id: fundId,
+          fund_type: strategy.fund_type || 'vc'
+        };
+        
+        console.log('Calling updateStrategy with:', updatesWithId);
+        result = await updateStrategy(updatesWithId);
+      } else {
+        console.log('✨ Creating new strategy');
+        // Convert form data to wizard format for saveStrategy
+        const defaultCategoryConfig = {
+          weight: 20,
+          subcategories: {},
+          positiveSignals: [],
+          negativeSignals: []
+        };
+        
+        const wizardData = {
+          fundName: fundId, // Use fundId as fallback
+          fundType: (strategy.fund_type || 'vc') as 'vc' | 'pe',
+          sectors: editedStrategy.industries || [],
+          stages: ['Series A'], // Default stage
+          geographies: editedStrategy.geography || [],
+          checkSizeRange: {
+            min: editedStrategy.min_investment_amount || 0,
+            max: editedStrategy.max_investment_amount || 0
+          },
+          dealThresholds: {
+            exciting: editedStrategy.exciting_threshold || 85,
+            promising: editedStrategy.promising_threshold || 70,
+            needs_development: editedStrategy.needs_development_threshold || 50
+          },
+          keySignals: editedStrategy.key_signals || [],
+          investmentThesis: editedStrategy.strategy_notes || '',
+          strategyDescription: editedStrategy.strategy_notes || '',
+          enhancedCriteria: strategy.enhanced_criteria?.categories || [],
+          // Required wizard config fields with proper CategoryCustomization objects
+          teamLeadershipConfig: { ...defaultCategoryConfig, weight: 20 },
+          marketOpportunityConfig: { ...defaultCategoryConfig, weight: 25 },
+          productTechnologyConfig: { ...defaultCategoryConfig, weight: 20 },
+          businessTractionConfig: { ...defaultCategoryConfig, weight: 15 },
+          financialHealthConfig: { ...defaultCategoryConfig, weight: 15 },
+          strategicFitConfig: { ...defaultCategoryConfig, weight: 5 }
+        };
+        
+        console.log('Calling saveStrategy with wizard data:', wizardData);
+        result = await saveStrategy(strategy.fund_type || 'vc', wizardData);
+      }
       
       if (result) {
         console.log('Save successful:', result);
