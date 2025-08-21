@@ -450,8 +450,20 @@ class UnifiedStrategyService {
       console.log('🎯 Final update object:', JSON.stringify(updateObject, null, 2));
       console.log('🚀 CODE VERSION: 2025-08-20-v3 - ENHANCED ERROR HANDLING');
       
-      // Perform the UPDATE operation
+      // Perform the UPDATE operation with proper error handling
       console.log('🚀 Updating strategy with ID:', strategyId);
+      
+      // First verify the strategy exists
+      const { data: existingStrategy, error: fetchError } = await supabase
+        .from('investment_strategies')
+        .select('id')
+        .eq('id', strategyId)
+        .single();
+        
+      if (fetchError || !existingStrategy) {
+        throw new Error(`Strategy with ID ${strategyId} not found`);
+      }
+      
       const { data, error } = await supabase
         .from('investment_strategies')
         .update(updateObject)
