@@ -253,14 +253,55 @@ class UnifiedStrategyService {
     }
   }
 
-  // Robust save strategy with upsert capability
+  // Robust save strategy with comprehensive auth validation
   async saveStrategy(fundId: string, updates: any): Promise<EnhancedStrategy | null> {
-    console.log('💾 === ROBUST SAVE STRATEGY SERVICE (UPSERT) ===');
+    console.log('💾 === SECURE SAVE STRATEGY SERVICE (UPSERT) ===');
     console.log('Fund ID:', fundId);
     console.log('Updates received:', JSON.stringify(updates, null, 2));
     
     try {
-      // Transform wizard data to database format first
+      // CRITICAL: Validate authentication context first
+      console.log('🔐 Validating authentication context...');
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (authError || sessionError) {
+        console.error('❌ Auth validation failed:', authError || sessionError);
+        throw new Error(`Authentication error: ${(authError || sessionError)?.message}`);
+      }
+      
+      if (!user || !session) {
+        console.error('❌ No authenticated user or session');
+        throw new Error('Authentication required: Please log in to save strategy');
+      }
+      
+      console.log('✅ Auth context validated for user:', user.email);
+
+      // Test database access with current auth context
+      console.log('🧪 Testing database access...');
+      const { error: testError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .limit(1);
+        
+      if (testError) {
+        console.error('❌ Database access test failed:', testError);
+        
+        // Try to refresh session if database access fails
+        console.log('🔄 Attempting session refresh...');
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshedSession) {
+          throw new Error(`Database access denied. Session refresh ${refreshError ? 'failed: ' + refreshError.message : 'returned no session'}. Please log out and log back in.`);
+        }
+        
+        console.log('✅ Session refreshed, retrying database access...');
+      } else {
+        console.log('✅ Database access confirmed');
+      }
+
+      // Transform wizard data to database format
       const transformedData = DataTransformationUtils.transformWizardToDatabase(updates);
       console.log('🔄 Transformed data:', JSON.stringify(transformedData, null, 2));
       
@@ -276,13 +317,57 @@ class UnifiedStrategyService {
       
       if (existingStrategy) {
         console.log('✅ Found existing strategy, performing UPDATE');
-        return await this.updateFundStrategy(existingStrategy.id!, transformedData);
+        return await this.updateFundStrategyWithRetry(existingStrategy.id!, transformedData);
       } else {
         console.log('🆕 No existing strategy, performing INSERT');
-        return await this.createFundStrategy(fundId, transformedData);
+        return await this.createFundStrategyWithRetry(fundId, transformedData);
       }
     } catch (error) {
-      console.error('💥 Error in robust saveStrategy:', error);
+      console.error('💥 Error in secure saveStrategy:', error);
+      throw error;
+    }
+  }
+
+  // Create with retry logic for auth failures
+  private async createFundStrategyWithRetry(fundId: string, strategyData: any, retryCount = 0): Promise<EnhancedStrategy | null> {
+    try {
+      return await this.createFundStrategy(fundId, strategyData);
+    } catch (error) {
+      const isAuthError = error instanceof Error && (
+        error.message.includes('JWT') || 
+        error.message.includes('permission') ||
+        error.message.includes('access denied')
+      );
+      
+      if (isAuthError && retryCount < 1) {
+        console.log('🔄 Auth error on create, refreshing session and retrying...');
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (!refreshError) {
+          return this.createFundStrategyWithRetry(fundId, strategyData, retryCount + 1);
+        }
+      }
+      throw error;
+    }
+  }
+
+  // Update with retry logic for auth failures
+  private async updateFundStrategyWithRetry(strategyId: string, updates: any, retryCount = 0): Promise<EnhancedStrategy | null> {
+    try {
+      return await this.updateFundStrategy(strategyId, updates);
+    } catch (error) {
+      const isAuthError = error instanceof Error && (
+        error.message.includes('JWT') || 
+        error.message.includes('permission') ||
+        error.message.includes('access denied')
+      );
+      
+      if (isAuthError && retryCount < 1) {
+        console.log('🔄 Auth error on update, refreshing session and retrying...');
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (!refreshError) {
+          return this.updateFundStrategyWithRetry(strategyId, updates, retryCount + 1);
+        }
+      }
       throw error;
     }
   }
