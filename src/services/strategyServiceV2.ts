@@ -6,7 +6,7 @@ export interface StrategyV2 {
   fund_id: string;
   fund_name: string;
   strategy_description?: string;
-  fund_type: 'venture_capital' | 'private_equity';
+  fund_type: 'vc' | 'pe'; // V2 uses short form to match database constraint
   sectors: string[];
   stages: string[];
   geographies: string[];
@@ -53,7 +53,7 @@ class StrategyServiceV2 {
   }
 
   async saveStrategy(fundId: string, wizardData: EnhancedWizardData): Promise<StrategyV2> {
-    console.log('💾 [V2] ENHANCED SAVE with Data Integrity Fixes...');
+    console.log('💾 [V2] ALWAYS UPDATE - Default strategy exists for all funds');
     console.log('Fund ID:', fundId);
     console.log('Wizard Data Keys:', Object.keys(wizardData));
 
@@ -90,22 +90,22 @@ class StrategyServiceV2 {
         const checkSizeMax = wizardData.checkSizeRange?.max ? 
           BigInt(Math.round(wizardData.checkSizeRange.max)) : null;
           
-        // PHASE 1: Fix fund type conversion - CRITICAL FIX
-        const convertFundType = (type: 'vc' | 'pe' | 'venture_capital' | 'private_equity'): 'venture_capital' | 'private_equity' => {
-          if (type === 'vc') return 'venture_capital';
-          if (type === 'pe') return 'private_equity';
-          if (type === 'venture_capital' || type === 'private_equity') return type;
-          console.warn('⚠️ [V2] Unknown fund type, defaulting to venture_capital:', type);
-          return 'venture_capital';
+        // PHASE 1: Convert fund type for V2 compatibility (use short form for V2 table)
+        const convertFundType = (type: 'vc' | 'pe' | 'venture_capital' | 'private_equity'): 'vc' | 'pe' => {
+          if (type === 'vc') return 'vc';
+          if (type === 'pe') return 'pe';
+          if (type === 'venture_capital') return 'vc';
+          if (type === 'private_equity') return 'pe';
+          console.warn('⚠️ [V2] Unknown fund type, defaulting to vc:', type);
+          return 'vc';
         };
         
         // PHASE 1: Comprehensive data mapping with all required fields
         const strategyData: any = {
-          fund_id: fundId,
           fund_name: fundData.name || `Fund ${fundId}`, // Use actual fund name
           organization_id: fundData.organization_id, // CRITICAL: NOT NULL field
           strategy_description: wizardData.strategyDescription || '',
-          fund_type: convertFundType(wizardData.fundType), // FIXED: Convert to DB enum values
+          fund_type: convertFundType(wizardData.fundType), // Convert to V2 format (vc/pe)
           sectors: wizardData.sectors || [],
           stages: wizardData.stages || ['Series A'], // Default stage if missing
           geographies: wizardData.geographies || [],
@@ -129,78 +129,36 @@ class StrategyServiceV2 {
           enhanced_criteria: wizardData.enhancedCriteria || [],
         };
         
-        // PHASE 1: Pre-flight validation of critical NOT NULL fields
-        if (!strategyData.fund_id) throw new Error('fund_id is required');
+        // PHASE 1: Pre-flight validation of critical NOT NULL fields  
         if (!strategyData.fund_name) throw new Error('fund_name is required'); 
         if (!strategyData.fund_type) throw new Error('fund_type is required');
         if (!strategyData.organization_id) throw new Error('organization_id is required');
         
         console.log('✅ [V2] Pre-flight validation passed');
-        console.log('🚀 [V2] FIXED: Enhanced mapped data with fund type conversion:', {
-          fund_id: strategyData.fund_id,
+        console.log('🚀 [V2] SIMPLIFIED: Mapped data for UPDATE operation:', {
+          fund_id: fundId,
           fund_name: strategyData.fund_name,
           organization_id: strategyData.organization_id,
           fund_type: `${wizardData.fundType} → ${strategyData.fund_type}`, // Show conversion
           check_sizes: { min: checkSizeMin?.toString(), max: checkSizeMax?.toString() }
         });
 
-        // PHASE 2: Connection health check before database operation
-        console.log('🧪 [V2] Phase 2: Testing database connectivity...');
-        try {
-          const { error: healthError } = await supabase
-            .from('investment_strategies_v2')
-            .select('id')
-            .limit(1);
-            
-          if (healthError && !healthError.message.includes('Results contain 0 rows')) {
-            console.warn('⚠️ [V2] Database connectivity issue detected:', healthError);
-            throw new Error(`Database connectivity issue: ${healthError.message}`);
-          }
-          console.log('✅ [V2] Database connectivity confirmed');
-        } catch (connError) {
-          console.warn('⚠️ [V2] Connection health check failed:', connError);
-          // Continue with operation but log the issue
-        }
-
-        // Check if strategy exists
-        const existing = await this.getFundStrategy(fundId);
-        
-        let result;
-        if (existing) {
-          // Update existing
-          console.log('🔄 [V2] Updating existing strategy:', existing.id);
-          const { data, error } = await supabase
-            .from('investment_strategies_v2')
-            .update(strategyData)
-            .eq('fund_id', fundId)
-            .select()
-            .single();
-            
-          if (error) {
-            console.error('❌ [V2] Update operation failed:', error);
-            throw error;
-          }
+        // PHASE 2: ALWAYS UPDATE - Default record exists for all funds
+        console.log('🔄 [V2] ALWAYS UPDATE - Default strategy exists, performing UPDATE');
+        const { data, error } = await supabase
+          .from('investment_strategies_v2')
+          .update(strategyData)
+          .eq('fund_id', fundId)
+          .select()
+          .single();
           
-          result = data;
-        } else {
-          // Insert new
-          console.log('➕ [V2] Creating new strategy');
-          const { data, error } = await supabase
-            .from('investment_strategies_v2')
-            .insert(strategyData)
-            .select()
-            .single();
-            
-          if (error) {
-            console.error('❌ [V2] Insert operation failed:', error);
-            throw error;
-          }
-          
-          result = data;
+        if (error) {
+          console.error('❌ [V2] Update operation failed:', error);
+          throw error;
         }
         
-        console.log('✅ [V2] Strategy saved successfully with data integrity');
-        return result as StrategyV2;
+        console.log('✅ [V2] Strategy updated successfully');
+        return data as StrategyV2;
         
       } catch (error: any) {
         attempt++;
@@ -300,10 +258,9 @@ class StrategyServiceV2 {
 
   // Convert V2 strategy back to legacy format for compatibility
   convertToLegacyFormat(strategyV2: StrategyV2): any {
-    // Convert fund type back to short form for legacy compatibility
-    const convertToLegacyFundType = (type: 'venture_capital' | 'private_equity'): 'vc' | 'pe' => {
-      if (type === 'venture_capital') return 'vc';
-      if (type === 'private_equity') return 'pe';
+    // V2 already uses short form fund types (vc/pe), so direct mapping
+    const convertToLegacyFundType = (type: 'vc' | 'pe'): 'vc' | 'pe' => {
+      if (type === 'vc' || type === 'pe') return type;
       console.warn('⚠️ [V2] Unknown V2 fund type, defaulting to vc:', type);
       return 'vc';
     };
@@ -333,11 +290,12 @@ class StrategyServiceV2 {
   convertLegacyUpdates(legacyUpdates: any): Partial<StrategyV2> {
     const v2Updates: Partial<StrategyV2> = {};
 
-    // Convert fund type to V2 format
-    const convertToV2FundType = (type: 'vc' | 'pe' | 'venture_capital' | 'private_equity'): 'venture_capital' | 'private_equity' | undefined => {
-      if (type === 'vc') return 'venture_capital';
-      if (type === 'pe') return 'private_equity';  
-      if (type === 'venture_capital' || type === 'private_equity') return type;
+    // Convert fund type to V2 format (V2 uses short form: vc/pe)
+    const convertToV2FundType = (type: 'vc' | 'pe' | 'venture_capital' | 'private_equity'): 'vc' | 'pe' | undefined => {
+      if (type === 'vc') return 'vc';
+      if (type === 'pe') return 'pe';  
+      if (type === 'venture_capital') return 'vc';
+      if (type === 'private_equity') return 'pe';
       if (type) console.warn('⚠️ [V2] Unknown legacy fund type:', type);
       return undefined;
     };
