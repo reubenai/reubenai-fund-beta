@@ -53,7 +53,7 @@ class StrategyServiceV2 {
   }
 
   async saveStrategy(fundId: string, wizardData: EnhancedWizardData): Promise<StrategyV2> {
-    console.log('💾 [V2] Saving strategy with retry logic...');
+    console.log('💾 [V2] ENHANCED SAVE with Data Integrity Fixes...');
     console.log('Fund ID:', fundId);
     console.log('Wizard Data Keys:', Object.keys(wizardData));
 
@@ -64,19 +64,46 @@ class StrategyServiceV2 {
       try {
         console.log(`🔄 [V2] Save attempt ${attempt + 1}/${maxAttempts}`);
         
-        // Direct 1:1 mapping from wizard to database - no transformations!
+        // PHASE 1: Get actual fund data and validate requirements
+        console.log('🔍 [V2] Phase 1: Fetching fund data and validating...');
+        
+        const { data: fundData, error: fundError } = await supabase
+          .from('funds')
+          .select('name, organization_id')
+          .eq('id', fundId)
+          .single();
+          
+        if (fundError) {
+          console.error('❌ [V2] Fund lookup error:', fundError);
+          throw new Error(`Fund lookup failed: ${fundError.message}`);
+        }
+        
+        if (!fundData) {
+          throw new Error(`Fund ${fundId} not found`);
+        }
+        
+        console.log('✅ [V2] Fund data retrieved:', fundData);
+        
+        // PHASE 1: Data type conversion and validation
+        const checkSizeMin = wizardData.checkSizeRange?.min ? 
+          BigInt(Math.round(wizardData.checkSizeRange.min)) : null;
+        const checkSizeMax = wizardData.checkSizeRange?.max ? 
+          BigInt(Math.round(wizardData.checkSizeRange.max)) : null;
+          
+        // PHASE 1: Comprehensive data mapping with all required fields
         const strategyData: any = {
           fund_id: fundId,
-          fund_name: wizardData.fundName,
-          strategy_description: wizardData.strategyDescription,
+          fund_name: fundData.name || `Fund ${fundId}`, // Use actual fund name
+          organization_id: fundData.organization_id, // CRITICAL: NOT NULL field
+          strategy_description: wizardData.strategyDescription || '',
           fund_type: wizardData.fundType,
           sectors: wizardData.sectors || [],
-          stages: wizardData.stages || [],
+          stages: wizardData.stages || ['Series A'], // Default stage if missing
           geographies: wizardData.geographies || [],
-          check_size_min: wizardData.checkSizeRange?.min,
-          check_size_max: wizardData.checkSizeRange?.max,
+          check_size_min: checkSizeMin, // Converted to bigint
+          check_size_max: checkSizeMax, // Converted to bigint
           key_signals: wizardData.keySignals || [],
-          investment_philosophy: wizardData.investmentPhilosophy,
+          investment_philosophy: wizardData.investmentPhilosophy || '',
           philosophy_config: wizardData.philosophyConfig || {},
           research_approach: wizardData.researchApproach || {},
           deal_sourcing_strategy: wizardData.dealSourcingStrategy || {},
@@ -92,8 +119,39 @@ class StrategyServiceV2 {
           needs_development_threshold: wizardData.dealThresholds?.needs_development || 50,
           enhanced_criteria: wizardData.enhancedCriteria || [],
         };
+        
+        // PHASE 1: Pre-flight validation of critical NOT NULL fields
+        if (!strategyData.fund_id) throw new Error('fund_id is required');
+        if (!strategyData.fund_name) throw new Error('fund_name is required'); 
+        if (!strategyData.fund_type) throw new Error('fund_type is required');
+        if (!strategyData.organization_id) throw new Error('organization_id is required');
+        
+        console.log('✅ [V2] Pre-flight validation passed');
+        console.log('🚀 [V2] Enhanced mapped data with data integrity:', {
+          fund_id: strategyData.fund_id,
+          fund_name: strategyData.fund_name,
+          organization_id: strategyData.organization_id,
+          fund_type: strategyData.fund_type,
+          check_sizes: { min: checkSizeMin?.toString(), max: checkSizeMax?.toString() }
+        });
 
-        console.log('🚀 [V2] Direct mapped data:', strategyData);
+        // PHASE 2: Connection health check before database operation
+        console.log('🧪 [V2] Phase 2: Testing database connectivity...');
+        try {
+          const { error: healthError } = await supabase
+            .from('investment_strategies_v2')
+            .select('id')
+            .limit(1);
+            
+          if (healthError && !healthError.message.includes('Results contain 0 rows')) {
+            console.warn('⚠️ [V2] Database connectivity issue detected:', healthError);
+            throw new Error(`Database connectivity issue: ${healthError.message}`);
+          }
+          console.log('✅ [V2] Database connectivity confirmed');
+        } catch (connError) {
+          console.warn('⚠️ [V2] Connection health check failed:', connError);
+          // Continue with operation but log the issue
+        }
 
         // Check if strategy exists
         const existing = await this.getFundStrategy(fundId);
@@ -110,6 +168,7 @@ class StrategyServiceV2 {
             .single();
             
           if (error) {
+            console.error('❌ [V2] Update operation failed:', error);
             throw error;
           }
           
@@ -124,43 +183,86 @@ class StrategyServiceV2 {
             .single();
             
           if (error) {
+            console.error('❌ [V2] Insert operation failed:', error);
             throw error;
           }
           
           result = data;
         }
         
-        console.log('✅ [V2] Strategy saved successfully');
+        console.log('✅ [V2] Strategy saved successfully with data integrity');
         return result as StrategyV2;
         
       } catch (error: any) {
         attempt++;
         console.error(`❌ [V2] Save attempt ${attempt} failed:`, error);
         
-        // Check if it's a retryable error (network/connectivity issues)
-        const isRetryableError = (
+        // PHASE 2: Enhanced error classification and retry logic
+        const isNetworkError = (
           error.message?.includes('Failed to fetch') ||
           error.message?.includes('NetworkError') ||
           error.message?.includes('timeout') ||
-          error.message?.includes('violates row-level security') ||
-          error.code === 'PGRST301' ||
-          error.status === 0 ||
+          error.message?.includes('ERR_NETWORK') ||
+          error.code === 'NETWORK_ERROR' ||
+          error.status === 0
+        );
+        
+        const isServerError = (
           error.status === 500 ||
           error.status === 502 ||
           error.status === 503 ||
-          error.status === 504
+          error.status === 504 ||
+          error.code === 'PGRST301'
         );
         
+        const isAuthError = (
+          error.message?.includes('violates row-level security') ||
+          error.message?.includes('JWT') ||
+          error.status === 401 ||
+          error.status === 403
+        );
+        
+        const isDataIntegrityError = (
+          error.message?.includes('violates not-null constraint') ||
+          error.message?.includes('violates foreign key constraint') ||
+          error.message?.includes('duplicate key') ||
+          error.code === '23502' || // not-null violation
+          error.code === '23503' || // foreign key violation
+          error.code === '23505'    // unique violation
+        );
+        
+        console.log('🔍 [V2] Error classification:', {
+          isNetworkError,
+          isServerError, 
+          isAuthError,
+          isDataIntegrityError,
+          errorCode: error.code,
+          errorStatus: error.status
+        });
+        
+        const isRetryableError = isNetworkError || isServerError || (isAuthError && attempt === 1);
+        
         if (attempt < maxAttempts && isRetryableError) {
-          const delay = 1000 * attempt; // Increasing delay: 1s, 2s, 3s
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff: 1s, 2s, 4s max
           console.log(`🔄 [V2] Retryable error detected, waiting ${delay}ms before retry...`);
+          console.log(`🔧 [V2] Error type: ${isNetworkError ? 'Network' : isServerError ? 'Server' : 'Auth'}`);
           await new Promise(resolve => setTimeout(resolve, delay));
           continue;
         }
         
-        // If not retryable or out of attempts, throw the error
+        // Enhanced error message for debugging
+        let errorContext = `Attempt ${attempt}/${maxAttempts}`;
+        if (isDataIntegrityError) {
+          errorContext += ' - Data integrity violation (check required fields)';
+        } else if (isNetworkError) {
+          errorContext += ' - Network connectivity issue';
+        } else if (isAuthError) {
+          errorContext += ' - Authentication/authorization issue';
+        }
+        
         console.error(`💥 [V2] ${isRetryableError ? 'All retry attempts exhausted' : 'Non-retryable error'}`);
-        throw new Error(`Failed to save strategy: ${error.message}`);
+        console.error(`🔍 [V2] Error context: ${errorContext}`);
+        throw new Error(`Failed to save strategy: ${error.message} (${errorContext})`);
       }
     }
     

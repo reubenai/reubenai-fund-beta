@@ -84,13 +84,12 @@ export function CleanThesisConfiguration({
           id: strategy.id,
           fund_id: fundId,
           fund_type: strategy.fund_type || 'vc',
-          // Map legacy field names to V2 format - use safe access
-          fund_name: `Fund ${fundId}`, // Default fund name
+          // Map legacy field names to V2 format with proper data types
           sectors: editedStrategy.industries || strategy.industries || [],
           stages: ['Series A'], // Default stage since it's not in EnhancedStrategy
           geographies: editedStrategy.geography || strategy.geography || [],
-          check_size_min: editedStrategy.min_investment_amount,
-          check_size_max: editedStrategy.max_investment_amount,
+          min_investment_amount: editedStrategy.min_investment_amount,
+          max_investment_amount: editedStrategy.max_investment_amount,
           key_signals: editedStrategy.key_signals || [],
           strategy_description: editedStrategy.strategy_notes,
           investment_philosophy: editedStrategy.strategy_notes, // Use strategy_notes as fallback
@@ -122,7 +121,7 @@ export function CleanThesisConfiguration({
         };
         
         const wizardData = {
-          fundName: `Fund ${fundId}`,
+          fundName: (strategy as any).fund_name || `Fund ${fundId}`, // Use existing fund name if available
           fundType: (strategy.fund_type || 'vc') as 'vc' | 'pe',
           sectors: editedStrategy.industries || [],
           stages: ['Series A'],

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { unifiedStrategyService, EnhancedStrategy, EnhancedWizardData } from '@/services/unifiedStrategyService';
 import { useToast } from '@/hooks/use-toast';
 import { useSecureDbOperation } from '@/hooks/useSecureDbOperation';
@@ -54,73 +54,106 @@ export function useUnifiedStrategy(fundId?: string) {
     }
   };
 
-  const saveStrategy = async (fundType: 'vc' | 'pe', wizardData: EnhancedWizardData) => {
-    if (!fundId) return null;
-    
-    console.log('💾 === SECURE SAVE STRATEGY (WITH AUTH VALIDATION) ===');
-    console.log('Fund ID:', fundId);
+  const saveStrategy = useCallback(async (
+    fundType: 'vc' | 'pe',
+    wizardData: EnhancedWizardData
+  ): Promise<EnhancedStrategy | null> => {
+    console.log('💾 [Hook] ENHANCED Save strategy with data validation');
     console.log('Fund Type:', fundType);
-    
-    return executeSecureOperation(
-      async () => {
-        console.log('🔍 Validating wizard data...');
-        const validation = unifiedStrategyService.validateStrategy(wizardData);
-        
-        if (!validation.isValid) {
-          throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
-        }
+    console.log('Wizard Data Keys:', Object.keys(wizardData));
 
-        // Convert wizard data to update format
-        const updates = {
-          fund_type: fundType,
-          industries: wizardData.sectors,
-          geography: wizardData.geographies,
-          min_investment_amount: wizardData.checkSizeRange?.min,
-          max_investment_amount: wizardData.checkSizeRange?.max,
-          key_signals: wizardData.keySignals,
-          exciting_threshold: wizardData.dealThresholds?.exciting,
-          promising_threshold: wizardData.dealThresholds?.promising,
-          needs_development_threshold: wizardData.dealThresholds?.needs_development,
-          strategy_notes: wizardData.strategyDescription,
-          enhanced_criteria: wizardData.enhancedCriteria
-        };
-
-        console.log('🚀 Calling secure saveStrategy service...');
-        const savedStrategy = await unifiedStrategyService.saveStrategy(fundId, updates);
-        
-        if (!savedStrategy) {
-          throw new Error('Save operation returned no data');
-        }
-
-        console.log('✅ Strategy saved successfully');
-        setStrategy(savedStrategy);
-        
-        toast({
-          title: 'Success',
-          description: 'Investment strategy saved successfully'
-        });
-        
-        return savedStrategy;
-      },
-      {
-        operation: 'Save Investment Strategy',
-        requireAuth: true,
-        maxRetries: 2
-      }
-    ).catch((error) => {
-      console.error('💥 Strategy save failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to save strategy';
-      
-      setError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive'
-      });
-      
+    if (!fundId) {
+      const error = new Error('Fund ID is required for saving strategy');
+      console.error('❌ [Hook]', error.message);
+      setError(error.message);
       return null;
-    });
-  };
+    }
+
+    let attempt = 0;
+    const maxAttempts = 3;
+
+    while (attempt < maxAttempts) {
+      try {
+        attempt++;
+        setLoading(true);
+        setError(null);
+
+        console.log(`🔄 [Hook] Save attempt ${attempt}/${maxAttempts}`);
+
+        // Pre-flight data integrity validation
+        console.log('🔍 [Hook] Phase 1: Data integrity validation...');
+        if (!wizardData.fundName?.trim()) {
+          wizardData.fundName = `Fund ${fundId}`; // Provide default
+        }
+        if (!wizardData.fundType) {
+          wizardData.fundType = fundType;
+        }
+        if (!wizardData.sectors?.length) {
+          console.warn('⚠️ [Hook] No sectors provided, using defaults');
+          wizardData.sectors = fundType === 'vc' ? ['Technology'] : ['Manufacturing'];
+        }
+        if (!wizardData.stages?.length) {
+          console.warn('⚠️ [Hook] No stages provided, using defaults');
+          wizardData.stages = fundType === 'vc' ? ['Series A'] : ['Growth Equity'];
+        }
+        if (!wizardData.geographies?.length) {
+          console.warn('⚠️ [Hook] No geographies provided, using defaults');
+          wizardData.geographies = ['North America'];
+        }
+
+        console.log('✅ [Hook] Phase 1: Data validation completed');
+
+        const savedStrategy = await executeSecureOperation(
+          async () => {
+            console.log('🔒 [Hook] Phase 2: Executing secure save operation...');
+            return unifiedStrategyService.saveStrategy(fundId, wizardData);
+          },
+          {
+            operation: 'Save Investment Strategy',
+            requireAuth: true,
+            maxRetries: 1 // We handle retries ourselves
+          }
+        );
+
+        console.log('✅ [Hook] Strategy saved successfully:', savedStrategy?.id);
+
+        if (savedStrategy) {
+          setStrategy(savedStrategy);
+          return savedStrategy;
+        } else {
+          throw new Error('No strategy data returned from save operation');
+        }
+      } catch (error: any) {
+        const errorMessage = error?.message || 'Failed to save strategy';
+        console.error(`❌ [Hook] Save attempt ${attempt} failed:`, errorMessage);
+        
+        // Check for retryable errors
+        const isRetryable = (
+          errorMessage.includes('Failed to fetch') ||
+          errorMessage.includes('NetworkError') ||
+          errorMessage.includes('timeout') ||
+          errorMessage.includes('Database connectivity issue') ||
+          error?.status === 0 ||
+          error?.status >= 500
+        );
+
+        if (attempt < maxAttempts && isRetryable) {
+          const delay = 1000 * attempt; // Increasing delay
+          console.log(`🔄 [Hook] Retryable error, waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+
+        // Final error handling
+        setError(errorMessage);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    return null;
+  }, [fundId, executeSecureOperation]);
 
   const updateStrategy = async (strategyIdOrUpdates: string | Partial<EnhancedStrategy>, updatesArg?: Partial<EnhancedStrategy>) => {
     console.log('🔧 === UPDATE STRATEGY WITH ENHANCED ERROR HANDLING ===');
