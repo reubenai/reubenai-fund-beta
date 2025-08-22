@@ -28,6 +28,7 @@ import WhatIsReubenAI from "./pages/WhatIsReubenAI";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import OnboardingDemo from "./pages/OnboardingDemo";
+import { StrategyTestConsole } from "@/components/debug/StrategyTestConsole";
 import { PostHogRouterTracker } from "@/components/analytics/PostHogRouterTracker";
 // Analysis scheduler removed for system shutdown
 // import { useAnalysisScheduler } from "@/hooks/useAnalysisScheduler";
@@ -181,6 +182,17 @@ const App = () => {
                 <Layout>
                   <ErrorBoundary>
                     <OnboardingDemo />
+                  </ErrorBoundary>
+                </Layout>
+              </AuthGuard>
+            } />
+            <Route path="/debug/strategy-test" element={
+              <AuthGuard>
+                <Layout>
+                  <ErrorBoundary>
+                    <div className="container mx-auto py-8">
+                      <StrategyTestConsole />
+                    </div>
                   </ErrorBoundary>
                 </Layout>
               </AuthGuard>
