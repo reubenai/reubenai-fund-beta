@@ -907,3 +907,4 @@ async function logJobCompletion(
     console.error('❌ [Orchestrator] Failed to log job completion:', error);
     // Don't throw here as it's just logging
   }
+}
