@@ -73,18 +73,7 @@ interface WorkflowJobStatus {
 }
 
 serve(async (req) => {
-  // 🚨 HARDCODED KILL SWITCH - EMERGENCY ORCHESTRATOR SHUTDOWN
-  console.log('🛑 EMERGENCY: Orchestrator Engine DISABLED by hardcoded kill switch');
-  return new Response(JSON.stringify({
-    success: false,
-    error: 'HARDCODED_KILL_SWITCH_ACTIVE',
-    message: 'Orchestrator engine has been disabled via emergency hardcoded kill switch',
-    timestamp: new Date().toISOString()
-  }), {
-    status: 503, // Service Unavailable
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -107,6 +96,88 @@ serve(async (req) => {
         status: 423, // Locked status
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+    
+    // 🛡️ PRE-FLIGHT VALIDATION: Check if analysis is already complete
+    if (request.deal_id) {
+      const { data: isComplete } = await supabase.rpc('is_deal_analysis_complete', {
+        p_deal_id: request.deal_id
+      });
+      
+      if (isComplete) {
+        console.log(`✅ [Orchestrator] Analysis already complete for deal ${request.deal_id}`);
+        return new Response(JSON.stringify({
+          success: true,
+          status: 'already_completed',
+          message: 'Analysis already exists for this deal',
+          completion_reason: 'analysis_already_exists'
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // 🔒 EXECUTION LOCK: Prevent concurrent analysis runs for same deal
+    if (request.deal_id) {
+      const lockResult = await acquireExecutionLock(request.deal_id, 'orchestrator-engine');
+      if (!lockResult.acquired) {
+        console.log(`🔒 [Orchestrator] Analysis already running for deal ${request.deal_id}`);
+        return new Response(JSON.stringify({
+          success: false,
+          status: 'analysis_in_progress',
+          error: 'Another analysis is already running for this deal',
+          locked_by: lockResult.locked_by,
+          locked_at: lockResult.locked_at
+        }), {
+          status: 423, // Locked
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // ⏱️ RATE LIMITING: Check if deal exceeds rate limits
+    if (request.deal_id) {
+      const rateLimitResult = await checkRateLimits(request.deal_id);
+      if (!rateLimitResult.allowed) {
+        console.log(`⏱️ [Orchestrator] Rate limit exceeded for deal ${request.deal_id}`);
+        
+        // Release the lock we just acquired
+        if (request.deal_id) {
+          await releaseExecutionLock(request.deal_id);
+        }
+        
+        return new Response(JSON.stringify({
+          success: false,
+          status: 'rate_limited',
+          error: rateLimitResult.reason,
+          next_allowed_at: rateLimitResult.next_allowed_at
+        }), {
+          status: 429, // Too Many Requests
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // 📊 CREATE ANALYSIS TRACKER: Track this analysis run
+    let trackerResult;
+    if (request.deal_id) {
+      trackerResult = await createAnalysisTracker(request.deal_id, request.workflow_type);
+      if (!trackerResult.success) {
+        console.log(`📊 [Orchestrator] Failed to create analysis tracker: ${trackerResult.error}`);
+        
+        // Release the lock we acquired
+        await releaseExecutionLock(request.deal_id);
+        
+        return new Response(JSON.stringify({
+          success: false,
+          status: 'tracker_creation_failed',
+          error: trackerResult.error
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
     
     console.log(`🎼 [Orchestrator] Starting workflow: ${request.workflow_type}`);
@@ -259,6 +330,12 @@ serve(async (req) => {
           // Log job completion with error
           await logJobCompletion(execution_token, request, jobStatus);
           
+          // 🧹 CLEANUP: Update tracker and release lock on technical error auto-completion
+          if (request.deal_id) {
+            await updateAnalysisTracker(request.deal_id, 'completed', 'technical_error_auto_completion', 0, 0);
+            await releaseExecutionLock(request.deal_id);
+          }
+          
           return new Response(JSON.stringify({
             success: false,
             execution_token,
@@ -295,6 +372,12 @@ serve(async (req) => {
     
     console.log(`🎉 [Orchestrator] Workflow ${request.workflow_type} completed successfully`);
     
+    // 🧹 CLEANUP: Update tracker and release lock on success
+    if (request.deal_id) {
+      await updateAnalysisTracker(request.deal_id, 'completed', 'all_steps_successful', 1, 0);
+      await releaseExecutionLock(request.deal_id);
+    }
+    
     // Log job completion
     await logJobCompletion(execution_token, request, jobStatus);
     
@@ -314,6 +397,12 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('❌ [Orchestrator] Workflow failed:', error);
+    
+    // 🧹 CLEANUP: Release lock and update tracker on unexpected error
+    if (request?.deal_id) {
+      await updateAnalysisTracker(request.deal_id, 'failed', 'unexpected_workflow_error', 0, 0);
+      await releaseExecutionLock(request.deal_id);
+    }
     
     return new Response(JSON.stringify({
       success: false,
@@ -906,5 +995,298 @@ async function logJobCompletion(
   } catch (error) {
     console.error('❌ [Orchestrator] Failed to log job completion:', error);
     // Don't throw here as it's just logging
+  }
+}
+
+// ==================== LIMITER FUNCTIONS ====================
+
+// Acquire execution lock to prevent concurrent analysis
+async function acquireExecutionLock(dealId: string, lockedBy: string): Promise<{
+  acquired: boolean;
+  locked_by?: string;
+  locked_at?: string;
+}> {
+  try {
+    // Clean up expired locks first
+    await supabase.rpc('cleanup_expired_execution_locks');
+    
+    // Try to acquire lock
+    const { data, error } = await supabase
+      .from('deal_execution_locks')
+      .insert({
+        deal_id: dealId,
+        lock_type: 'analysis',
+        locked_by: lockedBy,
+        expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours
+        metadata: {
+          acquired_at: new Date().toISOString(),
+          service: 'orchestrator-engine'
+        }
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      // Check if it's a unique constraint violation (lock already exists)
+      if (error.code === '23505') {
+        // Lock already exists, check who owns it
+        const { data: existingLock } = await supabase
+          .from('deal_execution_locks')
+          .select('locked_by, locked_at')
+          .eq('deal_id', dealId)
+          .eq('lock_type', 'analysis')
+          .single();
+        
+        return {
+          acquired: false,
+          locked_by: existingLock?.locked_by,
+          locked_at: existingLock?.locked_at
+        };
+      }
+      
+      console.error('❌ [ExecutionLock] Error acquiring lock:', error);
+      throw error;
+    }
+    
+    console.log(`🔒 [ExecutionLock] Successfully acquired lock for deal ${dealId}`);
+    return { acquired: true };
+    
+  } catch (error) {
+    console.error('❌ [ExecutionLock] Failed to acquire lock:', error);
+    return { acquired: false };
+  }
+}
+
+// Release execution lock
+async function releaseExecutionLock(dealId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('deal_execution_locks')
+      .delete()
+      .eq('deal_id', dealId)
+      .eq('lock_type', 'analysis');
+    
+    if (error) {
+      console.error('❌ [ExecutionLock] Error releasing lock:', error);
+      return false;
+    }
+    
+    console.log(`🔓 [ExecutionLock] Successfully released lock for deal ${dealId}`);
+    return true;
+    
+  } catch (error) {
+    console.error('❌ [ExecutionLock] Failed to release lock:', error);
+    return false;
+  }
+}
+
+// Check rate limits for deal analysis
+async function checkRateLimits(dealId: string): Promise<{
+  allowed: boolean;
+  reason?: string;
+  next_allowed_at?: string;
+}> {
+  try {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    // Get or create rate limit record
+    let { data: rateLimitRecord } = await supabase
+      .from('deal_rate_limits')
+      .select('*')
+      .eq('deal_id', dealId)
+      .single();
+    
+    if (!rateLimitRecord) {
+      // Create new rate limit record
+      const { data, error } = await supabase
+        .from('deal_rate_limits')
+        .insert({
+          deal_id: dealId,
+          last_analysis_at: now.toISOString(),
+          analysis_count_today: 1,
+          reset_date: today,
+          consecutive_failures: 0
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('❌ [RateLimit] Error creating rate limit record:', error);
+        return { allowed: true }; // Allow on error to not block completely
+      }
+      
+      return { allowed: true };
+    }
+    
+    // Check if circuit breaker is open
+    if (rateLimitRecord.is_circuit_open) {
+      const circuitOpenTime = new Date(rateLimitRecord.circuit_opened_at);
+      const circuitCooldown = 30 * 60 * 1000; // 30 minutes
+      
+      if (now.getTime() - circuitOpenTime.getTime() < circuitCooldown) {
+        return {
+          allowed: false,
+          reason: 'Circuit breaker is open due to repeated failures',
+          next_allowed_at: new Date(circuitOpenTime.getTime() + circuitCooldown).toISOString()
+        };
+      } else {
+        // Close circuit breaker
+        await supabase
+          .from('deal_rate_limits')
+          .update({
+            is_circuit_open: false,
+            circuit_opened_at: null,
+            consecutive_failures: 0
+          })
+          .eq('deal_id', dealId);
+      }
+    }
+    
+    // Reset daily count if new day
+    if (rateLimitRecord.reset_date !== today) {
+      rateLimitRecord = {
+        ...rateLimitRecord,
+        analysis_count_today: 0,
+        reset_date: today
+      };
+    }
+    
+    // Check hourly rate limit (max 1 analysis per hour)
+    const lastAnalysisTime = new Date(rateLimitRecord.last_analysis_at);
+    const hoursSinceLastAnalysis = (now.getTime() - lastAnalysisTime.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursSinceLastAnalysis < 1) {
+      return {
+        allowed: false,
+        reason: 'Rate limit: Maximum 1 analysis per hour per deal',
+        next_allowed_at: new Date(lastAnalysisTime.getTime() + 60 * 60 * 1000).toISOString()
+      };
+    }
+    
+    // Check daily rate limit (max 5 analyses per day)
+    if (rateLimitRecord.analysis_count_today >= 5) {
+      return {
+        allowed: false,
+        reason: 'Rate limit: Maximum 5 analyses per day per deal',
+        next_allowed_at: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString()
+      };
+    }
+    
+    // Update rate limit record
+    await supabase
+      .from('deal_rate_limits')
+      .update({
+        last_analysis_at: now.toISOString(),
+        analysis_count_today: rateLimitRecord.analysis_count_today + 1,
+        reset_date: today
+      })
+      .eq('deal_id', dealId);
+    
+    return { allowed: true };
+    
+  } catch (error) {
+    console.error('❌ [RateLimit] Error checking rate limits:', error);
+    return { allowed: true }; // Allow on error to not block completely
+  }
+}
+
+// Create analysis tracker record
+async function createAnalysisTracker(dealId: string, workflowType: string): Promise<{
+  success: boolean;
+  trackerId?: string;
+  error?: string;
+}> {
+  try {
+    // Check if there's already an active analysis
+    const { data: existingTracker } = await supabase
+      .from('analysis_completion_tracker')
+      .select('*')
+      .eq('deal_id', dealId)
+      .eq('analysis_type', 'full_analysis')
+      .eq('status', 'in_progress')
+      .single();
+    
+    if (existingTracker) {
+      return {
+        success: false,
+        error: 'Analysis already in progress for this deal'
+      };
+    }
+    
+    // Create new tracker record
+    const { data, error } = await supabase
+      .from('analysis_completion_tracker')
+      .insert({
+        deal_id: dealId,
+        analysis_type: 'full_analysis',
+        status: 'in_progress',
+        started_at: new Date().toISOString(),
+        metadata: {
+          workflow_type: workflowType,
+          started_by: 'orchestrator-engine',
+          start_timestamp: new Date().toISOString()
+        }
+      })
+      .select('id')
+      .single();
+    
+    if (error) {
+      console.error('❌ [AnalysisTracker] Error creating tracker:', error);
+      return {
+        success: false,
+        error: `Failed to create analysis tracker: ${error.message}`
+      };
+    }
+    
+    console.log(`📊 [AnalysisTracker] Created tracker ${data.id} for deal ${dealId}`);
+    return {
+      success: true,
+      trackerId: data.id
+    };
+    
+  } catch (error) {
+    console.error('❌ [AnalysisTracker] Error creating tracker:', error);
+    return {
+      success: false,
+      error: error.message || 'Unknown error creating analysis tracker'
+    };
+  }
+}
+
+// Update analysis tracker on completion
+async function updateAnalysisTracker(
+  dealId: string,
+  status: 'completed' | 'failed' | 'aborted',
+  completionReason: string,
+  artifactsCreated: number = 0,
+  sourcesCreated: number = 0
+): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('analysis_completion_tracker')
+      .update({
+        status,
+        completed_at: new Date().toISOString(),
+        completion_reason: completionReason,
+        artifacts_created: artifactsCreated,
+        sources_created: sourcesCreated,
+        updated_at: new Date().toISOString()
+      })
+      .eq('deal_id', dealId)
+      .eq('analysis_type', 'full_analysis')
+      .eq('status', 'in_progress');
+    
+    if (error) {
+      console.error('❌ [AnalysisTracker] Error updating tracker:', error);
+      return false;
+    }
+    
+    console.log(`📊 [AnalysisTracker] Updated tracker for deal ${dealId} - Status: ${status}`);
+    return true;
+    
+  } catch (error) {
+    console.error('❌ [AnalysisTracker] Error updating tracker:', error);
+    return false;
   }
 }

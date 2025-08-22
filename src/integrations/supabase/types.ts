@@ -350,6 +350,62 @@ export type Database = {
         }
         Relationships: []
       }
+      analysis_completion_tracker: {
+        Row: {
+          analysis_type: string
+          artifacts_created: number | null
+          completed_at: string | null
+          completion_reason: string | null
+          created_at: string
+          deal_id: string
+          execution_token: string | null
+          id: string
+          metadata: Json | null
+          sources_created: number | null
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          analysis_type?: string
+          artifacts_created?: number | null
+          completed_at?: string | null
+          completion_reason?: string | null
+          created_at?: string
+          deal_id: string
+          execution_token?: string | null
+          id?: string
+          metadata?: Json | null
+          sources_created?: number | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          analysis_type?: string
+          artifacts_created?: number | null
+          completed_at?: string | null
+          completion_reason?: string | null
+          created_at?: string
+          deal_id?: string
+          execution_token?: string | null
+          id?: string
+          metadata?: Json | null
+          sources_created?: number | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_completion_tracker_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       analysis_cost_tracking: {
         Row: {
           cost_per_deal: number | null
@@ -1447,6 +1503,47 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_execution_locks: {
+        Row: {
+          created_at: string
+          deal_id: string
+          expires_at: string
+          id: string
+          lock_type: string
+          locked_at: string
+          locked_by: string
+          metadata: Json | null
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          expires_at?: string
+          id?: string
+          lock_type?: string
+          locked_at?: string
+          locked_by: string
+          metadata?: Json | null
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          expires_at?: string
+          id?: string
+          lock_type?: string
+          locked_at?: string
+          locked_by?: string
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_execution_locks_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_features: {
         Row: {
           confidence_score: number | null
@@ -1575,6 +1672,56 @@ export type Database = {
             foreignKeyName: "deal_permissions_deal_id_fkey"
             columns: ["deal_id"]
             isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_rate_limits: {
+        Row: {
+          analysis_count_today: number | null
+          circuit_opened_at: string | null
+          consecutive_failures: number | null
+          created_at: string
+          deal_id: string
+          id: string
+          is_circuit_open: boolean | null
+          last_analysis_at: string
+          metadata: Json | null
+          reset_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          analysis_count_today?: number | null
+          circuit_opened_at?: string | null
+          consecutive_failures?: number | null
+          created_at?: string
+          deal_id: string
+          id?: string
+          is_circuit_open?: boolean | null
+          last_analysis_at?: string
+          metadata?: Json | null
+          reset_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          analysis_count_today?: number | null
+          circuit_opened_at?: string | null
+          consecutive_failures?: number | null
+          created_at?: string
+          deal_id?: string
+          id?: string
+          is_circuit_open?: boolean | null
+          last_analysis_at?: string
+          metadata?: Json | null
+          reset_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_rate_limits_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
             referencedRelation: "deals"
             referencedColumns: ["id"]
           },
@@ -5161,6 +5308,10 @@ export type Database = {
         }
         Returns: Json
       }
+      cleanup_expired_execution_locks: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       cleanup_llm_cache: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -5364,6 +5515,10 @@ export type Database = {
       }
       is_admin_by_email: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_deal_analysis_complete: {
+        Args: { p_deal_id: string }
         Returns: boolean
       }
       is_deal_safe_to_edit: {
