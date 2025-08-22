@@ -63,6 +63,15 @@ interface StepContext {
   telemetry: any;
 }
 
+interface WorkflowJobStatus {
+  execution_token: string;
+  workflow_type: string;
+  status: 'running' | 'completed' | 'completed_with_error' | 'failed';
+  error_type?: 'technical' | 'business' | 'system';
+  error_details?: any;
+  completion_reason?: string;
+}
+
 serve(async (req) => {
   // 🚨 HARDCODED KILL SWITCH - EMERGENCY ORCHESTRATOR SHUTDOWN
   console.log('🛑 EMERGENCY: Orchestrator Engine DISABLED by hardcoded kill switch');
@@ -141,7 +150,30 @@ serve(async (req) => {
       }
     };
 
-    // Execute workflow steps
+    // Initialize job status tracking
+    const jobStatus: WorkflowJobStatus = {
+      execution_token,
+      workflow_type: request.workflow_type,
+      status: 'running',
+      completion_reason: 'workflow_started'
+    };
+
+    // Log job start in orchestrator_executions with job status
+    await supabase.from('orchestrator_executions').insert({
+      org_id: request.org_id,
+      fund_id: request.fund_id,
+      deal_id: request.deal_id,
+      execution_token,
+      workflow_type: request.workflow_type,
+      current_step: 'job_start',
+      step_status: 'running',
+      step_input: { job_status: jobStatus },
+      telemetry_data: context.telemetry
+    });
+
+    console.log(`🎯 [Orchestrator] Job ${execution_token} initialized with ${workflow_steps.length} steps`);
+
+    // Execute workflow steps with improved error handling
     for (let i = current_step_index; i < workflow_steps.length; i++) {
       const step_name = workflow_steps[i];
       
@@ -161,8 +193,8 @@ serve(async (req) => {
       });
 
       try {
-        // Execute step
-        const step_result = await executeStep(step_name, context, enabledFlags);
+        // Execute step with retry logic
+        const step_result = await executeStepWithRetry(step_name, context, enabledFlags);
         
         // Update context for next step
         context.step_input = step_result.output;
@@ -183,32 +215,99 @@ serve(async (req) => {
       } catch (error) {
         console.error(`❌ [Orchestrator] Step ${step_name} failed:`, error);
         
-        // Log step failure
+        // Classify error type and determine if job should auto-complete
+        const errorClassification = classifyError(error, step_name);
+        
+        // Log step failure with error classification
         await supabase.from('orchestrator_executions')
           .update({
             step_status: 'failed',
             error_details: { 
               error: error.message,
               stack: error.stack,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              error_type: errorClassification.type,
+              http_status: errorClassification.httpStatus,
+              is_technical_error: errorClassification.isTechnical,
+              should_auto_complete: errorClassification.shouldAutoComplete
             }
           })
           .eq('execution_token', execution_token)
           .eq('current_step', step_name);
-        
-        // For now, fail fast. Later we can add retry logic
-        throw error;
+
+        // Handle error based on classification
+        if (errorClassification.shouldAutoComplete) {
+          // For technical errors (4xx/5xx), mark job as completed with error
+          jobStatus.status = 'completed_with_error';
+          jobStatus.error_type = 'technical';
+          jobStatus.error_details = {
+            failed_step: step_name,
+            http_status: errorClassification.httpStatus,
+            error_message: error.message,
+            completion_reason: 'auto_completed_due_to_technical_error'
+          };
+          
+          console.log(`🟡 [Orchestrator] Auto-completing job due to technical error in step ${step_name}`);
+          
+          // Try to persist artifacts with error status for partial completion
+          try {
+            await persistArtifactsWithError(context, jobStatus);
+          } catch (persistError) {
+            console.error('❌ [Orchestrator] Failed to persist artifacts after technical error:', persistError);
+          }
+          
+          // Log job completion with error
+          await logJobCompletion(execution_token, request, jobStatus);
+          
+          return new Response(JSON.stringify({
+            success: false,
+            execution_token,
+            workflow_type: request.workflow_type,
+            status: jobStatus.status,
+            error_type: jobStatus.error_type,
+            error_details: jobStatus.error_details,
+            steps_completed: i,
+            total_steps: workflow_steps.length,
+            completion_reason: 'technical_error_auto_completion'
+          }), {
+            status: 206, // Partial Content - job partially completed
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } else {
+          // For business/system errors, fail completely
+          jobStatus.status = 'failed';
+          jobStatus.error_type = errorClassification.type;
+          jobStatus.error_details = {
+            failed_step: step_name,
+            error_message: error.message,
+            completion_reason: 'business_logic_failure'
+          };
+          
+          await logJobCompletion(execution_token, request, jobStatus);
+          throw error;
+        }
       }
     }
 
+    // Mark job as completed successfully
+    jobStatus.status = 'completed';
+    jobStatus.completion_reason = 'all_steps_successful';
+    
     console.log(`🎉 [Orchestrator] Workflow ${request.workflow_type} completed successfully`);
+    
+    // Log job completion
+    await logJobCompletion(execution_token, request, jobStatus);
     
     return new Response(JSON.stringify({
       success: true,
       execution_token,
       workflow_type: request.workflow_type,
+      status: jobStatus.status,
       final_output: context.step_output,
-      telemetry: context.telemetry
+      telemetry: context.telemetry,
+      steps_completed: workflow_steps.length,
+      total_steps: workflow_steps.length,
+      completion_reason: jobStatus.completion_reason
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -597,3 +696,214 @@ async function persistArtifacts(context: StepContext) {
     };
   }
 }
+
+// Improved step execution with retry logic
+async function executeStepWithRetry(
+  step_name: string, 
+  context: StepContext, 
+  enabledFlags: Set<string>,
+  maxRetries: number = 2
+): Promise<{ output: any; telemetry: any }> {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Max 5s backoff
+        console.log(`🔄 [Orchestrator] Retry attempt ${attempt}/${maxRetries} for step ${step_name} after ${backoffDelay}ms`);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+      }
+      
+      const result = await executeStep(step_name, context, enabledFlags);
+      
+      if (attempt > 0) {
+        console.log(`✅ [Orchestrator] Step ${step_name} succeeded on retry attempt ${attempt}`);
+      }
+      
+      return result;
+    } catch (error) {
+      lastError = error;
+      console.error(`❌ [Orchestrator] Step ${step_name} attempt ${attempt + 1} failed:`, error.message);
+      
+      // Don't retry for certain error types
+      const classification = classifyError(error, step_name);
+      if (!classification.isRetryable || attempt === maxRetries) {
+        break;
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
+// Error classification for better handling
+function classifyError(error: any, step_name: string): {
+  type: 'technical' | 'business' | 'system';
+  httpStatus?: number;
+  isTechnical: boolean;
+  shouldAutoComplete: boolean;
+  isRetryable: boolean;
+} {
+  const errorMessage = error.message || error.toString();
+  
+  // Extract HTTP status code if present
+  let httpStatus: number | undefined;
+  const httpMatch = errorMessage.match(/(?:status|code)\s*:?\s*(\d{3})/i);
+  if (httpMatch) {
+    httpStatus = parseInt(httpMatch[1]);
+  }
+  
+  // Classify based on HTTP status code
+  if (httpStatus) {
+    if (httpStatus >= 400 && httpStatus < 500) {
+      // 4xx errors - client/technical errors, auto-complete
+      return {
+        type: 'technical',
+        httpStatus,
+        isTechnical: true,
+        shouldAutoComplete: true,
+        isRetryable: httpStatus === 429 || httpStatus === 408 // Only retry rate limits and timeouts
+      };
+    } else if (httpStatus >= 500) {
+      // 5xx errors - server errors, auto-complete but retryable
+      return {
+        type: 'technical',
+        httpStatus,
+        isTechnical: true,
+        shouldAutoComplete: true,
+        isRetryable: true
+      };
+    }
+  }
+  
+  // Check for specific error patterns
+  const lowerErrorMessage = errorMessage.toLowerCase();
+  
+  // Network/connectivity errors - retryable technical errors
+  if (lowerErrorMessage.includes('network') || 
+      lowerErrorMessage.includes('connection') ||
+      lowerErrorMessage.includes('timeout') ||
+      lowerErrorMessage.includes('fetch') && lowerErrorMessage.includes('failed')) {
+    return {
+      type: 'technical',
+      isTechnical: true,
+      shouldAutoComplete: true,
+      isRetryable: true
+    };
+  }
+  
+  // Authentication/authorization errors - non-retryable technical errors
+  if (lowerErrorMessage.includes('unauthorized') ||
+      lowerErrorMessage.includes('forbidden') ||
+      lowerErrorMessage.includes('authentication') ||
+      lowerErrorMessage.includes('permission')) {
+    return {
+      type: 'technical',
+      isTechnical: true,
+      shouldAutoComplete: true,
+      isRetryable: false
+    };
+  }
+  
+  // Business logic errors - don't auto-complete
+  if (lowerErrorMessage.includes('validation') ||
+      lowerErrorMessage.includes('invalid workflow') ||
+      lowerErrorMessage.includes('missing required') ||
+      step_name === 'PersistArtifacts') {
+    return {
+      type: 'business',
+      isTechnical: false,
+      shouldAutoComplete: false,
+      isRetryable: false
+    };
+  }
+  
+  // System/infrastructure errors - auto-complete and retryable
+  if (lowerErrorMessage.includes('database') ||
+      lowerErrorMessage.includes('redis') ||
+      lowerErrorMessage.includes('storage') ||
+      lowerErrorMessage.includes('memory')) {
+    return {
+      type: 'system',
+      isTechnical: true,
+      shouldAutoComplete: true,
+      isRetryable: true
+    };
+  }
+  
+  // Default classification - treat unknown errors as business errors to be safe
+  return {
+    type: 'business',
+    isTechnical: false,
+    shouldAutoComplete: false,
+    isRetryable: false
+  };
+}
+
+// Persist artifacts with error status for partial completion
+async function persistArtifactsWithError(context: StepContext, jobStatus: WorkflowJobStatus) {
+  try {
+    console.log(`🟡 [PersistArtifactsWithError] Storing partial results due to technical error`);
+    
+    const { error } = await supabase.from('artifacts').insert({
+      org_id: context.org_id,
+      fund_id: context.fund_id,
+      deal_id: context.deal_id,
+      artifact_type: 'partial_analysis_result',
+      artifact_kind: context.telemetry.workflow_type,
+      artifact_data: {
+        partial_output: context.step_output || context.step_input,
+        telemetry: context.telemetry,
+        execution_token: context.execution_token,
+        job_status: jobStatus,
+        error_completion: true,
+        completion_timestamp: new Date().toISOString()
+      },
+      validation_status: 'completed_with_error'
+    });
+    
+    if (error) {
+      console.error('❌ [PersistArtifactsWithError] Failed to store partial artifacts:', error);
+      throw error;
+    }
+    
+    console.log(`✅ [PersistArtifactsWithError] Successfully stored partial artifacts for technical error completion`);
+    
+  } catch (error) {
+    console.error('❌ [PersistArtifactsWithError] Error storing partial artifacts:', error);
+    throw error;
+  }
+}
+
+// Log overall job completion status
+async function logJobCompletion(
+  execution_token: string, 
+  request: OrchestrationRequest, 
+  jobStatus: WorkflowJobStatus
+) {
+  try {
+    // Update the job start record with final status
+    await supabase.from('orchestrator_executions')
+      .update({
+        step_status: jobStatus.status === 'completed' ? 'completed' : 'failed',
+        step_output: {
+          job_completion_status: jobStatus,
+          final_job_state: 'job_completed',
+          completion_timestamp: new Date().toISOString()
+        },
+        telemetry_data: {
+          workflow_type: request.workflow_type,
+          final_status: jobStatus.status,
+          error_type: jobStatus.error_type,
+          completion_reason: jobStatus.completion_reason
+        }
+      })
+      .eq('execution_token', execution_token)
+      .eq('current_step', 'job_start');
+    
+    console.log(`📊 [Orchestrator] Job completion logged: ${jobStatus.status} - ${jobStatus.completion_reason}`);
+    
+  } catch (error) {
+    console.error('❌ [Orchestrator] Failed to log job completion:', error);
+    // Don't throw here as it's just logging
+  }
