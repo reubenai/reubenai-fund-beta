@@ -55,14 +55,22 @@ export function CleanThesisConfiguration({
   const hasDetailedCriteria = wizardCriteriaConfig.length > 0;
 
   const handleSave = async () => {
-    console.log('=== MANUAL SAVE TRIGGERED ===');
+    console.log('🔧 [CleanThesis] === ENHANCED SAVE WITH V2 TESTING ===');
     console.log('Strategy ID:', strategy?.id);
-    console.log('Edited Strategy:', editedStrategy);
-    console.log('Current Strategy:', strategy);
+    console.log('Edited Strategy Keys:', Object.keys(editedStrategy));
     console.log('Fund ID:', fundId);
 
+    // Import test runner dynamically for testing
+    try {
+      const { StrategyTestRunner } = await import('@/utils/strategyTestRunner');
+      console.log('📊 Running pre-save data flow summary...');
+      await StrategyTestRunner.getDataFlowSummary(fundId);
+    } catch (e) {
+      console.log('🔧 Test runner not available in this environment');
+    }
+
     if (!fundId) {
-      console.error('No fund ID provided - cannot save');
+      console.error('❌ [CleanThesis] No fund ID provided - cannot save');
       toast({
         title: 'Error',
         description: 'Fund ID is missing. Please refresh the page.',
@@ -76,7 +84,13 @@ export function CleanThesisConfiguration({
       
       // Check if we have an existing strategy with ID (update) or need to create new (save)
       if (strategy?.id) {
-        console.log('📝 Updating existing strategy with ID:', strategy.id);
+        console.log('🔄 [CleanThesis] Updating existing strategy with ID:', strategy.id);
+        console.log('🔄 [CleanThesis] Update payload preview:', {
+          fund_type: editedStrategy.fund_type,
+          industries: editedStrategy.industries?.slice(0, 3),
+          geography: editedStrategy.geography?.slice(0, 3),
+          enhanced_criteria_type: Array.isArray(editedStrategy.enhanced_criteria?.categories) ? 'categories_array' : 'unknown'
+        });
         
         // Prepare comprehensive update data including all V2 fields
         const comprehensiveUpdates = {
@@ -108,10 +122,10 @@ export function CleanThesisConfiguration({
           enhanced_criteria: strategy.enhanced_criteria?.categories || strategy.enhanced_criteria || []
         };
         
-        console.log('Calling updateStrategy with comprehensive data:', comprehensiveUpdates);
+        console.log('📝 [CleanThesis] Calling updateStrategy with comprehensive data:', comprehensiveUpdates);
         result = await updateStrategy(comprehensiveUpdates);
       } else {
-        console.log('✨ Creating new strategy');
+        console.log('➕ [CleanThesis] Creating new strategy');
         // Convert form data to wizard format for saveStrategy
         const defaultCategoryConfig = {
           weight: 20,
@@ -148,19 +162,29 @@ export function CleanThesisConfiguration({
           strategicFitConfig: { ...defaultCategoryConfig, weight: 5 }
         };
         
-        console.log('Calling saveStrategy with wizard data:', wizardData);
+        console.log('📝 [CleanThesis] Calling saveStrategy with wizard data:', wizardData);
         result = await saveStrategy(strategy.fund_type || 'vc', wizardData);
       }
       
       if (result) {
-        console.log('Save successful:', result);
+        console.log('✅ [CleanThesis] Save successful:', result.id);
+        
+        // Run post-save verification
+        try {
+          const { StrategyTestRunner } = await import('@/utils/strategyTestRunner');
+          console.log('🧪 Running post-save verification...');
+          await StrategyTestRunner.getDataFlowSummary(fundId);
+        } catch (e) {
+          console.log('🔧 Post-save verification not available');
+        }
+
         toast({
           title: 'Success',
           description: 'Strategy configuration saved successfully.',
         });
         onSave(); // Use the parent callback instead of forcing page reload
       } else {
-        console.error('Save failed - no result returned');
+        console.error('❌ [CleanThesis] Save failed - no result returned');
         toast({
           title: 'Error',
           description: 'Failed to save changes. Please try again.',
@@ -168,7 +192,7 @@ export function CleanThesisConfiguration({
         });
       }
     } catch (error) {
-      console.error('Save error:', error);
+      console.error('❌ [CleanThesis] Save error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: 'Error',

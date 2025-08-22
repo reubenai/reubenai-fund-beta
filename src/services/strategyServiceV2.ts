@@ -6,7 +6,7 @@ export interface StrategyV2 {
   fund_id: string;
   fund_name: string;
   strategy_description?: string;
-  fund_type: 'vc' | 'pe';
+  fund_type: 'venture_capital' | 'private_equity';
   sectors: string[];
   stages: string[];
   geographies: string[];
@@ -90,13 +90,22 @@ class StrategyServiceV2 {
         const checkSizeMax = wizardData.checkSizeRange?.max ? 
           BigInt(Math.round(wizardData.checkSizeRange.max)) : null;
           
+        // PHASE 1: Fix fund type conversion - CRITICAL FIX
+        const convertFundType = (type: 'vc' | 'pe' | 'venture_capital' | 'private_equity'): 'venture_capital' | 'private_equity' => {
+          if (type === 'vc') return 'venture_capital';
+          if (type === 'pe') return 'private_equity';
+          if (type === 'venture_capital' || type === 'private_equity') return type;
+          console.warn('⚠️ [V2] Unknown fund type, defaulting to venture_capital:', type);
+          return 'venture_capital';
+        };
+        
         // PHASE 1: Comprehensive data mapping with all required fields
         const strategyData: any = {
           fund_id: fundId,
           fund_name: fundData.name || `Fund ${fundId}`, // Use actual fund name
           organization_id: fundData.organization_id, // CRITICAL: NOT NULL field
           strategy_description: wizardData.strategyDescription || '',
-          fund_type: wizardData.fundType,
+          fund_type: convertFundType(wizardData.fundType), // FIXED: Convert to DB enum values
           sectors: wizardData.sectors || [],
           stages: wizardData.stages || ['Series A'], // Default stage if missing
           geographies: wizardData.geographies || [],
@@ -127,11 +136,11 @@ class StrategyServiceV2 {
         if (!strategyData.organization_id) throw new Error('organization_id is required');
         
         console.log('✅ [V2] Pre-flight validation passed');
-        console.log('🚀 [V2] Enhanced mapped data with data integrity:', {
+        console.log('🚀 [V2] FIXED: Enhanced mapped data with fund type conversion:', {
           fund_id: strategyData.fund_id,
           fund_name: strategyData.fund_name,
           organization_id: strategyData.organization_id,
-          fund_type: strategyData.fund_type,
+          fund_type: `${wizardData.fundType} → ${strategyData.fund_type}`, // Show conversion
           check_sizes: { min: checkSizeMin?.toString(), max: checkSizeMax?.toString() }
         });
 
@@ -291,10 +300,18 @@ class StrategyServiceV2 {
 
   // Convert V2 strategy back to legacy format for compatibility
   convertToLegacyFormat(strategyV2: StrategyV2): any {
+    // Convert fund type back to short form for legacy compatibility
+    const convertToLegacyFundType = (type: 'venture_capital' | 'private_equity'): 'vc' | 'pe' => {
+      if (type === 'venture_capital') return 'vc';
+      if (type === 'private_equity') return 'pe';
+      console.warn('⚠️ [V2] Unknown V2 fund type, defaulting to vc:', type);
+      return 'vc';
+    };
+    
     return {
       id: strategyV2.id,
       fund_id: strategyV2.fund_id,
-      fund_type: strategyV2.fund_type,
+      fund_type: convertToLegacyFundType(strategyV2.fund_type),
       industries: strategyV2.sectors,
       geography: strategyV2.geographies,
       min_investment_amount: strategyV2.check_size_min,
@@ -316,8 +333,17 @@ class StrategyServiceV2 {
   convertLegacyUpdates(legacyUpdates: any): Partial<StrategyV2> {
     const v2Updates: Partial<StrategyV2> = {};
 
-    // Basic field mappings
-    if (legacyUpdates.fund_type) v2Updates.fund_type = legacyUpdates.fund_type;
+    // Convert fund type to V2 format
+    const convertToV2FundType = (type: 'vc' | 'pe' | 'venture_capital' | 'private_equity'): 'venture_capital' | 'private_equity' | undefined => {
+      if (type === 'vc') return 'venture_capital';
+      if (type === 'pe') return 'private_equity';  
+      if (type === 'venture_capital' || type === 'private_equity') return type;
+      if (type) console.warn('⚠️ [V2] Unknown legacy fund type:', type);
+      return undefined;
+    };
+
+    // Basic field mappings with fund type conversion
+    if (legacyUpdates.fund_type) v2Updates.fund_type = convertToV2FundType(legacyUpdates.fund_type);
     if (legacyUpdates.fund_name) v2Updates.fund_name = legacyUpdates.fund_name;
     if (legacyUpdates.industries) v2Updates.sectors = legacyUpdates.industries;
     if (legacyUpdates.geography) v2Updates.geographies = legacyUpdates.geography;
