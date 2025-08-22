@@ -27,7 +27,7 @@ export interface StrategyV2 {
   exciting_threshold: number;
   promising_threshold: number;
   needs_development_threshold: number;
-  enhanced_criteria: any[];
+  enhanced_criteria: any; // Can be object {categories: [...]} or array [...]
   organization_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -126,7 +126,7 @@ class StrategyServiceV2 {
           exciting_threshold: wizardData.dealThresholds?.exciting || 85,
           promising_threshold: wizardData.dealThresholds?.promising || 70,
           needs_development_threshold: wizardData.dealThresholds?.needs_development || 50,
-          enhanced_criteria: wizardData.enhancedCriteria || [],
+          enhanced_criteria: wizardData.enhancedCriteria || { categories: [] }, // Ensure proper V2 format
         };
         
         // PHASE 1: Pre-flight validation of critical NOT NULL fields  
@@ -265,6 +265,9 @@ class StrategyServiceV2 {
       return 'vc';
     };
     
+    // Handle enhanced_criteria structure - V2 already stores as {categories: [...]}
+    const enhancedCriteria = strategyV2.enhanced_criteria || {};
+    
     return {
       id: strategyV2.id,
       fund_id: strategyV2.fund_id,
@@ -278,9 +281,7 @@ class StrategyServiceV2 {
       promising_threshold: strategyV2.promising_threshold,
       needs_development_threshold: strategyV2.needs_development_threshold,
       strategy_notes: strategyV2.strategy_description,
-      enhanced_criteria: {
-        categories: strategyV2.enhanced_criteria
-      },
+      enhanced_criteria: enhancedCriteria, // V2 already has correct structure
       created_at: strategyV2.created_at,
       updated_at: strategyV2.updated_at
     };
@@ -317,11 +318,13 @@ class StrategyServiceV2 {
     if (legacyUpdates.promising_threshold) v2Updates.promising_threshold = legacyUpdates.promising_threshold;
     if (legacyUpdates.needs_development_threshold) v2Updates.needs_development_threshold = legacyUpdates.needs_development_threshold;
 
-    // Enhanced criteria mapping - handle both formats
-    if (legacyUpdates.enhanced_criteria?.categories) {
-      v2Updates.enhanced_criteria = legacyUpdates.enhanced_criteria.categories;
-    } else if (legacyUpdates.enhanced_criteria && Array.isArray(legacyUpdates.enhanced_criteria)) {
+    // Enhanced criteria mapping - ensure V2 format: {categories: [...]}
+    if (legacyUpdates.enhanced_criteria?.categories && Array.isArray(legacyUpdates.enhanced_criteria.categories)) {
+      // Legacy format: {categories: [...]} -> Keep as is for V2
       v2Updates.enhanced_criteria = legacyUpdates.enhanced_criteria;
+    } else if (legacyUpdates.enhanced_criteria && Array.isArray(legacyUpdates.enhanced_criteria)) {
+      // Direct array format: [...] -> Wrap in V2 format
+      v2Updates.enhanced_criteria = { categories: legacyUpdates.enhanced_criteria };
     }
 
     // Category config mappings
