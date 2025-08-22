@@ -428,7 +428,7 @@ export function EnhancedStrategyWizard({
       console.log('📊 Enhanced Criteria in Complete Data:', completeWizardData.enhancedCriteria);
       console.log('📊 Enhanced Criteria Array Length:', completeWizardData.enhancedCriteria?.length || 0);
       
-      result = await saveStrategy(wizardData.fundType, completeWizardData);
+      result = await saveStrategy(wizardData.fundType as 'vc' | 'pe', completeWizardData);
       
       console.log('📈 Save Result:', result);
       

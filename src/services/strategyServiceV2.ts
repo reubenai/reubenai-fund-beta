@@ -86,9 +86,9 @@ class StrategyServiceV2 {
         
         // PHASE 1: Data type conversion and validation
         const checkSizeMin = wizardData.checkSizeRange?.min ? 
-          BigInt(Math.round(wizardData.checkSizeRange.min)) : null;
+          Math.round(wizardData.checkSizeRange.min) : null;
         const checkSizeMax = wizardData.checkSizeRange?.max ? 
-          BigInt(Math.round(wizardData.checkSizeRange.max)) : null;
+          Math.round(wizardData.checkSizeRange.max) : null;
           
         // PHASE 1: Convert fund type for V2 compatibility (use short form for V2 table)
         const convertFundType = (type: 'vc' | 'pe' | 'venture_capital' | 'private_equity'): 'vc' | 'pe' => {
