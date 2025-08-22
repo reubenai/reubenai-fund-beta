@@ -402,29 +402,14 @@ export function EnhancedStrategyWizard({
     try {
       setIsProcessing(true);
       
-      // Convert enhanced criteria to the format expected by the service
+      // Convert enhanced criteria to the format expected by the V2 service
       const enhancedCriteriaData = {
         fundType: wizardData.fundType,
         categories: enhancedCriteria,
         totalWeight: enhancedCriteria.reduce((sum, cat) => sum + (cat.enabled ? cat.weight : 0), 0)
       };
 
-      const strategyData = {
-        fund_id: fundId,
-        fund_type: wizardData.fundType,
-        industries: wizardData.sectors,
-        geography: wizardData.geographies,
-        min_investment_amount: wizardData.checkSizeRange?.min,
-        max_investment_amount: wizardData.checkSizeRange?.max,
-        key_signals: wizardData.keySignals,
-        exciting_threshold: wizardData.dealThresholds?.exciting,
-        promising_threshold: wizardData.dealThresholds?.promising,
-        needs_development_threshold: wizardData.dealThresholds?.needs_development,
-        strategy_notes: wizardData.strategyDescription,
-        enhanced_criteria: enhancedCriteriaData
-      };
-
-      console.log('📊 Strategy Data to Save:', strategyData);
+      console.log('📊 Enhanced Criteria Data to Save:', enhancedCriteriaData);
       
       let result;
       
@@ -433,14 +418,11 @@ export function EnhancedStrategyWizard({
       console.log('📊 Enhanced Criteria State:', enhancedCriteria);
       console.log('📊 Wizard Data Before Merge:', wizardData);
       
-      // Use the most current enhanced criteria (prioritize the state variable)
-      const finalEnhancedCriteria = enhancedCriteria.length > 0 ? enhancedCriteria : wizardData.enhancedCriteria || [];
-      
-      // Merge enhanced criteria into wizard data for proper saving
-      const completeWizardData = {
+      // Use the properly formatted enhanced criteria data
+      const completeWizardData: any = {
         ...wizardData,
-        enhancedCriteria: finalEnhancedCriteria
-      } as EnhancedWizardData;
+        enhancedCriteria: enhancedCriteriaData // Use the full V2 format structure
+      };
       
       console.log('📊 Complete Wizard Data After Merge:', completeWizardData);
       console.log('📊 Enhanced Criteria in Complete Data:', completeWizardData.enhancedCriteria);

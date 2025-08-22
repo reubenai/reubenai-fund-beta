@@ -126,7 +126,7 @@ class StrategyServiceV2 {
           exciting_threshold: wizardData.dealThresholds?.exciting || 85,
           promising_threshold: wizardData.dealThresholds?.promising || 70,
           needs_development_threshold: wizardData.dealThresholds?.needs_development || 50,
-          enhanced_criteria: wizardData.enhancedCriteria || { categories: [] }, // Ensure proper V2 format
+          enhanced_criteria: StrategyServiceV2.normalizeEnhancedCriteria(wizardData.enhancedCriteria), // Ensure proper V2 format
         };
         
         // PHASE 1: Pre-flight validation of critical NOT NULL fields  
@@ -265,8 +265,8 @@ class StrategyServiceV2 {
       return 'vc';
     };
     
-    // Handle enhanced_criteria structure - V2 already stores as {categories: [...]}
-    const enhancedCriteria = strategyV2.enhanced_criteria || {};
+    // Handle enhanced_criteria structure - ensure consistent format
+    const enhancedCriteria = StrategyServiceV2.extractLegacyEnhancedCriteria(strategyV2.enhanced_criteria);
     
     return {
       id: strategyV2.id,
@@ -318,13 +318,9 @@ class StrategyServiceV2 {
     if (legacyUpdates.promising_threshold) v2Updates.promising_threshold = legacyUpdates.promising_threshold;
     if (legacyUpdates.needs_development_threshold) v2Updates.needs_development_threshold = legacyUpdates.needs_development_threshold;
 
-    // Enhanced criteria mapping - ensure V2 format: {categories: [...]}
-    if (legacyUpdates.enhanced_criteria?.categories && Array.isArray(legacyUpdates.enhanced_criteria.categories)) {
-      // Legacy format: {categories: [...]} -> Keep as is for V2
-      v2Updates.enhanced_criteria = legacyUpdates.enhanced_criteria;
-    } else if (legacyUpdates.enhanced_criteria && Array.isArray(legacyUpdates.enhanced_criteria)) {
-      // Direct array format: [...] -> Wrap in V2 format
-      v2Updates.enhanced_criteria = { categories: legacyUpdates.enhanced_criteria };
+    // Enhanced criteria mapping - normalize to V2 format
+    if (legacyUpdates.enhanced_criteria) {
+      v2Updates.enhanced_criteria = StrategyServiceV2.normalizeEnhancedCriteria(legacyUpdates.enhanced_criteria);
     }
 
     // Category config mappings
@@ -341,6 +337,46 @@ class StrategyServiceV2 {
 
     console.log('🔄 [V2] Legacy updates converted:', { legacyUpdates, v2Updates });
     return v2Updates;
+  }
+
+  // Helper function to normalize enhanced criteria to V2 format
+  static normalizeEnhancedCriteria(enhancedCriteria: any): any {
+    if (!enhancedCriteria) {
+      return { categories: [] };
+    }
+
+    // If it's already in V2 format {categories: [...], fundType?, totalWeight?}
+    if (enhancedCriteria.categories && Array.isArray(enhancedCriteria.categories)) {
+      return enhancedCriteria;
+    }
+
+    // If it's a direct array of categories
+    if (Array.isArray(enhancedCriteria)) {
+      return { categories: enhancedCriteria };
+    }
+
+    // If it's some other format, wrap it
+    return { categories: [] };
+  }
+
+  // Helper function to extract legacy enhanced criteria format
+  static extractLegacyEnhancedCriteria(v2EnhancedCriteria: any): any {
+    if (!v2EnhancedCriteria) {
+      return { categories: [] };
+    }
+
+    // If V2 format has categories array, use it directly
+    if (v2EnhancedCriteria.categories && Array.isArray(v2EnhancedCriteria.categories)) {
+      return v2EnhancedCriteria; // Return full V2 structure for legacy compatibility
+    }
+
+    // If it's already a direct array (legacy format), wrap it
+    if (Array.isArray(v2EnhancedCriteria)) {
+      return { categories: v2EnhancedCriteria };
+    }
+
+    // Fallback
+    return { categories: [] };
   }
 }
 
