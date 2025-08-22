@@ -5288,11 +5288,19 @@ export type Database = {
         Args: { target_org_id: string; target_user_id: string }
         Returns: boolean
       }
+      can_user_access_strategy_v2: {
+        Args: { target_fund_id: string }
+        Returns: boolean
+      }
       can_user_manage_fund: {
         Args: { target_org_id: string }
         Returns: boolean
       }
       can_user_update_strategy: {
+        Args: { target_fund_id: string }
+        Returns: boolean
+      }
+      can_user_update_strategy_v2: {
         Args: { target_fund_id: string }
         Returns: boolean
       }
