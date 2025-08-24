@@ -5335,6 +5335,10 @@ export type Database = {
           processing_count: number
         }[]
       }
+      cleanup_stuck_linkedin_processes: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       cleanup_vector_search_cache: {
         Args: Record<PropertyKey, never>
         Returns: number
