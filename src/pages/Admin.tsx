@@ -48,6 +48,7 @@ import { DealAllowlistManager } from '@/components/admin/DealAllowlistManager';
 import { DynamicStuckDocumentRecovery } from '@/components/admin/DynamicStuckDocumentRecovery';
 import { FeatureFlagsPanel } from '@/components/admin/FeatureFlagsPanel';
 import { BrightdataTestPanel } from '@/components/admin/BrightdataTestPanel';
+import { EmergencyCleanupPanel } from '@/components/EmergencyCleanupPanel';
 
 import { useFund } from '@/contexts/FundContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -938,6 +939,9 @@ export default function Admin() {
         
         {/* System Health & Analytics Sidebar */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Emergency Data Cleanup Panel */}
+          <EmergencyCleanupPanel />
+          
           {/* Force Refresh for Eluvo Health */}
           <ForceAnalysisRefresh 
             dealId="81c22db4-51bb-4c8a-b8e0-ec17918af497"

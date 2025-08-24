@@ -585,6 +585,45 @@ export type Database = {
           },
         ]
       }
+      analysis_idempotency: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          deal_id: string
+          engine_name: string
+          expires_at: string
+          id: string
+          idempotency_key: string
+          operation_type: string
+          result_data: Json | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          deal_id: string
+          engine_name: string
+          expires_at?: string
+          id?: string
+          idempotency_key: string
+          operation_type: string
+          result_data?: Json | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          deal_id?: string
+          engine_name?: string
+          expires_at?: string
+          id?: string
+          idempotency_key?: string
+          operation_type?: string
+          result_data?: Json | null
+          status?: string
+        }
+        Relationships: []
+      }
       analysis_quality_monitor: {
         Row: {
           analysis_type: string
@@ -5390,6 +5429,18 @@ export type Database = {
       current_user_email: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      detect_duplicate_sources: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      emergency_cleanup_duplicate_artifacts: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      emergency_cleanup_duplicate_sources: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       emergency_disable_rls: {
         Args: Record<PropertyKey, never>
