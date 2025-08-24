@@ -5408,6 +5408,10 @@ export type Database = {
         }
         Returns: string
       }
+      create_default_memo_sections_for_all_deals: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       create_default_pipeline_stages: {
         Args: { fund_id_param: string }
         Returns: undefined

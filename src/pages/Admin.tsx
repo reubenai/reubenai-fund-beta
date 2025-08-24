@@ -49,6 +49,7 @@ import { DynamicStuckDocumentRecovery } from '@/components/admin/DynamicStuckDoc
 import { FeatureFlagsPanel } from '@/components/admin/FeatureFlagsPanel';
 import { BrightdataTestPanel } from '@/components/admin/BrightdataTestPanel';
 import { EmergencyCleanupPanel } from '@/components/EmergencyCleanupPanel';
+import { InitializeMemoSectionsButton } from '@/components/InitializeMemoSectionsButton';
 
 import { useFund } from '@/contexts/FundContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -941,6 +942,17 @@ export default function Admin() {
         <div className="lg:col-span-1 space-y-6">
           {/* Emergency Data Cleanup Panel */}
           <EmergencyCleanupPanel />
+          
+          {/* Memo Sections Initialization */}
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-medium">Memo Sections Management</h3>
+              <p className="text-sm text-muted-foreground">
+                Initialize default memo sections for all deals that don't have memos yet.
+              </p>
+            </div>
+            <InitializeMemoSectionsButton />
+          </div>
           
           {/* Force Refresh for Eluvo Health */}
           <ForceAnalysisRefresh 
