@@ -34,9 +34,25 @@ interface RetrievedChunk {
 }
 
 serve(async (req) => {
+  // 🚫 HARDCODED KILL SWITCH - HYBRID RETRIEVAL ENGINE DISABLED
+  console.log('🚫 HYBRID RETRIEVAL ENGINE DISABLED - Kill switch active');
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  return new Response(
+    JSON.stringify({
+      success: false,
+      message: 'Hybrid retrieval engine is currently disabled by hardcoded kill switch',
+      disabled: true,
+      timestamp: new Date().toISOString()
+    }),
+    {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    }
+  );
 
   try {
     const request: HybridRetrievalRequest = await req.json();

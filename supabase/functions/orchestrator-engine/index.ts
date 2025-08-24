@@ -73,10 +73,25 @@ interface WorkflowJobStatus {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // 🚫 HARDCODED KILL SWITCH - ORCHESTRATOR ENGINE DISABLED
+  console.log('🚫 ORCHESTRATOR ENGINE DISABLED - Kill switch active');
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  return new Response(
+    JSON.stringify({
+      success: false,
+      message: 'Orchestrator engine is currently disabled by hardcoded kill switch',
+      disabled: true,
+      timestamp: new Date().toISOString()
+    }),
+    {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    }
+  );
 
   try {
     const request: OrchestrationRequest = await req.json();

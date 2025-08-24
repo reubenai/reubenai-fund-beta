@@ -13,9 +13,25 @@ const openAIApiKey = Deno.env.get('OPENAI_API_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 serve(async (req) => {
+  // 🚫 HARDCODED KILL SWITCH - MARKET INTELLIGENCE ENGINE DISABLED
+  console.log('🚫 MARKET INTELLIGENCE ENGINE DISABLED - Kill switch active');
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  return new Response(
+    JSON.stringify({
+      success: false,
+      message: 'Market intelligence engine is currently disabled by hardcoded kill switch',
+      disabled: true,
+      timestamp: new Date().toISOString()
+    }),
+    {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    }
+  );
 
   try {
     const { dealId, fundId, context, documentData } = await req.json();

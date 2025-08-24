@@ -9,9 +9,25 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // 🚫 HARDCODED KILL SWITCH - ENHANCED PDF GENERATOR DISABLED
+  console.log('🚫 ENHANCED PDF GENERATOR DISABLED - Kill switch active');
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  return new Response(
+    JSON.stringify({
+      success: false,
+      message: 'Enhanced PDF generator is currently disabled by hardcoded kill switch',
+      disabled: true,
+      timestamp: new Date().toISOString()
+    }),
+    {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    }
+  );
 
   try {
     console.log('🔬 Enhanced PDF Generator: Starting PDF generation...');

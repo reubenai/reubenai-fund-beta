@@ -31,9 +31,25 @@ interface CategoryScore {
 }
 
 serve(async (req) => {
+  // 🚫 HARDCODED KILL SWITCH - FEATURE FIRST SCORING DISABLED
+  console.log('🚫 FEATURE FIRST SCORING DISABLED - Kill switch active');
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  return new Response(
+    JSON.stringify({
+      success: false,
+      message: 'Feature first scoring is currently disabled by hardcoded kill switch',
+      disabled: true,
+      timestamp: new Date().toISOString()
+    }),
+    {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    }
+  );
 
   try {
     const request: ScoringRequest = await req.json();

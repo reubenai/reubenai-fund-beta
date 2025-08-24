@@ -29,9 +29,25 @@ interface CompetitorData {
 }
 
 serve(async (req) => {
+  // 🚫 HARDCODED KILL SWITCH - ENHANCED COMPETITIVE INTELLIGENCE DISABLED
+  console.log('🚫 ENHANCED COMPETITIVE INTELLIGENCE DISABLED - Kill switch active');
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  return new Response(
+    JSON.stringify({
+      success: false,
+      message: 'Enhanced competitive intelligence is currently disabled by hardcoded kill switch',
+      disabled: true,
+      timestamp: new Date().toISOString()
+    }),
+    {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    }
+  );
 
   try {
     const { dealId, fundId, context } = await req.json();

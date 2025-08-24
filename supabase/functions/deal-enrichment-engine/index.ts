@@ -32,9 +32,25 @@ interface EnrichmentResult {
 }
 
 serve(async (req) => {
+  // 🚫 HARDCODED KILL SWITCH - DEAL ENRICHMENT ENGINE DISABLED
+  console.log('🚫 DEAL ENRICHMENT ENGINE DISABLED - Kill switch active');
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  return new Response(
+    JSON.stringify({
+      success: false,
+      message: 'Deal enrichment engine is currently disabled by hardcoded kill switch',
+      disabled: true,
+      timestamp: new Date().toISOString()
+    }),
+    {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    }
+  );
 
   try {
     const request: EnrichmentRequest = await req.json();
