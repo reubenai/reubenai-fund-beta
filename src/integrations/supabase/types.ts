@@ -5253,6 +5253,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      auto_complete_stuck_linkedin_exports: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       backfill_linkedin_exports: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -5429,6 +5433,10 @@ export type Database = {
       get_jwt_org_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_linkedin_processing_status: {
+        Args: { target_deal_id: string }
+        Returns: Json
       }
       get_queue_health_status: {
         Args: Record<PropertyKey, never>
