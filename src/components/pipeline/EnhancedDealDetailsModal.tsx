@@ -34,8 +34,7 @@ import {
   Activity,
   FileText,
   Zap,
-  Eye,
-  RefreshCw
+  Eye
 } from 'lucide-react';
 import { DocumentManager } from '@/components/documents/DocumentManager';
 import { EnhancedDocumentAnalysis } from '@/components/documents/EnhancedDocumentAnalysis';
@@ -123,7 +122,7 @@ export function EnhancedDealDetailsModal({
 }: EnhancedDealDetailsModalProps) {
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(null);
   const [analysisData, setAnalysisData] = useState<any>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  
   const [hasTriggeredEnrichment, setHasTriggeredEnrichment] = useState(false);
   const [dealFund, setDealFund] = useState<any>(null);
   const [fundTypeLoading, setFundTypeLoading] = useState(true);
@@ -258,239 +257,6 @@ export function EnhancedDealDetailsModal({
     }
   };
 
-  const refreshAnalysis = async () => {
-    if (!deal || isRefreshing) return;
-
-    setIsRefreshing(true);
-    try {
-      // Step 1: Company Enrichment with Coresignal
-      console.log('🔍 Step 1: Company Enrichment...');
-      const { data: enrichmentData, error: enrichmentError } = await supabase.functions.invoke('company-enrichment-engine', {
-        body: {
-          dealId: deal.id,
-          companyName: deal.company_name,
-          website: deal.website,
-          linkedinUrl: deal.linkedin_url,
-          triggerReanalysis: false
-        }
-      });
-
-      if (enrichmentError) {
-        console.warn('Company enrichment failed:', enrichmentError);
-      } else {
-        console.log('✅ Company enrichment complete:', enrichmentData);
-      }
-
-      // Step 2: Comprehensive Analysis via Reuben Orchestrator  
-      console.log('🤖 Step 2: Running comprehensive AI analysis...');
-      const { data: orchestratorData, error: orchestratorError } = await supabase.functions.invoke('reuben-orchestrator', {
-        body: { 
-          dealId: deal.id,
-          strategyContext: {
-            fundType: selectedFund?.fund_type === 'private_equity' ? 'pe' : 'vc',
-            enhancedCriteria: true,
-            thresholds: { exciting: 85, promising: 70, needs_development: 50 }
-          },
-          includeWebResearch: true,
-          includeMarketIntelligence: true,
-          includeFinancialAnalysis: true,
-          includeTeamResearch: true,
-          includeProductIPAnalysis: true,
-          includeThesisAlignment: true
-        }
-      });
-
-      if (orchestratorError) {
-        console.error('Orchestrator failed:', orchestratorError);
-        throw orchestratorError;
-      }
-
-      console.log('✅ Orchestrator analysis complete:', orchestratorData);
-
-      // Step 3: Enhanced Deal Analysis (final aggregation)
-      console.log('📊 Step 3: Enhanced Deal Analysis...');
-      const { data: enhancedAnalysis, error: analysisError } = await supabase.functions.invoke('enhanced-deal-analysis', {
-        body: {
-          dealId: deal.id,
-          action: 'single'
-        }
-      });
-
-      if (analysisError) {
-        console.warn('Enhanced analysis failed:', analysisError);
-      } else {
-        console.log('✅ Enhanced analysis complete:', enhancedAnalysis);
-      }
-
-      // Step 4: Create comprehensive enhanced analysis object
-      const engines = orchestratorData?.engines || {};
-      const analysis = orchestratorData?.analysis || {};
-      
-      const comprehensiveAnalysis = {
-        rubric_breakdown: [
-          {
-            category: 'Team & Leadership',
-            score: engines['team-research-engine']?.score || analysis.engine_results?.founder_team_strength?.score || 50,
-            confidence: engines['team-research-engine']?.confidence || 75,
-            weight: 25,
-            insights: [engines['team-research-engine']?.analysis || analysis.engine_results?.founder_team_strength?.analysis || 'Team analysis pending'],
-            strengths: engines['team-research-engine']?.strengths || ['Analysis in progress'],
-            concerns: engines['team-research-engine']?.concerns || ['Pending detailed analysis']
-          },
-          {
-            category: 'Market Opportunity',
-            score: engines['market-intelligence-engine']?.score || analysis.engine_results?.market_attractiveness?.score || 50,
-            confidence: engines['market-intelligence-engine']?.confidence || 75,
-            weight: 25,
-            insights: [engines['market-intelligence-engine']?.analysis || analysis.engine_results?.market_attractiveness?.analysis || 'Market analysis pending'],
-            strengths: engines['market-intelligence-engine']?.strengths || ['Analysis in progress'],
-            concerns: engines['market-intelligence-engine']?.concerns || ['Pending detailed analysis']
-          },
-          {
-            category: 'Product & Technology',
-            score: engines['product-ip-engine']?.score || analysis.engine_results?.product_strength_ip?.score || 50,
-            confidence: engines['product-ip-engine']?.confidence || 75,
-            weight: 25,
-            insights: [engines['product-ip-engine']?.analysis || analysis.engine_results?.product_strength_ip?.analysis || 'Product analysis pending'],
-            strengths: engines['product-ip-engine']?.strengths || ['Analysis in progress'],
-            concerns: engines['product-ip-engine']?.concerns || ['Pending detailed analysis']
-          },
-          {
-            category: 'Financial Health',
-            score: engines['financial-engine']?.score || analysis.engine_results?.financial_feasibility?.score || 50,
-            confidence: engines['financial-engine']?.confidence || 75,
-            weight: 15,
-            insights: [engines['financial-engine']?.analysis || analysis.engine_results?.financial_feasibility?.analysis || 'Financial analysis pending'],
-            strengths: engines['financial-engine']?.strengths || ['Analysis in progress'],
-            concerns: engines['financial-engine']?.concerns || ['Pending detailed analysis']
-          },
-          {
-            category: 'Strategic Fit',
-            score: engines['thesis-alignment-engine']?.score || analysis.engine_results?.investment_thesis_alignment?.score || 50,
-            confidence: engines['thesis-alignment-engine']?.confidence || 75,
-            weight: 10,
-            insights: [engines['thesis-alignment-engine']?.analysis || analysis.engine_results?.investment_thesis_alignment?.analysis || 'Thesis analysis pending'],
-            strengths: engines['thesis-alignment-engine']?.strengths || ['Analysis in progress'],
-            concerns: engines['thesis-alignment-engine']?.concerns || ['Pending detailed analysis']
-          }
-        ],
-        analysis_engines: {
-          'team-research-engine': {
-            name: 'Team Research Engine',
-            score: engines['team-research-engine']?.score || 50,
-            confidence: engines['team-research-engine']?.confidence || 75,
-            status: engines['team-research-engine'] ? 'complete' : 'pending',
-            last_run: new Date().toISOString(),
-            version: '3.1'
-          },
-          'market-intelligence-engine': {
-            name: 'Market Intelligence Engine',
-            score: engines['market-intelligence-engine']?.score || 50,
-            confidence: engines['market-intelligence-engine']?.confidence || 75,
-            status: engines['market-intelligence-engine'] ? 'complete' : 'pending',
-            last_run: new Date().toISOString(),
-            version: '2.8'
-          },
-          'product-ip-engine': {
-            name: 'Product IP Engine',
-            score: engines['product-ip-engine']?.score || 50,
-            confidence: engines['product-ip-engine']?.confidence || 75,
-            status: engines['product-ip-engine'] ? 'complete' : 'pending',
-            last_run: new Date().toISOString(),
-            version: '2.5'
-          },
-          'financial-engine': {
-            name: 'Financial Engine',
-            score: engines['financial-engine']?.score || 50,
-            confidence: engines['financial-engine']?.confidence || 75,
-            status: engines['financial-engine'] ? 'complete' : 'pending',
-            last_run: new Date().toISOString(),
-            version: '3.0'
-          },
-          'thesis-alignment-engine': {
-            name: 'Thesis Alignment Engine',
-            score: engines['thesis-alignment-engine']?.score || 50,
-            confidence: engines['thesis-alignment-engine']?.confidence || 75,
-            status: engines['thesis-alignment-engine'] ? 'complete' : 'pending',
-            last_run: new Date().toISOString(),
-            version: '2.9'
-          }
-        },
-        notes_intelligence: {
-          sentiment: 'positive',
-          key_insights: orchestratorData?.insights || ['Comprehensive analysis complete'],
-          risk_flags: orchestratorData?.risk_factors || [],
-          trend_indicators: ['AI analysis integrated'],
-          confidence_level: 75,
-          last_analyzed: new Date().toISOString()
-        },
-        fund_type_analysis: {
-          fund_type: selectedFund?.fund_type === 'private_equity' ? 'pe' : 'vc',
-          focus_areas: selectedFund?.fund_type === 'private_equity' 
-            ? ['Financial Performance', 'Operational Excellence', 'Market Position'] 
-            : ['Technology', 'Growth potential', 'Market opportunity'],
-          strengths: orchestratorData?.analysis?.strengths || ['Analysis completed'],
-          concerns: orchestratorData?.analysis?.concerns || [],
-          alignment_score: engines['thesis-alignment-engine']?.score || analysis.overall_score || 70,
-          strategic_recommendations: orchestratorData?.next_steps || ['Continue analysis']
-        },
-        analysis_completeness: Object.keys(engines).length > 0 ? 95 : 30,
-        last_comprehensive_analysis: new Date().toISOString(),
-        company_enrichment: enrichmentData?.data?.enrichment_data || null
-      };
-
-      // Update deal with all enhanced data
-      const { error: updateError } = await supabase
-        .from('deals')
-        .update({
-          enhanced_analysis: comprehensiveAnalysis,
-          overall_score: analysis.overall_score || orchestratorData?.analysis?.overall_score,
-          rag_status: analysis.rag_status || orchestratorData?.analysis?.rag_status || 'needs_development',
-          employee_count: enrichmentData?.data?.enrichment_data?.employeeCount || deal.employee_count,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', deal.id);
-
-      if (updateError) {
-        console.error('Error updating deal:', updateError);
-        throw updateError;
-      }
-
-      // Store enriched company details
-      setCompanyDetails({
-        team_size: enrichmentData?.data?.enrichment_data?.employeeCount || deal.employee_count,
-        revenue_estimate: enrichmentData?.data?.enrichment_data?.revenueEstimate,
-        growth_rate: enrichmentData?.data?.enrichment_data?.growthRate,
-        ...orchestratorData?.company_details
-      });
-      
-      // Dispatch event to notify components of analysis completion
-      window.dispatchEvent(new CustomEvent('dealEnrichmentComplete', { 
-        detail: { dealId: deal.id } 
-      }));
-      
-      // Force refresh
-      setTimeout(() => {
-        onDealUpdated?.();
-        loadEnhancedData();
-      }, 1000);
-
-      toast({
-        title: "✅ Analysis Updated",
-        description: `Successfully refreshed analysis for ${deal.company_name}`,
-      });
-
-    } catch (error) {
-      console.error('Analysis refresh failed:', error);
-      toast({
-        title: "Refresh Error", 
-        description: "Failed to refresh analysis. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
 
   if (!deal) return null;
 
@@ -540,16 +306,6 @@ export function EnhancedDealDetailsModal({
                   <ShareDealModal dealId={deal.id} dealName={deal.company_name} />
                 )}
               </DealActionGuard>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={refreshAnalysis}
-                disabled={isRefreshing}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                {isRefreshing ? 'Refreshing...' : 'Refresh Analysis'}
-              </Button>
             </div>
           </DialogTitle>
         </DialogHeader>
@@ -591,12 +347,6 @@ export function EnhancedDealDetailsModal({
               {/* Company Overview Card with subtle background processing indicator */}
               <Card>
                 <CardContent className="pt-6">
-                  {isRefreshing && (
-                    <div className="flex items-center gap-2 mb-4 p-2 bg-muted/50 rounded-md">
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary" />
-                      <span className="text-sm text-muted-foreground">Refreshing analysis...</span>
-                    </div>
-                  )}
 
                   {/* Enhanced Company Details */}
                   <EnhancedCompanyDetails 

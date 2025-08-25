@@ -39,7 +39,7 @@ import { AnalysisQueueStatus } from './AnalysisQueueStatus';
 import { EnhancedAnalysisIndicators } from './EnhancedAnalysisIndicators';
 import { RubricScoreRadar } from './RubricScoreRadar';
 import { FundTypeAnalysisPanel } from './FundTypeAnalysisPanel';
-import { DealAnalysisRefreshButton } from './DealAnalysisRefreshButton';
+
 import { QueuePositionIndicator } from './QueuePositionIndicator';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -177,16 +177,6 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
                   <QueuePositionIndicator dealId={deal.id} compact />
                 </div>
 
-                {/* Analysis Refresh Button - Temporarily disabled to remove timestamp banners */}
-                {/* {permissions.canTriggerAnalysis && (
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <DealAnalysisRefreshButton 
-                      dealId={deal.id}
-                      lastAnalyzed={deal.updated_at}
-                      variant="badge"
-                    />
-                  </div>
-                )} */}
                 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
