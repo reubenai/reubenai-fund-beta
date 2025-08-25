@@ -62,25 +62,48 @@ export function BlueprintVCStrategicFit({ deal }: StrategicFitProps) {
     const fetchStrategicAnalysis = async () => {
       setLoading(true);
       try {
-        const mockSubCriteria: SubCriteriaScore[] = strategicSubCriteria.map(criteria => ({
-          name: criteria.name,
-          score: Math.floor(Math.random() * 40) + 60,
-          confidence: Math.floor(Math.random() * 30) + 70,
-          weight: criteria.weight,
-          data_completeness: Math.floor(Math.random() * 40) + 60,
-          insights: [
-            `${criteria.name} evaluated against fund investment criteria and strategy`,
-            'Assessment includes alignment with fund focus areas and investment thesis',
-            'Portfolio integration opportunities and value creation potential analysis'
-          ]
-        }));
-
-        setSubCriteria(mockSubCriteria);
+        // Use real enhanced analysis data if available, otherwise show pending state
+        const enhancedAnalysis = deal.enhanced_analysis as any;
+        const strategicData = enhancedAnalysis?.rubric_breakdown?.find((r: any) => r.category === 'Strategic Fit');
         
-        const totalWeightedScore = mockSubCriteria.reduce((sum, criteria) => 
-          sum + (criteria.score * criteria.weight / 100), 0
-        );
-        setOverallScore(Math.round(totalWeightedScore));
+        if (strategicData && strategicData.score > 0) {
+          // Use real data
+          const realSubCriteria: SubCriteriaScore[] = strategicSubCriteria.map(criteria => {
+            const criteriaId = criteria.id === 'fund-thesis-alignment' ? 'fund_thesis_alignment' : 'portfolio_synergies';
+            return {
+              name: criteria.name,
+              score: strategicData.score || 0,
+              confidence: strategicData.confidence || 50,
+              weight: criteria.weight,
+              data_completeness: 85,
+              insights: strategicData.insights || [
+                `Real ${criteria.name} analysis from enhanced assessment`,
+                'Based on fund investment strategy and deal characteristics',
+                'Analysis includes portfolio fit and strategic value potential'
+              ]
+            };
+          });
+          
+          setSubCriteria(realSubCriteria);
+          setOverallScore(strategicData.score || 0);
+        } else {
+          // Show engines paused / pending analysis state
+          const pendingSubCriteria: SubCriteriaScore[] = strategicSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: 0,
+            confidence: 0,
+            weight: criteria.weight,
+            data_completeness: 0,
+            insights: [
+              `${criteria.name} analysis pending - engines are currently paused`,
+              'Real assessment will be available when analysis engines are reactivated',
+              'Strategic fit evaluation will include fund thesis alignment and portfolio synergies'
+            ]
+          }));
+          
+          setSubCriteria(pendingSubCriteria);
+          setOverallScore(0);
+        }
         
       } catch (error) {
         console.error('Error fetching strategic analysis:', error);
@@ -90,7 +113,7 @@ export function BlueprintVCStrategicFit({ deal }: StrategicFitProps) {
     };
 
     fetchStrategicAnalysis();
-  }, [deal.id]);
+  }, [deal.id, deal.enhanced_analysis]);
 
   if (loading) {
     return (

@@ -64,26 +64,35 @@ export function BlueprintPEStrategicFit({ deal }: StrategicFitProps) {
     const fetchStrategicAnalysis = async () => {
       setLoading(true);
       try {
-        const mockSubCriteria: SubCriteriaScore[] = strategicSubCriteria.map(criteria => ({
-          name: criteria.name,
-          score: Math.floor(Math.random() * 40) + 60,
-          confidence: Math.floor(Math.random() * 30) + 70,
-          weight: criteria.weight,
-          data_completeness: Math.floor(Math.random() * 40) + 60,
-          insights: [
-            `${criteria.name} evaluated against fund investment mandate and strategy`,
-            'Portfolio integration assessment including operational synergies and cross-selling opportunities',
-            'Risk-return analysis including investment profile alignment and fund objectives'
-          ]
-        }));
-
-        setSubCriteria(mockSubCriteria);
+        // Use real enhanced analysis data if available
+        const enhancedAnalysis = deal.enhanced_analysis as any;
+        const strategicData = enhancedAnalysis?.rubric_breakdown?.find((r: any) => r.category === 'Strategic Fit');
         
-        const totalWeightedScore = mockSubCriteria.reduce((sum, criteria) => 
-          sum + (criteria.score * criteria.weight / 100), 0
-        );
-        setOverallScore(Math.round(totalWeightedScore));
-        
+        if (strategicData && strategicData.score > 0) {
+          const realSubCriteria: SubCriteriaScore[] = strategicSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: strategicData.score || 0,
+            confidence: strategicData.confidence || 50,
+            weight: criteria.weight,
+            data_completeness: 85,
+            insights: strategicData.insights || [`Real ${criteria.name} analysis from strategic engine`]
+          }));
+          
+          setSubCriteria(realSubCriteria);
+          setOverallScore(strategicData.score || 0);
+        } else {
+          const pendingSubCriteria: SubCriteriaScore[] = strategicSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: 0,
+            confidence: 0,
+            weight: criteria.weight,
+            data_completeness: 0,
+            insights: [`${criteria.name} analysis pending - engines paused`]
+          }));
+          
+          setSubCriteria(pendingSubCriteria);
+          setOverallScore(0);
+        }
       } catch (error) {
         console.error('Error fetching strategic analysis:', error);
       } finally {
@@ -92,7 +101,7 @@ export function BlueprintPEStrategicFit({ deal }: StrategicFitProps) {
     };
 
     fetchStrategicAnalysis();
-  }, [deal.id]);
+  }, [deal.id, deal.enhanced_analysis]);
 
   if (loading) {
     return (

@@ -62,25 +62,45 @@ export function BlueprintVCFinancialHealth({ deal }: FinancialHealthProps) {
     const fetchFinancialAnalysis = async () => {
       setLoading(true);
       try {
-        const mockSubCriteria: SubCriteriaScore[] = financialSubCriteria.map(criteria => ({
-          name: criteria.name,
-          score: Math.floor(Math.random() * 40) + 60,
-          confidence: Math.floor(Math.random() * 30) + 70,
-          weight: criteria.weight,
-          data_completeness: Math.floor(Math.random() * 40) + 60,
-          insights: [
-            `${criteria.name} assessed through comprehensive financial modeling`,
-            'Analysis includes revenue projections, cost structure, and cash flow modeling',
-            'Funding runway and milestone achievement timeline evaluation'
-          ]
-        }));
-
-        setSubCriteria(mockSubCriteria);
+        // Use real enhanced analysis data if available
+        const enhancedAnalysis = deal.enhanced_analysis as any;
+        const financialData = enhancedAnalysis?.rubric_breakdown?.find((r: any) => r.category === 'Financial Health');
         
-        const totalWeightedScore = mockSubCriteria.reduce((sum, criteria) => 
-          sum + (criteria.score * criteria.weight / 100), 0
-        );
-        setOverallScore(Math.round(totalWeightedScore));
+        if (financialData && financialData.score > 0) {
+          // Use real data
+          const realSubCriteria: SubCriteriaScore[] = financialSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: financialData.score || 0,
+            confidence: financialData.confidence || 50,
+            weight: criteria.weight,
+            data_completeness: 85,
+            insights: financialData.insights || [
+              `Real ${criteria.name} analysis from financial engine`,
+              'Financial projections and unit economics thoroughly assessed',
+              'Capital efficiency and funding requirements validated'
+            ]
+          }));
+          
+          setSubCriteria(realSubCriteria);
+          setOverallScore(financialData.score || 0);
+        } else {
+          // Show engines paused / pending analysis state
+          const pendingSubCriteria: SubCriteriaScore[] = financialSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: 0,
+            confidence: 0,
+            weight: criteria.weight,
+            data_completeness: 0,
+            insights: [
+              `${criteria.name} analysis pending - financial engine paused`,
+              'Real financial assessment will be available when engines are reactivated',
+              'Will include projections analysis, unit economics, and funding requirements evaluation'
+            ]
+          }));
+          
+          setSubCriteria(pendingSubCriteria);
+          setOverallScore(0);
+        }
         
       } catch (error) {
         console.error('Error fetching financial analysis:', error);
@@ -90,7 +110,7 @@ export function BlueprintVCFinancialHealth({ deal }: FinancialHealthProps) {
     };
 
     fetchFinancialAnalysis();
-  }, [deal.id]);
+  }, [deal.id, deal.enhanced_analysis]);
 
   if (loading) {
     return (

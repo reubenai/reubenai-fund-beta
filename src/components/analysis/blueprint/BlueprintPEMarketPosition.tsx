@@ -64,26 +64,34 @@ export function BlueprintPEMarketPosition({ deal }: MarketPositionProps) {
     const fetchMarketAnalysis = async () => {
       setLoading(true);
       try {
-        const mockSubCriteria: SubCriteriaScore[] = marketSubCriteria.map(criteria => ({
-          name: criteria.name,
-          score: Math.floor(Math.random() * 40) + 60,
-          confidence: Math.floor(Math.random() * 30) + 70,
-          weight: criteria.weight,
-          data_completeness: Math.floor(Math.random() * 40) + 60,
-          insights: [
-            `${criteria.name} evaluated through market intelligence and competitive analysis`,
-            'Market positioning assessment including competitive moats and differentiation',
-            'Customer analysis including concentration, loyalty, and lifetime value metrics'
-          ]
-        }));
-
-        setSubCriteria(mockSubCriteria);
+        const enhancedAnalysis = deal.enhanced_analysis as any;
+        const marketData = enhancedAnalysis?.rubric_breakdown?.find((r: any) => r.category === 'Market Position');
         
-        const totalWeightedScore = mockSubCriteria.reduce((sum, criteria) => 
-          sum + (criteria.score * criteria.weight / 100), 0
-        );
-        setOverallScore(Math.round(totalWeightedScore));
-        
+        if (marketData && marketData.score > 0) {
+          const realSubCriteria: SubCriteriaScore[] = marketSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: marketData.score || 0,
+            confidence: marketData.confidence || 50,
+            weight: criteria.weight,
+            data_completeness: 85,
+            insights: marketData.insights || [`Real ${criteria.name} analysis from market engine`]
+          }));
+          
+          setSubCriteria(realSubCriteria);
+          setOverallScore(marketData.score || 0);
+        } else {
+          const pendingSubCriteria: SubCriteriaScore[] = marketSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: 0,
+            confidence: 0,
+            weight: criteria.weight,
+            data_completeness: 0,
+            insights: [`${criteria.name} analysis pending - market engine paused`]
+          }));
+          
+          setSubCriteria(pendingSubCriteria);
+          setOverallScore(0);
+        }
       } catch (error) {
         console.error('Error fetching market analysis:', error);
       } finally {
@@ -92,7 +100,7 @@ export function BlueprintPEMarketPosition({ deal }: MarketPositionProps) {
     };
 
     fetchMarketAnalysis();
-  }, [deal.id]);
+  }, [deal.id, deal.enhanced_analysis]);
 
   if (loading) {
     return (

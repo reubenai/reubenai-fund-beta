@@ -64,26 +64,34 @@ export function BlueprintPEManagementQuality({ deal }: ManagementQualityProps) {
     const fetchManagementAnalysis = async () => {
       setLoading(true);
       try {
-        const mockSubCriteria: SubCriteriaScore[] = managementSubCriteria.map(criteria => ({
-          name: criteria.name,
-          score: Math.floor(Math.random() * 40) + 60,
-          confidence: Math.floor(Math.random() * 30) + 70,
-          weight: criteria.weight,
-          data_completeness: Math.floor(Math.random() * 40) + 60,
-          insights: [
-            `${criteria.name} assessed through comprehensive leadership evaluation`,
-            'Executive track record analysis including value creation history and performance',
-            'Organizational capability assessment and strategic planning evaluation'
-          ]
-        }));
-
-        setSubCriteria(mockSubCriteria);
+        const enhancedAnalysis = deal.enhanced_analysis as any;
+        const managementData = enhancedAnalysis?.rubric_breakdown?.find((r: any) => r.category === 'Management Quality');
         
-        const totalWeightedScore = mockSubCriteria.reduce((sum, criteria) => 
-          sum + (criteria.score * criteria.weight / 100), 0
-        );
-        setOverallScore(Math.round(totalWeightedScore));
-        
+        if (managementData && managementData.score > 0) {
+          const realSubCriteria: SubCriteriaScore[] = managementSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: managementData.score || 0,
+            confidence: managementData.confidence || 50,
+            weight: criteria.weight,
+            data_completeness: 85,
+            insights: managementData.insights || [`Real ${criteria.name} analysis from management engine`]
+          }));
+          
+          setSubCriteria(realSubCriteria);
+          setOverallScore(managementData.score || 0);
+        } else {
+          const pendingSubCriteria: SubCriteriaScore[] = managementSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: 0,
+            confidence: 0,
+            weight: criteria.weight,
+            data_completeness: 0,
+            insights: [`${criteria.name} analysis pending - management engine paused`]
+          }));
+          
+          setSubCriteria(pendingSubCriteria);
+          setOverallScore(0);
+        }
       } catch (error) {
         console.error('Error fetching management analysis:', error);
       } finally {
@@ -92,7 +100,7 @@ export function BlueprintPEManagementQuality({ deal }: ManagementQualityProps) {
     };
 
     fetchManagementAnalysis();
-  }, [deal.id]);
+  }, [deal.id, deal.enhanced_analysis]);
 
   if (loading) {
     return (

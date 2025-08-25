@@ -64,26 +64,34 @@ export function BlueprintPEGrowthPotential({ deal }: GrowthPotentialProps) {
     const fetchGrowthAnalysis = async () => {
       setLoading(true);
       try {
-        const mockSubCriteria: SubCriteriaScore[] = growthSubCriteria.map(criteria => ({
-          name: criteria.name,
-          score: Math.floor(Math.random() * 40) + 60,
-          confidence: Math.floor(Math.random() * 30) + 70,
-          weight: criteria.weight,
-          data_completeness: Math.floor(Math.random() * 40) + 60,
-          insights: [
-            `${criteria.name} evaluated through comprehensive growth and expansion analysis`,
-            'Value creation pathway assessment including operational improvements and strategic initiatives',
-            'Exit strategy evaluation including strategic buyer analysis and IPO readiness assessment'
-          ]
-        }));
-
-        setSubCriteria(mockSubCriteria);
+        const enhancedAnalysis = deal.enhanced_analysis as any;
+        const growthData = enhancedAnalysis?.rubric_breakdown?.find((r: any) => r.category === 'Growth Potential');
         
-        const totalWeightedScore = mockSubCriteria.reduce((sum, criteria) => 
-          sum + (criteria.score * criteria.weight / 100), 0
-        );
-        setOverallScore(Math.round(totalWeightedScore));
-        
+        if (growthData && growthData.score > 0) {
+          const realSubCriteria: SubCriteriaScore[] = growthSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: growthData.score || 0,
+            confidence: growthData.confidence || 50,
+            weight: criteria.weight,
+            data_completeness: 85,
+            insights: growthData.insights || [`Real ${criteria.name} analysis from growth engine`]
+          }));
+          
+          setSubCriteria(realSubCriteria);
+          setOverallScore(growthData.score || 0);
+        } else {
+          const pendingSubCriteria: SubCriteriaScore[] = growthSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: 0,
+            confidence: 0,
+            weight: criteria.weight,
+            data_completeness: 0,
+            insights: [`${criteria.name} analysis pending - growth engine paused`]
+          }));
+          
+          setSubCriteria(pendingSubCriteria);
+          setOverallScore(0);
+        }
       } catch (error) {
         console.error('Error fetching growth analysis:', error);
       } finally {
@@ -92,7 +100,7 @@ export function BlueprintPEGrowthPotential({ deal }: GrowthPotentialProps) {
     };
 
     fetchGrowthAnalysis();
-  }, [deal.id]);
+  }, [deal.id, deal.enhanced_analysis]);
 
   if (loading) {
     return (

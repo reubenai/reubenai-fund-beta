@@ -64,26 +64,35 @@ export function BlueprintPEOperationalExcellence({ deal }: OperationalExcellence
     const fetchOperationalAnalysis = async () => {
       setLoading(true);
       try {
-        const mockSubCriteria: SubCriteriaScore[] = operationalSubCriteria.map(criteria => ({
-          name: criteria.name,
-          score: Math.floor(Math.random() * 40) + 60,
-          confidence: Math.floor(Math.random() * 30) + 70,
-          weight: criteria.weight,
-          data_completeness: Math.floor(Math.random() * 40) + 60,
-          insights: [
-            `${criteria.name} assessed through comprehensive management and operational review`,
-            'Leadership capability evaluation and process efficiency analysis',
-            'Technology infrastructure and system scalability assessment'
-          ]
-        }));
-
-        setSubCriteria(mockSubCriteria);
+        // Use real enhanced analysis data if available
+        const enhancedAnalysis = deal.enhanced_analysis as any;
+        const operationalData = enhancedAnalysis?.rubric_breakdown?.find((r: any) => r.category === 'Operational Excellence');
         
-        const totalWeightedScore = mockSubCriteria.reduce((sum, criteria) => 
-          sum + (criteria.score * criteria.weight / 100), 0
-        );
-        setOverallScore(Math.round(totalWeightedScore));
-        
+        if (operationalData && operationalData.score > 0) {
+          const realSubCriteria: SubCriteriaScore[] = operationalSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: operationalData.score || 0,
+            confidence: operationalData.confidence || 50,
+            weight: criteria.weight,
+            data_completeness: 85,
+            insights: operationalData.insights || [`Real ${criteria.name} analysis from operational engine`]
+          }));
+          
+          setSubCriteria(realSubCriteria);
+          setOverallScore(operationalData.score || 0);
+        } else {
+          const pendingSubCriteria: SubCriteriaScore[] = operationalSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: 0,
+            confidence: 0,
+            weight: criteria.weight,
+            data_completeness: 0,
+            insights: [`${criteria.name} analysis pending - operational engine paused`]
+          }));
+          
+          setSubCriteria(pendingSubCriteria);
+          setOverallScore(0);
+        }
       } catch (error) {
         console.error('Error fetching operational analysis:', error);
       } finally {
@@ -92,7 +101,7 @@ export function BlueprintPEOperationalExcellence({ deal }: OperationalExcellence
     };
 
     fetchOperationalAnalysis();
-  }, [deal.id]);
+  }, [deal.id, deal.enhanced_analysis]);
 
   if (loading) {
     return (

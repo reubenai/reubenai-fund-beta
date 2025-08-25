@@ -64,26 +64,37 @@ export function BlueprintPEFinancialPerformance({ deal }: FinancialPerformancePr
     const fetchFinancialAnalysis = async () => {
       setLoading(true);
       try {
-        const mockSubCriteria: SubCriteriaScore[] = financialSubCriteria.map(criteria => ({
-          name: criteria.name,
-          score: Math.floor(Math.random() * 40) + 60,
-          confidence: Math.floor(Math.random() * 30) + 70,
-          weight: criteria.weight,
-          data_completeness: Math.floor(Math.random() * 40) + 60,
-          insights: [
-            `${criteria.name} evaluated through comprehensive financial statement analysis`,
-            'EBITDA analysis, cash flow assessment, and working capital evaluation',
-            'Industry benchmarking and peer comparison analysis completed'
-          ]
-        }));
-
-        setSubCriteria(mockSubCriteria);
+        // Use real enhanced analysis data if available
+        const enhancedAnalysis = deal.enhanced_analysis as any;
+        const financialData = enhancedAnalysis?.rubric_breakdown?.find((r: any) => r.category === 'Financial Performance');
         
-        const totalWeightedScore = mockSubCriteria.reduce((sum, criteria) => 
-          sum + (criteria.score * criteria.weight / 100), 0
-        );
-        setOverallScore(Math.round(totalWeightedScore));
-        
+        if (financialData && financialData.score > 0) {
+          // Use real data
+          const realSubCriteria: SubCriteriaScore[] = financialSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: financialData.score || 0,
+            confidence: financialData.confidence || 50,
+            weight: criteria.weight,
+            data_completeness: 85,
+            insights: financialData.insights || [`Real ${criteria.name} analysis from financial engine`]
+          }));
+          
+          setSubCriteria(realSubCriteria);
+          setOverallScore(financialData.score || 0);
+        } else {
+          // Show engines paused state
+          const pendingSubCriteria: SubCriteriaScore[] = financialSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: 0,
+            confidence: 0,
+            weight: criteria.weight,
+            data_completeness: 0,
+            insights: [`${criteria.name} analysis pending - financial engine paused`]
+          }));
+          
+          setSubCriteria(pendingSubCriteria);
+          setOverallScore(0);
+        }
       } catch (error) {
         console.error('Error fetching financial analysis:', error);
       } finally {
@@ -92,7 +103,7 @@ export function BlueprintPEFinancialPerformance({ deal }: FinancialPerformancePr
     };
 
     fetchFinancialAnalysis();
-  }, [deal.id]);
+  }, [deal.id, deal.enhanced_analysis]);
 
   if (loading) {
     return (

@@ -573,7 +573,16 @@ export function EnhancedDealDetailsModal({
               
               {/* Assessment Sections with Accordion - Dynamic based on fund type */}
               {fundType === 'private_equity' ? (
-                <Accordion type="multiple" className="w-full space-y-4" defaultValue={["financial", "operational", "market", "management", "growth", "strategic"]}>
+                <Accordion type="multiple" className="w-full space-y-4" defaultValue={["thesis", "financial", "operational", "market", "management", "growth", "strategic"]}>
+                  <AccordionItem value="thesis" className="border rounded-lg">
+                    <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
+                      Thesis Alignment
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <ThesisAlignmentSection deal={deal} />
+                    </AccordionContent>
+                  </AccordionItem>
+                  
                   <AccordionItem value="financial" className="border rounded-lg">
                     <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
                       Financial Performance
@@ -629,7 +638,16 @@ export function EnhancedDealDetailsModal({
                   </AccordionItem>
                 </Accordion>
               ) : (
-                <Accordion type="multiple" className="w-full space-y-4" defaultValue={["market", "team", "product", "business", "financial", "strategic"]}>
+                <Accordion type="multiple" className="w-full space-y-4" defaultValue={["thesis", "market", "team", "product", "business", "financial", "strategic"]}>
+                  <AccordionItem value="thesis" className="border rounded-lg">
+                    <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
+                      Thesis Alignment
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <ThesisAlignmentSection deal={deal} />
+                    </AccordionContent>
+                  </AccordionItem>
+                  
                   <AccordionItem value="market" className="border rounded-lg">
                     <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
                       Market Opportunity

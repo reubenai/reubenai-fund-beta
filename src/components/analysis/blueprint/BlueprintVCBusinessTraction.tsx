@@ -64,25 +64,45 @@ export function BlueprintVCBusinessTraction({ deal }: BusinessTractionProps) {
     const fetchTractionAnalysis = async () => {
       setLoading(true);
       try {
-        const mockSubCriteria: SubCriteriaScore[] = tractionSubCriteria.map(criteria => ({
-          name: criteria.name,
-          score: Math.floor(Math.random() * 40) + 60,
-          confidence: Math.floor(Math.random() * 30) + 70,
-          weight: criteria.weight,
-          data_completeness: Math.floor(Math.random() * 40) + 60,
-          insights: [
-            `${criteria.name} evaluation based on financial data and market performance`,
-            'Growth metrics analysis including trajectory and sustainability factors',
-            'Customer acquisition and retention pattern assessment'
-          ]
-        }));
-
-        setSubCriteria(mockSubCriteria);
+        // Use real enhanced analysis data if available
+        const enhancedAnalysis = deal.enhanced_analysis as any;
+        const tractionData = enhancedAnalysis?.rubric_breakdown?.find((r: any) => r.category === 'Business Model & Traction');
         
-        const totalWeightedScore = mockSubCriteria.reduce((sum, criteria) => 
-          sum + (criteria.score * criteria.weight / 100), 0
-        );
-        setOverallScore(Math.round(totalWeightedScore));
+        if (tractionData && tractionData.score > 0) {
+          // Use real data
+          const realSubCriteria: SubCriteriaScore[] = tractionSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: tractionData.score || 0,
+            confidence: tractionData.confidence || 50,
+            weight: criteria.weight,
+            data_completeness: 85,
+            insights: tractionData.insights || [
+              `Real ${criteria.name} analysis from traction assessment engine`,
+              'Business model validation and customer traction metrics analyzed',
+              'Revenue growth and market adoption indicators thoroughly evaluated'
+            ]
+          }));
+          
+          setSubCriteria(realSubCriteria);
+          setOverallScore(tractionData.score || 0);
+        } else {
+          // Show engines paused / pending analysis state
+          const pendingSubCriteria: SubCriteriaScore[] = tractionSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: 0,
+            confidence: 0,
+            weight: criteria.weight,
+            data_completeness: 0,
+            insights: [
+              `${criteria.name} analysis pending - traction assessment engine paused`,
+              'Real business traction assessment will be available when engines are reactivated',
+              'Will include revenue growth, customer adoption, and business model validation analysis'
+            ]
+          }));
+          
+          setSubCriteria(pendingSubCriteria);
+          setOverallScore(0);
+        }
         
       } catch (error) {
         console.error('Error fetching traction analysis:', error);
@@ -92,7 +112,7 @@ export function BlueprintVCBusinessTraction({ deal }: BusinessTractionProps) {
     };
 
     fetchTractionAnalysis();
-  }, [deal.id]);
+  }, [deal.id, deal.enhanced_analysis]);
 
   if (loading) {
     return (

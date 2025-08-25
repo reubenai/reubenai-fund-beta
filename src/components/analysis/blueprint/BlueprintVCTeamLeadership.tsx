@@ -67,25 +67,45 @@ export function BlueprintVCTeamLeadership({ deal }: TeamLeadershipProps) {
     const fetchTeamAnalysis = async () => {
       setLoading(true);
       try {
-        const mockSubCriteria: SubCriteriaScore[] = teamSubCriteria.map(criteria => ({
-          name: criteria.name,
-          score: Math.floor(Math.random() * 40) + 60,
-          confidence: Math.floor(Math.random() * 30) + 70,
-          weight: criteria.weight,
-          data_completeness: Math.floor(Math.random() * 40) + 60,
-          insights: [
-            `${criteria.name} evaluated through comprehensive team research`,
-            'Leadership assessment based on track record and industry expertise',
-            'Continuous monitoring of team dynamics and performance'
-          ]
-        }));
-
-        setSubCriteria(mockSubCriteria);
+        // Use real enhanced analysis data if available
+        const enhancedAnalysis = deal.enhanced_analysis as any;
+        const teamData = enhancedAnalysis?.rubric_breakdown?.find((r: any) => r.category === 'Team & Leadership');
         
-        const totalWeightedScore = mockSubCriteria.reduce((sum, criteria) => 
-          sum + (criteria.score * criteria.weight / 100), 0
-        );
-        setOverallScore(Math.round(totalWeightedScore));
+        if (teamData && teamData.score > 0) {
+          // Use real data
+          const realSubCriteria: SubCriteriaScore[] = teamSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: teamData.score || 0,
+            confidence: teamData.confidence || 50,
+            weight: criteria.weight,
+            data_completeness: 85,
+            insights: teamData.insights || [
+              `Real ${criteria.name} analysis from team research engine`,
+              'Leadership experience and track record thoroughly assessed',
+              'Team composition and advisory support evaluated for execution potential'
+            ]
+          }));
+          
+          setSubCriteria(realSubCriteria);
+          setOverallScore(teamData.score || 0);
+        } else {
+          // Show engines paused / pending analysis state
+          const pendingSubCriteria: SubCriteriaScore[] = teamSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: 0,
+            confidence: 0,
+            weight: criteria.weight,
+            data_completeness: 0,
+            insights: [
+              `${criteria.name} analysis pending - team research engine paused`,
+              'Real team assessment will be available when engines are reactivated',
+              'Will include founder-market fit, experience evaluation, and team composition analysis'
+            ]
+          }));
+          
+          setSubCriteria(pendingSubCriteria);
+          setOverallScore(0);
+        }
         
       } catch (error) {
         console.error('Error fetching team analysis:', error);
@@ -95,7 +115,7 @@ export function BlueprintVCTeamLeadership({ deal }: TeamLeadershipProps) {
     };
 
     fetchTeamAnalysis();
-  }, [deal.id]);
+  }, [deal.id, deal.enhanced_analysis]);
 
   if (loading) {
     return (

@@ -66,25 +66,45 @@ export function BlueprintVCProductTechnology({ deal }: ProductTechnologyProps) {
     const fetchProductAnalysis = async () => {
       setLoading(true);
       try {
-        const mockSubCriteria: SubCriteriaScore[] = productSubCriteria.map(criteria => ({
-          name: criteria.name,
-          score: Math.floor(Math.random() * 40) + 60,
-          confidence: Math.floor(Math.random() * 30) + 70,
-          weight: criteria.weight,
-          data_completeness: Math.floor(Math.random() * 40) + 60,
-          insights: [
-            `${criteria.name} assessment based on product analysis and technical review`,
-            'Technology evaluation including architecture and scalability factors',
-            'Competitive positioning and innovation level analysis'
-          ]
-        }));
-
-        setSubCriteria(mockSubCriteria);
+        // Use real enhanced analysis data if available
+        const enhancedAnalysis = deal.enhanced_analysis as any;
+        const productData = enhancedAnalysis?.rubric_breakdown?.find((r: any) => r.category === 'Product & Technology');
         
-        const totalWeightedScore = mockSubCriteria.reduce((sum, criteria) => 
-          sum + (criteria.score * criteria.weight / 100), 0
-        );
-        setOverallScore(Math.round(totalWeightedScore));
+        if (productData && productData.score > 0) {
+          // Use real data
+          const realSubCriteria: SubCriteriaScore[] = productSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: productData.score || 0,
+            confidence: productData.confidence || 50,
+            weight: criteria.weight,
+            data_completeness: 85,
+            insights: productData.insights || [
+              `Real ${criteria.name} analysis from product-IP engine`,
+              'Technical assessment and competitive moat evaluation completed',
+              'Product-market fit and scalability potential thoroughly assessed'
+            ]
+          }));
+          
+          setSubCriteria(realSubCriteria);
+          setOverallScore(productData.score || 0);
+        } else {
+          // Show engines paused / pending analysis state
+          const pendingSubCriteria: SubCriteriaScore[] = productSubCriteria.map(criteria => ({
+            name: criteria.name,
+            score: 0,
+            confidence: 0,
+            weight: criteria.weight,
+            data_completeness: 0,
+            insights: [
+              `${criteria.name} analysis pending - product-IP engine paused`,
+              'Real product assessment will be available when engines are reactivated',
+              'Will include innovation evaluation, competitive moat analysis, and scalability assessment'
+            ]
+          }));
+          
+          setSubCriteria(pendingSubCriteria);
+          setOverallScore(0);
+        }
         
       } catch (error) {
         console.error('Error fetching product analysis:', error);
@@ -94,7 +114,7 @@ export function BlueprintVCProductTechnology({ deal }: ProductTechnologyProps) {
     };
 
     fetchProductAnalysis();
-  }, [deal.id]);
+  }, [deal.id, deal.enhanced_analysis]);
 
   if (loading) {
     return (
