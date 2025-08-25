@@ -80,7 +80,7 @@ export function ReubenAISummaryScore({ deal, onScoreCalculated }: ReubenAISummar
               
               scores.push({
                 name: category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                score: Math.round(categoryData.score || 0),
+                score: Math.max(0, Math.min(100, Math.round(categoryData.score || 0))),
                 weight: weight
               });
             }
@@ -90,17 +90,23 @@ export function ReubenAISummaryScore({ deal, onScoreCalculated }: ReubenAISummar
           if (scores.length > 0) {
             setAssessmentScores(scores);
             
-            // Calculate weighted average (proper Reuben score calculation)
+            // Calculate weighted average with proper bounds checking
             const totalWeight = scores.reduce((sum, score) => sum + score.weight, 0);
-            const weightedScore = scores.reduce((sum, score) => 
-              sum + (score.weight * score.score / 100), 0
-            );
             
-            // Normalize to 100-point scale
-            const finalScore = Math.round((weightedScore / totalWeight) * 100);
-            
-            setOverallScore(finalScore);
-            onScoreCalculated?.(finalScore);
+            if (totalWeight === 0) {
+              setOverallScore(0);
+              onScoreCalculated?.(0);
+            } else {
+              const weightedScore = scores.reduce((sum, score) => 
+                sum + (score.weight * Math.max(0, Math.min(100, score.score))), 0
+              ) / totalWeight;
+              
+              // Ensure final score is within 0-100 bounds
+              const finalScore = Math.max(0, Math.min(100, Math.round(weightedScore)));
+              
+              setOverallScore(finalScore);
+              onScoreCalculated?.(finalScore);
+            }
           } else {
             // Fallback to mock data if no real analysis yet
             const mockScores: AssessmentScore[] = [
@@ -114,13 +120,17 @@ export function ReubenAISummaryScore({ deal, onScoreCalculated }: ReubenAISummar
             
             setAssessmentScores(mockScores);
             
-            // Calculate proper weighted score
-            const weightedScore = mockScores.reduce((sum, score) => 
-              sum + (score.weight * score.score / 100), 0
-            );
+            // Calculate proper weighted score with bounds checking
+            const totalWeight = mockScores.reduce((sum, score) => sum + score.weight, 0);
+            const weightedScore = totalWeight > 0 
+              ? mockScores.reduce((sum, score) => 
+                  sum + (score.weight * Math.max(0, Math.min(100, score.score))), 0
+                ) / totalWeight
+              : 0;
             
-            setOverallScore(Math.round(weightedScore));
-            onScoreCalculated?.(Math.round(weightedScore));
+            const finalScore = Math.max(0, Math.min(100, Math.round(weightedScore)));
+            setOverallScore(finalScore);
+            onScoreCalculated?.(finalScore);
           }
           } else {
             // Fallback to mock PE data
@@ -134,12 +144,18 @@ export function ReubenAISummaryScore({ deal, onScoreCalculated }: ReubenAISummar
             ];
             
             setAssessmentScores(mockScores);
-            const weightedScore = mockScores.reduce((sum, score) => 
-              sum + (score.weight * score.score / 100), 0
-            );
             
-            setOverallScore(Math.round(weightedScore));
-            onScoreCalculated?.(Math.round(weightedScore));
+            // Calculate proper weighted score with bounds checking
+            const totalWeight = mockScores.reduce((sum, score) => sum + score.weight, 0);
+            const weightedScore = totalWeight > 0 
+              ? mockScores.reduce((sum, score) => 
+                  sum + (score.weight * Math.max(0, Math.min(100, score.score))), 0
+                ) / totalWeight
+              : 0;
+            
+            const finalScore = Math.max(0, Math.min(100, Math.round(weightedScore)));
+            setOverallScore(finalScore);
+            onScoreCalculated?.(finalScore);
           }
         } else {
           // No analysis data - use placeholder scores
