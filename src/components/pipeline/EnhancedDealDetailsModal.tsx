@@ -125,13 +125,15 @@ export function EnhancedDealDetailsModal({
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasTriggeredEnrichment, setHasTriggeredEnrichment] = useState(false);
+  const [dealFund, setDealFund] = useState<any>(null);
+  const [fundTypeLoading, setFundTypeLoading] = useState(true);
   const { toast } = useToast();
   const { getRAGCategory } = useStrategyThresholds();
   const { canViewActivities, canViewAnalysis, role, loading } = usePermissions();
   const { selectedFund } = useFund();
   
-  // Get fund type for dynamic criteria rendering
-  const fundType = selectedFund?.fund_type || 'venture_capital';
+  // Get fund type from deal's specific fund, not selected fund
+  const fundType = dealFund?.fund_type || 'venture_capital';
   
   // Enhanced activity hook with user data and 30-day filter
   const { 
@@ -149,8 +151,35 @@ export function EnhancedDealDetailsModal({
     userEmail: 'checking permissions'
   });
 
+  // Load deal's fund data
   useEffect(() => {
-    if (deal && open) {
+    const loadDealFund = async () => {
+      if (!deal?.fund_id) return;
+      
+      setFundTypeLoading(true);
+      try {
+        const { data: fund, error } = await supabase
+          .from('funds')
+          .select('fund_type')
+          .eq('id', deal.fund_id)
+          .single();
+        
+        if (!error && fund) {
+          setDealFund(fund);
+          console.log('Deal fund type:', fund.fund_type, 'for deal:', deal.company_name);
+        }
+      } catch (error) {
+        console.error('Error loading deal fund:', error);
+      } finally {
+        setFundTypeLoading(false);
+      }
+    };
+
+    loadDealFund();
+  }, [deal?.fund_id]);
+
+  useEffect(() => {
+    if (deal && open && !fundTypeLoading) {
       loadEnhancedData();
       // Only trigger enrichment once per modal session to prevent infinite loops
       if (!hasTriggeredEnrichment) {
@@ -161,7 +190,7 @@ export function EnhancedDealDetailsModal({
       // Reset enrichment flag when modal closes
       setHasTriggeredEnrichment(false);
     }
-  }, [deal?.id, open, hasTriggeredEnrichment]);
+  }, [deal?.id, open, hasTriggeredEnrichment, fundTypeLoading]);
 
   const loadEnhancedData = async () => {
     if (!deal) return;
@@ -473,7 +502,31 @@ export function EnhancedDealDetailsModal({
   const rag = getRAGCategory(deal.overall_score);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+      {/* Development Debug Indicator */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed top-4 right-4 bg-black/80 text-white px-3 py-1 rounded text-xs z-50">
+          Fund Type: {fundTypeLoading ? 'Loading...' : fundType} | Deal: {deal?.company_name}
+        </div>
+      )}
+      
+      {/* Fund Type Loading State */}
+      {fundTypeLoading && (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Loading Deal Analysis...</DialogTitle>
+            </DialogHeader>
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <span className="ml-3 text-muted-foreground">Loading fund information...</span>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {!fundTypeLoading && (
+        <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
@@ -735,5 +788,7 @@ export function EnhancedDealDetailsModal({
         </Tabs>
       </DialogContent>
     </Dialog>
+      )}
+    </>
   );
 }

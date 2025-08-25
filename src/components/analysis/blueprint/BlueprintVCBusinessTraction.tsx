@@ -66,7 +66,7 @@ export function BlueprintVCBusinessTraction({ deal }: BusinessTractionProps) {
       try {
         // Use real enhanced analysis data if available
         const enhancedAnalysis = deal.enhanced_analysis as any;
-        const tractionData = enhancedAnalysis?.rubric_breakdown?.find((r: any) => r.category === 'Business Model & Traction');
+        const tractionData = enhancedAnalysis?.rubric_breakdown?.find((r: any) => r.category === 'Business Traction');
         
         if (tractionData && tractionData.score > 0) {
           // Use real data
