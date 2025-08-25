@@ -21,12 +21,36 @@ export interface CategoryDeepDive {
 }
 
 export interface MarketDeepDive {
-  tam_sam_som?: { tam: string; sam: string; som: string };
+  tam_sam_som?: { 
+    tam: string; 
+    sam: string; 
+    som: string;
+    global_analysis?: {
+      drivers: string[];
+      challenges: string[];
+    };
+    regional_analysis?: {
+      opportunities: string[];
+      barriers: string[];
+      growth_comparison: string;
+    };
+    local_analysis?: {
+      advantages: string[];
+      constraints: string[];
+      penetration_strategy: string[];
+    };
+  };
   growth_drivers?: string[];
   market_risks?: string[];
   competitive_positioning?: CompetitorAnalysis[];
   customer_validation?: CustomerInsight[];
   geographic_opportunities?: GeographicData[];
+  regional_growth_rate?: {
+    rate: number;
+    vs_global: string;
+    market_maturity: string;
+    growth_comparison?: string;
+  };
 }
 
 export interface TeamDeepDive {

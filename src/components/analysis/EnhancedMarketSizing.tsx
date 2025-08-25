@@ -12,7 +12,8 @@ import {
   Info,
   Calendar,
   BarChart3,
-  Zap
+  Zap,
+  Target
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -47,6 +48,24 @@ interface IndustryMarketData {
     period: string;
     source: string;
   };
+  regional_analysis?: {
+    region_name: string;
+    market_size: string;
+    growth_rate: number;
+    vs_global_comparison: string;
+    regional_drivers: string[];
+    market_maturity: string;
+    fund_alignment: string;
+  };
+  local_analysis?: {
+    country_name: string;
+    market_size: string;
+    growth_rate: number;
+    local_opportunities: string[];
+    regulatory_environment: string[];
+    competitive_dynamics: string[];
+  };
+  enhanced_insights?: string[];
   last_updated: string;
 }
 
@@ -81,9 +100,13 @@ export function EnhancedMarketSizing({ deal }: EnhancedMarketSizingProps) {
       
       const { data, error } = await supabase.functions.invoke('market-sizing-research', {
         body: {
-          industries,
-          location,
-          year: 2024
+          industry: industries[0],
+          company_name: deal.company_name,
+          target_market: industries[0],
+          geographic_scope: location,
+          deal_location: location,
+          fund_geographies: [], // TODO: Get from fund strategy
+          context: `Market sizing analysis for ${deal.company_name}`
         }
       });
 
@@ -92,19 +115,54 @@ export function EnhancedMarketSizing({ deal }: EnhancedMarketSizingProps) {
       }
 
       if (data.success) {
-        setMarketData(data.data);
-        setLastResearchDate(data.metadata.research_date);
+        const enhancedData = [{
+          industry: data.industry,
+          tam: {
+            value: Math.round(data.market_sizing.tam.value / 1000000000),
+            unit: 'B',
+            currency: data.market_sizing.tam.currency,
+            year: data.market_sizing.tam.year || 2024,
+            source: data.market_sizing.tam.source,
+            citation: data.market_sizing.tam.citation
+          },
+          sam: {
+            value: Math.round(data.market_sizing.sam.value / 1000000000),
+            unit: 'B', 
+            currency: data.market_sizing.sam.currency,
+            rationale: data.market_sizing.sam.rationale,
+            methodology: data.market_sizing.sam.calculation_method
+          },
+          som: {
+            value: Math.round(data.market_sizing.som.value / 1000000000),
+            unit: 'B',
+            currency: data.market_sizing.som.currency,
+            rationale: data.market_sizing.som.rationale,
+            methodology: data.market_sizing.som.calculation_method
+          },
+          growth_rate: {
+            cagr: data.market_sizing.cagr.value,
+            period: data.market_sizing.cagr.period,
+            source: data.market_sizing.cagr.source
+          },
+          regional_analysis: data.market_sizing.regional_analysis,
+          local_analysis: data.market_sizing.local_analysis,
+          enhanced_insights: data.market_sizing.enhanced_insights,
+          last_updated: data.timestamp
+        }];
+
+        setMarketData(enhancedData);
+        setLastResearchDate(data.timestamp);
         
         // Cache the results
         const cacheKey = `market_sizing_${deal.id}`;
         localStorage.setItem(cacheKey, JSON.stringify({
-          data: data.data,
-          last_updated: data.metadata.research_date
+          data: enhancedData,
+          last_updated: data.timestamp
         }));
 
         toast({
           title: "Market Research Complete",
-          description: `Updated market sizing for ${data.data.length} industry(ies)`
+          description: `Updated market sizing with regional and local analysis for ${data.industry}`
         });
       }
     } catch (error) {
@@ -330,7 +388,65 @@ export function EnhancedMarketSizing({ deal }: EnhancedMarketSizingProps) {
               </CardContent>
             </Card>
 
-            {/* Summary Insights */}
+            {/* Regional & Local Market Analysis */}
+            {(industry.regional_analysis || industry.local_analysis) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Regional Analysis */}
+                {industry.regional_analysis && (
+                  <Card className="bg-blue-50/50 border-blue-200/50">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-blue-600" />
+                        Regional Market ({industry.regional_analysis.region_name})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="text-lg font-bold text-blue-600">
+                        {industry.regional_analysis.market_size}
+                      </div>
+                      <div className="text-sm space-y-2">
+                        <div className="p-2 bg-background rounded border">
+                          <strong>Growth Rate:</strong> {industry.regional_analysis.growth_rate}% CAGR
+                        </div>
+                        <div className="p-2 bg-background rounded border">
+                          <strong>vs Global:</strong> {industry.regional_analysis.vs_global_comparison}
+                        </div>
+                        <div className="p-2 bg-background rounded border">
+                          <strong>Fund Alignment:</strong> {industry.regional_analysis.fund_alignment}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Local Analysis */}
+                {industry.local_analysis && (
+                  <Card className="bg-green-50/50 border-green-200/50">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Target className="h-4 w-4 text-green-600" />
+                        Local Market ({industry.local_analysis.country_name})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="text-lg font-bold text-green-600">
+                        {industry.local_analysis.market_size}
+                      </div>
+                      <div className="text-sm space-y-2">
+                        <div className="p-2 bg-background rounded border">
+                          <strong>Local Growth:</strong> {industry.local_analysis.growth_rate}% CAGR
+                        </div>
+                        <div className="p-2 bg-background rounded border">
+                          <strong>Key Opportunities:</strong> {industry.local_analysis.local_opportunities.slice(0, 1).join(', ')}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* Enhanced Summary Insights */}
             <Card className="bg-muted/30">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Market Insights</CardTitle>
@@ -340,19 +456,31 @@ export function EnhancedMarketSizing({ deal }: EnhancedMarketSizingProps) {
                   <div className="flex items-start gap-2">
                     <span className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
                     <span>
-                      <strong>Market Opportunity:</strong> {industry.industry} represents a 
+                      <strong>Global Market:</strong> {industry.industry} represents a 
                       {formatValue(industry.tam.value, industry.tam.unit)} total market with 
                       {industry.growth_rate.cagr}% annual growth
                     </span>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <span className="w-2 h-2 bg-secondary rounded-full mt-2 flex-shrink-0" />
-                    <span>
-                      <strong>Addressable Market:</strong> {formatValue(industry.sam.value, industry.sam.unit)} 
-                      ({((industry.sam.value / industry.tam.value) * 100).toFixed(1)}% of TAM) 
-                      is realistically addressable based on market dynamics
-                    </span>
-                  </div>
+                  
+                  {industry.regional_analysis && (
+                    <div className="flex items-start gap-2">
+                      <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
+                      <span>
+                        <strong>Regional Opportunity:</strong> {industry.regional_analysis.vs_global_comparison}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {industry.local_analysis && (
+                    <div className="flex items-start gap-2">
+                      <span className="w-2 h-2 bg-green-600 rounded-full mt-2 flex-shrink-0" />
+                      <span>
+                        <strong>Local Market:</strong> {industry.local_analysis.country_name} shows 
+                        {industry.local_analysis.growth_rate}% growth with direct market access opportunities
+                      </span>
+                    </div>
+                  )}
+                  
                   <div className="flex items-start gap-2">
                     <span className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0" />
                     <span>
@@ -360,6 +488,18 @@ export function EnhancedMarketSizing({ deal }: EnhancedMarketSizingProps) {
                       represents a realistic 3-5 year market capture target
                     </span>
                   </div>
+                  
+                  {industry.enhanced_insights && industry.enhanced_insights.length > 0 && (
+                    <div className="border-t pt-3 mt-3">
+                      <strong className="text-xs uppercase tracking-wide text-muted-foreground mb-2 block">Enhanced Insights</strong>
+                      {industry.enhanced_insights.map((insight, i) => (
+                        <div key={i} className="flex items-start gap-2 mb-1">
+                          <span className="w-1.5 h-1.5 bg-purple-600 rounded-full mt-2 flex-shrink-0" />
+                          <span className="text-xs text-purple-700">{insight}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

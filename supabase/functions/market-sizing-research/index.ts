@@ -12,9 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    const { industry, company_name, target_market, geographic_scope, context } = await req.json();
+    const { industry, company_name, target_market, geographic_scope, context, deal_location, fund_geographies } = await req.json();
 
-    console.log(`🔍 Researching market sizing for: ${industry} - ${company_name}`);
+    console.log(`🔍 Researching market sizing for: ${industry} - ${company_name} in ${deal_location || 'Global'}`);
 
     const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
     if (!perplexityApiKey) {
@@ -22,7 +22,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         success: true,
         industry,
-        market_sizing: generateFallbackMarketSizing(industry),
+        market_sizing: generateFallbackMarketSizing(industry, deal_location, fund_geographies),
         research_content: `Fallback market sizing for ${industry}`,
         sources: ['Industry research estimates'],
         research_quality: 'medium',
@@ -32,19 +32,39 @@ serve(async (req) => {
       });
     }
 
-    // Create focused research query
-    const researchQuery = `What is the Total Addressable Market (TAM) for ${industry} industry globally in 2024-2025? 
+    // Enhanced research queries for global, regional, and local analysis
+    const globalQuery = `What is the Total Addressable Market (TAM) for ${industry} industry globally in 2024-2025? 
     
     Focus on ${target_market || industry} sector specifically. Provide:
-    1. Specific TAM value with currency and year
-    2. Market growth rate (CAGR)
-    3. Key market drivers
+    1. Specific global TAM value with currency and year
+    2. Global market growth rate (CAGR)
+    3. Key global market drivers
     4. Data source citations
     
     Company context: ${company_name} operates in ${industry}`;
 
-    // Call Perplexity API for real market data
-    const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+    const regionalQuery = deal_location ? `What is the regional market opportunity for ${industry} in ${deal_location} region/country in 2024-2025?
+    
+    Provide:
+    1. Regional market size for ${industry} in ${deal_location}
+    2. Regional growth rate vs global market
+    3. Regional market drivers and dynamics
+    4. Market maturity in this region
+    
+    Context: ${company_name} operates in ${industry} and is based in ${deal_location}` : '';
+
+    const localQuery = deal_location ? `What are the local market dynamics for ${industry} companies in ${deal_location}?
+    
+    Focus on:
+    1. Local market penetration opportunities
+    2. Country-specific growth factors vs global trends
+    3. Regulatory environment impact
+    4. Local competitive landscape
+    
+    Context: Assessing ${company_name} in ${industry} sector located in ${deal_location}` : '';
+
+    // Call Perplexity API for global market data
+    const globalResponse = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${perplexityApiKey}`,
@@ -59,36 +79,112 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: researchQuery
+            content: globalQuery
           }
         ],
         temperature: 0.2,
-        max_tokens: 1500,
+        max_tokens: 1200,
         return_related_questions: false,
         search_recency_filter: 'month'
       })
     });
 
-    if (!perplexityResponse.ok) {
-      console.error('Perplexity API error:', await perplexityResponse.text());
-      throw new Error('Failed to fetch market research data');
+    if (!globalResponse.ok) {
+      console.error('Perplexity API error:', await globalResponse.text());
+      throw new Error('Failed to fetch global market research data');
     }
 
-    const perplexityData = await perplexityResponse.json();
-    const researchContent = perplexityData.choices[0].message.content;
+    const globalData = await globalResponse.json();
+    const globalContent = globalData.choices[0].message.content;
 
-    console.log(`📊 Market research completed for ${industry}`);
+    // Regional and local analysis (only if location is provided)
+    let regionalContent = '';
+    let localContent = '';
+    
+    if (deal_location && regionalQuery) {
+      try {
+        const regionalResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${perplexityApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama-3.1-sonar-large-128k-online',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a regional market analyst. Focus on regional market dynamics, growth rates, and opportunities compared to global trends.'
+              },
+              {
+                role: 'user',
+                content: regionalQuery
+              }
+            ],
+            temperature: 0.2,
+            max_tokens: 800,
+            return_related_questions: false,
+            search_recency_filter: 'month'
+          })
+        });
 
-    // Parse the research to extract structured data
-    const marketSizing = parseMarketResearch(researchContent, industry);
+        if (regionalResponse.ok) {
+          const regionalData = await regionalResponse.json();
+          regionalContent = regionalData.choices[0].message.content;
+        }
+      } catch (error) {
+        console.log('Regional analysis failed, using fallback');
+      }
+
+      try {
+        const localResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${perplexityApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama-3.1-sonar-large-128k-online',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a local market analyst. Focus on country-specific market opportunities, local growth factors, and market penetration strategies.'
+              },
+              {
+                role: 'user',
+                content: localQuery
+              }
+            ],
+            temperature: 0.2,
+            max_tokens: 600,
+            return_related_questions: false,
+            search_recency_filter: 'month'
+          })
+        });
+
+        if (localResponse.ok) {
+          const localData = await localResponse.json();
+          localContent = localData.choices[0].message.content;
+        }
+      } catch (error) {
+        console.log('Local analysis failed, using fallback');
+      }
+    }
+
+    console.log(`📊 Market research completed for ${industry} (Global + ${deal_location || 'No location'})`);
+
+    // Parse the research to extract structured data with regional/local insights
+    const marketSizing = parseEnhancedMarketResearch(globalContent, regionalContent, localContent, industry, deal_location, fund_geographies);
 
     return new Response(JSON.stringify({
       success: true,
       industry,
       market_sizing: marketSizing,
-      research_content: researchContent,
-      sources: extractSources(researchContent),
-      research_quality: assessResearchQuality(researchContent),
+      research_content: globalContent,
+      regional_content: regionalContent,
+      local_content: localContent,
+      sources: extractSources(globalContent + ' ' + regionalContent + ' ' + localContent),
+      research_quality: assessResearchQuality(globalContent + ' ' + regionalContent),
       timestamp: new Date().toISOString()
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -106,6 +202,49 @@ serve(async (req) => {
     });
   }
 });
+
+function parseEnhancedMarketResearch(globalContent: string, regionalContent: string, localContent: string, industry: string, location?: string, fundGeographies?: string[]) {
+  const globalData = parseMarketResearch(globalContent, industry);
+  
+  // Regional analysis
+  let regionalAnalysis = null;
+  if (regionalContent && location) {
+    const regionalGrowth = extractRegionalGrowthRate(regionalContent);
+    const globalGrowth = globalData.cagr.value;
+    const growthComparison = regionalGrowth > globalGrowth ? 'faster' : 
+                           regionalGrowth < globalGrowth ? 'slower' : 'in-line';
+    
+    regionalAnalysis = {
+      region_name: location,
+      market_size: extractRegionalMarketSize(regionalContent, industry),
+      growth_rate: regionalGrowth,
+      vs_global_comparison: `The ${location} region is growing ${growthComparison} with global market trends`,
+      regional_drivers: extractRegionalDrivers(regionalContent),
+      market_maturity: extractMarketMaturity(regionalContent),
+      fund_alignment: assessFundGeographyAlignment(location, fundGeographies)
+    };
+  }
+
+  // Local analysis  
+  let localAnalysis = null;
+  if (localContent && location) {
+    localAnalysis = {
+      country_name: location,
+      market_size: extractLocalMarketSize(localContent, industry),
+      growth_rate: extractLocalGrowthRate(localContent),
+      local_opportunities: extractLocalOpportunities(localContent),
+      regulatory_environment: extractRegulatoryFactors(localContent),
+      competitive_dynamics: extractLocalCompetition(localContent)
+    };
+  }
+
+  return {
+    ...globalData,
+    regional_analysis: regionalAnalysis,
+    local_analysis: localAnalysis,
+    enhanced_insights: generateEnhancedInsights(globalData, regionalAnalysis, localAnalysis)
+  };
+}
 
 function parseMarketResearch(content: string, industry: string) {
   // Extract TAM value
@@ -315,16 +454,179 @@ function assessResearchQuality(content: string): 'high' | 'medium' | 'low' {
   return 'low';
 }
 
-function generateFallbackMarketSizing(industry?: string) {
+// Regional/Local analysis helper functions
+function extractRegionalGrowthRate(content: string): number {
+  const cagrMatch = content.match(/(\d+(?:\.\d+)?)\s*%.*(?:CAGR|growth|growing)/i);
+  return cagrMatch ? parseFloat(cagrMatch[1]) : 8.5;
+}
+
+function extractRegionalMarketSize(content: string, industry: string): string {
+  const sizeMatch = content.match(/\$(\d+(?:\.\d+)?)\s*(billion|million|trillion|B|M|T)/i);
+  if (sizeMatch) {
+    return `$${sizeMatch[1]}${sizeMatch[2].charAt(0).toUpperCase()}`;
+  }
+  const defaultTam = getIndustryDefaultTAM(industry);
+  const regionalSize = Math.round(defaultTam * 0.15 / 1000000000);
+  return `$${regionalSize}B`;
+}
+
+function extractLocalMarketSize(content: string, industry: string): string {
+  const sizeMatch = content.match(/\$(\d+(?:\.\d+)?)\s*(billion|million|trillion|B|M|T)/i);
+  if (sizeMatch) {
+    const number = parseFloat(sizeMatch[1]);
+    const unit = sizeMatch[2].toLowerCase();
+    const localSize = unit.includes('billion') ? Math.round(number * 0.3) : 
+                     unit.includes('million') ? Math.round(number * 0.1) : number;
+    return `$${localSize}${sizeMatch[2].charAt(0).toUpperCase()}`;
+  }
+  const defaultTam = getIndustryDefaultTAM(industry);
+  const localSize = Math.round(defaultTam * 0.05 / 1000000000);
+  return `$${localSize}B`;
+}
+
+function extractLocalGrowthRate(content: string): number {
+  const growthMatch = content.match(/(\d+(?:\.\d+)?)\s*%.*(?:growth|growing|increase)/i);
+  return growthMatch ? parseFloat(growthMatch[1]) : 7.5;
+}
+
+function extractRegionalDrivers(content: string): string[] {
+  const drivers = [];
+  const sentences = content.split('.').filter(s => s.trim().length > 30);
+  
+  for (const sentence of sentences.slice(0, 3)) {
+    if (sentence.toLowerCase().includes('driver') || 
+        sentence.toLowerCase().includes('growth') || 
+        sentence.toLowerCase().includes('opportunity')) {
+      drivers.push(sentence.trim());
+    }
+  }
+  
+  return drivers.length > 0 ? drivers : ['Regional digital adoption trends', 'Government regulatory support'];
+}
+
+function extractLocalOpportunities(content: string): string[] {
+  const opportunities = [];
+  const sentences = content.split('.').filter(s => s.trim().length > 20);
+  
+  for (const sentence of sentences.slice(0, 2)) {
+    if (sentence.toLowerCase().includes('opportunity') || 
+        sentence.toLowerCase().includes('potential') ||
+        sentence.toLowerCase().includes('market')) {
+      opportunities.push(sentence.trim());
+    }
+  }
+  
+  return opportunities.length > 0 ? opportunities : ['Local market penetration potential'];
+}
+
+function extractMarketMaturity(content: string): string {
+  if (content.toLowerCase().includes('emerging') || content.toLowerCase().includes('early')) return 'Emerging';
+  if (content.toLowerCase().includes('mature') || content.toLowerCase().includes('established')) return 'Mature';
+  if (content.toLowerCase().includes('growth') || content.toLowerCase().includes('expanding')) return 'Growth';
+  return 'Growth';
+}
+
+function extractRegulatoryFactors(content: string): string[] {
+  const factors = [];
+  const sentences = content.split('.').filter(s => s.trim().length > 20);
+  
+  for (const sentence of sentences) {
+    if (sentence.toLowerCase().includes('regulat') || 
+        sentence.toLowerCase().includes('policy') ||
+        sentence.toLowerCase().includes('compliance')) {
+      factors.push(sentence.trim());
+      if (factors.length >= 2) break;
+    }
+  }
+  
+  return factors.length > 0 ? factors : ['Standard regulatory environment'];
+}
+
+function extractLocalCompetition(content: string): string[] {
+  const competition = [];
+  const sentences = content.split('.').filter(s => s.trim().length > 20);
+  
+  for (const sentence of sentences) {
+    if (sentence.toLowerCase().includes('compet') || 
+        sentence.toLowerCase().includes('player') ||
+        sentence.toLowerCase().includes('market share')) {
+      competition.push(sentence.trim());
+      if (competition.length >= 2) break;
+    }
+  }
+  
+  return competition.length > 0 ? competition : ['Competitive landscape analysis needed'];
+}
+
+function assessFundGeographyAlignment(dealLocation: string, fundGeographies?: string[]): string {
+  if (!fundGeographies || fundGeographies.length === 0) {
+    return 'Fund geography preferences not specified';
+  }
+  
+  const isAligned = fundGeographies.some(geo => 
+    dealLocation.toLowerCase().includes(geo.toLowerCase()) ||
+    geo.toLowerCase().includes(dealLocation.toLowerCase())
+  );
+  
+  return isAligned ? 
+    `Strong alignment with fund's target geography (${fundGeographies.join(', ')})` :
+    `Limited alignment with fund's target geographies (${fundGeographies.join(', ')})`;
+}
+
+function generateEnhancedInsights(globalData: any, regionalData: any, localData: any): string[] {
+  const insights = [];
+  
+  if (regionalData) {
+    insights.push(`Regional opportunity: ${regionalData.region_name} shows ${regionalData.vs_global_comparison.toLowerCase()} (${regionalData.growth_rate}% vs ${globalData.cagr.value}% globally)`);
+  }
+  
+  if (localData) {
+    insights.push(`Local market: ${localData.country_name} represents ${localData.market_size} addressable opportunity with specific local dynamics`);
+  }
+  
+  if (regionalData && regionalData.fund_alignment) {
+    insights.push(`Strategic fit: ${regionalData.fund_alignment}`);
+  }
+  
+  return insights;
+}
+
+function generateFallbackMarketSizing(industry?: string, location?: string, fundGeographies?: string[]) {
   const tam = industry ? getIndustryDefaultTAM(industry) : 1000000000;
   const sam = Math.round(tam * 0.25);
   const som = Math.round(sam * 0.12);
   
+  const regionalAnalysis = location ? {
+    region_name: location,
+    market_size: `$${Math.round(tam * 0.15 / 1000000000)}B`,
+    growth_rate: 8.5,
+    vs_global_comparison: `The ${location} region is growing in-line with global market trends`,
+    regional_drivers: ['Regional digital adoption trends', 'Government regulatory support'],
+    market_maturity: 'Growth',
+    fund_alignment: assessFundGeographyAlignment(location, fundGeographies)
+  } : null;
+
+  const localAnalysis = location ? {
+    country_name: location,
+    market_size: `$${Math.round(tam * 0.05 / 1000000000)}B`,
+    growth_rate: 7.5,
+    local_opportunities: ['Local market penetration potential', 'Direct customer access opportunities'],
+    regulatory_environment: ['Standard regulatory environment'],
+    competitive_dynamics: ['Competitive landscape analysis needed']
+  } : null;
+
   return {
     tam: { value: tam, currency: 'USD', confidence: 50, citation: 'Industry estimates', source: 'Fallback data' },
     sam: { value: sam, currency: 'USD', confidence: 45, calculation_method: 'Geographic focus', rationale: 'Standard 25% TAM addressability' },
     som: { value: som, currency: 'USD', confidence: 40, calculation_method: 'Market capture', rationale: 'Conservative 12% penetration' },
     cagr: { value: 8.5, period: '2024-2029', citation: 'Industry average', source: 'Standard estimates' },
-    research_quality: 'medium'
+    research_quality: 'medium',
+    regional_analysis: regionalAnalysis,
+    local_analysis: localAnalysis,
+    enhanced_insights: generateEnhancedInsights(
+      { cagr: { value: 8.5 } }, 
+      regionalAnalysis, 
+      localAnalysis
+    )
   };
 }

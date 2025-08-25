@@ -63,31 +63,49 @@ export function MarketOpportunityDeepDive({ data }: MarketOpportunityDeepDivePro
                   <div>
                     <h5 className="font-medium text-primary mb-2">Global Drivers</h5>
                     <ul className="space-y-1">
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
-                        Worldwide digital transformation trends
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
-                        Cross-border regulatory harmonization
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
-                        International adoption patterns
-                      </li>
+                      {data.tam_sam_som?.global_analysis?.drivers?.map((driver, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                          {driver}
+                        </li>
+                      )) || (
+                        <>
+                          <li className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                            Worldwide digital transformation trends
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                            Cross-border regulatory harmonization
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0" />
+                            International adoption patterns
+                          </li>
+                        </>
+                      )}
                     </ul>
                   </div>
                   <div>
                     <h5 className="font-medium text-warning mb-2">Global Challenges</h5>
                     <ul className="space-y-1">
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
-                        Regulatory complexity across regions
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
-                        Cultural adaptation requirements
-                      </li>
+                      {data.tam_sam_som?.global_analysis?.challenges?.map((challenge, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                          {challenge}
+                        </li>
+                      )) || (
+                        <>
+                          <li className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                            Regulatory complexity across regions
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                            Cultural adaptation requirements
+                          </li>
+                        </>
+                      )}
                     </ul>
                   </div>
                 </div>
@@ -97,39 +115,67 @@ export function MarketOpportunityDeepDive({ data }: MarketOpportunityDeepDivePro
                 <h4 className="font-semibold mb-3 flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
                   Regional Market Focus (SAM)
+                  {data.regional_growth_rate && (
+                    <Badge variant="outline" className="ml-2">
+                      {data.regional_growth_rate.rate}% CAGR ({data.regional_growth_rate.vs_global})
+                    </Badge>
+                  )}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
                     <h5 className="font-medium text-secondary mb-2">Regional Opportunities</h5>
                     <ul className="space-y-1">
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-secondary rounded-full mt-2 flex-shrink-0" />
-                        Targeted regulatory environment
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-secondary rounded-full mt-2 flex-shrink-0" />
-                        Regional partnership networks
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-secondary rounded-full mt-2 flex-shrink-0" />
-                        Market maturity advantages
-                      </li>
+                      {data.tam_sam_som?.regional_analysis?.opportunities?.map((opportunity, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 bg-secondary rounded-full mt-2 flex-shrink-0" />
+                          {opportunity}
+                        </li>
+                      )) || (
+                        <>
+                          <li className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-secondary rounded-full mt-2 flex-shrink-0" />
+                            Targeted regulatory environment
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-secondary rounded-full mt-2 flex-shrink-0" />
+                            Regional partnership networks
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-secondary rounded-full mt-2 flex-shrink-0" />
+                            Market maturity advantages
+                          </li>
+                        </>
+                      )}
                     </ul>
                   </div>
                   <div>
                     <h5 className="font-medium text-warning mb-2">Regional Barriers</h5>
                     <ul className="space-y-1">
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
-                        Regional competitive pressure
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
-                        Local market preferences
-                      </li>
+                      {data.tam_sam_som?.regional_analysis?.barriers?.map((barrier, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                          {barrier}
+                        </li>
+                      )) || (
+                        <>
+                          <li className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                            Regional competitive pressure
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                            Local market preferences
+                          </li>
+                        </>
+                      )}
                     </ul>
                   </div>
                 </div>
+                {data.regional_growth_rate?.growth_comparison && (
+                  <div className="mt-3 p-2 bg-blue-50/50 rounded border text-sm">
+                    <strong>Growth Comparison:</strong> {data.regional_growth_rate.growth_comparison}
+                  </div>
+                )}
               </div>
 
               <div className="border border-border rounded-lg p-4">
@@ -141,31 +187,49 @@ export function MarketOpportunityDeepDive({ data }: MarketOpportunityDeepDivePro
                   <div>
                     <h5 className="font-medium text-accent mb-2">Local Advantages</h5>
                     <ul className="space-y-1">
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-accent rounded-full mt-2 flex-shrink-0" />
-                        Direct market access and presence
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-accent rounded-full mt-2 flex-shrink-0" />
-                        Local customer relationships
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-accent rounded-full mt-2 flex-shrink-0" />
-                        Operational infrastructure
-                      </li>
+                      {data.tam_sam_som?.local_analysis?.advantages?.map((advantage, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 bg-accent rounded-full mt-2 flex-shrink-0" />
+                          {advantage}
+                        </li>
+                      )) || (
+                        <>
+                          <li className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-accent rounded-full mt-2 flex-shrink-0" />
+                            Direct market access and presence
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-accent rounded-full mt-2 flex-shrink-0" />
+                            Local customer relationships
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-accent rounded-full mt-2 flex-shrink-0" />
+                            Operational infrastructure
+                          </li>
+                        </>
+                      )}
                     </ul>
                   </div>
                   <div>
                     <h5 className="font-medium text-warning mb-2">Penetration Constraints</h5>
                     <ul className="space-y-1">
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
-                        Resource allocation limits
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
-                        Market capture timeline
-                      </li>
+                      {data.tam_sam_som?.local_analysis?.constraints?.map((constraint, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                          {constraint}
+                        </li>
+                      )) || (
+                        <>
+                          <li className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                            Resource allocation limits
+                          </li>
+                          <li className="flex items-start gap-2">
+                            <span className="w-1.5 h-1.5 bg-warning rounded-full mt-2 flex-shrink-0" />
+                            Market capture timeline
+                          </li>
+                        </>
+                      )}
                     </ul>
                   </div>
                 </div>
