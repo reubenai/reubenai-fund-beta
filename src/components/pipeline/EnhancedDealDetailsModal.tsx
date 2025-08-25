@@ -573,31 +573,13 @@ export function EnhancedDealDetailsModal({
               
               {/* Assessment Sections with Accordion - Dynamic based on fund type */}
               {fundType === 'private_equity' ? (
-                <Accordion type="multiple" className="w-full space-y-4" defaultValue={["thesis", "financial", "market", "operational", "growth", "risk", "timing", "trust"]}>
-                  <AccordionItem value="thesis" className="border rounded-lg">
-                    <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
-                      Thesis Alignment
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <ThesisAlignmentSection deal={deal} />
-                    </AccordionContent>
-                  </AccordionItem>
-                  
+                <Accordion type="multiple" className="w-full space-y-4" defaultValue={["financial", "operational", "market", "management", "growth", "strategic"]}>
                   <AccordionItem value="financial" className="border rounded-lg">
                     <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
                       Financial Performance
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
-                      <FinancialPerformanceAssessment deal={deal} />
-                    </AccordionContent>
-                  </AccordionItem>
-                  
-                  <AccordionItem value="market" className="border rounded-lg">
-                    <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
-                      Market Position
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <MarketPositionAssessment deal={deal} />
+                      <BlueprintPEFinancialPerformance deal={deal} />
                     </AccordionContent>
                   </AccordionItem>
                   
@@ -606,7 +588,25 @@ export function EnhancedDealDetailsModal({
                       Operational Excellence
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
-                      <OperationalExcellenceAssessment deal={deal} />
+                      <BlueprintPEOperationalExcellence deal={deal} />
+                    </AccordionContent>
+                  </AccordionItem>
+                  
+                  <AccordionItem value="market" className="border rounded-lg">
+                    <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
+                      Market Position
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <BlueprintPEMarketPosition deal={deal} />
+                    </AccordionContent>
+                  </AccordionItem>
+                  
+                  <AccordionItem value="management" className="border rounded-lg">
+                    <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
+                      Management Quality
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <BlueprintPEManagementQuality deal={deal} />
                     </AccordionContent>
                   </AccordionItem>
                   
@@ -615,81 +615,72 @@ export function EnhancedDealDetailsModal({
                       Growth Potential
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
-                      <GrowthPotentialAssessment deal={deal} />
+                      <BlueprintPEGrowthPotential deal={deal} />
                     </AccordionContent>
                   </AccordionItem>
                   
-                  <AccordionItem value="risk" className="border rounded-lg">
+                  <AccordionItem value="strategic" className="border rounded-lg">
                     <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
-                      Risk Assessment
+                      Strategic Fit
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
-                      <RiskAssessmentSection deal={deal} />
-                    </AccordionContent>
-                  </AccordionItem>
-                  
-                  <AccordionItem value="timing" className="border rounded-lg">
-                    <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
-                      Strategic Timing
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <StrategicTimingAssessment deal={deal} />
-                    </AccordionContent>
-                  </AccordionItem>
-                  
-                  <AccordionItem value="trust" className="border rounded-lg">
-                    <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
-                      Trust & Transparency
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <TrustTransparencyAssessment deal={deal} />
+                      <BlueprintPEStrategicFit deal={deal} />
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
               ) : (
-                <Accordion type="multiple" className="w-full space-y-4" defaultValue={["thesis", "market", "team", "product", "traction"]}>
-                  <AccordionItem value="thesis" className="border rounded-lg">
-                    <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
-                      Thesis Alignment
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <ThesisAlignmentSection deal={deal} />
-                    </AccordionContent>
-                  </AccordionItem>
-                  
+                <Accordion type="multiple" className="w-full space-y-4" defaultValue={["market", "team", "product", "business", "financial", "strategic"]}>
                   <AccordionItem value="market" className="border rounded-lg">
                     <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
                       Market Opportunity
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
-                      <MarketOpportunityAssessment deal={deal} />
+                      <BlueprintVCMarketOpportunity deal={deal} />
                     </AccordionContent>
                   </AccordionItem>
                   
                   <AccordionItem value="team" className="border rounded-lg">
                     <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
-                      Founder & Team Strength
+                      Team & Leadership
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
-                      <FounderTeamStrengthAssessment deal={deal} />
+                      <BlueprintVCTeamLeadership deal={deal} />
                     </AccordionContent>
                   </AccordionItem>
                   
                   <AccordionItem value="product" className="border rounded-lg">
                     <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
-                      Product & IP Moat
+                      Product & Technology
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
-                      <ProductIPMoatAssessment deal={deal} />
+                      <BlueprintVCProductTechnology deal={deal} />
                     </AccordionContent>
                   </AccordionItem>
                   
-                  <AccordionItem value="traction" className="border rounded-lg">
+                  <AccordionItem value="business" className="border rounded-lg">
                     <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
-                      Traction & Financial Feasibility
+                      Business Model & Traction
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
-                      <TractionFinancialFeasibilityAssessment deal={deal} />
+                      <BlueprintVCBusinessTraction deal={deal} />
+                    </AccordionContent>
+                  </AccordionItem>
+                  
+                  <AccordionItem value="financial" className="border rounded-lg">
+                    <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
+                      Financial Health
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <BlueprintVCFinancialHealth deal={deal} />
+                    </AccordionContent>
+                  </AccordionItem>
+                  
+                  <AccordionItem value="strategic" className="border rounded-lg">
+                    <AccordionTrigger className="px-4 text-lg font-semibold hover:no-underline">
+                      Strategic Fit
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <BlueprintVCStrategicFit deal={deal} />
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
