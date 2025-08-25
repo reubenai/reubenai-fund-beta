@@ -64,6 +64,18 @@ import { RiskAssessmentSection } from '@/components/analysis/RiskAssessmentSecti
 import { StrategicTimingAssessment } from '@/components/analysis/StrategicTimingAssessment';
 import { TrustTransparencyAssessment } from '@/components/analysis/TrustTransparencyAssessment';
 import { ReubenAISummaryScore } from '@/components/analysis/ReubenAISummaryScore';
+import { BlueprintVCMarketOpportunity } from '@/components/analysis/blueprint/BlueprintVCMarketOpportunity';
+import { BlueprintVCTeamLeadership } from '@/components/analysis/blueprint/BlueprintVCTeamLeadership';
+import { BlueprintVCProductTechnology } from '@/components/analysis/blueprint/BlueprintVCProductTechnology';
+import { BlueprintVCBusinessTraction } from '@/components/analysis/blueprint/BlueprintVCBusinessTraction';
+import { BlueprintVCFinancialHealth } from '@/components/analysis/blueprint/BlueprintVCFinancialHealth';
+import { BlueprintVCStrategicFit } from '@/components/analysis/blueprint/BlueprintVCStrategicFit';
+import { BlueprintPEFinancialPerformance } from '@/components/analysis/blueprint/BlueprintPEFinancialPerformance';
+import { BlueprintPEOperationalExcellence } from '@/components/analysis/blueprint/BlueprintPEOperationalExcellence';
+import { BlueprintPEMarketPosition } from '@/components/analysis/blueprint/BlueprintPEMarketPosition';
+import { BlueprintPEManagementQuality } from '@/components/analysis/blueprint/BlueprintPEManagementQuality';
+import { BlueprintPEGrowthPotential } from '@/components/analysis/blueprint/BlueprintPEGrowthPotential';
+import { BlueprintPEStrategicFit } from '@/components/analysis/blueprint/BlueprintPEStrategicFit';
 // Removed DealAnalysisTrigger - reverting to background processing
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useFund } from '@/contexts/FundContext';
