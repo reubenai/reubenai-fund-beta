@@ -173,7 +173,7 @@ export function EnhancedMarketSizing({ deal }: EnhancedMarketSizingProps) {
         variant: "destructive"
       });
       
-      // Fallback data
+      // Fallback data with regional and local analysis
       setMarketData([{
         industry: industries[0],
         tam: {
@@ -203,6 +203,28 @@ export function EnhancedMarketSizing({ deal }: EnhancedMarketSizingProps) {
           period: '2024-2029',
           source: 'Industry analysis'
         },
+        regional_analysis: {
+          region_name: location === 'Global' ? 'North America' : location.split(',')[1]?.trim() || location,
+          market_size: '$45B regional market opportunity',
+          growth_rate: 9.2,
+          vs_global_comparison: 'Regional market growing 8% faster than global average, driven by digital transformation initiatives',
+          regional_drivers: ['Digital transformation', 'Regulatory compliance', 'Technology adoption'],
+          market_maturity: 'Mature market with established infrastructure',
+          fund_alignment: 'Strong alignment with fund\'s target geography and investment thesis'
+        },
+        local_analysis: {
+          country_name: location.split(',')[0]?.trim() || location,
+          market_size: '$12B local market size',
+          growth_rate: 10.5,
+          local_opportunities: ['Enterprise digital transformation', 'SME technology adoption', 'Government digitization initiatives'],
+          regulatory_environment: ['Favorable regulatory environment', 'Government incentives for technology'],
+          competitive_dynamics: ['Growing competitive landscape', 'Market consolidation opportunities']
+        },
+        enhanced_insights: [
+          'Regional market shows accelerated growth vs global trends',
+          'Local market benefits from strong government support and investment',
+          'Geographic positioning aligns well with fund investment strategy'
+        ],
         last_updated: new Date().toISOString()
       }]);
     } finally {
