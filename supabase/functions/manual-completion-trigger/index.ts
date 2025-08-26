@@ -15,6 +15,17 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // 🚫 HARD CODED KILL SWITCH - ENGINE PERMANENTLY DISABLED
+  console.log('🚫 Manual Completion Trigger: PERMANENTLY DISABLED');
+  return new Response(JSON.stringify({ 
+    success: false, 
+    error: 'Manual completion processing permanently disabled',
+    message: 'This engine has been shut down permanently'
+  }), {
+    status: 503,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+
   try {
     console.log('🔧 Manual Completion Trigger: Starting immediate completion...');
 

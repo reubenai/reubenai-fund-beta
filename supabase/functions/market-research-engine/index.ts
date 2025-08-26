@@ -26,6 +26,17 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // 🚫 HARD CODED KILL SWITCH - ENGINE PERMANENTLY DISABLED
+  console.log('🚫 Market Research Engine: PERMANENTLY DISABLED');
+  return new Response(JSON.stringify({ 
+    success: false, 
+    error: 'Market research engine permanently disabled',
+    message: 'This engine has been shut down permanently'
+  }), {
+    status: 503,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+
   try {
     const { 
       dealData, 

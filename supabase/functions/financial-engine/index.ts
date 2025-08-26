@@ -22,6 +22,25 @@ interface FinancialAnalysisRequest {
 }
 
 serve(async (req) => {
+  // 🚫 HARD CODED KILL SWITCH - ENGINE PERMANENTLY DISABLED
+  console.log('🚫 Financial Engine: PERMANENTLY DISABLED');
+  
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  return new Response(
+    JSON.stringify({
+      success: false,
+      error: 'Financial engine permanently disabled',
+      message: 'This engine has been shut down permanently'
+    }),
+    {
+      status: 503,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    }
+  );
+
   // 🚫 HARDCODED KILL SWITCH - FINANCIAL ENGINE DISABLED
   console.log('🚫 FINANCIAL ENGINE DISABLED - Kill switch active');
   

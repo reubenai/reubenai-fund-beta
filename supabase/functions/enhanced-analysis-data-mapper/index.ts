@@ -34,6 +34,17 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // 🚫 HARD CODED KILL SWITCH - ENGINE PERMANENTLY DISABLED
+  console.log('🚫 Enhanced Analysis Data Mapper: PERMANENTLY DISABLED');
+  return new Response(JSON.stringify({ 
+    success: false, 
+    error: 'Enhanced analysis data mapper permanently disabled',
+    message: 'This engine has been shut down permanently'
+  }), {
+    status: 503,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+
   try {
     const { dealId, orchestratorAnalysis }: { 
       dealId: string; 

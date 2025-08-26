@@ -47,6 +47,23 @@ interface QueueItem {
 }
 
 serve(async (req) => {
+  // 🚫 HARD CODED KILL SWITCH - ENGINE PERMANENTLY DISABLED
+  console.log('🚫 Analysis Queue Processor: PERMANENTLY DISABLED');
+  
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  return new Response(JSON.stringify({ 
+    success: false, 
+    error: 'Analysis queue processor permanently disabled',
+    message: 'This engine has been shut down permanently'
+  }), {
+    status: 503,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });

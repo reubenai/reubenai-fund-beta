@@ -35,6 +35,17 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // 🚫 HARD CODED KILL SWITCH - ENGINE PERMANENTLY DISABLED
+  console.log('🚫 RAG Calculation Engine: PERMANENTLY DISABLED');
+  return new Response(JSON.stringify({ 
+    success: false, 
+    error: 'RAG calculation engine permanently disabled',
+    message: 'This engine has been shut down permanently'
+  }), {
+    status: 503,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+
   try {
     console.log('🎯 RAG Calculation Engine: CONSOLIDATED - Routing through enhanced-deal-analysis');
     
