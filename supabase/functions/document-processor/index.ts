@@ -129,6 +129,129 @@ function parseAIAnalysis(analysis: string, analysisType: string) {
   }
 }
 
+// Investment Summary Generator
+async function generateInvestmentSummary(extractedText: string, document: any, openAIApiKey: string) {
+  if (!openAIApiKey) {
+    throw new Error('OpenAI API key is required for investment summary generation');
+  }
+
+  const prompt = `You are an expert VC analyst. Analyze the following document and generate an investment summary with specific data points.
+
+Document: ${document.name}
+Category: ${document.document_category}
+
+Extracted Text:
+${extractedText.substring(0, 6000)}
+
+Generate a JSON response with:
+1. "narrative" - A concise 2-3 sentence summary of the company/opportunity
+2. "data_points" - An object with these exact keys, using "not listed" if data is not found:
+
+Required data points:
+- TAM
+- SAM  
+- SOM
+- CAGR
+- Growth Drivers
+- Market Share Distribution
+- Key Market Players
+- Whitespace Opportunities
+- Addressable Customers
+- CAC Trend
+- LTV:CAC Ratio
+- Retention Rate
+- Channel Effectiveness
+- Strategic Advisors
+- Investor Network
+- Partnership Ecosystem
+
+Example format:
+{
+  "narrative": "Company description in 2-3 sentences highlighting key value proposition and market opportunity.",
+  "data_points": {
+    "TAM": "not listed",
+    "SAM": "not listed", 
+    "SOM": "not listed",
+    "CAGR": "15.1%",
+    "Growth Drivers": "Key growth factors identified",
+    "Market Share Distribution": "not listed",
+    "Key Market Players": "Competitor names if mentioned",
+    "Whitespace Opportunities": "Market gaps identified",
+    "Addressable Customers": "Customer count or description",
+    "CAC Trend": "not listed",
+    "LTV:CAC Ratio": "not listed", 
+    "Retention Rate": "not listed",
+    "Channel Effectiveness": "Distribution channels mentioned",
+    "Strategic Advisors": "not listed",
+    "Investor Network": "Investor names if mentioned",
+    "Partnership Ecosystem": "Partners mentioned"
+  }
+}`;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { 
+            role: 'system', 
+            content: 'You are an expert VC analyst specializing in investment summary generation. Always respond with valid JSON containing narrative and data_points fields.'
+          },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.2,
+        max_tokens: 1500
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const summaryContent = data.choices[0].message.content;
+    
+    // Parse the JSON response
+    const summaryData = JSON.parse(summaryContent);
+    
+    // Validate the structure
+    if (!summaryData.narrative || !summaryData.data_points) {
+      throw new Error('Invalid summary structure received from AI');
+    }
+    
+    return summaryData;
+  } catch (error) {
+    console.error('Investment summary generation failed:', error);
+    // Return a fallback structure
+    return {
+      narrative: `Investment summary for ${document.name}. Document analysis completed with available data extraction.`,
+      data_points: {
+        "TAM": "not listed",
+        "SAM": "not listed",
+        "SOM": "not listed", 
+        "CAGR": "not listed",
+        "Growth Drivers": "not listed",
+        "Market Share Distribution": "not listed",
+        "Key Market Players": "not listed", 
+        "Whitespace Opportunities": "not listed",
+        "Addressable Customers": "not listed",
+        "CAC Trend": "not listed",
+        "LTV:CAC Ratio": "not listed",
+        "Retention Rate": "not listed",
+        "Channel Effectiveness": "not listed",
+        "Strategic Advisors": "not listed",
+        "Investor Network": "not listed",
+        "Partnership Ecosystem": "not listed"
+      }
+    };
+  }
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -158,6 +281,9 @@ serve(async (req) => {
     }
 
     console.log(`Processing document ${documentId} with analysis type: ${analysisType}`);
+
+    // Get OpenAI API key for investment summary
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
     // Get document record
     const { data: document, error: docError } = await supabaseClient
@@ -203,7 +329,20 @@ serve(async (req) => {
     // Perform intelligent analysis on the extracted text
     const analysisResult = await analyzeDocument(extractedText, document, analysisType);
 
-    // Update document with analysis results and extracted text
+    // Generate investment summary with structured VC data points
+    let investmentSummary = null;
+    if (extractedText && extractedText.length > 100) {
+      try {
+        console.log(`Generating investment summary for document: ${document.name}`);
+        investmentSummary = await generateInvestmentSummary(extractedText, document, openAIApiKey);
+        console.log('✅ Investment summary generated successfully');
+      } catch (summaryError) {
+        console.warn('Investment summary generation failed:', summaryError);
+        // Continue processing even if summary fails
+      }
+    }
+
+    // Update document with analysis results, extracted text, and investment summary
     const { error: updateError } = await supabaseClient
       .from('deal_documents')
       .update({
@@ -211,12 +350,14 @@ serve(async (req) => {
         parsing_status: 'completed',
         extracted_text: extractedText,
         parsed_data: analysisResult.parsed_data || {},
+        document_summary: investmentSummary,
         metadata: {
           ...document.metadata,
           analysis_completed_at: new Date().toISOString(),
           analysis_result: analysisResult,
           analysis_type: analysisType,
-          text_extraction_completed: true
+          text_extraction_completed: true,
+          investment_summary_generated: !!investmentSummary
         }
       })
       .eq('id', documentId);

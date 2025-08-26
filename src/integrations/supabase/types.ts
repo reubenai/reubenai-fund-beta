@@ -1310,6 +1310,7 @@ export type Database = {
           document_category:
             | Database["public"]["Enums"]["document_category"]
             | null
+          document_summary: Json | null
           document_type: string | null
           extracted_text: string | null
           file_path: string
@@ -1341,6 +1342,7 @@ export type Database = {
           document_category?:
             | Database["public"]["Enums"]["document_category"]
             | null
+          document_summary?: Json | null
           document_type?: string | null
           extracted_text?: string | null
           file_path: string
@@ -1372,6 +1374,7 @@ export type Database = {
           document_category?:
             | Database["public"]["Enums"]["document_category"]
             | null
+          document_summary?: Json | null
           document_type?: string | null
           extracted_text?: string | null
           file_path?: string
