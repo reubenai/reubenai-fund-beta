@@ -16,6 +16,7 @@ import { MultiSelect } from '@/components/ui/multi-select';
 import { COMPREHENSIVE_INDUSTRY_OPTIONS } from '@/constants/enhancedIndustries';
 import { LOCATION_OPTIONS, locationsToString, stringToLocations } from '@/constants/locations';
 import { sanitizeUrl } from '@/hooks/useValidation';
+import { useLinkedInProfileEnrichment } from '@/hooks/useLinkedInProfileEnrichment';
 
 interface AddDealModalProps {
   open: boolean;
@@ -48,6 +49,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { triggerDealAnalysis } = useAnalysisIntegration();
+  const { triggerProfileEnrichment } = useLinkedInProfileEnrichment();
   
   // Ref to prevent duplicate submissions
   const submissionInProgress = useRef(false);
@@ -178,6 +180,17 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
           console.log('✅ Initial analysis triggered');
         } catch (error) {
           console.warn('Initial analysis trigger failed but deal created:', error);
+        }
+
+        // Trigger profile enrichment if founder name provided (optional, don't fail deal creation if this fails)
+        if (formData.founder_name && formData.founder_name.trim()) {
+          try {
+            console.log('🚀 Triggering LinkedIn profile enrichment...');
+            await triggerProfileEnrichment(newDeal.id, formData.founder_name);
+            console.log('✅ LinkedIn profile enrichment triggered');
+          } catch (error) {
+            console.warn('Profile enrichment failed but deal created:', error);
+          }
         }
 
         toast({

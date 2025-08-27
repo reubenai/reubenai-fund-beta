@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { COMPREHENSIVE_INDUSTRY_OPTIONS } from '@/constants/enhancedIndustries';
 import { sanitizeUrl } from '@/hooks/useValidation';
+import { useLinkedInProfileEnrichment } from '@/hooks/useLinkedInProfileEnrichment';
 
 interface Deal {
   id: string;
@@ -97,6 +98,7 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { triggerProfileEnrichment } = useLinkedInProfileEnrichment();
 
   // Update form data when deal changes
   useEffect(() => {
@@ -508,12 +510,34 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="founder">Founder</Label>
-                <Input
-                  id="founder"
-                  value={formData.founder}
-                  onChange={(e) => handleInputChange('founder', e.target.value)}
-                  placeholder="Enter founder name"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="founder"
+                    value={formData.founder}
+                    onChange={(e) => handleInputChange('founder', e.target.value)}
+                    placeholder="Enter founder name"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      if (formData.founder && formData.founder.trim()) {
+                        await triggerProfileEnrichment(deal.id, formData.founder);
+                      } else {
+                        toast({
+                          title: "Missing Information",
+                          description: "Please enter a founder name first",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                    disabled={!formData.founder?.trim()}
+                  >
+                    Enrich Profile
+                  </Button>
+                </div>
               </div>
               <div>
                 <Label htmlFor="founder_email">Founder Email</Label>

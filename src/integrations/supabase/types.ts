@@ -1545,6 +1545,126 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_enrichment_linkedin_profile_export: {
+        Row: {
+          about: string | null
+          activity: Json | null
+          certifications: Json | null
+          connections: number | null
+          courses: Json | null
+          created_at: string
+          current_company: string | null
+          current_company_company_id: string | null
+          current_company_name: string | null
+          deal_id: string
+          education: Json | null
+          educations_details: Json | null
+          error_details: string | null
+          experience: Json | null
+          first_name: string | null
+          followers: number | null
+          honors_and_awards: Json | null
+          id: string
+          languages: Json | null
+          last_name: string | null
+          name: string | null
+          organizations: Json | null
+          patents: Json | null
+          position: string | null
+          posts: Json | null
+          processed_at: string | null
+          processing_status: string | null
+          projects: Json | null
+          publications: Json | null
+          raw_brightdata_response: Json
+          recommendations: Json | null
+          recommendations_count: number | null
+          snapshot_id: string
+          timestamp: string | null
+          updated_at: string
+          url: string | null
+          volunteer_experience: Json | null
+        }
+        Insert: {
+          about?: string | null
+          activity?: Json | null
+          certifications?: Json | null
+          connections?: number | null
+          courses?: Json | null
+          created_at?: string
+          current_company?: string | null
+          current_company_company_id?: string | null
+          current_company_name?: string | null
+          deal_id: string
+          education?: Json | null
+          educations_details?: Json | null
+          error_details?: string | null
+          experience?: Json | null
+          first_name?: string | null
+          followers?: number | null
+          honors_and_awards?: Json | null
+          id?: string
+          languages?: Json | null
+          last_name?: string | null
+          name?: string | null
+          organizations?: Json | null
+          patents?: Json | null
+          position?: string | null
+          posts?: Json | null
+          processed_at?: string | null
+          processing_status?: string | null
+          projects?: Json | null
+          publications?: Json | null
+          raw_brightdata_response: Json
+          recommendations?: Json | null
+          recommendations_count?: number | null
+          snapshot_id: string
+          timestamp?: string | null
+          updated_at?: string
+          url?: string | null
+          volunteer_experience?: Json | null
+        }
+        Update: {
+          about?: string | null
+          activity?: Json | null
+          certifications?: Json | null
+          connections?: number | null
+          courses?: Json | null
+          created_at?: string
+          current_company?: string | null
+          current_company_company_id?: string | null
+          current_company_name?: string | null
+          deal_id?: string
+          education?: Json | null
+          educations_details?: Json | null
+          error_details?: string | null
+          experience?: Json | null
+          first_name?: string | null
+          followers?: number | null
+          honors_and_awards?: Json | null
+          id?: string
+          languages?: Json | null
+          last_name?: string | null
+          name?: string | null
+          organizations?: Json | null
+          patents?: Json | null
+          position?: string | null
+          posts?: Json | null
+          processed_at?: string | null
+          processing_status?: string | null
+          projects?: Json | null
+          publications?: Json | null
+          raw_brightdata_response?: Json
+          recommendations?: Json | null
+          recommendations_count?: number | null
+          snapshot_id?: string
+          timestamp?: string | null
+          updated_at?: string
+          url?: string | null
+          volunteer_experience?: Json | null
+        }
+        Relationships: []
+      }
       deal_execution_locks: {
         Row: {
           created_at: string

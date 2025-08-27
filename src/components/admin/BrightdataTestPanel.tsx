@@ -6,18 +6,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useLinkedInProfileEnrichment } from '@/hooks/useLinkedInProfileEnrichment';
 
 export const BrightdataTestPanel = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [testResult, setTestResult] = useState<any>(null);
   const [companyName, setCompanyName] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [founderFirstName, setFounderFirstName] = useState('');
+  const [founderLastName, setFounderLastName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [testResult, setTestResult] = useState<any>(null);
+  const [profileTestResult, setProfileTestResult] = useState<any>(null);
   const [coresignalComparison, setCoresignalComparison] = useState<any>(null);
   const [processingStatus, setProcessingStatus] = useState<any>(null);
   const [showStatusMonitor, setShowStatusMonitor] = useState(false);
   const { toast } = useToast();
+  const { triggerProfileEnrichment } = useLinkedInProfileEnrichment();
 
   const triggerCompletionService = async () => {
     try {
@@ -128,13 +134,66 @@ export const BrightdataTestPanel = () => {
     }
   };
 
+  const testProfileEnrichment = async () => {
+    if (!founderFirstName || !founderLastName) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide both first and last name",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProfileLoading(true);
+    setProfileTestResult(null);
+
+    try {
+      console.log('Testing LinkedIn Profile Enrichment...');
+      const { data: profileData, error: profileError } = await supabase.functions.invoke(
+        'brightdata-linkedin-profile-enrichment',
+        {
+          body: {
+            dealId: 'test-profile-' + Date.now(),
+            firstName: founderFirstName,
+            lastName: founderLastName
+          }
+        }
+      );
+
+      if (profileError) {
+        throw new Error(`Profile Enrichment Error: ${profileError.message}`);
+      }
+
+      setProfileTestResult(profileData);
+
+      toast({
+        title: "Profile Test Completed",
+        description: "LinkedIn Profile enrichment API tested successfully",
+      });
+
+    } catch (error: any) {
+      console.error('Profile test error:', error);
+      toast({
+        title: "Profile Test Failed", 
+        description: error.message,
+        variant: "destructive"
+      });
+      setProfileTestResult({ error: error.message });
+    } finally {
+      setIsProfileLoading(false);
+    }
+  };
+
   const resetTestPanel = () => {
     setTestResult(null);
+    setProfileTestResult(null);
     setCoresignalComparison(null);
     setProcessingStatus(null);
     setShowStatusMonitor(false);
     setCompanyName('');
     setLinkedinUrl('');
+    setFounderFirstName('');
+    setFounderLastName('');
     
     toast({
       title: "Panel Reset",
@@ -163,44 +222,79 @@ export const BrightdataTestPanel = () => {
           🌟 Brightdata API Test Panel
         </CardTitle>
         <CardDescription>
-          Test Brightdata LinkedIn enrichment with Coresignal comparison (Option B: Brightdata Primary)
+          Test Brightdata LinkedIn company & profile enrichment with Coresignal comparison
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="companyName">Company Name</Label>
-            <Input
-              id="companyName"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="e.g. Stalkit"
-            />
+        {/* Company Enrichment Section */}
+        <div className="space-y-4 border rounded-lg p-4">
+          <h3 className="text-lg font-semibold">🏢 Company Enrichment Test</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="companyName">Company Name</Label>
+              <Input
+                id="companyName"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="e.g. Stalkit"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="linkedinUrl">LinkedIn Company URL</Label>
+              <Input
+                id="linkedinUrl"
+                value={linkedinUrl}
+                onChange={(e) => setLinkedinUrl(e.target.value)}
+                placeholder="https://www.linkedin.com/company/stalkit"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="linkedinUrl">LinkedIn Company URL</Label>
-            <Input
-              id="linkedinUrl"
-              value={linkedinUrl}
-              onChange={(e) => setLinkedinUrl(e.target.value)}
-              placeholder="https://www.linkedin.com/company/stalkit"
-            />
+          <Button 
+            onClick={testBrightdataEnrichment}
+            disabled={isLoading}
+            className="w-full"
+          >
+            {isLoading ? 'Testing Company APIs...' : 'Test Company Enrichment'}
+          </Button>
+        </div>
+
+        {/* Profile Enrichment Section */}
+        <div className="space-y-4 border rounded-lg p-4">
+          <h3 className="text-lg font-semibold">👤 Profile Enrichment Test</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="founderFirstName">Founder First Name</Label>
+              <Input
+                id="founderFirstName"
+                value={founderFirstName}
+                onChange={(e) => setFounderFirstName(e.target.value)}
+                placeholder="e.g. John"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="founderLastName">Founder Last Name</Label>
+              <Input
+                id="founderLastName"
+                value={founderLastName}
+                onChange={(e) => setFounderLastName(e.target.value)}
+                placeholder="e.g. Smith"
+              />
+            </div>
           </div>
+          <Button 
+            onClick={testProfileEnrichment}
+            disabled={isProfileLoading}
+            className="w-full"
+          >
+            {isProfileLoading ? 'Testing Profile API...' : 'Test Profile Enrichment'}
+          </Button>
         </div>
         
         <div className="flex flex-wrap gap-2">
           <Button 
-            onClick={testBrightdataEnrichment}
-            disabled={isLoading}
-            className="flex-1"
-          >
-            {isLoading ? 'Testing APIs...' : 'Test Brightdata vs Coresignal'}
-          </Button>
-          
-          <Button 
             onClick={triggerCompletionService}
             variant="outline"
-            disabled={isLoading}
+            disabled={isLoading || isProfileLoading}
           >
             🔧 Complete Stuck Processes
           </Button>
@@ -208,7 +302,7 @@ export const BrightdataTestPanel = () => {
           <Button 
             onClick={resetTestPanel}
             variant="secondary"
-            disabled={isLoading}
+            disabled={isLoading || isProfileLoading}
           >
             🔄 Reset Panel
           </Button>
@@ -279,6 +373,7 @@ export const BrightdataTestPanel = () => {
           </div>
         )}
 
+        {/* Company Enrichment Results */}
         {testResult && (
           <div className="space-y-4">
             <Separator />
@@ -286,7 +381,7 @@ export const BrightdataTestPanel = () => {
             {testResult.error ? (
               <Alert variant="destructive">
                 <AlertDescription>
-                  <strong>Error:</strong> {testResult.error}
+                  <strong>Company Enrichment Error:</strong> {testResult.error}
                 </AlertDescription>
               </Alert>
             ) : (
@@ -294,7 +389,7 @@ export const BrightdataTestPanel = () => {
                 {/* Brightdata Results */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold">🌟 Brightdata Results</h3>
+                    <h3 className="text-lg font-semibold">🏢 Company: Brightdata Results</h3>
                     <Badge className={getSourceBadgeColor(testResult.dataSource)}>
                       {testResult.dataSource}
                     </Badge>
@@ -308,102 +403,65 @@ export const BrightdataTestPanel = () => {
 
                   {testResult.data && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
-                      <div>
-                        <strong>Company:</strong> {testResult.data.company_name || 'N/A'}
-                      </div>
-                      <div>
-                        <strong>Employees:</strong> {testResult.data.employee_count || 'N/A'}
-                      </div>
-                      <div>
-                        <strong>Industry:</strong> {testResult.data.industry || 'N/A'}
-                      </div>
-                      <div>
-                        <strong>Location:</strong> {testResult.data.location || 'N/A'}
-                      </div>
-                      <div>
-                        <strong>Revenue Est:</strong> {testResult.data.revenue_estimate ? `$${(testResult.data.revenue_estimate / 1000000).toFixed(1)}M` : 'N/A'}
-                      </div>
-                      <div>
-                        <strong>LinkedIn Followers:</strong> {testResult.data.linkedin_followers || 'N/A'}
-                      </div>
+                      <div><strong>Company:</strong> {testResult.data.company_name || 'N/A'}</div>
+                      <div><strong>Employees:</strong> {testResult.data.employee_count || 'N/A'}</div>
+                      <div><strong>Industry:</strong> {testResult.data.industry || 'N/A'}</div>
+                      <div><strong>Location:</strong> {testResult.data.location || 'N/A'}</div>
+                      <div><strong>Revenue Est:</strong> {testResult.data.revenue_estimate ? `$${(testResult.data.revenue_estimate / 1000000).toFixed(1)}M` : 'N/A'}</div>
+                      <div><strong>LinkedIn Followers:</strong> {testResult.data.linkedin_followers || 'N/A'}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Profile Enrichment Results */}
+        {profileTestResult && (
+          <div className="space-y-4">
+            <Separator />
+            
+            {profileTestResult.error ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  <strong>Profile Enrichment Error:</strong> {profileTestResult.error}
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold">👤 Profile: Brightdata Results</h3>
+                    <Badge className={getSourceBadgeColor(profileTestResult.dataSource)}>
+                      {profileTestResult.dataSource}
+                    </Badge>
+                    <Badge variant="outline">
+                      Trust: {profileTestResult.trustScore}/100
+                    </Badge>
+                    <Badge variant="outline">
+                      Quality: {profileTestResult.dataQuality || 'N/A'}/100
+                    </Badge>
+                  </div>
+
+                  {profileTestResult.data && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+                      <div><strong>Name:</strong> {profileTestResult.data.name || 'N/A'}</div>
+                      <div><strong>Position:</strong> {profileTestResult.data.position || 'N/A'}</div>
+                      <div><strong>Company:</strong> {profileTestResult.data.current_company || 'N/A'}</div>
+                      <div><strong>Followers:</strong> {profileTestResult.data.followers || 'N/A'}</div>
+                      <div><strong>Connections:</strong> {profileTestResult.data.connections || 'N/A'}</div>
+                      <div><strong>Activity Level:</strong> {profileTestResult.data.activity_level || 'N/A'}</div>
                     </div>
                   )}
                 </div>
 
-                {/* Coresignal Comparison */}
-                {coresignalComparison && !coresignalComparison.error && (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold">📊 Coresignal Comparison</h3>
-                      <Badge className={getSourceBadgeColor(coresignalComparison.data?.enrichment_data?.source)}>
-                        {coresignalComparison.data?.enrichment_data?.source || 'unknown'}
-                      </Badge>
-                      <Badge variant="outline">
-                        Trust: {coresignalComparison.data?.enrichment_data?.trustScore || 'N/A'}/100
-                      </Badge>
-                      <Badge variant="outline">
-                        Quality: {coresignalComparison.data?.enrichment_data?.dataQuality || 'N/A'}/100
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
-                      <div>
-                        <strong>Employees:</strong> {coresignalComparison.data?.enrichment_data?.employeeCount || 'N/A'}
-                      </div>
-                      <div>
-                        <strong>Revenue Est:</strong> {coresignalComparison.data?.enrichment_data?.revenueEstimate ? `$${(coresignalComparison.data.enrichment_data.revenueEstimate / 1000000).toFixed(1)}M` : 'N/A'}
-                      </div>
-                      <div>
-                        <strong>Key Personnel:</strong> {coresignalComparison.data?.enrichment_data?.keyPersonnel?.length || 0} found
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Data Quality Comparison */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold">📈 Data Quality Analysis</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium text-blue-600">Brightdata Advantages</h4>
-                      <ul className="text-sm text-muted-foreground mt-2 space-y-1">
-                        <li>• Direct LinkedIn API access</li>
-                        <li>• Higher trust score (95 vs {coresignalComparison?.data?.enrichment_data?.trustScore || 'N/A'})</li>
-                        <li>• LinkedIn-specific data (followers, updates)</li>
-                        <li>• More comprehensive company profiles</li>
-                      </ul>
-                    </div>
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium text-green-600">Coresignal Advantages</h4>
-                      <ul className="text-sm text-muted-foreground mt-2 space-y-1">
-                        <li>• Detailed employee data</li>
-                        <li>• Individual LinkedIn profiles</li>
-                        <li>• Historical tracking</li>
-                        <li>• Proven reliability</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Raw Response Data */}
                 <details className="space-y-2">
-                  <summary className="cursor-pointer font-medium">View Raw API Responses</summary>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium">Brightdata Response:</h4>
-                      <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-60">
-                        {JSON.stringify(testResult, null, 2)}
-                      </pre>
-                    </div>
-                    {coresignalComparison && (
-                      <div>
-                        <h4 className="font-medium">Coresignal Response:</h4>
-                        <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-60">
-                          {JSON.stringify(coresignalComparison, null, 2)}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
+                  <summary className="cursor-pointer font-medium">View Raw Profile API Response</summary>
+                  <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-60">
+                    {JSON.stringify(profileTestResult, null, 2)}
+                  </pre>
                 </details>
               </div>
             )}
