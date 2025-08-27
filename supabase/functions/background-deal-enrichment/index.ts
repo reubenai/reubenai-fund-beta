@@ -17,15 +17,29 @@ interface BackgroundEnrichmentRequest {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
+
+  console.log('🚀 Background Deal Enrichment Function Called')
 
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
+
+    console.log('✅ Supabase client initialized')
+
+    const requestBody = await req.json() as BackgroundEnrichmentRequest
+    console.log('📥 Request received:', {
+      dealId: requestBody.dealId,
+      companyName: requestBody.companyName,
+      hasLinkedinUrl: !!requestBody.linkedinUrl,
+      hasCrunchbaseUrl: !!requestBody.crunchbaseUrl,
+      hasFounderName: !!requestBody.founderName
+    })
 
     const { 
       dealId, 
@@ -35,7 +49,7 @@ serve(async (req) => {
       founderName,
       companyName,
       website
-    } = await req.json() as BackgroundEnrichmentRequest
+    } = requestBody
 
     console.log(`🚀 Background Deal Enrichment: Starting parallel enrichment for ${companyName} (${dealId})`)
 
@@ -64,10 +78,12 @@ serve(async (req) => {
           }
         } catch (error) {
           console.error('💥 LinkedIn company enrichment error:', error)
-          return { type: 'linkedin_company', success: false, error }
+          return { type: 'linkedin_company', success: false, error: error.message }
         }
       }
       enrichmentPromises.push(linkedinEnrichment())
+    } else {
+      console.log('⚠️ Skipping LinkedIn company enrichment - no URL provided')
     }
 
     // 2. Crunchbase Enrichment (if Crunchbase URL exists)
@@ -96,10 +112,12 @@ serve(async (req) => {
           }
         } catch (error) {
           console.error('💥 Crunchbase enrichment error:', error)
-          return { type: 'crunchbase', success: false, error }
+          return { type: 'crunchbase', success: false, error: error.message }
         }
       }
       enrichmentPromises.push(crunchbaseEnrichment())
+    } else {
+      console.log('⚠️ Skipping Crunchbase enrichment - no URL provided')
     }
 
     // 3. LinkedIn Profile Enrichment (if founder name exists)
@@ -124,11 +142,15 @@ serve(async (req) => {
           }
         } catch (error) {
           console.error('💥 LinkedIn profile enrichment error:', error)
-          return { type: 'linkedin_profile', success: false, error }
+          return { type: 'linkedin_profile', success: false, error: error.message }
         }
       }
       enrichmentPromises.push(profileEnrichment())
+    } else {
+      console.log('⚠️ Skipping LinkedIn profile enrichment - no founder name provided')
     }
+
+    console.log(`📊 Total enrichment processes to run: ${enrichmentPromises.length}`)
 
     // Execute background tasks without blocking response
     if (enrichmentPromises.length > 0) {
@@ -186,22 +208,28 @@ serve(async (req) => {
             console.error('💥 Background enrichment process failed:', error)
             
             // Log failure
-            await supabase
-              .from('activity_events')
-              .insert({
-                deal_id: dealId,
-                fund_id: fundId,
-                activity_type: 'enrichment_failed',
-                title: 'Background Enrichment Failed',
-                description: 'Parallel enrichment process encountered errors',
-                context_data: {
-                  error: error.message || 'Unknown error',
-                  deal_name: companyName
-                }
-              })
+            try {
+              await supabase
+                .from('activity_events')
+                .insert({
+                  deal_id: dealId,
+                  fund_id: fundId,
+                  activity_type: 'enrichment_failed',
+                  title: 'Background Enrichment Failed',
+                  description: 'Parallel enrichment process encountered errors',
+                  context_data: {
+                    error: error.message || 'Unknown error',
+                    deal_name: companyName
+                  }
+                })
+            } catch (logError) {
+              console.error('Failed to log enrichment failure:', logError)
+            }
           }
         })()
       )
+    } else {
+      console.log('⚠️ No enrichment processes to run - no URLs or data provided')
     }
 
     // Return immediate response
@@ -214,7 +242,8 @@ serve(async (req) => {
         linkedin_company: !!linkedinUrl,
         crunchbase: !!crunchbaseUrl,
         linkedin_profile: !!founderName
-      }
+      },
+      timestamp: new Date().toISOString()
     }
 
     console.log(`✅ Background enrichment initiated for ${companyName}:`, response)
@@ -228,12 +257,13 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Background Deal Enrichment Error:', error)
+    console.error('💥 Background Deal Enrichment Error:', error)
     return new Response(
       JSON.stringify({ 
         success: false,
         error: error.message,
-        details: 'Background deal enrichment failed'
+        details: 'Background deal enrichment failed',
+        timestamp: new Date().toISOString()
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

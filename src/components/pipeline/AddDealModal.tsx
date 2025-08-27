@@ -159,23 +159,50 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
             founderName: formData.founder_name || undefined
           };
 
+          console.log('📤 Enrichment payload:', {
+            dealId: backgroundEnrichmentData.dealId,
+            companyName: backgroundEnrichmentData.companyName,
+            hasLinkedinUrl: !!backgroundEnrichmentData.linkedinUrl,
+            hasCrunchbaseUrl: !!backgroundEnrichmentData.crunchbaseUrl,
+            hasFounderName: !!backgroundEnrichmentData.founderName
+          });
+
           // Fire and forget - this runs in background
           supabase.functions.invoke('background-deal-enrichment', {
             body: backgroundEnrichmentData
           }).then(({ data, error }) => {
             if (error) {
-              console.warn('Background enrichment initiation failed:', error);
+              console.error('❌ Background enrichment initiation failed:', error);
+              // Show warning toast but don't block flow
+              toast({
+                title: "Warning",
+                description: `Deal created successfully but enrichment failed to start: ${error.message}`,
+                variant: "destructive"
+              });
             } else {
-              console.log('✅ Background enrichment initiated:', data);
+              console.log('✅ Background enrichment initiated successfully:', data);
+              console.log(`🔄 ${data.processesStarted} enrichment processes started for: ${formData.company_name}`);
             }
           }).catch(err => {
-            console.warn('Background enrichment promise failed:', err);
+            console.error('💥 Background enrichment promise failed:', err);
+            // Show warning toast
+            toast({
+              title: "Warning", 
+              description: `Deal created but enrichment service unavailable: ${err.message}`,
+              variant: "destructive"
+            });
           });
 
-          console.log('🔄 Background enrichment started for:', formData.company_name);
+          console.log('🔄 Background enrichment request sent for:', formData.company_name);
           
         } catch (error) {
-          console.warn('Background enrichment initiation failed but deal created:', error);
+          console.error('💥 Background enrichment initiation error:', error);
+          // Show warning toast but don't block deal creation
+          toast({
+            title: "Warning",
+            description: `Deal created successfully but enrichment failed: ${error.message}`,
+            variant: "destructive"
+          });
         }
 
         toast({
