@@ -147,53 +147,74 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
         
         // Start background enrichment processes (non-blocking)
         try {
-          console.log('🚀 Starting parallel background enrichment...');
+          console.log('🚀 Starting independent background enrichment processes...');
           
-          const backgroundEnrichmentData = {
-            dealId: newDeal.id,
-            fundId: newDeal.fund_id,
-            companyName: formData.company_name,
-            website: formData.website || undefined,
-            linkedinUrl: formData.linkedin_url || undefined,
-            crunchbaseUrl: formData.crunchbase_url || undefined,
-            founderName: formData.founder_name || undefined
-          };
+          let enrichmentProcesses = 0;
 
-          console.log('📤 Enrichment payload:', {
-            dealId: backgroundEnrichmentData.dealId,
-            companyName: backgroundEnrichmentData.companyName,
-            hasLinkedinUrl: !!backgroundEnrichmentData.linkedinUrl,
-            hasCrunchbaseUrl: !!backgroundEnrichmentData.crunchbaseUrl,
-            hasFounderName: !!backgroundEnrichmentData.founderName
-          });
-
-          // Fire and forget - this runs in background
-          supabase.functions.invoke('background-deal-enrichment', {
-            body: backgroundEnrichmentData
-          }).then(({ data, error }) => {
-            if (error) {
-              console.error('❌ Background enrichment initiation failed:', error);
-              // Show warning toast but don't block flow
-              toast({
-                title: "Warning",
-                description: `Deal created successfully but enrichment failed to start: ${error.message}`,
-                variant: "destructive"
-              });
-            } else {
-              console.log('✅ Background enrichment initiated successfully:', data);
-              console.log(`🔄 ${data.processesStarted} enrichment processes started for: ${formData.company_name}`);
-            }
-          }).catch(err => {
-            console.error('💥 Background enrichment promise failed:', err);
-            // Show warning toast
-            toast({
-              title: "Warning", 
-              description: `Deal created but enrichment service unavailable: ${err.message}`,
-              variant: "destructive"
+          // 1. LinkedIn Company Enrichment (if LinkedIn URL available)
+          if (formData.linkedin_url) {
+            enrichmentProcesses++;
+            console.log('📤 Starting LinkedIn company enrichment...');
+            supabase.functions.invoke('brightdata-linkedin-enrichment', {
+              body: {
+                dealId: newDeal.id,
+                companyName: formData.company_name,
+                linkedinUrl: formData.linkedin_url
+              }
+            }).then(({ data, error }) => {
+              if (error) {
+                console.error('❌ LinkedIn company enrichment failed:', error);
+              } else {
+                console.log('✅ LinkedIn company enrichment completed:', data);
+              }
+            }).catch(err => {
+              console.error('💥 LinkedIn company enrichment error:', err);
             });
-          });
+          }
 
-          console.log('🔄 Background enrichment request sent for:', formData.company_name);
+          // 2. Crunchbase Enrichment (if Crunchbase URL available)
+          if (formData.crunchbase_url) {
+            enrichmentProcesses++;
+            console.log('📤 Starting Crunchbase enrichment...');
+            supabase.functions.invoke('company-enrichment-engine', {
+              body: {
+                dealId: newDeal.id,
+                companyName: formData.company_name,
+                crunchbaseUrl: formData.crunchbase_url
+              }
+            }).then(({ data, error }) => {
+              if (error) {
+                console.error('❌ Crunchbase enrichment failed:', error);
+              } else {
+                console.log('✅ Crunchbase enrichment completed:', data);
+              }
+            }).catch(err => {
+              console.error('💥 Crunchbase enrichment error:', err);
+            });
+          }
+
+          // 3. LinkedIn Profile Enrichment (if founder name available)
+          if (formData.founder_name) {
+            enrichmentProcesses++;
+            console.log('📤 Starting LinkedIn profile enrichment...');
+            supabase.functions.invoke('brightdata-linkedin-profile-enrichment', {
+              body: {
+                dealId: newDeal.id,
+                firstName: formData.founder_name.split(' ')[0],
+                lastName: formData.founder_name.split(' ').slice(1).join(' ')
+              }
+            }).then(({ data, error }) => {
+              if (error) {
+                console.error('❌ LinkedIn profile enrichment failed:', error);
+              } else {
+                console.log('✅ LinkedIn profile enrichment completed:', data);
+              }
+            }).catch(err => {
+              console.error('💥 LinkedIn profile enrichment error:', err);
+            });
+          }
+
+          console.log(`🔄 ${enrichmentProcesses} independent enrichment processes started for: ${formData.company_name}`);
           
         } catch (error) {
           console.error('💥 Background enrichment initiation error:', error);
