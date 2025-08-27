@@ -381,78 +381,105 @@ async function enrichWithCrunchbase(request: EnrichmentRequest): Promise<Company
 }
 
 async function processCrunchbaseResponse(rawData: any, dealId: string, snapshotId: string, supabase: any): Promise<void> {
-  console.log('🔄 [Crunchbase] Processing Crunchbase response for deal:', dealId);
+  console.log('🔄 [Crunchbase] Processing response for deal:', dealId);
+  
+  // Handle different response formats from Brightdata (exactly like LinkedIn)
+  let companyData = rawData;
+  
+  // If response is an array, take the first item
+  if (Array.isArray(rawData) && rawData.length > 0) {
+    companyData = rawData[0];
+  }
+  
+  // If response has a data property, use that
+  if (rawData.data) {
+    companyData = rawData.data;
+  }
 
-  // Extract and safely map all fields with proper type handling
+  // Extract from raw response structure - use direct field mapping where possible
+  let sourceData = companyData;
+  
+  // Store structured Crunchbase export data with direct field mapping (like LinkedIn)
   const crunchbaseExportData = {
     deal_id: dealId,
     snapshot_id: snapshotId,
+    timestamp: new Date().toISOString(),
+    
+    // Company identification - direct mapping where field names match
+    company_id: sourceData.company_id || sourceData.id || sourceData.cb_id || null,
+    name: sourceData.name || null,
+    url: sourceData.url || null,
+    cb_rank: sourceData.cb_rank || null,
+    region: sourceData.region || null,
+    about: sourceData.about || null,
+    
+    // Industries - direct mapping (no complex transformations)
+    industries: sourceData.industries || null,
+    operating_status: sourceData.operating_status || null,
+    company_type: sourceData.company_type || null,
+    
+    // Social and web data - direct mapping
+    social_media_links: sourceData.social_media_links || null,
+    founded_date: sourceData.founded_date || null,
+    num_employees: sourceData.num_employees || null,
+    country_code: sourceData.country_code || null,
+    website: sourceData.website || null,
+    contact_email: sourceData.contact_email || null,
+    contact_phone: sourceData.contact_phone || null,
+    
+    // Company details - direct mapping
+    full_description: sourceData.full_description || null,
+    legal_name: sourceData.legal_name || null,
+    ipo_status: sourceData.ipo_status || null,
+    uuid: sourceData.uuid || null,
+    type: sourceData.type || null,
+    
+    // Tech data - direct mapping  
+    active_tech_count: sourceData.active_tech_count || null,
+    builtwith_num_technologies_used: sourceData.builtwith_num_technologies_used || null,
+    builtwith_tech: sourceData.builtwith_tech || null,
+    
+    // Metrics - direct mapping
+    monthly_visits: sourceData.monthly_visits || null,
+    semrush_visits_latest_month: sourceData.semrush_visits_latest_month || null,
+    
+    // Company relations - direct mapping
+    similar_companies: sourceData.similar_companies || null,
+    location: sourceData.location || null,
+    address: sourceData.address || null,
+    
+    // People data - direct mapping
+    contacts: sourceData.contacts || null,
+    current_employees: sourceData.current_employees || null,
+    
+    // Funding data - direct mapping (no complex extraction)
+    num_funding_rounds: sourceData.num_funding_rounds || null,
+    num_investors: sourceData.num_investors || null,
+    funds_total: sourceData.funds_total || null,
+    investors: sourceData.investors || null,
+    funding_rounds_list: sourceData.funding_rounds_list || null,
+    
+    // Raw data and processing
     raw_brightdata_response: rawData,
-    
-    // Basic company info - safe extraction
-    name: rawData.name || null,
-    url: rawData.url || null,
-    cb_id: rawData.id || rawData.cb_id || null,
-    cb_rank: typeof rawData.cb_rank === 'number' ? rawData.cb_rank : null,
-    region: rawData.region || null,
-    about: rawData.about || rawData.full_description || null,
-    
-    // Handle industries - can be array or string
-    industries: Array.isArray(rawData.industries) ? 
-      rawData.industries.map((i: any) => typeof i === 'object' ? (i.value || i.name || i) : i).join(', ') :
-      (typeof rawData.industries === 'string' ? rawData.industries : null),
-    
-    // Status and type info
-    operating_status: rawData.operating_status || null,
-    company_type: rawData.company_type || null,
-    founded_date: rawData.founded_date || rawData.founded || null,
-    
-    // Contact and web presence
-    website: rawData.website || null,
-    contact_email: rawData.contact_email || rawData.email_address || null,
-    contact_phone: rawData.contact_phone || rawData.phone_number || null,
-    country_code: rawData.country_code || null,
-    
-    // Social media - handle as JSON
-    social_media_links: typeof rawData.social_media_links === 'object' ? rawData.social_media_links : {},
-    
-    // Employee data
-    num_employees: typeof rawData.num_employees === 'number' ? rawData.num_employees : 
-                   (typeof rawData.employee_count === 'number' ? rawData.employee_count : null),
-    
-    // Financial data - CRITICAL: Extract numbers from objects
-    funding_rounds: typeof rawData.funding_rounds === 'object' && rawData.funding_rounds?.num_funding_rounds ?
-      rawData.funding_rounds.num_funding_rounds : 
-      (typeof rawData.funding_rounds === 'number' ? rawData.funding_rounds : null),
-    
-    num_investors: typeof rawData.num_investors === 'number' ? rawData.num_investors : null,
-    funds_total: typeof rawData.funds_total === 'number' ? rawData.funds_total : null,
-    
-    // Traffic data
-    monthly_visits: typeof rawData.monthly_visits === 'number' ? rawData.monthly_visits : null,
-    
-    // Processing metadata
-    processing_status: 'processed',
-    processed_at: new Date().toISOString()
+    processing_status: 'processed'
   };
 
-  // Insert into the Crunchbase export table with detailed error handling
+  // Insert into Crunchbase export table with two-stage approach (exactly like LinkedIn)
   console.log('🔄 [Crunchbase] Attempting to insert Crunchbase export data...');
   console.log('📋 [Crunchbase] Data to insert:', JSON.stringify({
     deal_id: crunchbaseExportData.deal_id,
     snapshot_id: crunchbaseExportData.snapshot_id,
     company_name: crunchbaseExportData.name,
-    funding_rounds: crunchbaseExportData.funding_rounds,
     has_raw_data: !!crunchbaseExportData.raw_brightdata_response
   }, null, 2));
-
+  
   const { data: insertData, error: insertError } = await supabase
     .from('deal_enrichment_crunchbase_export')
     .insert(crunchbaseExportData)
     .select();
 
   if (insertError) {
-    console.error('❌ [Crunchbase] Failed to insert Crunchbase export:', {
+    console.error('❌ [Crunchbase] Failed to insert export data:', {
       error: insertError,
       code: insertError.code,
       message: insertError.message,
@@ -460,13 +487,13 @@ async function processCrunchbaseResponse(rawData: any, dealId: string, snapshotI
       hint: insertError.hint
     });
     
-    // Try a simpler insert with just required fields (Stage 1 fallback)
+    // Try a simpler insert with just required fields (exactly like LinkedIn)
     console.log('🔄 [Crunchbase] Attempting simplified insert...');
     const simplifiedData = {
       deal_id: dealId,
       snapshot_id: snapshotId,
       raw_brightdata_response: rawData,
-      name: rawData.name || null,
+      name: companyData.name || null,
       processing_status: 'raw'
     };
     
@@ -476,7 +503,6 @@ async function processCrunchbaseResponse(rawData: any, dealId: string, snapshotI
     
     if (simpleInsertError) {
       console.error('❌ [Crunchbase] Simplified insert also failed:', simpleInsertError);
-      throw new Error(`Failed to save Crunchbase data: ${simpleInsertError.message}`);
     } else {
       console.log('✅ [Crunchbase] Simplified Crunchbase export saved');
     }
