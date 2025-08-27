@@ -109,7 +109,19 @@ export function sanitizeUrl(url: string): string {
   try {
     const parsed = new URL(url);
     if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-      return parsed.toString();
+      let cleanUrl = parsed.toString();
+      
+      // Normalize LinkedIn company URLs
+      if (parsed.hostname === 'www.linkedin.com' && parsed.pathname.startsWith('/company/')) {
+        // Extract company identifier and normalize to base format
+        const pathParts = parsed.pathname.split('/');
+        if (pathParts.length >= 3 && pathParts[1] === 'company') {
+          const companyId = pathParts[2];
+          cleanUrl = `https://www.linkedin.com/company/${companyId}`;
+        }
+      }
+      
+      return cleanUrl;
     }
     return '';
   } catch {

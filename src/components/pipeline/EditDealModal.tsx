@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { COMPREHENSIVE_INDUSTRY_OPTIONS } from '@/constants/enhancedIndustries';
+import { sanitizeUrl } from '@/hooks/useValidation';
 
 interface Deal {
   id: string;
@@ -201,7 +202,7 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
           location: formData.location || null,
           headquarters: formData.headquarters || null,
           website: formData.website || null,
-          linkedin_url: formData.linkedin_url || null,
+          linkedin_url: formData.linkedin_url ? sanitizeUrl(formData.linkedin_url) : null,
           crunchbase_url: formData.crunchbase_url || null,
           founder: formData.founder || null,
           founder_email: formData.founder_email || null,
@@ -432,7 +433,6 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
                   value={formData.employee_count}
                   onChange={(e) => handleInputChange('employee_count', e.target.value)}
                   placeholder="50"
-                  min="1"
                 />
               </div>
             </div>

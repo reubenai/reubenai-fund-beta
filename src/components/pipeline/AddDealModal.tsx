@@ -15,6 +15,7 @@ import { Building2 } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { COMPREHENSIVE_INDUSTRY_OPTIONS } from '@/constants/enhancedIndustries';
 import { LOCATION_OPTIONS, locationsToString, stringToLocations } from '@/constants/locations';
+import { sanitizeUrl } from '@/hooks/useValidation';
 
 interface AddDealModalProps {
   open: boolean;
@@ -127,7 +128,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
         specialized_sectors: formData.specialized_sectors.length > 0 ? formData.specialized_sectors : undefined,
         location: formData.location.length > 0 ? locationsToString(formData.location) : undefined,
         website: sanitizeValue(formData.website),
-        linkedin_url: sanitizeValue(formData.linkedin_url),
+        linkedin_url: sanitizeValue(formData.linkedin_url) ? sanitizeUrl(sanitizeValue(formData.linkedin_url)) : undefined,
         crunchbase_url: sanitizeValue(formData.crunchbase_url),
         current_round_size: sanitizeValue(formData.current_round_size) ? parseInt(sanitizeValue(formData.current_round_size)) : undefined,
         valuation: sanitizeValue(formData.valuation) ? parseInt(sanitizeValue(formData.valuation)) : undefined,
