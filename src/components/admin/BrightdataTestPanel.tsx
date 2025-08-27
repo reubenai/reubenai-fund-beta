@@ -13,12 +13,15 @@ import { useLinkedInProfileEnrichment } from '@/hooks/useLinkedInProfileEnrichme
 export const BrightdataTestPanel = () => {
   const [companyName, setCompanyName] = useState('');
   const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [crunchbaseUrl, setCrunchbaseUrl] = useState('');
   const [founderFirstName, setFounderFirstName] = useState('');
   const [founderLastName, setFounderLastName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [isCrunchbaseLoading, setIsCrunchbaseLoading] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
   const [profileTestResult, setProfileTestResult] = useState<any>(null);
+  const [crunchbaseTestResult, setCrunchbaseTestResult] = useState<any>(null);
   const [coresignalComparison, setCoresignalComparison] = useState<any>(null);
   const [processingStatus, setProcessingStatus] = useState<any>(null);
   const [showStatusMonitor, setShowStatusMonitor] = useState(false);
@@ -184,14 +187,66 @@ export const BrightdataTestPanel = () => {
     }
   };
 
+  const testCrunchbaseEnrichment = async () => {
+    if (!companyName || !crunchbaseUrl) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide both company name and Crunchbase URL",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsCrunchbaseLoading(true);
+    setCrunchbaseTestResult(null);
+
+    try {
+      console.log('Testing Crunchbase Enrichment...');
+      const { data: crunchbaseData, error: crunchbaseError } = await supabase.functions.invoke(
+        'company-enrichment-engine',
+        {
+          body: {
+            dealId: 'test-crunchbase-' + Date.now(),
+            companyName,
+            crunchbaseUrl
+          }
+        }
+      );
+
+      if (crunchbaseError) {
+        throw new Error(`Crunchbase Enrichment Error: ${crunchbaseError.message}`);
+      }
+
+      setCrunchbaseTestResult(crunchbaseData);
+
+      toast({
+        title: "Crunchbase Test Completed",
+        description: "Crunchbase enrichment API tested successfully",
+      });
+
+    } catch (error: any) {
+      console.error('Crunchbase test error:', error);
+      toast({
+        title: "Crunchbase Test Failed", 
+        description: error.message,
+        variant: "destructive"
+      });
+      setCrunchbaseTestResult({ error: error.message });
+    } finally {
+      setIsCrunchbaseLoading(false);
+    }
+  };
+
   const resetTestPanel = () => {
     setTestResult(null);
     setProfileTestResult(null);
+    setCrunchbaseTestResult(null);
     setCoresignalComparison(null);
     setProcessingStatus(null);
     setShowStatusMonitor(false);
     setCompanyName('');
     setLinkedinUrl('');
+    setCrunchbaseUrl('');
     setFounderFirstName('');
     setFounderLastName('');
     
@@ -206,6 +261,8 @@ export const BrightdataTestPanel = () => {
       case 'brightdata':
       case 'brightdata_linkedin':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'brightdata_crunchbase':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
       case 'coresignal_api':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       case 'google_custom_search':
@@ -222,7 +279,7 @@ export const BrightdataTestPanel = () => {
           🌟 Brightdata API Test Panel
         </CardTitle>
         <CardDescription>
-          Test Brightdata LinkedIn company & profile enrichment with Coresignal comparison
+          Test Brightdata LinkedIn, Crunchbase, and profile enrichment APIs
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -255,6 +312,38 @@ export const BrightdataTestPanel = () => {
             className="w-full"
           >
             {isLoading ? 'Testing Company APIs...' : 'Test Company Enrichment'}
+          </Button>
+        </div>
+
+        {/* Crunchbase Enrichment Section */}
+        <div className="space-y-4 border rounded-lg p-4">
+          <h3 className="text-lg font-semibold">🏢 Crunchbase Enrichment Test</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="crunchbaseCompanyName">Company Name</Label>
+              <Input
+                id="crunchbaseCompanyName"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="e.g. OpenAI"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="crunchbaseUrl">Crunchbase URL</Label>
+              <Input
+                id="crunchbaseUrl"
+                value={crunchbaseUrl}
+                onChange={(e) => setCrunchbaseUrl(e.target.value)}
+                placeholder="https://www.crunchbase.com/organization/openai"
+              />
+            </div>
+          </div>
+          <Button 
+            onClick={testCrunchbaseEnrichment}
+            disabled={isCrunchbaseLoading}
+            className="w-full"
+          >
+            {isCrunchbaseLoading ? 'Testing Crunchbase API...' : 'Test Crunchbase Enrichment'}
           </Button>
         </div>
 
@@ -294,7 +383,7 @@ export const BrightdataTestPanel = () => {
           <Button 
             onClick={triggerCompletionService}
             variant="outline"
-            disabled={isLoading || isProfileLoading}
+            disabled={isLoading || isProfileLoading || isCrunchbaseLoading}
           >
             🔧 Complete Stuck Processes
           </Button>
@@ -302,7 +391,7 @@ export const BrightdataTestPanel = () => {
           <Button 
             onClick={resetTestPanel}
             variant="secondary"
-            disabled={isLoading || isProfileLoading}
+            disabled={isLoading || isProfileLoading || isCrunchbaseLoading}
           >
             🔄 Reset Panel
           </Button>
@@ -412,6 +501,60 @@ export const BrightdataTestPanel = () => {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Crunchbase Enrichment Results */}
+        {crunchbaseTestResult && (
+          <div className="space-y-4">
+            <Separator />
+            
+            {crunchbaseTestResult.error ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  <strong>Crunchbase Enrichment Error:</strong> {crunchbaseTestResult.error}
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold">🏢 Crunchbase: Brightdata Results</h3>
+                    <Badge className={getSourceBadgeColor(crunchbaseTestResult.dataSource)}>
+                      {crunchbaseTestResult.dataSource}
+                    </Badge>
+                    <Badge variant="outline">
+                      Trust: {crunchbaseTestResult.trustScore}/100
+                    </Badge>
+                    <Badge variant="outline">
+                      Quality: {crunchbaseTestResult.dataQuality || 'N/A'}/100
+                    </Badge>
+                  </div>
+
+                  {crunchbaseTestResult.data && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
+                      <div><strong>Company:</strong> {crunchbaseTestResult.data.company_name || 'N/A'}</div>
+                      <div><strong>Employees:</strong> {crunchbaseTestResult.data.employee_count || 'N/A'}</div>
+                      <div><strong>Industry:</strong> {crunchbaseTestResult.data.industry || 'N/A'}</div>
+                      <div><strong>Location:</strong> {crunchbaseTestResult.data.location || 'N/A'}</div>
+                      <div><strong>Revenue Est:</strong> {crunchbaseTestResult.data.revenue_estimate ? `$${(crunchbaseTestResult.data.revenue_estimate / 1000000).toFixed(1)}M` : 'N/A'}</div>
+                      <div><strong>Funding Rounds:</strong> {crunchbaseTestResult.data.funding_rounds || 'N/A'}</div>
+                      <div><strong>Investors:</strong> {crunchbaseTestResult.data.num_investors || 'N/A'}</div>
+                      <div><strong>Monthly Visits:</strong> {crunchbaseTestResult.data.monthly_visits || 'N/A'}</div>
+                      <div><strong>CB Rank:</strong> {crunchbaseTestResult.data.cb_rank || 'N/A'}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Raw Response Data */}
+                <details className="space-y-2">
+                  <summary className="cursor-pointer font-medium">View Raw Crunchbase API Response</summary>
+                  <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-60">
+                    {JSON.stringify(crunchbaseTestResult, null, 2)}
+                  </pre>
+                </details>
               </div>
             )}
           </div>

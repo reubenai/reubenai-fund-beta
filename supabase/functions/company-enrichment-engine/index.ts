@@ -67,13 +67,26 @@ serve(async (req) => {
 
     let enrichmentData: CompanyEnrichmentData = {};
 
-    // Enrichment priority: 1. Brightdata (if LinkedIn URL), 2. Coresignal, 3. Google Search
+    // Enrichment priority: 1. Brightdata (LinkedIn or Crunchbase), 2. Coresignal, 3. Google Search
     if (request.linkedinUrl && Deno.env.get('BRIGHTDATA_API_KEY')) {
       console.log('🌟 Enriching with Brightdata (LinkedIn URL available)...');
       try {
         enrichmentData = await enrichWithBrightdata(request);
       } catch (error) {
-        console.log('❌ Brightdata failed, falling back to Coresignal...', error.message);
+        console.log('❌ Brightdata LinkedIn failed, falling back to Coresignal...', error.message);
+        try {
+          enrichmentData = await enrichWithCoresignal(request);
+        } catch (coresignalError) {
+          console.log('❌ Coresignal also failed, trying Google Custom Search...', coresignalError.message);
+          enrichmentData = await enrichWithGoogleSearch(request);
+        }
+      }
+    } else if (request.crunchbaseUrl && Deno.env.get('BRIGHTDATA_API_KEY')) {
+      console.log('🏢 Enriching with Brightdata (Crunchbase URL available)...');
+      try {
+        enrichmentData = await enrichWithCrunchbase(request);
+      } catch (error) {
+        console.log('❌ Crunchbase enrichment failed, falling back to Coresignal...', error.message);
         try {
           enrichmentData = await enrichWithCoresignal(request);
         } catch (coresignalError) {
@@ -243,6 +256,192 @@ async function enrichWithBrightdata(request: EnrichmentRequest): Promise<Company
   };
 }
 
+async function enrichWithCrunchbase(request: EnrichmentRequest): Promise<CompanyEnrichmentData> {
+  const brightdataApiKey = Deno.env.get('BRIGHTDATA_API_KEY');
+  if (!brightdataApiKey) {
+    throw new Error('Brightdata API key not configured');
+  }
+
+  console.log('🔍 [Crunchbase] Enriching company:', request.companyName, 'with URL:', request.crunchbaseUrl);
+
+  // Step 1: Trigger Brightdata Crunchbase dataset
+  console.log('🚀 [Crunchbase] Triggering data collection for:', request.crunchbaseUrl);
+  
+  const triggerResponse = await fetch(
+    'https://api.brightdata.com/datasets/v3/trigger?dataset_id=gd_l1vijqt9jfj7olije&include_errors=true',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${brightdataApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify([{ url: request.crunchbaseUrl }])
+    }
+  );
+
+  if (!triggerResponse.ok) {
+    throw new Error(`Brightdata trigger failed: ${triggerResponse.status}`);
+  }
+
+  const triggerData = await triggerResponse.json();
+  const snapshotId = triggerData.snapshot_id;
+
+  if (!snapshotId) {
+    throw new Error('No snapshot_id received from Brightdata');
+  }
+
+  console.log('✅ [Crunchbase] Trigger response:', { snapshot_id: snapshotId });
+
+  // Step 2: Poll for results
+  console.log('🔄 [Crunchbase] Polling for data with snapshot_id:', snapshotId);
+  
+  let pollAttempts = 0;
+  const maxPolls = 10;
+  const pollIntervals = [1000, 2000, 4000, 8000, 16000, 30000, 30000, 30000, 30000, 30000];
+  
+  while (pollAttempts < maxPolls) {
+    pollAttempts++;
+    console.log(`📊 [Crunchbase] Poll attempt ${pollAttempts}/${maxPolls}`);
+    
+    const pollResponse = await fetch(
+      `https://api.brightdata.com/datasets/v3/snapshot/${snapshotId}?format=json`,
+      {
+        headers: {
+          'Authorization': `Bearer ${brightdataApiKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (pollResponse.ok) {
+      const pollData = await pollResponse.json();
+      console.log('✅ [Crunchbase] Data ready for snapshot', snapshotId);
+      
+      if (pollData && Array.isArray(pollData) && pollData.length > 0) {
+        console.log('✅ [Crunchbase] Final data retrieved:', pollData);
+        
+        const crunchbaseData = pollData[0];
+        console.log('🔄 [Crunchbase] Processing response for', request.companyName);
+        
+        // Store in deal_enrichment_crunchbase_export table
+        console.log('🔄 [Crunchbase] Attempting to insert Crunchbase export data...');
+        
+        const { data: insertedData, error: insertError } = await supabase
+          .from('deal_enrichment_crunchbase_export')
+          .insert({
+            deal_id: request.dealId,
+            snapshot_id: snapshotId,
+            raw_brightdata_response: crunchbaseData,
+            name: crunchbaseData.name,
+            url: crunchbaseData.url,
+            cb_id: crunchbaseData.id,
+            cb_rank: crunchbaseData.cb_rank,
+            region: crunchbaseData.region,
+            about: crunchbaseData.about,
+            industries: crunchbaseData.industries,
+            operating_status: crunchbaseData.operating_status,
+            company_type: crunchbaseData.company_type,
+            social_media_links: crunchbaseData.social_media_links,
+            founded_date: crunchbaseData.founded_date,
+            num_employees: crunchbaseData.num_employees,
+            country_code: crunchbaseData.country_code,
+            website: crunchbaseData.website,
+            contact_email: crunchbaseData.contact_email,
+            contact_phone: crunchbaseData.contact_phone,
+            funding_rounds: crunchbaseData.funding_rounds,
+            num_investors: crunchbaseData.num_investors,
+            monthly_visits: crunchbaseData.monthly_visits,
+            funds_total: crunchbaseData.funds_total,
+            processing_status: 'processed',
+            processed_at: new Date().toISOString()
+          })
+          .select();
+
+        if (insertError) {
+          console.error('❌ [Crunchbase] Failed to insert export data:', insertError);
+          throw new Error(`Failed to save Crunchbase export: ${insertError.message}`);
+        }
+
+        console.log('✅ [Crunchbase] Crunchbase export saved successfully:', insertedData);
+
+        // Return processed data for deal updates
+        console.log('✅ [Crunchbase] Processed data for', request.companyName);
+        
+        return {
+          employeeCount: crunchbaseData.num_employees,
+          website: crunchbaseData.website,
+          foundingYear: crunchbaseData.founded_date ? new Date(crunchbaseData.founded_date).getFullYear() : undefined,
+          location: crunchbaseData.location || crunchbaseData.region,
+          keyPersonnel: crunchbaseData.current_employees?.slice(0, 4) || [],
+          competitors: crunchbaseData.similar_companies?.slice(0, 5) || [],
+          trustScore: 95,
+          dataQuality: calculateCrunchbaseQuality(crunchbaseData),
+          source: 'brightdata_crunchbase',
+          revenueEstimate: estimateRevenueFromCrunchbase(crunchbaseData),
+          fundingHistory: crunchbaseData.funding_rounds_list || [],
+          rawData: crunchbaseData
+        };
+      }
+    }
+    
+    // Wait before next poll
+    if (pollAttempts < maxPolls) {
+      const waitTime = pollIntervals[pollAttempts - 1];
+      console.log(`⏱️ [Crunchbase] Waiting ${waitTime}ms before next poll...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+  
+  throw new Error('Crunchbase data collection timeout - no results after polling');
+}
+
+function calculateCrunchbaseQuality(data: any): number {
+  let score = 0;
+  const maxScore = 100;
+  
+  // Core info (40 points)
+  if (data.name) score += 5;
+  if (data.about || data.full_description) score += 10;
+  if (data.website) score += 5;
+  if (data.founded_date) score += 5;
+  if (data.num_employees) score += 5;
+  if (data.location) score += 5;
+  if (data.industries) score += 5;
+  
+  // Funding data (30 points)
+  if (data.funding_rounds > 0) score += 10;
+  if (data.funding_rounds_list?.length > 0) score += 10;
+  if (data.num_investors > 0) score += 5;
+  if (data.funds_total) score += 5;
+  
+  // Business metrics (20 points)
+  if (data.monthly_visits) score += 5;
+  if (data.num_contacts > 0) score += 5;
+  if (data.builtwith_tech?.length > 0) score += 5;
+  if (data.similar_companies?.length > 0) score += 5;
+  
+  // Growth indicators (10 points)
+  if (data.growth_score) score += 5;
+  if (data.heat_score) score += 5;
+  
+  return Math.min(score, maxScore);
+}
+
+function estimateRevenueFromCrunchbase(data: any): number | undefined {
+  // Use employee count for base estimation if available
+  if (data.num_employees) {
+    return estimateRevenue(data.num_employees, data.industries);
+  }
+  
+  // Use funding as revenue indicator
+  if (data.funds_total && data.funds_total > 0) {
+    // Rough heuristic: funded companies often have revenue 2-5x their total funding
+    return data.funds_total * 3;
+  }
+  
+  return undefined;
+}
+
 async function updateDealFieldsSelectively(dealId: string, enrichmentData: any): Promise<string[]> {
   console.log('🔄 [Selective Update] Checking fields to update for deal:', dealId);
   
@@ -260,9 +459,16 @@ async function updateDealFieldsSelectively(dealId: string, enrichmentData: any):
   const updates: any = {};
   const updatedFields: string[] = [];
   
-  // Try to get structured LinkedIn data first
+  // Try to get structured data first (LinkedIn or Crunchbase)
   const { data: linkedinExports } = await supabase
     .from('deal_enrichment_linkedin_export')
+    .select('*')
+    .eq('deal_id', dealId)
+    .order('created_at', { ascending: false })
+    .limit(1);
+    
+  const { data: crunchbaseExports } = await supabase
+    .from('deal_enrichment_crunchbase_export')
     .select('*')
     .eq('deal_id', dealId)
     .order('created_at', { ascending: false })
@@ -270,8 +476,11 @@ async function updateDealFieldsSelectively(dealId: string, enrichmentData: any):
 
   let rawData = enrichmentData.rawData;
   
-  // Use structured LinkedIn data if available
-  if (linkedinExports && linkedinExports.length > 0) {
+  // Use structured data if available (prioritize newest)
+  if (crunchbaseExports && crunchbaseExports.length > 0) {
+    rawData = crunchbaseExports[0];
+    console.log('✅ [Selective Update] Using structured Crunchbase export data');
+  } else if (linkedinExports && linkedinExports.length > 0) {
     rawData = linkedinExports[0];
     console.log('✅ [Selective Update] Using structured LinkedIn export data');
   } else if (!rawData) {
@@ -291,7 +500,16 @@ async function updateDealFieldsSelectively(dealId: string, enrichmentData: any):
       sourceField: 'founded', 
       targetField: 'founding_year', 
       currentValue: deal.founding_year,
-      processor: (value: any) => typeof value === 'number' ? value : parseInt(value)
+      processor: (value: any) => {
+        // Handle different date formats from Brightdata sources
+        if (typeof value === 'number') return value;
+        if (typeof value === 'string') {
+          // Handle Crunchbase date format (YYYY-MM-DD) or LinkedIn year
+          const yearMatch = value.match(/(\d{4})/);
+          if (yearMatch) return parseInt(yearMatch[1]);
+        }
+        return null;
+      }
     },
     { 
       sourceField: 'employees', 
@@ -340,13 +558,18 @@ async function updateDealFieldsSelectively(dealId: string, enrichmentData: any):
 
   // Check each field mapping with intelligent processing
   for (const mapping of fieldMappings) {
-    // Try multiple source field variations
+    // Try multiple source field variations (including Crunchbase field names)
     const possibleSources = [
       mapping.sourceField,
       mapping.sourceField.charAt(0).toUpperCase() + mapping.sourceField.slice(1), // Capitalize
       mapping.sourceField.replace('_', ' '), // Space instead of underscore
-      mapping.sourceField.replace(/([A-Z])/g, ' $1').toLowerCase().trim() // camelCase to words
-    ];
+      mapping.sourceField.replace(/([A-Z])/g, ' $1').toLowerCase().trim(), // camelCase to words
+      // Crunchbase specific field mappings
+      mapping.sourceField === 'founded' ? 'founded_date' : null,
+      mapping.sourceField === 'employees' ? 'num_employees' : null,
+      mapping.sourceField === 'about' ? 'full_description' : null,
+      mapping.sourceField === 'headquarters' ? 'location' : null
+    ].filter(Boolean); // Remove null values
     
     let sourceValue = null;
     for (const source of possibleSources) {
