@@ -2073,6 +2073,84 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_enrichment_perplexity_founder_export: {
+        Row: {
+          academic_background: Json | null
+          certifications: Json | null
+          company_name: string
+          confidence_score: number | null
+          created_at: string
+          data_quality_score: number | null
+          deal_id: string
+          exit_history: Json | null
+          founder_name: string
+          id: string
+          innovation_record: Json | null
+          leadership_experience: Json | null
+          market_knowledge: Json | null
+          previous_roles: Json | null
+          processed_at: string | null
+          processing_status: string
+          raw_perplexity_response: Json
+          snapshot_id: string | null
+          team_building: Json | null
+          technical_skills: Json | null
+          thought_leadership: Json | null
+          updated_at: string
+          value_creation: Json | null
+        }
+        Insert: {
+          academic_background?: Json | null
+          certifications?: Json | null
+          company_name: string
+          confidence_score?: number | null
+          created_at?: string
+          data_quality_score?: number | null
+          deal_id: string
+          exit_history?: Json | null
+          founder_name: string
+          id?: string
+          innovation_record?: Json | null
+          leadership_experience?: Json | null
+          market_knowledge?: Json | null
+          previous_roles?: Json | null
+          processed_at?: string | null
+          processing_status?: string
+          raw_perplexity_response?: Json
+          snapshot_id?: string | null
+          team_building?: Json | null
+          technical_skills?: Json | null
+          thought_leadership?: Json | null
+          updated_at?: string
+          value_creation?: Json | null
+        }
+        Update: {
+          academic_background?: Json | null
+          certifications?: Json | null
+          company_name?: string
+          confidence_score?: number | null
+          created_at?: string
+          data_quality_score?: number | null
+          deal_id?: string
+          exit_history?: Json | null
+          founder_name?: string
+          id?: string
+          innovation_record?: Json | null
+          leadership_experience?: Json | null
+          market_knowledge?: Json | null
+          previous_roles?: Json | null
+          processed_at?: string | null
+          processing_status?: string
+          raw_perplexity_response?: Json
+          snapshot_id?: string | null
+          team_building?: Json | null
+          technical_skills?: Json | null
+          thought_leadership?: Json | null
+          updated_at?: string
+          value_creation?: Json | null
+        }
+        Relationships: []
+      }
       deal_execution_locks: {
         Row: {
           created_at: string

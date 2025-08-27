@@ -17,6 +17,7 @@ import { COMPREHENSIVE_INDUSTRY_OPTIONS } from '@/constants/enhancedIndustries';
 import { LOCATION_OPTIONS, locationsToString, stringToLocations } from '@/constants/locations';
 import { sanitizeUrl } from '@/hooks/useValidation';
 import { useLinkedInProfileEnrichment } from '@/hooks/useLinkedInProfileEnrichment';
+import { usePerplexityFounderEnrichment } from '@/hooks/usePerplexityFounderEnrichment';
 
 interface AddDealModalProps {
   open: boolean;
@@ -50,6 +51,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
   const { toast } = useToast();
   const { triggerDealAnalysis } = useAnalysisIntegration();
   const { triggerProfileEnrichment } = useLinkedInProfileEnrichment();
+  const { triggerFounderEnrichment } = usePerplexityFounderEnrichment();
   
   // Ref to prevent duplicate submissions
   const submissionInProgress = useRef(false);
@@ -211,6 +213,30 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
               }
             }).catch(err => {
               console.error('💥 LinkedIn profile enrichment error:', err);
+            });
+          }
+
+          // 4. Perplexity Founder Enrichment (if founder name available)
+          if (formData.founder_name && formData.company_name) {
+            enrichmentProcesses++;
+            console.log('📤 Starting Perplexity founder enrichment...');
+            supabase.functions.invoke('perplexity-founder-enrichment', {
+              body: {
+                dealId: newDeal.id,
+                founderName: formData.founder_name,
+                companyName: formData.company_name,
+                companyWebsite: formData.website,
+                linkedinUrl: formData.linkedin_url,
+                crunchbaseUrl: formData.crunchbase_url
+              }
+            }).then(({ data, error }) => {
+              if (error) {
+                console.error('❌ Perplexity founder enrichment failed:', error);
+              } else {
+                console.log('✅ Perplexity founder enrichment completed:', data);
+              }
+            }).catch(err => {
+              console.error('💥 Perplexity founder enrichment error:', err);
             });
           }
 

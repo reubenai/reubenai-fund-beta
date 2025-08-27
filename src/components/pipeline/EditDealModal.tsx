@@ -12,6 +12,7 @@ import { MultiSelect } from '@/components/ui/multi-select';
 import { COMPREHENSIVE_INDUSTRY_OPTIONS } from '@/constants/enhancedIndustries';
 import { sanitizeUrl } from '@/hooks/useValidation';
 import { useLinkedInProfileEnrichment } from '@/hooks/useLinkedInProfileEnrichment';
+import { usePerplexityFounderEnrichment } from '@/hooks/usePerplexityFounderEnrichment';
 
 interface Deal {
   id: string;
@@ -99,6 +100,7 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { triggerProfileEnrichment } = useLinkedInProfileEnrichment();
+  const { triggerFounderEnrichment } = usePerplexityFounderEnrichment();
 
   // Update form data when deal changes
   useEffect(() => {
@@ -535,7 +537,35 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
                     }}
                     disabled={!formData.founder?.trim()}
                   >
-                    Enrich Profile
+                    LinkedIn
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      if (formData.founder && formData.founder.trim() && formData.company_name?.trim()) {
+                        await triggerFounderEnrichment(
+                          deal.id, 
+                          formData.founder, 
+                          formData.company_name,
+                          {
+                            companyWebsite: formData.website,
+                            linkedinUrl: formData.linkedin_url,
+                            crunchbaseUrl: formData.crunchbase_url
+                          }
+                        );
+                      } else {
+                        toast({
+                          title: "Missing Information",
+                          description: "Please enter both founder name and company name first",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                    disabled={!formData.founder?.trim() || !formData.company_name?.trim()}
+                  >
+                    Perplexity
                   </Button>
                 </div>
               </div>
