@@ -401,13 +401,43 @@ async function processCrunchbaseResponse(rawData: any, dealId: string, snapshotI
   
   console.log('📊 [Crunchbase] Mapping fields from source data:', Object.keys(sourceData).slice(0, 10));
   
-  // Store structured Crunchbase export data with corrected field mapping
+  // Helper functions for data processing (like LinkedIn)
+  const safeJsonField = (field: any): any => {
+    if (field === null || field === undefined) return null;
+    if (typeof field === 'string') {
+      try {
+        return JSON.parse(field);
+      } catch {
+        return field;
+      }
+    }
+    return field;
+  };
+
+  const parseFoundedDate = (dateStr: any): string | null => {
+    if (!dateStr) return null;
+    try {
+      const date = new Date(dateStr);
+      return date.toISOString().split('T')[0]; // Return YYYY-MM-DD format
+    } catch {
+      return typeof dateStr === 'string' ? dateStr : null;
+    }
+  };
+
+  const parseEmployeeRange = (employees: any): string | null => {
+    if (!employees) return null;
+    if (typeof employees === 'number') return employees.toString();
+    if (typeof employees === 'string') return employees;
+    return null;
+  };
+  
+  // Store structured Crunchbase export data with processed fields (like LinkedIn approach)
   const crunchbaseExportData = {
     deal_id: dealId,
     snapshot_id: snapshotId,
     timestamp: new Date().toISOString(),
     
-    // Company identification - direct mapping where field names match
+    // Company identification - processed mapping
     company_id: sourceData.company_id || sourceData.id || sourceData.cb_id || null,
     name: sourceData.name || null,
     url: sourceData.url || null,
@@ -415,82 +445,83 @@ async function processCrunchbaseResponse(rawData: any, dealId: string, snapshotI
     region: sourceData.region || null,
     about: sourceData.about || null,
     
-    // Industries - convert array to string if needed
+    // Industries - processed array to string conversion
     industries: Array.isArray(sourceData.industries) 
       ? sourceData.industries.map(i => typeof i === 'object' ? i.value || i.name : i).join(', ')
       : sourceData.industries || null,
     operating_status: sourceData.operating_status || null,
     company_type: sourceData.company_type || null,
     
-    // Social and web data - direct mapping
-    social_media_links: sourceData.social_media_links || sourceData.socila_media_urls || null,
-    founded_date: sourceData.founded_date || null,
+    // Social and web data - processed mapping
+    social_media_links: safeJsonField(sourceData.social_media_links || sourceData.socila_media_urls),
+    founded_date: parseFoundedDate(sourceData.founded_date),
     num_employees: sourceData.num_employees || null,
     country_code: sourceData.country_code || null,
     website: sourceData.website || null,
     contact_email: sourceData.contact_email || sourceData.email_address || null,
     contact_phone: sourceData.contact_phone || sourceData.phone_number || null,
     
-    // Company details - direct mapping
+    // Company details - processed mapping
     full_description: sourceData.full_description || null,
     legal_name: sourceData.legal_name || null,
     ipo_status: sourceData.ipo_status || null,
     uuid: sourceData.uuid || null,
     type: sourceData.type || null,
     
-    // Tech data - map built_with_tech to builtwith_tech
+    // Tech data - processed mapping
     active_tech_count: sourceData.active_tech_count || null,
     builtwith_num_technologies_used: sourceData.builtwith_num_technologies_used || sourceData.built_with_num_technologies_used || null,
-    builtwith_tech: sourceData.builtwith_tech || sourceData.built_with_tech || null,
+    builtwith_tech: safeJsonField(sourceData.builtwith_tech || sourceData.built_with_tech),
     
-    // Metrics - direct mapping
+    // Metrics - processed mapping
     monthly_visits: sourceData.monthly_visits || null,
     semrush_visits_latest_month: sourceData.semrush_visits_latest_month || null,
     semrush_last_updated: sourceData.semrush_last_updated || null,
     monthly_visits_growth: sourceData.monthly_visits_growth || sourceData.semrush_visits_mom_pct || null,
     semrush_visits_mom_pct: sourceData.semrush_visits_mom_pct || null,
     
-    // Company relations - direct mapping
-    similar_companies: sourceData.similar_companies || null,
+    // Company relations - processed mapping
+    similar_companies: safeJsonField(sourceData.similar_companies),
     location: Array.isArray(sourceData.location) 
       ? sourceData.location.map(l => typeof l === 'object' ? l.name : l).join(', ')
       : sourceData.location || sourceData.address || null,
     address: sourceData.address || null,
     
-    // People data - direct mapping
-    contacts: sourceData.contacts || null,
-    current_employees: sourceData.current_employees || null,
+    // People data - processed mapping
+    contacts: safeJsonField(sourceData.contacts),
+    current_employees: safeJsonField(sourceData.current_employees),
     number_of_employee_profiles: sourceData.number_of_employee_profiles || sourceData.num_employee_profiles || null,
     
-    // Funding data - use correct column names from schema
+    // Funding data - processed mapping
     num_funds: sourceData.num_funds || null,
     num_investors: sourceData.num_investors || sourceData.number_of_investors || null,
     funds_total: sourceData.funds_total || null,
-    investors: sourceData.investors || null,
-    funding_rounds_list: sourceData.funding_rounds_list || null,
+    investors: safeJsonField(sourceData.investors),
+    funding_rounds_list: safeJsonField(sourceData.funding_rounds_list),
     
-    // Additional fields from the rich data
-    headquarters_regions: sourceData.headquarters_regions || null,
+    // Additional fields - processed mapping
+    headquarters_regions: safeJsonField(sourceData.headquarters_regions),
     featured_list: Array.isArray(sourceData.featured_list) 
       ? JSON.stringify(sourceData.featured_list) 
       : sourceData.featured_list || null,
     heat_score: sourceData.heat_score || null,
     heat_trend: sourceData.heat_trend || null,
     company_overview: sourceData.company_overview || sourceData.about || null,
-    web_traffic_by_semrush: sourceData.web_traffic_by_semrush || null,
+    web_traffic_by_semrush: safeJsonField(sourceData.web_traffic_by_semrush),
     hq_continent: sourceData.hq_continent || null,
     
-    // Raw data and processing
+    // Raw data and processing - PROCESSED STATUS like LinkedIn
     raw_brightdata_response: rawData,
-    has_raw_data: true
+    processing_status: 'processed' // Direct processing like LinkedIn approach
   };
 
-  // Insert into Crunchbase export table with two-stage approach (exactly like LinkedIn)
-  console.log('🔄 [Crunchbase] Attempting to insert Crunchbase export data...');
+  // Insert processed Crunchbase export data directly (like LinkedIn)
+  console.log('🔄 [Crunchbase] Inserting processed Crunchbase export data...');
   console.log('📋 [Crunchbase] Data to insert:', JSON.stringify({
     deal_id: crunchbaseExportData.deal_id,
     snapshot_id: crunchbaseExportData.snapshot_id,
     company_name: crunchbaseExportData.name,
+    processing_status: crunchbaseExportData.processing_status,
     has_raw_data: !!crunchbaseExportData.raw_brightdata_response
   }, null, 2));
   
@@ -500,7 +531,7 @@ async function processCrunchbaseResponse(rawData: any, dealId: string, snapshotI
     .select();
 
   if (insertError) {
-    console.error('❌ [Crunchbase] Failed to insert export data:', {
+    console.error('❌ [Crunchbase] Failed to insert processed export data:', {
       error: insertError,
       code: insertError.code,
       message: insertError.message,
@@ -508,66 +539,28 @@ async function processCrunchbaseResponse(rawData: any, dealId: string, snapshotI
       hint: insertError.hint
     });
     
-    // Try a simpler insert with just required fields (exactly like LinkedIn)
+    // Try a simpler insert with just required fields (fallback like LinkedIn)
     console.log('🔄 [Crunchbase] Attempting simplified insert...');
     const simplifiedData = {
       deal_id: dealId,
       snapshot_id: snapshotId,
       raw_brightdata_response: rawData,
       name: companyData.name || null,
-      processing_status: 'raw'
+      processing_status: 'raw'  // Only raw if processing fails
     };
     
-    const { data: simpleInsertData, error: simpleInsertError } = await supabase
+    const { error: simpleInsertError } = await supabase
       .from('deal_enrichment_crunchbase_export')
-      .insert(simplifiedData)
-      .select();
+      .insert(simplifiedData);
     
     if (simpleInsertError) {
       console.error('❌ [Crunchbase] Simplified insert also failed:', simpleInsertError);
     } else {
-      console.log('✅ [Crunchbase] Simplified Crunchbase export saved');
-      
-      // Call post-processor to convert raw data to structured fields
-      try {
-        console.log('🔄 [Crunchbase] Calling post-processor...');
-        const { error: processorError } = await supabase.functions.invoke('crunchbase-export-post-processor', {
-          body: { 
-            dealId: dealId,
-            crunchbaseExportId: simpleInsertData?.[0]?.id 
-          }
-        });
-        
-        if (processorError) {
-          console.error('❌ [Crunchbase] Post-processor error:', processorError);
-        } else {
-          console.log('✅ [Crunchbase] Post-processor completed successfully');
-        }
-      } catch (processorError) {
-        console.error('❌ [Crunchbase] Post-processor call failed:', processorError);
-      }
+      console.log('✅ [Crunchbase] Simplified Crunchbase export saved (will need post-processing)');
     }
   } else {
-    console.log('✅ [Crunchbase] Full Crunchbase export saved successfully:', insertData);
-    
-    // Call post-processor to convert raw data to structured fields
-    try {
-      console.log('🔄 [Crunchbase] Calling post-processor...');
-      const { error: processorError } = await supabase.functions.invoke('crunchbase-export-post-processor', {
-        body: { 
-          dealId: dealId,
-          crunchbaseExportId: insertData?.[0]?.id 
-        }
-      });
-      
-      if (processorError) {
-        console.error('❌ [Crunchbase] Post-processor error:', processorError);
-      } else {
-        console.log('✅ [Crunchbase] Post-processor completed successfully');
-      }
-    } catch (processorError) {
-      console.error('❌ [Crunchbase] Post-processor call failed:', processorError);
-    }
+    console.log('✅ [Crunchbase] Processed Crunchbase export saved successfully:', insertData);
+    // No need to call post-processor since data is already processed!
   }
 }
 
