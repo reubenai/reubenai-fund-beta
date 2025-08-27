@@ -399,7 +399,9 @@ async function processCrunchbaseResponse(rawData: any, dealId: string, snapshotI
   // Extract from raw response structure - use direct field mapping where possible
   let sourceData = companyData;
   
-  // Store structured Crunchbase export data with direct field mapping (like LinkedIn)
+  console.log('📊 [Crunchbase] Mapping fields from source data:', Object.keys(sourceData).slice(0, 10));
+  
+  // Store structured Crunchbase export data with corrected field mapping
   const crunchbaseExportData = {
     deal_id: dealId,
     snapshot_id: snapshotId,
@@ -413,19 +415,21 @@ async function processCrunchbaseResponse(rawData: any, dealId: string, snapshotI
     region: sourceData.region || null,
     about: sourceData.about || null,
     
-    // Industries - direct mapping (no complex transformations)
-    industries: sourceData.industries || null,
+    // Industries - convert array to string if needed
+    industries: Array.isArray(sourceData.industries) 
+      ? sourceData.industries.map(i => typeof i === 'object' ? i.value || i.name : i).join(', ')
+      : sourceData.industries || null,
     operating_status: sourceData.operating_status || null,
     company_type: sourceData.company_type || null,
     
     // Social and web data - direct mapping
-    social_media_links: sourceData.social_media_links || null,
+    social_media_links: sourceData.social_media_links || sourceData.socila_media_urls || null,
     founded_date: sourceData.founded_date || null,
     num_employees: sourceData.num_employees || null,
     country_code: sourceData.country_code || null,
     website: sourceData.website || null,
-    contact_email: sourceData.contact_email || null,
-    contact_phone: sourceData.contact_phone || null,
+    contact_email: sourceData.contact_email || sourceData.email_address || null,
+    contact_phone: sourceData.contact_phone || sourceData.phone_number || null,
     
     // Company details - direct mapping
     full_description: sourceData.full_description || null,
@@ -434,34 +438,51 @@ async function processCrunchbaseResponse(rawData: any, dealId: string, snapshotI
     uuid: sourceData.uuid || null,
     type: sourceData.type || null,
     
-    // Tech data - direct mapping  
+    // Tech data - map built_with_tech to builtwith_tech
     active_tech_count: sourceData.active_tech_count || null,
-    builtwith_num_technologies_used: sourceData.builtwith_num_technologies_used || null,
-    builtwith_tech: sourceData.builtwith_tech || null,
+    builtwith_num_technologies_used: sourceData.builtwith_num_technologies_used || sourceData.built_with_num_technologies_used || null,
+    builtwith_tech: sourceData.builtwith_tech || sourceData.built_with_tech || null,
     
     // Metrics - direct mapping
     monthly_visits: sourceData.monthly_visits || null,
     semrush_visits_latest_month: sourceData.semrush_visits_latest_month || null,
+    semrush_last_updated: sourceData.semrush_last_updated || null,
+    monthly_visits_growth: sourceData.monthly_visits_growth || sourceData.semrush_visits_mom_pct || null,
+    semrush_visits_mom_pct: sourceData.semrush_visits_mom_pct || null,
     
     // Company relations - direct mapping
     similar_companies: sourceData.similar_companies || null,
-    location: sourceData.location || null,
+    location: Array.isArray(sourceData.location) 
+      ? sourceData.location.map(l => typeof l === 'object' ? l.name : l).join(', ')
+      : sourceData.location || sourceData.address || null,
     address: sourceData.address || null,
     
     // People data - direct mapping
     contacts: sourceData.contacts || null,
     current_employees: sourceData.current_employees || null,
+    number_of_employee_profiles: sourceData.number_of_employee_profiles || sourceData.num_employee_profiles || null,
     
-    // Funding data - direct mapping (no complex extraction)
-    num_funding_rounds: sourceData.num_funding_rounds || null,
-    num_investors: sourceData.num_investors || null,
+    // Funding data - use correct column names from schema
+    num_funds: sourceData.num_funds || null,
+    num_investors: sourceData.num_investors || sourceData.number_of_investors || null,
     funds_total: sourceData.funds_total || null,
     investors: sourceData.investors || null,
     funding_rounds_list: sourceData.funding_rounds_list || null,
     
+    // Additional fields from the rich data
+    headquarters_regions: sourceData.headquarters_regions || null,
+    featured_list: Array.isArray(sourceData.featured_list) 
+      ? JSON.stringify(sourceData.featured_list) 
+      : sourceData.featured_list || null,
+    heat_score: sourceData.heat_score || null,
+    heat_trend: sourceData.heat_trend || null,
+    company_overview: sourceData.company_overview || sourceData.about || null,
+    web_traffic_by_semrush: sourceData.web_traffic_by_semrush || null,
+    hq_continent: sourceData.hq_continent || null,
+    
     // Raw data and processing
     raw_brightdata_response: rawData,
-    processing_status: 'processed'
+    has_raw_data: true
   };
 
   // Insert into Crunchbase export table with two-stage approach (exactly like LinkedIn)
