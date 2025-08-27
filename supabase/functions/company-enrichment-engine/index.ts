@@ -345,46 +345,9 @@ async function enrichWithCrunchbase(request: EnrichmentRequest): Promise<Company
         const crunchbaseData = pollData[0];
         console.log('🔄 [Crunchbase] Processing response for', request.companyName);
         
-        // Store in deal_enrichment_crunchbase_export table
-        console.log('🔄 [Crunchbase] Attempting to insert Crunchbase export data...');
-        
-        const { data: insertedData, error: insertError } = await supabase
-          .from('deal_enrichment_crunchbase_export')
-          .insert({
-            deal_id: request.dealId,
-            snapshot_id: snapshotId,
-            raw_brightdata_response: crunchbaseData,
-            name: crunchbaseData.name,
-            url: crunchbaseData.url,
-            cb_id: crunchbaseData.id,
-            cb_rank: crunchbaseData.cb_rank,
-            region: crunchbaseData.region,
-            about: crunchbaseData.about,
-            industries: crunchbaseData.industries,
-            operating_status: crunchbaseData.operating_status,
-            company_type: crunchbaseData.company_type,
-            social_media_links: crunchbaseData.social_media_links,
-            founded_date: crunchbaseData.founded_date,
-            num_employees: crunchbaseData.num_employees,
-            country_code: crunchbaseData.country_code,
-            website: crunchbaseData.website,
-            contact_email: crunchbaseData.contact_email,
-            contact_phone: crunchbaseData.contact_phone,
-            funding_rounds: crunchbaseData.funding_rounds,
-            num_investors: crunchbaseData.num_investors,
-            monthly_visits: crunchbaseData.monthly_visits,
-            funds_total: crunchbaseData.funds_total,
-            processing_status: 'processed',
-            processed_at: new Date().toISOString()
-          })
-          .select();
-
-        if (insertError) {
-          console.error('❌ [Crunchbase] Failed to insert export data:', insertError);
-          throw new Error(`Failed to save Crunchbase export: ${insertError.message}`);
-        }
-
-        console.log('✅ [Crunchbase] Crunchbase export saved successfully:', insertedData);
+        // Process and store Crunchbase data safely
+        console.log('🔄 [Crunchbase] Processing Crunchbase response...');
+        await processCrunchbaseResponse(crunchbaseData, request.dealId, snapshotId, supabase);
 
         // Return processed data for deal updates
         console.log('✅ [Crunchbase] Processed data for', request.companyName);
@@ -415,6 +378,111 @@ async function enrichWithCrunchbase(request: EnrichmentRequest): Promise<Company
   }
   
   throw new Error('Crunchbase data collection timeout - no results after polling');
+}
+
+async function processCrunchbaseResponse(rawData: any, dealId: string, snapshotId: string, supabase: any): Promise<void> {
+  console.log('🔄 [Crunchbase] Processing Crunchbase response for deal:', dealId);
+
+  // Extract and safely map all fields with proper type handling
+  const crunchbaseExportData = {
+    deal_id: dealId,
+    snapshot_id: snapshotId,
+    raw_brightdata_response: rawData,
+    
+    // Basic company info - safe extraction
+    name: rawData.name || null,
+    url: rawData.url || null,
+    cb_id: rawData.id || rawData.cb_id || null,
+    cb_rank: typeof rawData.cb_rank === 'number' ? rawData.cb_rank : null,
+    region: rawData.region || null,
+    about: rawData.about || rawData.full_description || null,
+    
+    // Handle industries - can be array or string
+    industries: Array.isArray(rawData.industries) ? 
+      rawData.industries.map((i: any) => typeof i === 'object' ? (i.value || i.name || i) : i).join(', ') :
+      (typeof rawData.industries === 'string' ? rawData.industries : null),
+    
+    // Status and type info
+    operating_status: rawData.operating_status || null,
+    company_type: rawData.company_type || null,
+    founded_date: rawData.founded_date || rawData.founded || null,
+    
+    // Contact and web presence
+    website: rawData.website || null,
+    contact_email: rawData.contact_email || rawData.email_address || null,
+    contact_phone: rawData.contact_phone || rawData.phone_number || null,
+    country_code: rawData.country_code || null,
+    
+    // Social media - handle as JSON
+    social_media_links: typeof rawData.social_media_links === 'object' ? rawData.social_media_links : {},
+    
+    // Employee data
+    num_employees: typeof rawData.num_employees === 'number' ? rawData.num_employees : 
+                   (typeof rawData.employee_count === 'number' ? rawData.employee_count : null),
+    
+    // Financial data - CRITICAL: Extract numbers from objects
+    funding_rounds: typeof rawData.funding_rounds === 'object' && rawData.funding_rounds?.num_funding_rounds ?
+      rawData.funding_rounds.num_funding_rounds : 
+      (typeof rawData.funding_rounds === 'number' ? rawData.funding_rounds : null),
+    
+    num_investors: typeof rawData.num_investors === 'number' ? rawData.num_investors : null,
+    funds_total: typeof rawData.funds_total === 'number' ? rawData.funds_total : null,
+    
+    // Traffic data
+    monthly_visits: typeof rawData.monthly_visits === 'number' ? rawData.monthly_visits : null,
+    
+    // Processing metadata
+    processing_status: 'processed',
+    processed_at: new Date().toISOString()
+  };
+
+  // Insert into the Crunchbase export table with detailed error handling
+  console.log('🔄 [Crunchbase] Attempting to insert Crunchbase export data...');
+  console.log('📋 [Crunchbase] Data to insert:', JSON.stringify({
+    deal_id: crunchbaseExportData.deal_id,
+    snapshot_id: crunchbaseExportData.snapshot_id,
+    company_name: crunchbaseExportData.name,
+    funding_rounds: crunchbaseExportData.funding_rounds,
+    has_raw_data: !!crunchbaseExportData.raw_brightdata_response
+  }, null, 2));
+
+  const { data: insertData, error: insertError } = await supabase
+    .from('deal_enrichment_crunchbase_export')
+    .insert(crunchbaseExportData)
+    .select();
+
+  if (insertError) {
+    console.error('❌ [Crunchbase] Failed to insert Crunchbase export:', {
+      error: insertError,
+      code: insertError.code,
+      message: insertError.message,
+      details: insertError.details,
+      hint: insertError.hint
+    });
+    
+    // Try a simpler insert with just required fields (Stage 1 fallback)
+    console.log('🔄 [Crunchbase] Attempting simplified insert...');
+    const simplifiedData = {
+      deal_id: dealId,
+      snapshot_id: snapshotId,
+      raw_brightdata_response: rawData,
+      name: rawData.name || null,
+      processing_status: 'raw'
+    };
+    
+    const { error: simpleInsertError } = await supabase
+      .from('deal_enrichment_crunchbase_export')
+      .insert(simplifiedData);
+    
+    if (simpleInsertError) {
+      console.error('❌ [Crunchbase] Simplified insert also failed:', simpleInsertError);
+      throw new Error(`Failed to save Crunchbase data: ${simpleInsertError.message}`);
+    } else {
+      console.log('✅ [Crunchbase] Simplified Crunchbase export saved');
+    }
+  } else {
+    console.log('✅ [Crunchbase] Full Crunchbase export saved successfully:', insertData);
+  }
 }
 
 function calculateCrunchbaseQuality(data: any): number {
