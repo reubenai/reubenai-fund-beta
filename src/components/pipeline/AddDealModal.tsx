@@ -240,6 +240,31 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
             });
           }
 
+          // 5. Perplexity Company Enrichment (if company name available)
+          if (formData.company_name) {
+            enrichmentProcesses++;
+            console.log('📤 Starting Perplexity company enrichment...');
+            supabase.functions.invoke('perplexity-company-enrichment', {
+              body: {
+                dealId: newDeal.id,
+                companyName: formData.company_name,
+                additionalContext: {
+                  industry: formData.industry.length > 0 ? formData.industry.join(';') : undefined,
+                  website: formData.website,
+                  description: formData.description
+                }
+              }
+            }).then(({ data, error }) => {
+              if (error) {
+                console.error('❌ Perplexity company enrichment failed:', error);
+              } else {
+                console.log('✅ Perplexity company enrichment completed:', data);
+              }
+            }).catch(err => {
+              console.error('💥 Perplexity company enrichment error:', err);
+            });
+          }
+
           console.log(`🔄 ${enrichmentProcesses} independent enrichment processes started for: ${formData.company_name}`);
           
         } catch (error) {
