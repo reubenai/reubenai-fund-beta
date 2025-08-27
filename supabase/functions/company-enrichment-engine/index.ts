@@ -518,17 +518,56 @@ async function processCrunchbaseResponse(rawData: any, dealId: string, snapshotI
       processing_status: 'raw'
     };
     
-    const { error: simpleInsertError } = await supabase
+    const { data: simpleInsertData, error: simpleInsertError } = await supabase
       .from('deal_enrichment_crunchbase_export')
-      .insert(simplifiedData);
+      .insert(simplifiedData)
+      .select();
     
     if (simpleInsertError) {
       console.error('❌ [Crunchbase] Simplified insert also failed:', simpleInsertError);
     } else {
       console.log('✅ [Crunchbase] Simplified Crunchbase export saved');
+      
+      // Call post-processor to convert raw data to structured fields
+      try {
+        console.log('🔄 [Crunchbase] Calling post-processor...');
+        const { error: processorError } = await supabase.functions.invoke('crunchbase-export-post-processor', {
+          body: { 
+            dealId: dealId,
+            crunchbaseExportId: simpleInsertData?.[0]?.id 
+          }
+        });
+        
+        if (processorError) {
+          console.error('❌ [Crunchbase] Post-processor error:', processorError);
+        } else {
+          console.log('✅ [Crunchbase] Post-processor completed successfully');
+        }
+      } catch (processorError) {
+        console.error('❌ [Crunchbase] Post-processor call failed:', processorError);
+      }
     }
   } else {
     console.log('✅ [Crunchbase] Full Crunchbase export saved successfully:', insertData);
+    
+    // Call post-processor to convert raw data to structured fields
+    try {
+      console.log('🔄 [Crunchbase] Calling post-processor...');
+      const { error: processorError } = await supabase.functions.invoke('crunchbase-export-post-processor', {
+        body: { 
+          dealId: dealId,
+          crunchbaseExportId: insertData?.[0]?.id 
+        }
+      });
+      
+      if (processorError) {
+        console.error('❌ [Crunchbase] Post-processor error:', processorError);
+      } else {
+        console.log('✅ [Crunchbase] Post-processor completed successfully');
+      }
+    } catch (processorError) {
+      console.error('❌ [Crunchbase] Post-processor call failed:', processorError);
+    }
   }
 }
 
