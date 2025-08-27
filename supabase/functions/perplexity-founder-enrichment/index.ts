@@ -200,7 +200,95 @@ serve(async (req) => {
         return_related_questions: false,
         search_recency_filter: 'month',
         frequency_penalty: 1,
-        presence_penalty: 0
+        presence_penalty: 0,
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            schema: {
+              type: 'object',
+              properties: {
+                research_data: {
+                  type: 'object',
+                  properties: {
+                    previous_roles: {
+                      type: 'array',
+                      items: { type: 'string' }
+                    },
+                    leadership_experience: {
+                      type: 'object',
+                      properties: {
+                        years_experience: { type: 'number' },
+                        team_sizes_managed: { type: 'array', items: { type: 'number' } },
+                        leadership_style: { type: 'string' },
+                        key_achievements: { type: 'array', items: { type: 'string' } }
+                      }
+                    },
+                    technical_skills: {
+                      type: 'array',
+                      items: { type: 'string' }
+                    },
+                    market_knowledge: {
+                      type: 'object',
+                      properties: {
+                        industries: { type: 'array', items: { type: 'string' } },
+                        market_insights: { type: 'array', items: { type: 'string' } }
+                      }
+                    },
+                    innovation_record: {
+                      type: 'object',
+                      properties: {
+                        patents: { type: 'array', items: { type: 'string' } },
+                        innovations: { type: 'array', items: { type: 'string' } }
+                      }
+                    },
+                    academic_background: {
+                      type: 'object',
+                      properties: {
+                        degrees: { type: 'array', items: { type: 'string' } },
+                        institutions: { type: 'array', items: { type: 'string' } }
+                      }
+                    },
+                    certifications: {
+                      type: 'array',
+                      items: { type: 'string' }
+                    },
+                    thought_leadership: {
+                      type: 'object',
+                      properties: {
+                        publications: { type: 'array', items: { type: 'string' } },
+                        speaking_engagements: { type: 'array', items: { type: 'string' } }
+                      }
+                    },
+                    exit_history: {
+                      type: 'array',
+                      items: { type: 'string' }
+                    },
+                    value_creation: {
+                      type: 'object',
+                      properties: {
+                        financial_achievements: { type: 'array', items: { type: 'string' } },
+                        growth_metrics: { type: 'array', items: { type: 'string' } }
+                      }
+                    },
+                    team_building: {
+                      type: 'object',
+                      properties: {
+                        hiring_record: { type: 'array', items: { type: 'string' } },
+                        team_culture: { type: 'string' }
+                      }
+                    }
+                  },
+                  required: ['previous_roles', 'leadership_experience']
+                },
+                sources: {
+                  type: 'array',
+                  items: { type: 'string' }
+                }
+              },
+              required: ['research_data']
+            }
+          }
+        }
       }),
     });
 
@@ -217,9 +305,30 @@ serve(async (req) => {
     let founderData;
     try {
       const content = perplexityResult.choices[0].message.content;
-      founderData = JSON.parse(content);
+      
+      // Handle both plain JSON and markdown-wrapped JSON
+      let jsonContent = content;
+      if (content.includes('```json')) {
+        // Extract JSON from markdown code blocks
+        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+          jsonContent = jsonMatch[1];
+          console.log('🔧 Extracted JSON from markdown wrapper');
+        }
+      } else if (content.includes('```')) {
+        // Handle generic code blocks
+        const codeMatch = content.match(/```\s*([\s\S]*?)\s*```/);
+        if (codeMatch) {
+          jsonContent = codeMatch[1];
+          console.log('🔧 Extracted JSON from code wrapper');
+        }
+      }
+      
+      founderData = JSON.parse(jsonContent.trim());
+      console.log('✅ Successfully parsed founder data from Perplexity response');
     } catch (parseError) {
       console.error('❌ Failed to parse Perplexity response:', parseError);
+      console.error('❌ Raw content:', perplexityResult.choices[0].message.content);
       throw new Error('Failed to parse Perplexity JSON response');
     }
 
