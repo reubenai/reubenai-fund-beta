@@ -13,6 +13,7 @@ import { COMPREHENSIVE_INDUSTRY_OPTIONS } from '@/constants/enhancedIndustries';
 import { sanitizeUrl } from '@/hooks/useValidation';
 import { useLinkedInProfileEnrichment } from '@/hooks/useLinkedInProfileEnrichment';
 import { usePerplexityFounderEnrichment } from '@/hooks/usePerplexityFounderEnrichment';
+import { usePerplexityCompanyEnrichment } from '@/hooks/usePerplexityCompanyEnrichment';
 
 interface Deal {
   id: string;
