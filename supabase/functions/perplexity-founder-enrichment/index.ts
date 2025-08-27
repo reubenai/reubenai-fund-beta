@@ -183,7 +183,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-large-128k-online',
+        model: 'sonar',
         messages: [
           {
             role: 'system',
@@ -194,11 +194,13 @@ serve(async (req) => {
             content: searchQuery
           }
         ],
-        response_format: {
-          type: 'json_object'
-        },
         max_tokens: 3000,
-        temperature: 0.1
+        top_p: 0.9,
+        return_images: false,
+        return_related_questions: false,
+        search_recency_filter: 'month',
+        frequency_penalty: 1,
+        presence_penalty: 0
       }),
     });
 
