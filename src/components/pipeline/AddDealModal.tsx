@@ -145,57 +145,42 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
       if (newDeal) {
         console.log('✅ Deal created successfully:', newDeal.company_name);
         
-        // Now process through universal processor for enhancement (non-blocking)
+        // Start background enrichment processes (non-blocking)
         try {
-          console.log('🔄 Starting deal enhancement...');
-          const { data: processedResult, error: processingError } = await supabase.functions.invoke('universal-deal-processor', {
-            body: {
-              dealId: newDeal.id,
-              source: 'single_upload',
-              fundId: newDeal.fund_id,
-              options: {
-                priority: 'high',
-                metadata: { singleUpload: true }
-              }
+          console.log('🚀 Starting parallel background enrichment...');
+          
+          const backgroundEnrichmentData = {
+            dealId: newDeal.id,
+            fundId: newDeal.fund_id,
+            companyName: formData.company_name,
+            website: formData.website || undefined,
+            linkedinUrl: formData.linkedin_url || undefined,
+            crunchbaseUrl: formData.crunchbase_url || undefined,
+            founderName: formData.founder_name || undefined
+          };
+
+          // Fire and forget - this runs in background
+          supabase.functions.invoke('background-deal-enrichment', {
+            body: backgroundEnrichmentData
+          }).then(({ data, error }) => {
+            if (error) {
+              console.warn('Background enrichment initiation failed:', error);
+            } else {
+              console.log('✅ Background enrichment initiated:', data);
             }
+          }).catch(err => {
+            console.warn('Background enrichment promise failed:', err);
           });
 
-          if (processingError) {
-            console.warn('Universal processing failed:', processingError);
-          } else {
-            console.log('Deal enhanced successfully via universal processor');
-          }
+          console.log('🔄 Background enrichment started for:', formData.company_name);
+          
         } catch (error) {
-          console.warn('Enhancement failed but deal created:', error);
-          toast({
-            title: "Info",
-            description: "Deal created successfully, but enhancement is pending",
-            variant: "default"
-          });
-        }
-
-        // Trigger initial analysis (optional, don't fail deal creation if this fails)
-        try {
-          await triggerDealAnalysis(newDeal.id, 'initial', newDeal.fund_id);
-          console.log('✅ Initial analysis triggered');
-        } catch (error) {
-          console.warn('Initial analysis trigger failed but deal created:', error);
-        }
-
-        // Trigger profile enrichment if founder name provided (optional, don't fail deal creation if this fails)
-        if (formData.founder_name && formData.founder_name.trim()) {
-          try {
-            console.log('🚀 Triggering LinkedIn profile enrichment...');
-            await triggerProfileEnrichment(newDeal.id, formData.founder_name);
-            console.log('✅ LinkedIn profile enrichment triggered');
-          } catch (error) {
-            console.warn('Profile enrichment failed but deal created:', error);
-          }
+          console.warn('Background enrichment initiation failed but deal created:', error);
         }
 
         toast({
           title: "Success",
-          description: `Deal "${formData.company_name}" created successfully!`,
+          description: `Deal "${formData.company_name}" added successfully! Enrichment processes are running in the background.`,
         });
 
         // Close modal immediately after successful creation

@@ -22,6 +22,7 @@ interface EnrichmentRequest {
   linkedinUrl?: string;
   crunchbaseUrl?: string;
   triggerReanalysis?: boolean;
+  forceCrunchbase?: boolean;
 }
 
 interface CompanyEnrichmentData {
@@ -67,26 +68,47 @@ serve(async (req) => {
 
     let enrichmentData: CompanyEnrichmentData = {};
 
-    // Enrichment priority: 1. Brightdata (LinkedIn or Crunchbase), 2. Coresignal, 3. Google Search
-    if (request.linkedinUrl && Deno.env.get('BRIGHTDATA_API_KEY')) {
+    // Enrichment priority: Force Crunchbase if requested, otherwise prioritize based on availability
+    if (request.forceCrunchbase && request.crunchbaseUrl && Deno.env.get('BRIGHTDATA_API_KEY')) {
+      console.log('🏢 Force Crunchbase enrichment (forceCrunchbase=true)...');
+      try {
+        enrichmentData = await enrichWithCrunchbase(request);
+      } catch (error) {
+        console.log('❌ Force Crunchbase failed, falling back to LinkedIn...', error.message);
+        if (request.linkedinUrl) {
+          try {
+            enrichmentData = await enrichWithBrightdata(request);
+          } catch (linkedinError) {
+            console.log('❌ LinkedIn also failed, falling back to Coresignal...', linkedinError.message);
+            enrichmentData = await enrichWithCoresignal(request);
+          }
+        } else {
+          enrichmentData = await enrichWithCoresignal(request);
+        }
+      }
+    } else if (request.crunchbaseUrl && Deno.env.get('BRIGHTDATA_API_KEY')) {
+      console.log('🏢 Prioritizing Crunchbase enrichment (Crunchbase URL available)...');
+      try {
+        enrichmentData = await enrichWithCrunchbase(request);
+      } catch (error) {
+        console.log('❌ Crunchbase failed, falling back to LinkedIn...', error.message);
+        if (request.linkedinUrl) {
+          try {
+            enrichmentData = await enrichWithBrightdata(request);
+          } catch (linkedinError) {
+            console.log('❌ LinkedIn also failed, falling back to Coresignal...', linkedinError.message);
+            enrichmentData = await enrichWithCoresignal(request);
+          }
+        } else {
+          enrichmentData = await enrichWithCoresignal(request);
+        }
+      }
+    } else if (request.linkedinUrl && Deno.env.get('BRIGHTDATA_API_KEY')) {
       console.log('🌟 Enriching with Brightdata (LinkedIn URL available)...');
       try {
         enrichmentData = await enrichWithBrightdata(request);
       } catch (error) {
         console.log('❌ Brightdata LinkedIn failed, falling back to Coresignal...', error.message);
-        try {
-          enrichmentData = await enrichWithCoresignal(request);
-        } catch (coresignalError) {
-          console.log('❌ Coresignal also failed, trying Google Custom Search...', coresignalError.message);
-          enrichmentData = await enrichWithGoogleSearch(request);
-        }
-      }
-    } else if (request.crunchbaseUrl && Deno.env.get('BRIGHTDATA_API_KEY')) {
-      console.log('🏢 Enriching with Brightdata (Crunchbase URL available)...');
-      try {
-        enrichmentData = await enrichWithCrunchbase(request);
-      } catch (error) {
-        console.log('❌ Crunchbase enrichment failed, falling back to Coresignal...', error.message);
         try {
           enrichmentData = await enrichWithCoresignal(request);
         } catch (coresignalError) {

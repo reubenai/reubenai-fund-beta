@@ -190,3 +190,6 @@ verify_jwt = false
 
 [functions.emergency-deal-checker]
 verify_jwt = false
+
+[functions.background-deal-enrichment]
+verify_jwt = false
