@@ -929,6 +929,110 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_integrations: {
+        Row: {
+          connection_name: string
+          created_at: string
+          created_by: string | null
+          credentials: Json
+          crm_type: string
+          field_mappings: Json
+          fund_id: string | null
+          id: string
+          is_active: boolean
+          last_sync_at: string | null
+          organization_id: string
+          sync_settings: Json
+          updated_at: string
+        }
+        Insert: {
+          connection_name: string
+          created_at?: string
+          created_by?: string | null
+          credentials?: Json
+          crm_type: string
+          field_mappings?: Json
+          fund_id?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          organization_id: string
+          sync_settings?: Json
+          updated_at?: string
+        }
+        Update: {
+          connection_name?: string
+          created_at?: string
+          created_by?: string | null
+          credentials?: Json
+          crm_type?: string
+          field_mappings?: Json
+          fund_id?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          organization_id?: string
+          sync_settings?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_sync_log: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          integration_id: string
+          metadata: Json | null
+          records_created: number | null
+          records_failed: number | null
+          records_processed: number | null
+          records_updated: number | null
+          started_at: string
+          status: string
+          sync_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          integration_id: string
+          metadata?: Json | null
+          records_created?: number | null
+          records_failed?: number | null
+          records_processed?: number | null
+          records_updated?: number | null
+          started_at?: string
+          status?: string
+          sync_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          integration_id?: string
+          metadata?: Json | null
+          records_created?: number | null
+          records_failed?: number | null
+          records_processed?: number | null
+          records_updated?: number | null
+          started_at?: string
+          status?: string
+          sync_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_sync_log_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "crm_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       data_lineage_log: {
         Row: {
           approved: boolean
@@ -1410,7 +1514,7 @@ export type Database = {
           about: string | null
           acquired_by: Json | null
           acquisitions: Json | null
-          active_tech_count: number | null
+          active_tech_count: string | null
           address: string | null
           alumni: Json | null
           apptopia: Json | null
@@ -1420,10 +1524,10 @@ export type Database = {
           bombora_last_updated: string | null
           built_with_num_technologies_used: number | null
           built_with_tech: Json | null
-          builtwith_num_technologies_used: number | null
+          builtwith_num_technologies_used: string | null
           builtwith_tech: Json | null
           cb_id: string | null
-          cb_rank: number | null
+          cb_rank: string | null
           company_activity_level: string | null
           company_id: string | null
           company_industry: string | null
@@ -1483,7 +1587,7 @@ export type Database = {
           num_contacts_linkedin: number | null
           num_diversity_spotlight_investments: number | null
           num_employee_profiles: number | null
-          num_employees: number | null
+          num_employees: string | null
           num_event_appearances: number | null
           num_exits: number | null
           num_founder_alumni: number | null
@@ -1545,7 +1649,7 @@ export type Database = {
           about?: string | null
           acquired_by?: Json | null
           acquisitions?: Json | null
-          active_tech_count?: number | null
+          active_tech_count?: string | null
           address?: string | null
           alumni?: Json | null
           apptopia?: Json | null
@@ -1555,10 +1659,10 @@ export type Database = {
           bombora_last_updated?: string | null
           built_with_num_technologies_used?: number | null
           built_with_tech?: Json | null
-          builtwith_num_technologies_used?: number | null
+          builtwith_num_technologies_used?: string | null
           builtwith_tech?: Json | null
           cb_id?: string | null
-          cb_rank?: number | null
+          cb_rank?: string | null
           company_activity_level?: string | null
           company_id?: string | null
           company_industry?: string | null
@@ -1618,7 +1722,7 @@ export type Database = {
           num_contacts_linkedin?: number | null
           num_diversity_spotlight_investments?: number | null
           num_employee_profiles?: number | null
-          num_employees?: number | null
+          num_employees?: string | null
           num_event_appearances?: number | null
           num_exits?: number | null
           num_founder_alumni?: number | null
@@ -1680,7 +1784,7 @@ export type Database = {
           about?: string | null
           acquired_by?: Json | null
           acquisitions?: Json | null
-          active_tech_count?: number | null
+          active_tech_count?: string | null
           address?: string | null
           alumni?: Json | null
           apptopia?: Json | null
@@ -1690,10 +1794,10 @@ export type Database = {
           bombora_last_updated?: string | null
           built_with_num_technologies_used?: number | null
           built_with_tech?: Json | null
-          builtwith_num_technologies_used?: number | null
+          builtwith_num_technologies_used?: string | null
           builtwith_tech?: Json | null
           cb_id?: string | null
-          cb_rank?: number | null
+          cb_rank?: string | null
           company_activity_level?: string | null
           company_id?: string | null
           company_industry?: string | null
@@ -1753,7 +1857,7 @@ export type Database = {
           num_contacts_linkedin?: number | null
           num_diversity_spotlight_investments?: number | null
           num_employee_profiles?: number | null
-          num_employees?: number | null
+          num_employees?: string | null
           num_event_appearances?: number | null
           num_exits?: number | null
           num_founder_alumni?: number | null
@@ -2634,6 +2738,9 @@ export type Database = {
           countries_of_operation: string[] | null
           created_at: string
           created_by: string
+          crm_external_id: string | null
+          crm_integration_id: string | null
+          crm_source: string | null
           crunchbase_url: string | null
           currency: string | null
           current_round_size: number | null
@@ -2653,6 +2760,7 @@ export type Database = {
           key_customers: string[] | null
           last_analysis_trigger: string | null
           last_analysis_trigger_reason: string | null
+          last_crm_sync: string | null
           linkedin_url: string | null
           location: string | null
           next_action: string | null
@@ -2694,6 +2802,9 @@ export type Database = {
           countries_of_operation?: string[] | null
           created_at?: string
           created_by: string
+          crm_external_id?: string | null
+          crm_integration_id?: string | null
+          crm_source?: string | null
           crunchbase_url?: string | null
           currency?: string | null
           current_round_size?: number | null
@@ -2713,6 +2824,7 @@ export type Database = {
           key_customers?: string[] | null
           last_analysis_trigger?: string | null
           last_analysis_trigger_reason?: string | null
+          last_crm_sync?: string | null
           linkedin_url?: string | null
           location?: string | null
           next_action?: string | null
@@ -2754,6 +2866,9 @@ export type Database = {
           countries_of_operation?: string[] | null
           created_at?: string
           created_by?: string
+          crm_external_id?: string | null
+          crm_integration_id?: string | null
+          crm_source?: string | null
           crunchbase_url?: string | null
           currency?: string | null
           current_round_size?: number | null
@@ -2773,6 +2888,7 @@ export type Database = {
           key_customers?: string[] | null
           last_analysis_trigger?: string | null
           last_analysis_trigger_reason?: string | null
+          last_crm_sync?: string | null
           linkedin_url?: string | null
           location?: string | null
           next_action?: string | null
@@ -2800,6 +2916,13 @@ export type Database = {
           website?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "deals_crm_integration_id_fkey"
+            columns: ["crm_integration_id"]
+            isOneToOne: false
+            referencedRelation: "crm_integrations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "deals_fund_id_fkey"
             columns: ["fund_id"]

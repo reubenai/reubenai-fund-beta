@@ -22,6 +22,7 @@ interface EnhancedPipelineHeaderProps {
   onAddDeal: () => void;
   onBatchUpload: () => void;
   onSourceDeals?: () => void;
+  onIntegrateCRM?: () => void;
   totalDeals: number;
   showFilters?: boolean;
   onToggleFilters?: () => void;
@@ -33,6 +34,7 @@ export function EnhancedPipelineHeader({
   onAddDeal,
   onBatchUpload,
   onSourceDeals,
+  onIntegrateCRM,
   totalDeals,
   showFilters,
   onToggleFilters,
@@ -63,15 +65,41 @@ export function EnhancedPipelineHeader({
             </Button>
           )}
           
-          <Button 
-            disabled
-            variant="outline"
-            className="gap-2 opacity-50 cursor-not-allowed"
-          >
-            <Search className="h-4 w-4" />
-            Source Deals
-            <Badge variant="secondary" className="ml-2 text-xs">Coming Soon</Badge>
-          </Button>
+           <DropdownMenu>
+             <DropdownMenuTrigger asChild>
+               <Button variant="outline" className="gap-2">
+                 <Search className="h-4 w-4" />
+                 Integrate CRM
+                 <ChevronDown className="h-4 w-4" />
+               </Button>
+             </DropdownMenuTrigger>
+             <DropdownMenuContent align="end">
+               <DropdownMenuItem onClick={onIntegrateCRM}>
+                 <div className="flex items-center gap-2">
+                   <div className="w-4 h-4 bg-orange-500 rounded"></div>
+                   HubSpot
+                 </div>
+               </DropdownMenuItem>
+               <DropdownMenuItem onClick={onIntegrateCRM}>
+                 <div className="flex items-center gap-2">
+                   <div className="w-4 h-4 bg-blue-600 rounded"></div>
+                   Salesforce
+                 </div>
+               </DropdownMenuItem>
+               <DropdownMenuItem onClick={onIntegrateCRM}>
+                 <div className="flex items-center gap-2">
+                   <div className="w-4 h-4 bg-purple-600 rounded"></div>
+                   Affinity
+                 </div>
+               </DropdownMenuItem>
+               <DropdownMenuItem onClick={onIntegrateCRM}>
+                 <div className="flex items-center gap-2">
+                   <div className="w-4 h-4 bg-green-600 rounded"></div>
+                   PipeDrive
+                 </div>
+               </DropdownMenuItem>
+             </DropdownMenuContent>
+           </DropdownMenu>
         </div>
       </div>
 
