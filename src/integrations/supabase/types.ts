@@ -2755,6 +2755,9 @@ export type Database = {
           fund_id: string
           funding_stage: string | null
           headquarters: string | null
+          ic_decision_date: string | null
+          ic_decision_id: string | null
+          ic_decision_outcome: string | null
           id: string
           industry: string | null
           key_customers: string[] | null
@@ -2819,6 +2822,9 @@ export type Database = {
           fund_id: string
           funding_stage?: string | null
           headquarters?: string | null
+          ic_decision_date?: string | null
+          ic_decision_id?: string | null
+          ic_decision_outcome?: string | null
           id?: string
           industry?: string | null
           key_customers?: string[] | null
@@ -2883,6 +2889,9 @@ export type Database = {
           fund_id?: string
           funding_stage?: string | null
           headquarters?: string | null
+          ic_decision_date?: string | null
+          ic_decision_id?: string | null
+          ic_decision_outcome?: string | null
           id?: string
           industry?: string | null
           key_customers?: string[] | null
@@ -2928,6 +2937,13 @@ export type Database = {
             columns: ["fund_id"]
             isOneToOne: false
             referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_ic_decision_id_fkey"
+            columns: ["ic_decision_id"]
+            isOneToOne: false
+            referencedRelation: "ic_voting_decisions"
             referencedColumns: ["id"]
           },
           {

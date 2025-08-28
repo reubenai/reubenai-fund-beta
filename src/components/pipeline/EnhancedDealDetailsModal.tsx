@@ -344,6 +344,48 @@ export function EnhancedDealDetailsModal({
 
           <TabsContent value="overview" className="mt-6">
             <div className="space-y-6">
+              {/* IC Decision Card - Only show if decision exists */}
+              {deal.ic_decision_outcome && (
+                <Card className="border-l-4 border-l-primary">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Target className="h-5 w-5" />
+                      Investment Committee Decision
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <Badge variant={
+                          deal.ic_decision_outcome === 'approved' ? 'default' : 
+                          deal.ic_decision_outcome === 'rejected' ? 'destructive' : 
+                          'secondary'
+                        }>
+                          {deal.ic_decision_outcome?.toUpperCase()}
+                        </Badge>
+                        {deal.ic_decision_date && (
+                          <span className="text-sm text-muted-foreground">
+                            Decided on {format(new Date(deal.ic_decision_date), 'MMM d, yyyy')}
+                          </span>
+                        )}
+                      </div>
+                      {deal.ic_decision_outcome === 'approved' && (
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      )}
+                      {deal.ic_decision_outcome === 'rejected' && (
+                        <AlertCircle className="h-5 w-5 text-red-600" />
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Investment Committee has {deal.ic_decision_outcome} this opportunity. 
+                      {deal.ic_decision_outcome === 'approved' && ' Proceeding to term sheet preparation.'}
+                      {deal.ic_decision_outcome === 'rejected' && ' Deal archived with learnings captured.'}
+                      {deal.ic_decision_outcome === 'deferred' && ' Additional due diligence required.'}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Company Overview Card with subtle background processing indicator */}
               <Card>
                 <CardContent className="pt-6">

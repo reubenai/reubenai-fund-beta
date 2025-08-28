@@ -86,11 +86,14 @@ serve(async (req) => {
         break;
     }
 
-    // Update deal status
+    // Update deal status and IC decision fields
     const { error: updateDealError } = await supabase
       .from('deals')
       .update({
-        status: newDealStatus
+        status: newDealStatus,
+        ic_decision_id: decisionId,
+        ic_decision_date: new Date().toISOString(),
+        ic_decision_outcome: finalDecision
       })
       .eq('id', deal.id);
 
@@ -142,6 +145,45 @@ Deal status updated from "${deal.status}" to "${newDealStatus}"`;
 
     if (noteError) {
       console.warn('Could not create decision note:', noteError.message);
+    }
+
+    // Capture IC decision context for Fund Memory
+    try {
+      const { error: memoryError } = await supabase.functions.invoke('enhanced-fund-memory-engine', {
+        body: {
+          fund_id: deal.fund_id,
+          action_type: 'capture_decision_context',
+          context: {
+            deal_id: deal.id,
+            ic_session_id: decision.session_id,
+            decision_type: 'ic_voting_decision',
+            decision_outcome: finalDecision,
+            confidence_level: 95, // IC decisions have high confidence
+            ai_recommendations: null, // Could be enhanced with AI comparison
+            supporting_evidence: {
+              vote_summary: voteSummary,
+              decision_rationale: decisionRationale,
+              committee_votes: voteSummary
+            },
+            context_data: {
+              decision_id: decisionId,
+              company_name: deal.company_name,
+              previous_status: deal.status,
+              new_status: newDealStatus,
+              fund_name: deal.funds.name,
+              decision_date: new Date().toISOString()
+            }
+          }
+        }
+      });
+
+      if (memoryError) {
+        console.warn('Could not capture IC decision in Fund Memory:', memoryError);
+      } else {
+        console.log('✅ IC decision captured in Fund Memory');
+      }
+    } catch (memoryError) {
+      console.warn('Fund Memory capture failed silently:', memoryError);
     }
 
     console.log(`✅ Update Deal: ${deal.company_name} decision processed - ${finalDecision}`);

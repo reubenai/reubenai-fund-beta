@@ -9,6 +9,7 @@ export interface DecisionContext {
   ai_recommendations?: any;
   supporting_evidence?: any;
   context_data?: any;
+  decision_id?: string; // IC decision ID for linking
 }
 
 export interface FundMemoryInsight {
@@ -57,25 +58,40 @@ class EnhancedFundMemoryService {
 
       if (decisionError) throw decisionError;
 
-      // Store in enhanced memory for pattern analysis
+      // Store in enhanced memory for pattern analysis with IC decision context
+      const memoryTitle = context.decision_type === 'ic_voting_decision' 
+        ? `IC Decision: ${context.decision_outcome} - ${context.context_data?.company_name || 'Deal'}`
+        : `Enhanced Decision: ${context.decision_type} - ${context.decision_outcome}`;
+      
+      const memoryDescription = context.decision_type === 'ic_voting_decision'
+        ? `Investment Committee ${context.decision_outcome} decision with ${context.confidence_level}% confidence and voting details`
+        : `Decision context with ${context.confidence_level}% confidence and learning metadata`;
+
       const { error: memoryError } = await supabase
         .from('fund_memory_entries')
         .insert({
           fund_id: fundId,
           deal_id: context.deal_id,
           ic_meeting_id: context.ic_session_id,
-          memory_type: 'investment_decision', // Use valid constraint value
-          title: `Enhanced Decision: ${context.decision_type} - ${context.decision_outcome}`,
-          description: `Decision context with ${context.confidence_level}% confidence and learning metadata`,
+          memory_type: context.decision_type === 'ic_voting_decision' ? 'committee_decision' : 'investment_decision',
+          title: memoryTitle,
+          description: memoryDescription,
           memory_content: {
-            decision_id: decision.id,
+            decision_id: decision?.id || context.decision_id,
+            ic_decision_id: context.decision_id, // Link to IC voting decision
             decision_type: context.decision_type,
             decision_outcome: context.decision_outcome,
             confidence_level: context.confidence_level,
             ai_recommendations: context.ai_recommendations,
             supporting_evidence: context.supporting_evidence,
             context_data: context.context_data,
-            ai_human_alignment: !decision.contradicts_ai,
+            ai_human_alignment: !decision?.contradicts_ai,
+            is_ic_decision: context.decision_type === 'ic_voting_decision',
+            committee_context: context.decision_type === 'ic_voting_decision' ? {
+              vote_summary: context.supporting_evidence?.vote_summary,
+              decision_rationale: context.supporting_evidence?.decision_rationale,
+              fund_name: context.context_data?.fund_name
+            } : null,
             captured_at: new Date().toISOString()
           },
           confidence_score: context.confidence_level,
@@ -85,7 +101,8 @@ class EnhancedFundMemoryService {
             context.decision_type,
             context.decision_outcome,
             context.deal_id ? 'deal_decision' : 'ic_decision',
-            decision.contradicts_ai ? 'ai_divergent' : 'ai_aligned'
+            decision?.contradicts_ai ? 'ai_divergent' : 'ai_aligned',
+            ...(context.decision_type === 'ic_voting_decision' ? ['committee_vote', 'ic_outcome'] : [])
           ],
           ai_service_name: 'enhanced-fund-memory-service',
           created_by: (await supabase.auth.getUser()).data.user?.id
