@@ -513,62 +513,15 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="founder">Founder</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="founder"
-                    value={formData.founder}
-                    onChange={(e) => handleInputChange('founder', e.target.value)}
-                    placeholder="Enter founder name"
-                    className="flex-1"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={async () => {
-                      if (formData.founder && formData.founder.trim()) {
-                        await triggerProfileEnrichment(deal.id, formData.founder);
-                      } else {
-                        toast({
-                          title: "Missing Information",
-                          description: "Please enter a founder name first",
-                          variant: "destructive",
-                        });
-                      }
-                    }}
-                    disabled={!formData.founder?.trim()}
-                  >
-                    LinkedIn
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={async () => {
-                      if (formData.founder && formData.founder.trim() && formData.company_name?.trim()) {
-                        await triggerFounderEnrichment(
-                          deal.id, 
-                          formData.founder, 
-                          formData.company_name,
-                          {
-                            companyWebsite: formData.website,
-                            linkedinUrl: formData.linkedin_url,
-                            crunchbaseUrl: formData.crunchbase_url
-                          }
-                        );
-                      } else {
-                        toast({
-                          title: "Missing Information",
-                          description: "Please enter both founder name and company name first",
-                          variant: "destructive",
-                        });
-                      }
-                    }}
-                    disabled={!formData.founder?.trim() || !formData.company_name?.trim()}
-                  >
-                    Perplexity
-                  </Button>
-                </div>
+                <Input
+                  id="founder"
+                  value={formData.founder}
+                  onChange={(e) => handleInputChange('founder', e.target.value)}
+                  placeholder="Enter founder name"
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Data enrichment is managed centrally to prevent duplicates
+                </p>
               </div>
               <div>
                 <Label htmlFor="founder_email">Founder Email</Label>
