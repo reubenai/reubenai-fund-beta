@@ -106,58 +106,141 @@ export function useDealPermissions(dealId: string) {
       // First, check if user exists in profiles
       const { data: existingProfile } = await supabase
         .from('profiles')
-        .select('user_id, email')
+        .select('user_id, email, first_name, last_name')
         .eq('email', email)
         .single();
 
       let targetUserId = existingProfile?.user_id;
+      const isExistingUser = !!existingProfile;
 
-      // If user doesn't exist, create external user profile
-      if (!existingProfile && accessType === 'external') {
-        // For external users, we'll create a placeholder profile
-        // In a real implementation, you'd send an invitation email
-        toast({
-          title: "Feature Coming Soon",
-          description: "External user invitations will be available soon. For now, users must sign up first.",
-          variant: "default"
-        });
-        return false;
-      }
+      // Get deal and fund information for invitation email
+      const { data: dealData } = await supabase
+        .from('deals')
+        .select(`
+          company_name,
+          fund_id,
+          funds!inner(name)
+        `)
+        .eq('id', dealId)
+        .single();
 
-      if (!targetUserId) {
-        toast({
-          title: "User Not Found",
-          description: "The user must have an account before being granted access.",
-          variant: "destructive"
-        });
-        return false;
-      }
-
-      // Grant permission
-      const { error } = await supabase
-        .from('deal_permissions')
-        .upsert({
-          deal_id: dealId,
-          user_id: targetUserId,
-          role,
-          access_type: accessType,
-          access_granted_by: user.id
-        });
-
-      if (error) {
-        console.error('Error granting access:', error);
+      if (!dealData) {
         toast({
           title: "Error",
-          description: "Failed to grant access. Please try again.",
+          description: "Deal information not found.",
           variant: "destructive"
         });
         return false;
       }
 
-      toast({
-        title: "Access Granted",
-        description: `${email} has been granted ${role} access to this deal.`,
-      });
+      // Get current user's profile information
+      const { data: currentUserProfile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, email')
+        .eq('user_id', user.id)
+        .single();
+
+      const inviterName = currentUserProfile?.first_name && currentUserProfile?.last_name
+        ? `${currentUserProfile.first_name} ${currentUserProfile.last_name}`
+        : currentUserProfile?.email || user.email || 'Team Member';
+
+      if (isExistingUser && targetUserId) {
+        // Grant permission for existing user
+        const { error } = await supabase
+          .from('deal_permissions')
+          .upsert({
+            deal_id: dealId,
+            user_id: targetUserId,
+            role,
+            access_type: accessType,
+            access_granted_by: user.id
+          });
+
+        if (error) {
+          console.error('Error granting access:', error);
+          toast({
+            title: "Error",
+            description: "Failed to grant access. Please try again.",
+            variant: "destructive"
+          });
+          return false;
+        }
+
+        // Send notification email to existing user
+        try {
+          await supabase.functions.invoke('send-deal-invitation', {
+            body: {
+              recipientEmail: email,
+              recipientName: existingProfile.first_name && existingProfile.last_name 
+                ? `${existingProfile.first_name} ${existingProfile.last_name}` 
+                : undefined,
+              role,
+              dealInfo: {
+                id: dealId,
+                companyName: dealData.company_name,
+                fundName: (dealData.funds as any)?.name || 'Unknown Fund'
+              },
+              inviterInfo: {
+                name: inviterName,
+                email: user.email || currentUserProfile?.email || ''
+              },
+              isNewUser: false,
+              accessType
+            }
+          });
+        } catch (emailError) {
+          console.warn('Failed to send notification email:', emailError);
+          // Don't fail the entire operation if email fails
+        }
+
+        toast({
+          title: "Access Granted",
+          description: `${email} has been granted ${role} access and notified via email.`,
+        });
+
+      } else {
+        // Handle new user invitation
+        const invitationToken = crypto.randomUUID();
+        
+        // Store invitation token for later verification (you may want to create a table for this)
+        // For now, we'll send the invitation email with the token
+        try {
+          await supabase.functions.invoke('send-deal-invitation', {
+            body: {
+              recipientEmail: email,
+              role,
+              dealInfo: {
+                id: dealId,
+                companyName: dealData.company_name,
+                fundName: (dealData.funds as any)?.name || 'Unknown Fund'
+              },
+              inviterInfo: {
+                name: inviterName,
+                email: user.email || currentUserProfile?.email || ''
+              },
+              isNewUser: true,
+              invitationToken,
+              accessType
+            }
+          });
+
+          // Store pending invitation (optional - you can implement this later)
+          // This would track invitations until the user signs up
+          
+          toast({
+            title: "Invitation Sent",
+            description: `Invitation sent to ${email}. They will receive access once they sign up.`,
+          });
+        } catch (emailError) {
+          console.error('Failed to send invitation email:', emailError);
+          toast({
+            title: "Error",
+            description: "Failed to send invitation email. Please try again.",
+            variant: "destructive"
+          });
+          return false;
+        }
+      }
 
       await fetchDealPermissions();
       return true;

@@ -152,6 +152,9 @@ verify_jwt = false
 [functions.risk-mitigation-engine]
 verify_jwt = false
 
+[functions.send-deal-invitation]
+verify_jwt = false
+
 [functions.send-feedback-notification]
 verify_jwt = false
 
