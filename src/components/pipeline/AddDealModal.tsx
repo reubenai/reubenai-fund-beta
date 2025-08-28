@@ -271,12 +271,11 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
           if (formData.industry.length > 0 && formData.location.length > 0) {
             enrichmentProcesses++;
             console.log('📤 Starting Perplexity market enrichment...');
-            try {
-              await triggerMarketEnrichment(newDeal.id, formData.industry[0], formData.location[0]);
-              console.log('✅ Perplexity market enrichment triggered successfully');
-            } catch (err) {
+            triggerMarketEnrichment(newDeal.id, formData.industry[0], formData.location[0]).then(() => {
+              console.log('✅ Perplexity market enrichment completed');
+            }).catch(err => {
               console.error('💥 Perplexity market enrichment error:', err);
-            }
+            });
           }
 
           console.log(`🔄 ${enrichmentProcesses} independent enrichment processes started for: ${formData.company_name}`);
@@ -293,7 +292,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
 
         toast({
           title: "Success",
-          description: `Deal "${formData.company_name}" added successfully! Enrichment processes are running in the background.`,
+          description: `Deal ${formData.company_name} Successfully Added. Reuben is fetching data in background`,
         });
 
         // Close modal immediately after successful creation
