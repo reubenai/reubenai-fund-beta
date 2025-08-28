@@ -2073,20 +2073,23 @@ export type Database = {
         }
         Relationships: []
       }
-      deal_enrichment_perplexity_company_export: {
+      deal_enrichment_perplexity_company_export_vc: {
         Row: {
           addressable_customers: string | null
           cac_trend: string | null
           cagr: string | null
           channel_effectiveness: Json | null
           company_name: string
+          confidence_level: string | null
           created_at: string
           data_quality_score: number | null
+          data_sources: Json | null
           deal_id: string
           growth_drivers: string[] | null
           id: string
           investor_network: string[] | null
           key_market_players: string[] | null
+          last_updated: string | null
           ltv_cac_ratio: string | null
           market_share_distribution: Json | null
           partnership_ecosystem: Json | null
@@ -2108,13 +2111,16 @@ export type Database = {
           cagr?: string | null
           channel_effectiveness?: Json | null
           company_name: string
+          confidence_level?: string | null
           created_at?: string
           data_quality_score?: number | null
+          data_sources?: Json | null
           deal_id: string
           growth_drivers?: string[] | null
           id?: string
           investor_network?: string[] | null
           key_market_players?: string[] | null
+          last_updated?: string | null
           ltv_cac_ratio?: string | null
           market_share_distribution?: Json | null
           partnership_ecosystem?: Json | null
@@ -2136,13 +2142,16 @@ export type Database = {
           cagr?: string | null
           channel_effectiveness?: Json | null
           company_name?: string
+          confidence_level?: string | null
           created_at?: string
           data_quality_score?: number | null
+          data_sources?: Json | null
           deal_id?: string
           growth_drivers?: string[] | null
           id?: string
           investor_network?: string[] | null
           key_market_players?: string[] | null
+          last_updated?: string | null
           ltv_cac_ratio?: string | null
           market_share_distribution?: Json | null
           partnership_ecosystem?: Json | null
@@ -2158,15 +2167,7 @@ export type Database = {
           updated_at?: string
           whitespace_opportunities?: string[] | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "deal_enrichment_perplexity_company_export_deal_id_fkey"
-            columns: ["deal_id"]
-            isOneToOne: false
-            referencedRelation: "deals"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       deal_enrichment_perplexity_founder_export: {
         Row: {

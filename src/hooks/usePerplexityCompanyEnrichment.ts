@@ -80,7 +80,7 @@ export const usePerplexityCompanyEnrichment = () => {
     }
   };
 
-  // Wrapper function to trigger company enrichment
+  // Wrapper function to trigger company enrichment (VC deals only)
   const triggerCompanyEnrichment = async (
     dealId: string,
     companyName: string,
@@ -90,14 +90,61 @@ export const usePerplexityCompanyEnrichment = () => {
       description?: string;
     }
   ): Promise<CompanyEnrichmentResult | null> => {
-    return enrichCompanyProfile(dealId, companyName, additionalContext);
+    // First check if the deal's fund is venture capital
+    try {
+      const { data: dealData, error: dealError } = await supabase
+        .from('deals')
+        .select(`
+          id,
+          fund_id,
+          funds!deals_fund_id_fkey(
+            id,
+            fund_type
+          )
+        `)
+        .eq('id', dealId)
+        .single();
+
+      if (dealError) {
+        console.error('❌ Error fetching deal data:', dealError);
+        toast.error('Failed to fetch deal information');
+        const errorResult = { success: false, error: 'Failed to fetch deal information' };
+        setEnrichmentResult(errorResult);
+        return errorResult;
+      }
+
+      // Only proceed if fund type is venture_capital
+      if (dealData.funds.fund_type !== 'venture_capital') {
+        console.log(`🚫 Skipping Perplexity enrichment for ${companyName} - Fund type is ${dealData.funds.fund_type}, not venture_capital`);
+        toast.error('Perplexity company enrichment is only available for venture capital deals');
+        const errorResult = { 
+          success: false, 
+          error: 'Perplexity company enrichment is only available for venture capital deals',
+          fund_type: dealData.funds.fund_type 
+        };
+        setEnrichmentResult(errorResult);
+        return errorResult;
+      }
+
+      console.log(`✅ Deal ${dealId} confirmed as venture capital - proceeding with enrichment`);
+      
+      // Proceed with enrichment for VC deals
+      return enrichCompanyProfile(dealId, companyName, additionalContext);
+      
+    } catch (error) {
+      console.error('❌ Unexpected error during fund type check:', error);
+      toast.error('An unexpected error occurred during fund type validation');
+      const errorResult = { success: false, error: 'Fund type validation failed' };
+      setEnrichmentResult(errorResult);
+      return errorResult;
+    }
   };
 
-  // Function to get existing company enrichment data
+  // Function to get existing company enrichment data (VC only)
   const getCompanyEnrichmentData = async (dealId: string) => {
     try {
       const { data, error } = await supabase
-        .from('deal_enrichment_perplexity_company_export')
+        .from('deal_enrichment_perplexity_company_export_vc')
         .select('*')
         .eq('deal_id', dealId)
         .order('created_at', { ascending: false })
@@ -105,13 +152,13 @@ export const usePerplexityCompanyEnrichment = () => {
         .maybeSingle();
 
       if (error) {
-        console.error('❌ Error fetching company enrichment data:', error);
+        console.error('❌ Error fetching VC company enrichment data:', error);
         return null;
       }
 
       return data;
     } catch (error) {
-      console.error('❌ Unexpected error fetching company enrichment data:', error);
+      console.error('❌ Unexpected error fetching VC company enrichment data:', error);
       return null;
     }
   };

@@ -52,6 +52,43 @@ serve(async (req) => {
       );
     }
 
+    // Check if the deal's fund is venture capital only
+    const { data: dealData, error: dealError } = await supabase
+      .from('deals')
+      .select(`
+        id,
+        fund_id,
+        funds!inner(
+          id,
+          fund_type
+        )
+      `)
+      .eq('id', dealId)
+      .single();
+
+    if (dealError) {
+      console.error('❌ Error fetching deal data:', dealError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Failed to fetch deal information' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Only process if fund type is venture_capital
+    if (dealData.funds.fund_type !== 'venture_capital') {
+      console.log(`🚫 Skipping Perplexity enrichment for ${companyName} - Fund type is ${dealData.funds.fund_type}, not venture_capital`);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Perplexity company enrichment is only available for venture capital deals',
+          fund_type: dealData.funds.fund_type
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`✅ Deal ${dealId} confirmed as venture capital - proceeding with enrichment`);
+
     // Check for Perplexity API key
     const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
     if (!perplexityApiKey) {
@@ -330,7 +367,7 @@ async function processPerplexityCompanyResponse(
   };
 
   const { data, error } = await supabase
-    .from('deal_enrichment_perplexity_company_export')
+    .from('deal_enrichment_perplexity_company_export_vc')
     .insert(processedCompanyData)
     .select()
     .single();
@@ -348,7 +385,7 @@ async function processPerplexityCompanyResponse(
     };
     
     const { data: fallbackResult } = await supabase
-      .from('deal_enrichment_perplexity_company_export')
+      .from('deal_enrichment_perplexity_company_export_vc')
       .insert(fallbackData)
       .select()
       .single();
