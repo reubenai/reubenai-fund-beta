@@ -74,7 +74,7 @@ serve(async (req) => {
       .select(`
         id,
         fund_id,
-        funds!inner(fund_type)
+        funds!deals_fund_id_fkey(fund_type)
       `)
       .eq('id', dealId)
       .single();

@@ -271,21 +271,12 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
           if (formData.industry.length > 0 && formData.location.length > 0) {
             enrichmentProcesses++;
             console.log('📤 Starting Perplexity market enrichment...');
-            supabase.functions.invoke('perplexity-market-enrichment', {
-              body: {
-                dealId: newDeal.id,
-                primaryIndustry: formData.industry[0],
-                location: formData.location[0]
-              }
-            }).then(({ data, error }) => {
-              if (error) {
-                console.error('❌ Perplexity market enrichment failed:', error);
-              } else {
-                console.log('✅ Perplexity market enrichment completed:', data);
-              }
-            }).catch(err => {
+            try {
+              await triggerMarketEnrichment(newDeal.id, formData.industry[0], formData.location[0]);
+              console.log('✅ Perplexity market enrichment triggered successfully');
+            } catch (err) {
               console.error('💥 Perplexity market enrichment error:', err);
-            });
+            }
           }
 
           console.log(`🔄 ${enrichmentProcesses} independent enrichment processes started for: ${formData.company_name}`);
