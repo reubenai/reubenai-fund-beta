@@ -344,16 +344,6 @@ export function EnhancedDealDetailsModal({
 
           <TabsContent value="overview" className="mt-6">
             <div className="space-y-6">
-              {/* Debug IC Decision Fields */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="bg-blue-50 border border-blue-200 p-3 rounded text-xs">
-                  <strong>IC Decision Debug:</strong><br/>
-                  ic_decision_outcome: {deal.ic_decision_outcome || 'null'}<br/>
-                  ic_decision_date: {deal.ic_decision_date || 'null'}<br/>
-                  ic_decision_id: {deal.ic_decision_id || 'null'}
-                </div>
-              )}
-              
               {/* IC Decision Card - Only show if decision exists */}
               {deal.ic_decision_outcome && (
                 <Card className="border-l-4 border-l-primary">
