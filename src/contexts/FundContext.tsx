@@ -117,7 +117,8 @@ export const FundProvider: React.FC<{ children: React.ReactNode }> = ({ children
             organization:organizations(name)
           `)
           .eq('organization_id', organizationId)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
         data = response.data;
         error = response.error;
         
