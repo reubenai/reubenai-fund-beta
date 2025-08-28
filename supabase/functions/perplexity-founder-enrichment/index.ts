@@ -130,85 +130,109 @@ serve(async (req) => {
     const snapshotId = `founder_${dealId}_${Date.now()}`;
     console.log(`📝 Generated snapshot ID: ${snapshotId}`);
 
-    // Build structured search query
+    // Build structured search query with VC subcategories
     const searchQuery = `
-    Research ${founderName}, founder of ${companyName}, and return the information in the following JSON structure:
+    Research ${founderName}, founder of ${companyName}, and return the information in the following JSON structure organized by venture capital evaluation subcategories:
 
     {
         "founder_name": "${founderName}",
         "company_name": "${companyName}",
-        "research_data": {
-            "previous_roles": [
-                {
-                    "company": "Company Name",
-                    "position": "Job Title",
-                    "duration": "Years",
-                    "description": "Role description"
-                }
-            ],
-            "leadership_experience": {
-                "summary": "Leadership background summary",
-                "key_achievements": ["Achievement 1", "Achievement 2"]
-            },
-            "technical_skills": [
-                "Skill 1", "Skill 2", "Skill 3"
-            ],
-            "market_knowledge": {
-                "industries": ["Industry 1", "Industry 2"],
-                "expertise_areas": ["Area 1", "Area 2"]
-            },
-            "innovation_record": {
-                "patents": ["Patent 1", "Patent 2"],
-                "innovations": ["Innovation 1", "Innovation 2"],
-                "breakthrough_work": ["Work 1", "Work 2"]
-            },
-            "academic_background": {
-                "degrees": [
+        "team_leadership": {
+            "data": {
+                "previous_roles": [
                     {
-                        "degree": "Degree Type",
-                        "institution": "University Name",
-                        "year": "Graduation Year",
-                        "field": "Field of Study"
+                        "company": "Company Name",
+                        "position": "Job Title",
+                        "duration": "Years",
+                        "description": "Role description"
+                    }
+                ],
+                "leadership_experience": {
+                    "years_experience": 0,
+                    "team_sizes_managed": [10, 50, 100],
+                    "leadership_style": "Description",
+                    "key_achievements": ["Achievement 1", "Achievement 2"]
+                },
+                "team_building": {
+                    "summary": "Team building experience",
+                    "team_sizes": ["Size ranges managed"],
+                    "notable_hires": ["Key hire 1", "Key hire 2"],
+                    "hiring_record": ["Hiring achievement 1", "Hiring achievement 2"],
+                    "team_culture": "Team culture description"
+                }
+            },
+            "sources": ["URL 1", "URL 2"],
+            "confidence": "High"
+        },
+        "innovation_expertise": {
+            "data": {
+                "technical_skills": ["Skill 1", "Skill 2", "Skill 3"],
+                "innovation_record": {
+                    "patents": ["Patent 1", "Patent 2"],
+                    "innovations": ["Innovation 1", "Innovation 2"],
+                    "breakthrough_work": ["Work 1", "Work 2"]
+                },
+                "academic_background": {
+                    "degrees": [
+                        {
+                            "degree": "Degree Type",
+                            "institution": "University Name",
+                            "year": "Graduation Year",
+                            "field": "Field of Study"
+                        }
+                    ],
+                    "institutions": ["University 1", "University 2"]
+                },
+                "certifications": [
+                    {
+                        "name": "Certification Name",
+                        "issuer": "Issuing Organization",
+                        "year": "Year Obtained"
                     }
                 ]
             },
-            "certifications": [
-                {
-                    "name": "Certification Name",
-                    "issuer": "Issuing Organization",
-                    "year": "Year Obtained"
-                }
-            ],
-            "thought_leadership": {
-                "publications": ["Article 1", "Article 2"],
-                "speaking_engagements": ["Event 1", "Event 2"],
-                "media_appearances": ["Media 1", "Media 2"]
-            },
-            "exit_history": [
-                {
-                    "company": "Company Name",
-                    "exit_type": "IPO/Acquisition/etc",
-                    "year": "Exit Year",
-                    "valuation": "Exit Value"
-                }
-            ],
-            "value_creation": {
-                "summary": "Value creation track record",
-                "metrics": ["Metric 1", "Metric 2"]
-            },
-            "team_building": {
-                "summary": "Team building experience",
-                "team_sizes": ["Size ranges managed"],
-                "notable_hires": ["Key hire 1", "Key hire 2"]
-            }
+            "sources": ["URL 1", "URL 2"],
+            "confidence": "Medium"
         },
-        "sources": [
-            {
-                "title": "Source Title",
-                "url": "Source URL",
-                "relevance": "How this source contributed"
-            }
-        ]
+        "market_knowledge": {
+            "data": {
+                "market_knowledge": {
+                    "industries": ["Industry 1", "Industry 2"],
+                    "expertise_areas": ["Area 1", "Area 2"],
+                    "market_insights": ["Insight 1", "Insight 2"]
+                },
+                "thought_leadership": {
+                    "publications": ["Article 1", "Article 2"],
+                    "speaking_engagements": ["Event 1", "Event 2"],
+                    "media_appearances": ["Media 1", "Media 2"]
+                }
+            },
+            "sources": ["URL 1", "URL 2"],
+            "confidence": "Medium"
+        },
+        "track_record": {
+            "data": {
+                "exit_history": [
+                    {
+                        "company": "Company Name",
+                        "exit_type": "IPO/Acquisition/etc",
+                        "year": "Exit Year",
+                        "valuation": "Exit Value"
+                    }
+                ],
+                "value_creation": {
+                    "summary": "Value creation track record",
+                    "financial_achievements": ["Achievement 1", "Achievement 2"],
+                    "growth_metrics": ["Metric 1", "Metric 2"]
+                }
+            },
+            "sources": ["URL 1", "URL 2"],
+            "confidence": "Low"
+        },
+        "metadata": {
+            "last_updated": "2025-01-27",
+            "overall_confidence": "Medium"
+        }
     }
 
     Additional context:
@@ -253,85 +277,170 @@ serve(async (req) => {
             schema: {
               type: 'object',
               properties: {
-                research_data: {
+                founder_name: { type: 'string' },
+                company_name: { type: 'string' },
+                team_leadership: {
                   type: 'object',
                   properties: {
-                    previous_roles: {
-                      type: 'array',
-                      items: { type: 'string' }
-                    },
-                    leadership_experience: {
+                    data: {
                       type: 'object',
                       properties: {
-                        years_experience: { type: 'number' },
-                        team_sizes_managed: { type: 'array', items: { type: 'number' } },
-                        leadership_style: { type: 'string' },
-                        key_achievements: { type: 'array', items: { type: 'string' } }
+                        previous_roles: { 
+                          type: 'array', 
+                          items: { 
+                            type: 'object',
+                            properties: {
+                              company: { type: 'string' },
+                              position: { type: 'string' },
+                              duration: { type: 'string' },
+                              description: { type: 'string' }
+                            }
+                          }
+                        },
+                        leadership_experience: {
+                          type: 'object',
+                          properties: {
+                            years_experience: { type: 'number' },
+                            team_sizes_managed: { type: 'array', items: { type: 'number' } },
+                            leadership_style: { type: 'string' },
+                            key_achievements: { type: 'array', items: { type: 'string' } }
+                          }
+                        },
+                        team_building: {
+                          type: 'object',
+                          properties: {
+                            summary: { type: 'string' },
+                            team_sizes: { type: 'array', items: { type: 'string' } },
+                            notable_hires: { type: 'array', items: { type: 'string' } },
+                            hiring_record: { type: 'array', items: { type: 'string' } },
+                            team_culture: { type: 'string' }
+                          }
+                        }
                       }
                     },
-                    technical_skills: {
-                      type: 'array',
-                      items: { type: 'string' }
-                    },
-                    market_knowledge: {
-                      type: 'object',
-                      properties: {
-                        industries: { type: 'array', items: { type: 'string' } },
-                        market_insights: { type: 'array', items: { type: 'string' } }
-                      }
-                    },
-                    innovation_record: {
-                      type: 'object',
-                      properties: {
-                        patents: { type: 'array', items: { type: 'string' } },
-                        innovations: { type: 'array', items: { type: 'string' } }
-                      }
-                    },
-                    academic_background: {
-                      type: 'object',
-                      properties: {
-                        degrees: { type: 'array', items: { type: 'string' } },
-                        institutions: { type: 'array', items: { type: 'string' } }
-                      }
-                    },
-                    certifications: {
-                      type: 'array',
-                      items: { type: 'string' }
-                    },
-                    thought_leadership: {
-                      type: 'object',
-                      properties: {
-                        publications: { type: 'array', items: { type: 'string' } },
-                        speaking_engagements: { type: 'array', items: { type: 'string' } }
-                      }
-                    },
-                    exit_history: {
-                      type: 'array',
-                      items: { type: 'string' }
-                    },
-                    value_creation: {
-                      type: 'object',
-                      properties: {
-                        financial_achievements: { type: 'array', items: { type: 'string' } },
-                        growth_metrics: { type: 'array', items: { type: 'string' } }
-                      }
-                    },
-                    team_building: {
-                      type: 'object',
-                      properties: {
-                        hiring_record: { type: 'array', items: { type: 'string' } },
-                        team_culture: { type: 'string' }
-                      }
-                    }
-                  },
-                  required: ['previous_roles', 'leadership_experience']
+                    sources: { type: 'array', items: { type: 'string' } },
+                    confidence: { type: 'string' }
+                  }
                 },
-                sources: {
-                  type: 'array',
-                  items: { type: 'string' }
+                innovation_expertise: {
+                  type: 'object',
+                  properties: {
+                    data: {
+                      type: 'object',
+                      properties: {
+                        technical_skills: { type: 'array', items: { type: 'string' } },
+                        innovation_record: {
+                          type: 'object',
+                          properties: {
+                            patents: { type: 'array', items: { type: 'string' } },
+                            innovations: { type: 'array', items: { type: 'string' } },
+                            breakthrough_work: { type: 'array', items: { type: 'string' } }
+                          }
+                        },
+                        academic_background: {
+                          type: 'object',
+                          properties: {
+                            degrees: { 
+                              type: 'array', 
+                              items: {
+                                type: 'object',
+                                properties: {
+                                  degree: { type: 'string' },
+                                  institution: { type: 'string' },
+                                  year: { type: 'string' },
+                                  field: { type: 'string' }
+                                }
+                              }
+                            },
+                            institutions: { type: 'array', items: { type: 'string' } }
+                          }
+                        },
+                        certifications: {
+                          type: 'array',
+                          items: {
+                            type: 'object',
+                            properties: {
+                              name: { type: 'string' },
+                              issuer: { type: 'string' },
+                              year: { type: 'string' }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    sources: { type: 'array', items: { type: 'string' } },
+                    confidence: { type: 'string' }
+                  }
+                },
+                market_knowledge: {
+                  type: 'object',
+                  properties: {
+                    data: {
+                      type: 'object',
+                      properties: {
+                        market_knowledge: {
+                          type: 'object',
+                          properties: {
+                            industries: { type: 'array', items: { type: 'string' } },
+                            expertise_areas: { type: 'array', items: { type: 'string' } },
+                            market_insights: { type: 'array', items: { type: 'string' } }
+                          }
+                        },
+                        thought_leadership: {
+                          type: 'object',
+                          properties: {
+                            publications: { type: 'array', items: { type: 'string' } },
+                            speaking_engagements: { type: 'array', items: { type: 'string' } },
+                            media_appearances: { type: 'array', items: { type: 'string' } }
+                          }
+                        }
+                      }
+                    },
+                    sources: { type: 'array', items: { type: 'string' } },
+                    confidence: { type: 'string' }
+                  }
+                },
+                track_record: {
+                  type: 'object',
+                  properties: {
+                    data: {
+                      type: 'object',
+                      properties: {
+                        exit_history: {
+                          type: 'array',
+                          items: {
+                            type: 'object',
+                            properties: {
+                              company: { type: 'string' },
+                              exit_type: { type: 'string' },
+                              year: { type: 'string' },
+                              valuation: { type: 'string' }
+                            }
+                          }
+                        },
+                        value_creation: {
+                          type: 'object',
+                          properties: {
+                            summary: { type: 'string' },
+                            financial_achievements: { type: 'array', items: { type: 'string' } },
+                            growth_metrics: { type: 'array', items: { type: 'string' } }
+                          }
+                        }
+                      }
+                    },
+                    sources: { type: 'array', items: { type: 'string' } },
+                    confidence: { type: 'string' }
+                  }
+                },
+                metadata: {
+                  type: 'object',
+                  properties: {
+                    last_updated: { type: 'string' },
+                    overall_confidence: { type: 'string' }
+                  }
                 }
               },
-              required: ['research_data']
+              required: ['founder_name', 'company_name', 'team_leadership']
             }
           }
         }
@@ -444,8 +553,34 @@ async function processPerplexityFounderResponse(
   console.log('🔄 Processing Perplexity founder response...');
 
   try {
-    // Extract structured data from response
-    const researchData = founderData.research_data || {};
+    // Extract subcategory-level data with sources and confidence
+    const teamLeadership = founderData.team_leadership || {};
+    const innovationExpertise = founderData.innovation_expertise || {};
+    const marketKnowledge = founderData.market_knowledge || {};
+    const trackRecord = founderData.track_record || {};
+    const metadata = founderData.metadata || {};
+
+    // Build subcategory sources object
+    const subcategorySources = {
+      team_leadership: teamLeadership.sources || [],
+      innovation_expertise: innovationExpertise.sources || [],
+      market_knowledge: marketKnowledge.sources || [],
+      track_record: trackRecord.sources || []
+    };
+
+    // Build subcategory confidence object
+    const subcategoryConfidence = {
+      team_leadership: teamLeadership.confidence || 'Unknown',
+      innovation_expertise: innovationExpertise.confidence || 'Unknown',
+      market_knowledge: marketKnowledge.confidence || 'Unknown',
+      track_record: trackRecord.confidence || 'Unknown'
+    };
+
+    // Extract data for backward compatibility
+    const teamData = teamLeadership.data || {};
+    const innovationData = innovationExpertise.data || {};
+    const marketData = marketKnowledge.data || {};
+    const trackData = trackRecord.data || {};
 
     const perplexityFounderExportData = {
       deal_id: dealId,
@@ -453,24 +588,28 @@ async function processPerplexityFounderResponse(
       founder_name: founderName,
       company_name: companyName,
       
-      // Map structured data fields
-      previous_roles: researchData.previous_roles || [],
-      leadership_experience: researchData.leadership_experience || {},
-      technical_skills: researchData.technical_skills || [],
-      market_knowledge: researchData.market_knowledge || {},
-      innovation_record: researchData.innovation_record || {},
-      academic_background: researchData.academic_background || {},
-      certifications: researchData.certifications || [],
-      thought_leadership: researchData.thought_leadership || {},
-      exit_history: researchData.exit_history || [],
-      value_creation: researchData.value_creation || {},
-      team_building: researchData.team_building || {},
+      // Map structured data fields for backward compatibility
+      previous_roles: teamData.previous_roles || [],
+      leadership_experience: teamData.leadership_experience || {},
+      technical_skills: innovationData.technical_skills || [],
+      market_knowledge: marketData.market_knowledge || {},
+      innovation_record: innovationData.innovation_record || {},
+      academic_background: innovationData.academic_background || {},
+      certifications: innovationData.certifications || [],
+      thought_leadership: marketData.thought_leadership || {},
+      exit_history: trackData.exit_history || [],
+      value_creation: trackData.value_creation || {},
+      team_building: teamData.team_building || {},
+      
+      // NEW: Add subcategory-level source tracking
+      subcategory_sources: subcategorySources,
+      subcategory_confidence: subcategoryConfidence,
       
       // System fields
       raw_perplexity_response: founderData,
       processing_status: 'processed',
-      data_quality_score: calculateFounderDataQuality(founderData),
-      confidence_score: 85,
+      data_quality_score: calculateFounderDataQualityWithSubcategories(founderData),
+      confidence_score: metadata.overall_confidence === 'High' ? 90 : metadata.overall_confidence === 'Medium' ? 75 : 60,
       processed_at: new Date().toISOString()
     };
 
@@ -496,7 +635,9 @@ async function processPerplexityFounderResponse(
         raw_perplexity_response: founderData,
         processing_status: 'raw',
         data_quality_score: 50,
-        confidence_score: 70
+        confidence_score: 70,
+        subcategory_sources: {},
+        subcategory_confidence: {}
       };
 
       const { error: fallbackError } = await supabase
@@ -518,18 +659,20 @@ async function processPerplexityFounderResponse(
       founder_profile: {
         name: founderName,
         company: companyName,
-        previous_roles: researchData.previous_roles || [],
-        leadership_summary: researchData.leadership_experience?.summary || null,
-        technical_expertise: researchData.technical_skills || [],
-        industry_knowledge: researchData.market_knowledge?.industries || [],
-        academic_credentials: researchData.academic_background?.degrees || [],
-        exit_experience: researchData.exit_history || [],
-        thought_leadership: researchData.thought_leadership || {}
+        previous_roles: teamData.previous_roles || [],
+        leadership_summary: teamData.leadership_experience?.summary || null,
+        technical_expertise: innovationData.technical_skills || [],
+        industry_knowledge: marketData.market_knowledge?.industries || [],
+        academic_credentials: innovationData.academic_background?.degrees || [],
+        exit_experience: trackData.exit_history || [],
+        thought_leadership: marketData.thought_leadership || {}
       },
-      data_quality: calculateFounderDataQuality(founderData),
-      confidence_score: 85,
-      sources: founderData.sources || [],
-      enrichment_timestamp: new Date().toISOString()
+      data_quality: calculateFounderDataQualityWithSubcategories(founderData),
+      confidence_score: metadata.overall_confidence === 'High' ? 90 : metadata.overall_confidence === 'Medium' ? 75 : 60,
+      sources: getAllSourcesFromSubcategories(subcategorySources),
+      enrichment_timestamp: new Date().toISOString(),
+      subcategory_sources: subcategorySources,
+      subcategory_confidence: subcategoryConfidence
     };
 
   } catch (error) {
@@ -538,7 +681,55 @@ async function processPerplexityFounderResponse(
   }
 }
 
+function calculateFounderDataQualityWithSubcategories(founderData: any): number {
+  let qualityScore = 0;
+  
+  // Team & Leadership scoring (25 points)
+  const teamLeadership = founderData.team_leadership?.data || {};
+  if (teamLeadership.previous_roles?.length > 0) qualityScore += 10;
+  if (teamLeadership.leadership_experience?.key_achievements?.length > 0) qualityScore += 8;
+  if (teamLeadership.team_building?.notable_hires?.length > 0) qualityScore += 7;
+  
+  // Innovation & Expertise scoring (25 points)
+  const innovationExpertise = founderData.innovation_expertise?.data || {};
+  if (innovationExpertise.technical_skills?.length > 0) qualityScore += 8;
+  if (innovationExpertise.innovation_record?.patents?.length > 0) qualityScore += 10;
+  if (innovationExpertise.academic_background?.degrees?.length > 0) qualityScore += 7;
+  
+  // Market Knowledge scoring (25 points)
+  const marketKnowledge = founderData.market_knowledge?.data || {};
+  if (marketKnowledge.market_knowledge?.industries?.length > 0) qualityScore += 10;
+  if (marketKnowledge.thought_leadership?.publications?.length > 0) qualityScore += 8;
+  if (marketKnowledge.thought_leadership?.speaking_engagements?.length > 0) qualityScore += 7;
+  
+  // Track Record scoring (25 points)
+  const trackRecord = founderData.track_record?.data || {};
+  if (trackRecord.exit_history?.length > 0) qualityScore += 15;
+  if (trackRecord.value_creation?.financial_achievements?.length > 0) qualityScore += 10;
+  
+  return Math.min(qualityScore, 100);
+}
+
+function getAllSourcesFromSubcategories(subcategorySources: any): string[] {
+  const allSources: string[] = [];
+  
+  Object.values(subcategorySources).forEach((sources: any) => {
+    if (Array.isArray(sources)) {
+      allSources.push(...sources);
+    }
+  });
+  
+  // Remove duplicates
+  return [...new Set(allSources)];
+}
+
 function calculateFounderDataQuality(founderData: any): number {
+  // Fallback for old format - delegate to new function
+  if (founderData.team_leadership) {
+    return calculateFounderDataQualityWithSubcategories(founderData);
+  }
+  
+  // Legacy calculation for backward compatibility
   let qualityScore = 0;
   const researchData = founderData.research_data || {};
 

@@ -2195,6 +2195,8 @@ export type Database = {
           processing_status: string
           raw_perplexity_response: Json
           snapshot_id: string | null
+          subcategory_confidence: Json | null
+          subcategory_sources: Json | null
           team_building: Json | null
           technical_skills: Json | null
           thought_leadership: Json | null
@@ -2220,6 +2222,8 @@ export type Database = {
           processing_status?: string
           raw_perplexity_response?: Json
           snapshot_id?: string | null
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
           team_building?: Json | null
           technical_skills?: Json | null
           thought_leadership?: Json | null
@@ -2245,6 +2249,8 @@ export type Database = {
           processing_status?: string
           raw_perplexity_response?: Json
           snapshot_id?: string | null
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
           team_building?: Json | null
           technical_skills?: Json | null
           thought_leadership?: Json | null
