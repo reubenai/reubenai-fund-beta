@@ -166,7 +166,7 @@ Focus on venture capital investment perspectives and recent market data.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-large-128k-online',
+        model: 'sonar',
         messages: [
           {
             role: 'system',
@@ -177,11 +177,82 @@ Focus on venture capital investment perspectives and recent market data.`;
             content: searchQuery
           }
         ],
-        temperature: 0.2,
-        max_tokens: 2000,
+        max_tokens: 3000,
+        top_p: 0.9,
         return_images: false,
         return_related_questions: false,
-        search_recency_filter: 'month'
+        search_recency_filter: 'month',
+        frequency_penalty: 1,
+        presence_penalty: 0,
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            schema: {
+              type: "object",
+              properties: {
+                market_assessment: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      properties: {
+                        market_cycle: { type: "string" },
+                        economic_sensitivity: { type: "string" },
+                        investment_climate: { type: "string" }
+                      }
+                    },
+                    sources: { type: "array", items: { type: "string" } },
+                    confidence: { type: "string" }
+                  }
+                },
+                regulatory_competitive: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      properties: {
+                        regulatory_timeline: { type: "string" },
+                        competitive_window: { type: "string" },
+                        regulatory_requirements: { type: "string" }
+                      }
+                    },
+                    sources: { type: "array", items: { type: "string" } },
+                    confidence: { type: "string" }
+                  }
+                },
+                capital_technology: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      properties: {
+                        capital_requirements: { type: "string" },
+                        technology_moats: { type: "string" }
+                      }
+                    },
+                    sources: { type: "array", items: { type: "string" } },
+                    confidence: { type: "string" }
+                  }
+                },
+                operational_challenges: {
+                  type: "object",
+                  properties: {
+                    data: {
+                      type: "object",
+                      properties: {
+                        distribution_challenges: { type: "string" },
+                        geographic_constraints: { type: "string" }
+                      }
+                    },
+                    sources: { type: "array", items: { type: "string" } },
+                    confidence: { type: "string" }
+                  }
+                }
+              },
+              required: ["market_assessment", "regulatory_competitive", "capital_technology", "operational_challenges"]
+            }
+          }
+        }
       }),
     });
 
@@ -274,7 +345,7 @@ Focus on venture capital investment perspectives and recent market data.`;
           response: rawContent,
           parsed_data: parsedResponse,
           api_metadata: {
-            model: 'llama-3.1-sonar-large-128k-online',
+            model: 'sonar',
             timestamp: new Date().toISOString(),
             sources_count: totalSources
           }
