@@ -2101,6 +2101,8 @@ export type Database = {
           snapshot_id: string
           som: string | null
           strategic_advisors: string[] | null
+          subcategory_confidence: Json | null
+          subcategory_sources: Json | null
           tam: string | null
           updated_at: string
           whitespace_opportunities: string[] | null
@@ -2132,6 +2134,8 @@ export type Database = {
           snapshot_id: string
           som?: string | null
           strategic_advisors?: string[] | null
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
           tam?: string | null
           updated_at?: string
           whitespace_opportunities?: string[] | null
@@ -2163,6 +2167,8 @@ export type Database = {
           snapshot_id?: string
           som?: string | null
           strategic_advisors?: string[] | null
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
           tam?: string | null
           updated_at?: string
           whitespace_opportunities?: string[] | null
