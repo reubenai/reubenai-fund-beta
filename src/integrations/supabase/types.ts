@@ -2259,6 +2259,90 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_enrichment_perplexity_market_export_vc: {
+        Row: {
+          capital_requirements: string | null
+          competitive_window: string | null
+          confidence_level: string | null
+          created_at: string
+          data_quality_score: number | null
+          deal_id: string
+          distribution_challenges: string | null
+          economic_sensitivity: string | null
+          geographic_constraints: string | null
+          id: string
+          investment_climate: string | null
+          last_updated: string | null
+          location: string | null
+          market_cycle: string | null
+          primary_industry: string | null
+          processed_at: string | null
+          processing_status: string
+          raw_perplexity_response: Json
+          regulatory_requirements: string | null
+          regulatory_timeline: string | null
+          snapshot_id: string
+          subcategory_confidence: Json | null
+          subcategory_sources: Json | null
+          technology_moats: string | null
+          updated_at: string
+        }
+        Insert: {
+          capital_requirements?: string | null
+          competitive_window?: string | null
+          confidence_level?: string | null
+          created_at?: string
+          data_quality_score?: number | null
+          deal_id: string
+          distribution_challenges?: string | null
+          economic_sensitivity?: string | null
+          geographic_constraints?: string | null
+          id?: string
+          investment_climate?: string | null
+          last_updated?: string | null
+          location?: string | null
+          market_cycle?: string | null
+          primary_industry?: string | null
+          processed_at?: string | null
+          processing_status?: string
+          raw_perplexity_response?: Json
+          regulatory_requirements?: string | null
+          regulatory_timeline?: string | null
+          snapshot_id: string
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
+          technology_moats?: string | null
+          updated_at?: string
+        }
+        Update: {
+          capital_requirements?: string | null
+          competitive_window?: string | null
+          confidence_level?: string | null
+          created_at?: string
+          data_quality_score?: number | null
+          deal_id?: string
+          distribution_challenges?: string | null
+          economic_sensitivity?: string | null
+          geographic_constraints?: string | null
+          id?: string
+          investment_climate?: string | null
+          last_updated?: string | null
+          location?: string | null
+          market_cycle?: string | null
+          primary_industry?: string | null
+          processed_at?: string | null
+          processing_status?: string
+          raw_perplexity_response?: Json
+          regulatory_requirements?: string | null
+          regulatory_timeline?: string | null
+          snapshot_id?: string
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
+          technology_moats?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       deal_execution_locks: {
         Row: {
           created_at: string
