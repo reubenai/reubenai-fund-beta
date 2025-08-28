@@ -61,6 +61,52 @@ serve(async (req) => {
       );
     }
 
+    // Check if the deal's fund is venture capital only
+    const { data: dealData, error: dealError } = await supabase
+      .from('deals')
+      .select(`
+        id,
+        fund_id,
+        funds!deals_fund_id_fkey(
+          id,
+          fund_type
+        )
+      `)
+      .eq('id', dealId)
+      .single();
+
+    if (dealError) {
+      console.error('❌ Error fetching deal data:', dealError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to fetch deal information',
+          dataSource: 'perplexity_founder_search',
+          trustScore: 0,
+          dataQuality: 0
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Only process if fund type is venture_capital
+    if (dealData.funds.fund_type !== 'venture_capital') {
+      console.log(`🚫 Skipping Perplexity founder enrichment for ${founderName} at ${companyName} - Fund type is ${dealData.funds.fund_type}, not venture_capital`);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Perplexity founder enrichment is only available for venture capital deals',
+          fund_type: dealData.funds.fund_type,
+          dataSource: 'perplexity_founder_search',
+          trustScore: 0,
+          dataQuality: 0
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`✅ Deal ${dealId} confirmed as venture capital - proceeding with founder enrichment`);
+
     // Get Perplexity API key from environment
     const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
     if (!perplexityApiKey) {
@@ -432,7 +478,7 @@ async function processPerplexityFounderResponse(
 
     // Insert the processed data
     const { data: insertedData, error: insertError } = await supabase
-      .from('deal_enrichment_perplexity_founder_export')
+      .from('deal_enrichment_perplexity_founder_export_vc')
       .insert(perplexityFounderExportData)
       .select()
       .single();
@@ -454,7 +500,7 @@ async function processPerplexityFounderResponse(
       };
 
       const { error: fallbackError } = await supabase
-        .from('deal_enrichment_perplexity_founder_export')
+        .from('deal_enrichment_perplexity_founder_export_vc')
         .insert(fallbackData);
 
       if (fallbackError) {

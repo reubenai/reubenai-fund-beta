@@ -2169,7 +2169,7 @@ export type Database = {
         }
         Relationships: []
       }
-      deal_enrichment_perplexity_founder_export: {
+      deal_enrichment_perplexity_founder_export_vc: {
         Row: {
           academic_background: Json | null
           certifications: Json | null
