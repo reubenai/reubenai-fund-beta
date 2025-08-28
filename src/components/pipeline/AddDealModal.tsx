@@ -18,6 +18,7 @@ import { LOCATION_OPTIONS, locationsToString, stringToLocations } from '@/consta
 import { sanitizeUrl } from '@/hooks/useValidation';
 import { useLinkedInProfileEnrichment } from '@/hooks/useLinkedInProfileEnrichment';
 import { usePerplexityFounderEnrichment } from '@/hooks/usePerplexityFounderEnrichment';
+import { usePerplexityMarketEnrichment } from '@/hooks/usePerplexityMarketEnrichment';
 
 interface AddDealModalProps {
   open: boolean;
@@ -52,6 +53,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
   const { triggerDealAnalysis } = useAnalysisIntegration();
   const { triggerProfileEnrichment } = useLinkedInProfileEnrichment();
   const { triggerFounderEnrichment } = usePerplexityFounderEnrichment();
+  const { triggerMarketEnrichment } = usePerplexityMarketEnrichment();
   
   // Ref to prevent duplicate submissions
   const submissionInProgress = useRef(false);
@@ -262,6 +264,27 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
               }
             }).catch(err => {
               console.error('💥 Perplexity company enrichment error:', err);
+            });
+          }
+
+          // 6. Perplexity Market Enrichment (if industry and location available)
+          if (formData.industry.length > 0 && formData.location.length > 0) {
+            enrichmentProcesses++;
+            console.log('📤 Starting Perplexity market enrichment...');
+            supabase.functions.invoke('perplexity-market-enrichment', {
+              body: {
+                dealId: newDeal.id,
+                primaryIndustry: formData.industry[0],
+                location: formData.location[0]
+              }
+            }).then(({ data, error }) => {
+              if (error) {
+                console.error('❌ Perplexity market enrichment failed:', error);
+              } else {
+                console.log('✅ Perplexity market enrichment completed:', data);
+              }
+            }).catch(err => {
+              console.error('💥 Perplexity market enrichment error:', err);
             });
           }
 
