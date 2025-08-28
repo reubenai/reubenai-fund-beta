@@ -8,6 +8,7 @@ import { AddDealModal } from './AddDealModal';
 import { BatchUploadModal } from './BatchUploadModal';
 import { DealDetailsModal } from './DealDetailsModal';
 import { DealSourcingModal } from './DealSourcingModal';
+import { CRMIntegrationModal } from '../crm/CRMIntegrationModal';
 import { PipelineFilters } from './PipelineFilters';
 import { useToast } from '@/hooks/use-toast';
 import { useFund } from '@/contexts/FundContext';
@@ -31,6 +32,7 @@ interface KanbanBoardState {
   showAddDeal: boolean;
   showBatchUpload: boolean;
   showSourceDeals: boolean;
+  showCRMIntegration: boolean;
 }
 
 interface KanbanBoardProps {
@@ -71,6 +73,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
     showAddDeal: false,
     showBatchUpload: false,
     showSourceDeals: false,
+    showCRMIntegration: false,
   });
 
   const { toast } = useToast();
@@ -216,6 +219,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
             onAddDeal={permissions.canCreateDeals ? () => updateState({ showAddDeal: true }) : undefined}
             onBatchUpload={permissions.canBatchUpload ? () => updateState({ showBatchUpload: true }) : undefined}
             onSourceDeals={undefined}
+            onIntegrateCRM={() => updateState({ showCRMIntegration: true })}
             totalDeals={getTotalDeals()}
             showFilters={state.showFilters}
             onToggleFilters={() => updateState({ showFilters: !state.showFilters })}
@@ -285,6 +289,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ fundId }) => {
         onClose={() => updateState({ showSourceDeals: false })}
         fundId={fundId}
         fundName={selectedFund?.name || "Selected Fund"}
+      />
+
+      <CRMIntegrationModal
+        isOpen={state.showCRMIntegration}
+        onClose={() => updateState({ showCRMIntegration: false })}
+        organizationId={selectedFund?.organization_id || ''}
+        fundId={fundId}
       />
     </div>
   );

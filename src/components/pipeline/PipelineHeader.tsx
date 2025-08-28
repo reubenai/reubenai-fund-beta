@@ -6,6 +6,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { 
@@ -21,7 +22,8 @@ import {
   Upload,
   Zap,
   ChevronDown,
-  RefreshCw
+  RefreshCw,
+  Database
 } from 'lucide-react';
 
 interface PipelineHeaderProps {
@@ -30,6 +32,7 @@ interface PipelineHeaderProps {
   onAddDeal: () => void;
   onBatchUpload: () => void;
   onDealSourcing?: () => void;
+  onIntegrateCRM?: () => void;
   currentView: 'kanban' | 'list' | 'table' | 'funnel';
   onViewChange: (view: 'kanban' | 'list' | 'table' | 'funnel') => void;
   viewDensity?: 'compact' | 'comfortable' | 'detailed';
@@ -53,6 +56,7 @@ export const PipelineHeader: React.FC<PipelineHeaderProps> = ({
   onAddDeal,
   onBatchUpload,
   onDealSourcing,
+  onIntegrateCRM,
   currentView,
   onViewChange,
   viewDensity = 'comfortable',
@@ -105,6 +109,12 @@ export const PipelineHeader: React.FC<PipelineHeaderProps> = ({
                 <Zap className="w-4 h-4 mr-2" />
                 Deal Sourcing
                 <span className="ml-auto text-xs text-gray-500">Coming soon</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onIntegrateCRM}>
+                <Database className="w-4 h-4 mr-2" />
+                Integrate CRM
+                <span className="ml-auto text-xs text-gray-500">Connect your CRM</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

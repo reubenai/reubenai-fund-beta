@@ -9,6 +9,7 @@ import { BatchUploadModal } from './BatchUploadModal';
 import { DealDetailsModal } from './DealDetailsModal';
 import { EditDealModal } from './EditDealModal';
 import { DealSourcingModal } from './DealSourcingModal';
+import { CRMIntegrationModal } from '../crm/CRMIntegrationModal';
 import { PipelineFilters } from './PipelineFilters';
 import { useToast } from '@/hooks/use-toast';
 import { useFund } from '@/contexts/FundContext';
@@ -34,6 +35,7 @@ interface PipelineViewState {
   showAddDeal: boolean;
   showBatchUpload: boolean;
   showSourceDeals: boolean;
+  showCRMIntegration: boolean;
 }
 
 interface EnhancedPipelineViewProps {
@@ -67,6 +69,7 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fund
     showAddDeal: false,
     showBatchUpload: false,
     showSourceDeals: false,
+    showCRMIntegration: false,
   });
 
   const updateState = useCallback((updates: Partial<PipelineViewState>) => {
@@ -204,6 +207,7 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fund
             onAddDeal={handleAddDeal}
             onBatchUpload={permissions.canBatchUpload ? () => updateState({ showBatchUpload: true }) : () => {}}
             onDealSourcing={undefined}
+            onIntegrateCRM={() => updateState({ showCRMIntegration: true })}
             currentView={state.currentView}
             onViewChange={() => {}} // Disabled - only table view
             viewDensity={state.viewDensity}
@@ -277,6 +281,13 @@ export const EnhancedPipelineView: React.FC<EnhancedPipelineViewProps> = ({ fund
         onClose={() => updateState({ showSourceDeals: false })}
         fundId={fundId}
         fundName={selectedFund?.name || "Selected Fund"}
+      />
+
+      <CRMIntegrationModal
+        isOpen={state.showCRMIntegration}
+        onClose={() => updateState({ showCRMIntegration: false })}
+        organizationId={selectedFund?.organization_id || ''}
+        fundId={fundId}
       />
     </div>
   );
