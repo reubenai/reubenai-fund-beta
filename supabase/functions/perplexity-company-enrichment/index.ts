@@ -119,39 +119,70 @@ serve(async (req) => {
 
     const perplexityQuery = `
 Research ${queryContext} and provide comprehensive market analysis and business intelligence. 
-Focus on quantitative data and specific metrics where available. Return the information in the following JSON structure:
+Focus on quantitative data and specific metrics where available. For each category, provide specific sources and citations for the data points. Return the information in the following JSON structure grouped by VC analysis subcategories:
 
 {
-  "tam": "Total Addressable Market size with specific dollar amounts",
-  "sam": "Serviceable Addressable Market size with specific dollar amounts", 
-  "som": "Serviceable Obtainable Market size with specific dollar amounts",
-  "cagr": "Compound Annual Growth Rate percentage for the market",
-  "growth_drivers": ["List of key factors driving market growth"],
-  "market_share_distribution": {
-    "leader": "Market leader name and percentage",
-    "competitors": ["Key competitors with market share percentages"]
+  "market_size": {
+    "data": {
+      "tam": "Total Addressable Market size with specific dollar amounts",
+      "sam": "Serviceable Addressable Market size with specific dollar amounts", 
+      "som": "Serviceable Obtainable Market size with specific dollar amounts"
+    },
+    "sources": ["Specific URLs or sources for market size data"],
+    "confidence": "High/Medium/Low based on data availability"
   },
-  "key_market_players": ["Top 5-10 companies in this market space"],
-  "whitespace_opportunities": ["Unexploited market opportunities or gaps"],
-  "addressable_customers": "Number or description of target customers",
-  "cac_trend": "Customer Acquisition Cost trends and benchmarks",
-  "ltv_cac_ratio": "Lifetime Value to Customer Acquisition Cost ratio trends",
-  "retention_rate": "Industry average customer retention rates",
-  "channel_effectiveness": {
-    "digital": "Effectiveness of digital marketing channels",
-    "direct_sales": "Effectiveness of direct sales approach",
-    "partnerships": "Partner channel effectiveness"
+  "market_growth_rate": {
+    "data": {
+      "cagr": "Compound Annual Growth Rate percentage for the market",
+      "growth_drivers": ["List of key factors driving market growth"]
+    },
+    "sources": ["Specific URLs or sources for growth rate data"],
+    "confidence": "High/Medium/Low based on data availability"
   },
-  "strategic_advisors": ["Notable advisors or board members if known"],
-  "investor_network": ["Current investors, VCs, or funding sources"],
-  "partnership_ecosystem": {
-    "technology_partners": ["Key technology partnerships"],
-    "distribution_partners": ["Distribution or channel partners"],
-    "strategic_alliances": ["Strategic business alliances"]
+  "competitive_position": {
+    "data": {
+      "market_share_distribution": {
+        "leader": "Market leader name and percentage",
+        "competitors": ["Key competitors with market share percentages"]
+      },
+      "key_market_players": ["Top 5-10 companies in this market space"],
+      "whitespace_opportunities": ["Unexploited market opportunities or gaps"]
+    },
+    "sources": ["Specific URLs or sources for competitive analysis data"],
+    "confidence": "High/Medium/Low based on data availability"
   },
-  "data_sources": ["URLs or sources where this information was found"],
-  "last_updated": "Current date",
-  "confidence_level": "High/Medium/Low based on data availability"
+  "customer_acquisition": {
+    "data": {
+      "addressable_customers": "Number or description of target customers",
+      "cac_trend": "Customer Acquisition Cost trends and benchmarks",
+      "ltv_cac_ratio": "Lifetime Value to Customer Acquisition Cost ratio trends",
+      "retention_rate": "Industry average customer retention rates",
+      "channel_effectiveness": {
+        "digital": "Effectiveness of digital marketing channels",
+        "direct_sales": "Effectiveness of direct sales approach",
+        "partnerships": "Partner channel effectiveness"
+      }
+    },
+    "sources": ["Specific URLs or sources for customer acquisition data"],
+    "confidence": "High/Medium/Low based on data availability"
+  },
+  "network_advisors": {
+    "data": {
+      "strategic_advisors": ["Notable advisors or board members if known"],
+      "investor_network": ["Current investors, VCs, or funding sources"],
+      "partnership_ecosystem": {
+        "technology_partners": ["Key technology partnerships"],
+        "distribution_partners": ["Distribution or channel partners"],
+        "strategic_alliances": ["Strategic business alliances"]
+      }
+    },
+    "sources": ["Specific URLs or sources for network and advisor data"],
+    "confidence": "High/Medium/Low based on data availability"
+  },
+  "metadata": {
+    "last_updated": "Current date",
+    "overall_confidence": "High/Medium/Low based on overall data availability"
+  }
 }`;
 
     console.log('🔍 Calling Perplexity API with structured query...');
@@ -188,47 +219,111 @@ Focus on quantitative data and specific metrics where available. Return the info
             schema: {
               type: 'object',
               properties: {
-                tam: { type: 'string' },
-                sam: { type: 'string' },
-                som: { type: 'string' },
-                cagr: { type: 'string' },
-                growth_drivers: { type: 'array', items: { type: 'string' } },
-                market_share_distribution: { 
+                market_size: {
                   type: 'object',
                   properties: {
-                    leader: { type: 'string' },
-                    competitors: { type: 'array', items: { type: 'string' } }
+                    data: {
+                      type: 'object',
+                      properties: {
+                        tam: { type: 'string' },
+                        sam: { type: 'string' },
+                        som: { type: 'string' }
+                      }
+                    },
+                    sources: { type: 'array', items: { type: 'string' } },
+                    confidence: { type: 'string' }
                   }
                 },
-                key_market_players: { type: 'array', items: { type: 'string' } },
-                whitespace_opportunities: { type: 'array', items: { type: 'string' } },
-                addressable_customers: { type: 'string' },
-                cac_trend: { type: 'string' },
-                ltv_cac_ratio: { type: 'string' },
-                retention_rate: { type: 'string' },
-                channel_effectiveness: {
+                market_growth_rate: {
                   type: 'object',
                   properties: {
-                    digital: { type: 'string' },
-                    direct_sales: { type: 'string' },
-                    partnerships: { type: 'string' }
+                    data: {
+                      type: 'object',
+                      properties: {
+                        cagr: { type: 'string' },
+                        growth_drivers: { type: 'array', items: { type: 'string' } }
+                      }
+                    },
+                    sources: { type: 'array', items: { type: 'string' } },
+                    confidence: { type: 'string' }
                   }
                 },
-                strategic_advisors: { type: 'array', items: { type: 'string' } },
-                investor_network: { type: 'array', items: { type: 'string' } },
-                partnership_ecosystem: {
+                competitive_position: {
                   type: 'object',
                   properties: {
-                    technology_partners: { type: 'array', items: { type: 'string' } },
-                    distribution_partners: { type: 'array', items: { type: 'string' } },
-                    strategic_alliances: { type: 'array', items: { type: 'string' } }
+                    data: {
+                      type: 'object',
+                      properties: {
+                        market_share_distribution: { 
+                          type: 'object',
+                          properties: {
+                            leader: { type: 'string' },
+                            competitors: { type: 'array', items: { type: 'string' } }
+                          }
+                        },
+                        key_market_players: { type: 'array', items: { type: 'string' } },
+                        whitespace_opportunities: { type: 'array', items: { type: 'string' } }
+                      }
+                    },
+                    sources: { type: 'array', items: { type: 'string' } },
+                    confidence: { type: 'string' }
                   }
                 },
-                data_sources: { type: 'array', items: { type: 'string' } },
-                last_updated: { type: 'string' },
-                confidence_level: { type: 'string' }
+                customer_acquisition: {
+                  type: 'object',
+                  properties: {
+                    data: {
+                      type: 'object',
+                      properties: {
+                        addressable_customers: { type: 'string' },
+                        cac_trend: { type: 'string' },
+                        ltv_cac_ratio: { type: 'string' },
+                        retention_rate: { type: 'string' },
+                        channel_effectiveness: {
+                          type: 'object',
+                          properties: {
+                            digital: { type: 'string' },
+                            direct_sales: { type: 'string' },
+                            partnerships: { type: 'string' }
+                          }
+                        }
+                      }
+                    },
+                    sources: { type: 'array', items: { type: 'string' } },
+                    confidence: { type: 'string' }
+                  }
+                },
+                network_advisors: {
+                  type: 'object',
+                  properties: {
+                    data: {
+                      type: 'object',
+                      properties: {
+                        strategic_advisors: { type: 'array', items: { type: 'string' } },
+                        investor_network: { type: 'array', items: { type: 'string' } },
+                        partnership_ecosystem: {
+                          type: 'object',
+                          properties: {
+                            technology_partners: { type: 'array', items: { type: 'string' } },
+                            distribution_partners: { type: 'array', items: { type: 'string' } },
+                            strategic_alliances: { type: 'array', items: { type: 'string' } }
+                          }
+                        }
+                      }
+                    },
+                    sources: { type: 'array', items: { type: 'string' } },
+                    confidence: { type: 'string' }
+                  }
+                },
+                metadata: {
+                  type: 'object',
+                  properties: {
+                    last_updated: { type: 'string' },
+                    overall_confidence: { type: 'string' }
+                  }
+                }
               },
-              required: ['tam', 'sam', 'som', 'company_name']
+              required: ['market_size', 'market_growth_rate', 'competitive_position', 'customer_acquisition', 'network_advisors']
             }
           }
         }
@@ -336,28 +431,46 @@ async function processPerplexityCompanyResponse(
     company_name: companyName,
     
     // Market Size Data
-    tam: companyData.tam || null,
-    sam: companyData.sam || null,
-    som: companyData.som || null,
-    cagr: companyData.cagr || null,
-    growth_drivers: companyData.growth_drivers || [],
+    tam: companyData.market_size?.data?.tam || null,
+    sam: companyData.market_size?.data?.sam || null,
+    som: companyData.market_size?.data?.som || null,
+    cagr: companyData.market_growth_rate?.data?.cagr || null,
+    growth_drivers: companyData.market_growth_rate?.data?.growth_drivers || [],
     
     // Market Analysis
-    market_share_distribution: companyData.market_share_distribution || {},
-    key_market_players: companyData.key_market_players || [],
-    whitespace_opportunities: companyData.whitespace_opportunities || [],
+    market_share_distribution: companyData.competitive_position?.data?.market_share_distribution || {},
+    key_market_players: companyData.competitive_position?.data?.key_market_players || [],
+    whitespace_opportunities: companyData.competitive_position?.data?.whitespace_opportunities || [],
     
     // Customer & Business Metrics
-    addressable_customers: companyData.addressable_customers || null,
-    cac_trend: companyData.cac_trend || null,
-    ltv_cac_ratio: companyData.ltv_cac_ratio || null,
-    retention_rate: companyData.retention_rate || null,
-    channel_effectiveness: companyData.channel_effectiveness || {},
+    addressable_customers: companyData.customer_acquisition?.data?.addressable_customers || null,
+    cac_trend: companyData.customer_acquisition?.data?.cac_trend || null,
+    ltv_cac_ratio: companyData.customer_acquisition?.data?.ltv_cac_ratio || null,
+    retention_rate: companyData.customer_acquisition?.data?.retention_rate || null,
+    channel_effectiveness: companyData.customer_acquisition?.data?.channel_effectiveness || {},
     
     // Strategic Network
-    strategic_advisors: companyData.strategic_advisors || [],
-    investor_network: companyData.investor_network || [],
-    partnership_ecosystem: companyData.partnership_ecosystem || {},
+    strategic_advisors: companyData.network_advisors?.data?.strategic_advisors || [],
+    investor_network: companyData.network_advisors?.data?.investor_network || [],
+    partnership_ecosystem: companyData.network_advisors?.data?.partnership_ecosystem || {},
+    
+    // Subcategory Sources (NEW)
+    subcategory_sources: {
+      market_size: companyData.market_size?.sources || [],
+      market_growth_rate: companyData.market_growth_rate?.sources || [],
+      competitive_position: companyData.competitive_position?.sources || [],
+      customer_acquisition: companyData.customer_acquisition?.sources || [],
+      network_advisors: companyData.network_advisors?.sources || []
+    },
+    
+    // Subcategory Confidence (NEW)
+    subcategory_confidence: {
+      market_size: companyData.market_size?.confidence || 'Unknown',
+      market_growth_rate: companyData.market_growth_rate?.confidence || 'Unknown',
+      competitive_position: companyData.competitive_position?.confidence || 'Unknown',
+      customer_acquisition: companyData.customer_acquisition?.confidence || 'Unknown',
+      network_advisors: companyData.network_advisors?.confidence || 'Unknown'
+    },
     
     // System fields
     raw_perplexity_response: rawResponse,
@@ -403,30 +516,30 @@ function calculateCompanyDataQuality(companyData: any): number {
   const maxScore = 16; // Total number of data points
 
   // Market Size Data (4 points)
-  if (companyData.tam) score += 1;
-  if (companyData.sam) score += 1;
-  if (companyData.som) score += 1;
-  if (companyData.cagr) score += 1;
+  if (companyData.market_size?.data?.tam) score += 1;
+  if (companyData.market_size?.data?.sam) score += 1;
+  if (companyData.market_size?.data?.som) score += 1;
+  if (companyData.market_growth_rate?.data?.cagr) score += 1;
 
   // Market Analysis (3 points)
-  if (companyData.growth_drivers && companyData.growth_drivers.length > 0) score += 1;
-  if (companyData.key_market_players && companyData.key_market_players.length > 0) score += 1;
-  if (companyData.whitespace_opportunities && companyData.whitespace_opportunities.length > 0) score += 1;
+  if (companyData.market_growth_rate?.data?.growth_drivers && companyData.market_growth_rate.data.growth_drivers.length > 0) score += 1;
+  if (companyData.competitive_position?.data?.key_market_players && companyData.competitive_position.data.key_market_players.length > 0) score += 1;
+  if (companyData.competitive_position?.data?.whitespace_opportunities && companyData.competitive_position.data.whitespace_opportunities.length > 0) score += 1;
 
   // Customer & Business Metrics (4 points)
-  if (companyData.addressable_customers) score += 1;
-  if (companyData.cac_trend) score += 1;
-  if (companyData.ltv_cac_ratio) score += 1;
-  if (companyData.retention_rate) score += 1;
+  if (companyData.customer_acquisition?.data?.addressable_customers) score += 1;
+  if (companyData.customer_acquisition?.data?.cac_trend) score += 1;
+  if (companyData.customer_acquisition?.data?.ltv_cac_ratio) score += 1;
+  if (companyData.customer_acquisition?.data?.retention_rate) score += 1;
 
   // Strategic Network (3 points)
-  if (companyData.strategic_advisors && companyData.strategic_advisors.length > 0) score += 1;
-  if (companyData.investor_network && companyData.investor_network.length > 0) score += 1;
-  if (companyData.partnership_ecosystem && Object.keys(companyData.partnership_ecosystem).length > 0) score += 1;
+  if (companyData.network_advisors?.data?.strategic_advisors && companyData.network_advisors.data.strategic_advisors.length > 0) score += 1;
+  if (companyData.network_advisors?.data?.investor_network && companyData.network_advisors.data.investor_network.length > 0) score += 1;
+  if (companyData.network_advisors?.data?.partnership_ecosystem && Object.keys(companyData.network_advisors.data.partnership_ecosystem).length > 0) score += 1;
 
   // Additional factors (2 points)
-  if (companyData.market_share_distribution && Object.keys(companyData.market_share_distribution).length > 0) score += 1;
-  if (companyData.channel_effectiveness && Object.keys(companyData.channel_effectiveness).length > 0) score += 1;
+  if (companyData.competitive_position?.data?.market_share_distribution && Object.keys(companyData.competitive_position.data.market_share_distribution).length > 0) score += 1;
+  if (companyData.customer_acquisition?.data?.channel_effectiveness && Object.keys(companyData.customer_acquisition.data.channel_effectiveness).length > 0) score += 1;
 
   return Math.round((score / maxScore) * 100);
 }
