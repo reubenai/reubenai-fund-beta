@@ -1,5 +1,8 @@
 project_id = "bueuioozcgmedkuxawju"
 
+[functions.crm-sync-engine]
+verify_jwt = false
+
 [functions.enhanced-competitive-intelligence]
 verify_jwt = false
 
