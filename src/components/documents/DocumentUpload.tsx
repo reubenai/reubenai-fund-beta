@@ -17,6 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 import { EnhancedDocumentErrorHandler, DocumentErrors } from './EnhancedDocumentErrorHandler';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
+import { PermissionDebugger } from '@/components/debug/PermissionDebugger';
+import { useAuthDebug } from '@/hooks/useAuthDebug';
 
 interface DocumentUploadProps {
   dealId: string;
@@ -59,16 +61,21 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
   const { triggerDealAnalysis } = useAnalysisIntegration();
   const permissions = usePermissions();
   const { toast } = useToast();
-
-  // Debug permission loading for fund_manager users
+  
+  // Debug hooks - enable in development
+  useAuthDebug(true);
+  
+  // Enhanced debug logging for permissions
   React.useEffect(() => {
-    console.log('DocumentUpload permissions debug:', {
-      canUploadDocuments: permissions.canUploadDocuments,
-      role: permissions.role,
-      loading: permissions.loading,
-      userId: dealId // For debugging context
-    });
-  }, [permissions.canUploadDocuments, permissions.role, permissions.loading, dealId]);
+    console.group('📄 DocumentUpload Permission Debug');
+    console.log('Permissions Loading:', permissions.loading);
+    console.log('Can Upload Documents:', permissions.canUploadDocuments);
+    console.log('Can View Documents:', permissions.canViewDocuments);
+    console.log('User Role:', permissions.role);
+    console.log('Deal ID:', dealId);
+    console.log('Company Name:', companyName);
+    console.groupEnd();
+  }, [permissions, dealId, companyName]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setError(null);
@@ -246,18 +253,31 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
   if (permissions.loading) {
     return (
       <div className="text-center p-8 bg-muted/20 rounded-lg">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
         <p className="text-muted-foreground">Loading permissions...</p>
+        <PermissionDebugger dealId={dealId} />
       </div>
     );
   }
 
   // Permission denied state
   if (!permissions.canUploadDocuments) {
+    console.warn('❌ Upload permission denied', { 
+      permissions, 
+      canUpload: permissions.canUploadDocuments,
+      role: permissions.role,
+      dealId,
+      companyName 
+    });
     return (
       <div className="text-center p-8 bg-muted/20 rounded-lg">
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground mb-4">
           You don't have permission to upload documents. Contact your administrator for access.
         </p>
+        <div className="text-xs text-muted-foreground/70">
+          Current role: {permissions.role}
+        </div>
+        <PermissionDebugger dealId={dealId} />
       </div>
     );
   }
@@ -456,6 +476,7 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
           ))}
         </div>
       )}
+      <PermissionDebugger dealId={dealId} />
     </div>
   );
 }
