@@ -50,6 +50,7 @@ import { FeatureFlagsPanel } from '@/components/admin/FeatureFlagsPanel';
 import { BrightdataTestPanel } from '@/components/admin/BrightdataTestPanel';
 import { EmergencyCleanupPanel } from '@/components/EmergencyCleanupPanel';
 import { InitializeMemoSectionsButton } from '@/components/InitializeMemoSectionsButton';
+import { DealDataProcessingTool } from '@/components/admin/DealDataProcessingTool';
 
 import { useFund } from '@/contexts/FundContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -940,6 +941,9 @@ export default function Admin() {
         
         {/* System Health & Analytics Sidebar */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Deal Data Processing Tool */}
+          <DealDataProcessingTool />
+          
           {/* Emergency Data Cleanup Panel */}
           <EmergencyCleanupPanel />
           
