@@ -21,6 +21,7 @@ import { industryMappingService, SemanticMatch } from '@/services/industryMappin
 
 interface ThesisAlignmentSectionProps {
   deal: Deal;
+  fundId?: string;
 }
 
 interface AlignmentCheck {
@@ -58,15 +59,18 @@ const getStatusIcon = (aligned: boolean) => {
   );
 };
 
-export function ThesisAlignmentSection({ deal }: ThesisAlignmentSectionProps) {
+export function ThesisAlignmentSection({ deal, fundId }: ThesisAlignmentSectionProps) {
   const { selectedFund } = useFund();
   const [strategy, setStrategy] = useState<EnhancedStrategy | null>(null);
   const [loading, setLoading] = useState(true);
   const [assessment, setAssessment] = useState<AlignmentAssessment | null>(null);
 
+  // Use fundId prop if provided, otherwise fall back to selectedFund
+  const activeFundId = fundId || selectedFund?.id;
+
   useEffect(() => {
     const fetchStrategyAndAssess = async () => {
-      if (!selectedFund?.id) return;
+      if (!activeFundId) return;
 
       try {
         setLoading(true);
@@ -75,7 +79,7 @@ export function ThesisAlignmentSection({ deal }: ThesisAlignmentSectionProps) {
         const { data: strategyData, error } = await supabase
           .from('investment_strategies')
           .select('*')
-          .eq('fund_id', selectedFund.id)
+          .eq('fund_id', activeFundId)
           .maybeSingle();
 
         if (error) {
@@ -98,7 +102,7 @@ export function ThesisAlignmentSection({ deal }: ThesisAlignmentSectionProps) {
     };
 
     fetchStrategyAndAssess();
-  }, [deal, selectedFund?.id]);
+  }, [activeFundId, deal]);
 
   const assessThesisAlignment = (deal: Deal, strategy: EnhancedStrategy): AlignmentAssessment => {
     const checks: AlignmentCheck[] = [];
