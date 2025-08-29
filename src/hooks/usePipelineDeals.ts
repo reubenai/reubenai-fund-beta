@@ -253,7 +253,7 @@ export const usePipelineDeals = (fundId?: string) => {
         .from('deals')
         .insert(insertData)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
