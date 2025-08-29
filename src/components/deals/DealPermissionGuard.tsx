@@ -1,5 +1,5 @@
 import React from 'react';
-import { useDealPermissions } from '@/hooks/useDealPermissions';
+import { useSimpleDealPermissions } from '@/hooks/useSimpleDealPermissions';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Shield, Lock } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export function DealPermissionGuard({
   fallback,
   showError = true
 }: DealPermissionGuardProps) {
-  const { canPerformAction, loading, userRole } = useDealPermissions(dealId);
+  const { canPerformAction, loading, userRole } = useSimpleDealPermissions(dealId);
 
   // Show loading state
   if (loading) {
@@ -80,7 +80,7 @@ interface DealActionGuardProps {
 }
 
 export function DealActionGuard({ dealId, action, children }: DealActionGuardProps) {
-  const { canPerformAction, userRole, loading } = useDealPermissions(dealId);
+  const { canPerformAction, userRole, loading } = useSimpleDealPermissions(dealId);
 
   if (loading) {
     return children(false, 'loading');
