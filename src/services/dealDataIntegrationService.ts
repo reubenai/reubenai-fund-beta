@@ -199,15 +199,24 @@ export class DealDataIntegrationService {
    * Fetch methods for each enrichment source
    */
   
-  private static async fetchDocumentData(dealId: string) {
-    const { data } = await supabase
-      .from('deal_documents')
-      .select('extracted_text, parsed_data, document_summary, document_type, processing_status')
-      .eq('deal_id', dealId)
-      .eq('processing_status', 'completed')
-      .order('created_at', { ascending: false });
-    
-    return data && data.length > 0 ? data : null;
+  private static async fetchDocumentData(dealId: string): Promise<any> {
+    try {
+      const { data, error } = await supabase
+        .from('deal_documents')
+        .select('extracted_text, parsed_data, document_summary, document_type')
+        .eq('deal_id', dealId)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching document data:', error);
+        return null;
+      }
+      
+      return data && data.length > 0 ? data : null;
+    } catch (error) {
+      console.error('Document fetch error:', error);
+      return null;
+    }
   }
   private static async fetchCrunchbaseData(dealId: string) {
     const { data } = await supabase

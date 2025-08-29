@@ -21,7 +21,7 @@ export function useDealDataIntegration() {
     organizationId: string,
     fundType: AnyFundType,
     options: {
-      triggerReason?: 'new_deal' | 'enrichment_update' | 'manual_refresh';
+      triggerReason?: 'new_deal' | 'enrichment_update' | 'manual_refresh' | 'waterfall_processing';
       showToast?: boolean;
     } = {}
   ): Promise<DataIntegrationResult> => {
@@ -50,7 +50,7 @@ export function useDealDataIntegration() {
         if (result.success) {
           toast({
             title: "Data Integration Complete",
-            description: `Successfully integrated ${result.sourceEnginesProcessed.length} data sources (${result.dataCompleteness}% complete)`,
+            description: `Successfully integrated ${result.processedSources.length} data sources (${result.completenessScore}% complete)`,
             variant: "default"
           });
         } else {
@@ -69,8 +69,12 @@ export function useDealDataIntegration() {
       
       const errorResult: DataIntegrationResult = {
         success: false,
+        dataPointsCreated: 0,
+        completenessScore: 0,
         dataCompleteness: 0,
         sourceEnginesProcessed: [],
+        processedSources: [],
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
         error: error instanceof Error ? error.message : 'Unknown error'
       };
 
@@ -104,8 +108,12 @@ export function useDealDataIntegration() {
       if (status) {
         const result: DataIntegrationResult = {
           success: true,
+          dataPointsCreated: 1,
+          completenessScore: status.data_completeness_score,
           dataCompleteness: status.data_completeness_score,
           sourceEnginesProcessed: status.source_engines,
+          processedSources: status.source_engines,
+          errors: [],
           vcDataPointsCreated: fundType === 'venture_capital' || fundType === 'vc',
           peDataPointsCreated: fundType === 'private_equity' || fundType === 'pe'
         };
