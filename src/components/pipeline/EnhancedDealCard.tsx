@@ -19,7 +19,8 @@ import {
   Users,
   ExternalLink,
   Star,
-  Zap
+  Zap,
+  Database
 } from 'lucide-react';
 import { Deal as BaseDeal } from '@/hooks/usePipelineDeals';
 import { EnhancedDealAnalysis } from '@/types/enhanced-deal-analysis';
@@ -42,6 +43,8 @@ import { FundTypeAnalysisPanel } from './FundTypeAnalysisPanel';
 
 import { QueuePositionIndicator } from './QueuePositionIndicator';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useUserRole } from '@/hooks/useUserRole';
+import { useDealDataIntegration } from '@/hooks/useDealDataIntegration';
 
 interface EnhancedDealCardProps {
   deal: Deal;
@@ -82,7 +85,11 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
   const { getRAGCategory } = useStrategyThresholds();
   const { forceAnalysisNow, queueDealAnalysis } = useEnhancedAnalysisQueue();
   const permissions = usePermissions();
+  const { isSuperAdmin } = useUserRole();
+  const { integrateDealData } = useDealDataIntegration();
+  const { selectedFund } = useFund();
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessingData, setIsProcessingData] = useState(false);
   
   const formatAmount = (amount?: number, currency = 'USD') => {
     return formatCurrency(amount, currency, { compact: true });
@@ -118,6 +125,28 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
       console.error('Failed to trigger analysis:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleProcessDealData = async () => {
+    if (!selectedFund) return;
+    
+    setIsProcessingData(true);
+    try {
+      await integrateDealData(
+        deal.id,
+        selectedFund.id,
+        selectedFund.organization_id,
+        selectedFund.fund_type === 'venture_capital' ? 'vc' : 'pe',
+        {
+          triggerReason: 'manual_refresh',
+          showToast: true
+        }
+      );
+    } catch (error) {
+      console.error('Failed to process deal data:', error);
+    } finally {
+      setIsProcessingData(false);
     }
   };
 
@@ -202,6 +231,15 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
                           Analyze Now
                         </DropdownMenuItem>
                       </>
+                    )}
+                    {isSuperAdmin && (
+                      <DropdownMenuItem 
+                        onClick={handleProcessDealData}
+                        disabled={isProcessingData}
+                      >
+                        <Database className="w-3 h-3 mr-2" />
+                        Process Deal Data
+                      </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
