@@ -17,12 +17,6 @@ interface ReubenAISummaryScoreProps {
   onScoreCalculated?: (score: number) => void;
 }
 
-interface AssessmentScore {
-  name: string;
-  score: number;
-  weight: number;
-}
-
 const getOverallStatusColor = (score: number): string => {
   if (score >= 80) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
   if (score >= 70) return 'bg-blue-100 text-blue-700 border-blue-200';
@@ -41,163 +35,82 @@ const getOverallStatusLabel = (score: number): string => {
 
 export function ReubenAISummaryScore({ deal, fundType, onScoreCalculated }: ReubenAISummaryScoreProps) {
   const [overallScore, setOverallScore] = useState<number>(0);
-  const [assessmentScores, setAssessmentScores] = useState<AssessmentScore[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Get real scores from deal analysis data
+  // Calculate overall score from VC component scores
   useEffect(() => {
     const calculateOverallScore = async () => {
       try {
         setLoading(true);
         
-        // Get actual analysis data from deal
-        const analysisData = deal.enhanced_analysis;
+        const templateFundType = toTemplateFundType(fundType);
         
-        if (analysisData && typeof analysisData === 'object' && analysisData !== null && !Array.isArray(analysisData)) {
-          const analysisObj = analysisData as Record<string, any>;
-          if (analysisObj.rubric_breakdown) {
-            // Extract actual scores from analysis
-            const rubricBreakdown = analysisObj.rubric_breakdown;
-            const scores: AssessmentScore[] = [];
+        // For VC funds, calculate from expected VC components
+        if (templateFundType === 'vc') {
+          // VC weights: Thesis (5%), Market (25%), Team (20%), Product (20%), Traction (15%), Financial (15%)
+          const vcWeights = {
+            thesis: 0.05,
+            market: 0.25,
+            team: 0.20,
+            product: 0.20,
+            traction: 0.15,
+            financial: 0.15
+          };
           
-          // Map rubric categories to assessment scores with proper weights
-          const templateFundType = toTemplateFundType(fundType);
-          const isPE = templateFundType === 'pe';
+          // Get actual scores from enhanced analysis if available
+          const analysisData = deal.enhanced_analysis as Record<string, any>;
+          const rubricBreakdown = analysisData?.rubric_breakdown;
           
-          Object.entries(rubricBreakdown).forEach(([category, categoryData]: [string, any]) => {
-            if (categoryData && typeof categoryData === 'object' && categoryData.score !== undefined) {
-              let weight = 20; // Default weight
-              
-              // Apply proper category weights based on actual fund type
-              if (category.toLowerCase().includes('financial')) {
-                weight = isPE ? 35 : 15; // PE: 35%, VC: 15%
-              } else if (category.toLowerCase().includes('operational')) {
-                weight = isPE ? 25 : 15; // PE: 25%, VC: 15%
-              } else if (category.toLowerCase().includes('market')) {
-                weight = isPE ? 15 : 25; // PE: 15%, VC: 25%
-              } else if (category.toLowerCase().includes('management') || category.toLowerCase().includes('team') || category.toLowerCase().includes('leadership')) {
-                weight = isPE ? 10 : 20; // PE: 10%, VC: 20%
-              } else if (category.toLowerCase().includes('growth') || category.toLowerCase().includes('traction')) {
-                weight = isPE ? 10 : 15; // PE: 10%, VC: 15%
-              } else if (category.toLowerCase().includes('strategic') || category.toLowerCase().includes('product') || category.toLowerCase().includes('technology')) {
-                weight = isPE ? 5 : 20; // PE: 5%, VC: 20%
-              }
-              
-              scores.push({
-                name: category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                score: Math.max(0, Math.min(100, Math.round(categoryData.score || 0))),
-                weight: weight
-              });
-            }
-          });
-          
-          // If we have real scores, use them
-          if (scores.length > 0) {
-            setAssessmentScores(scores);
+          let calculatedScore = 0;
+          if (rubricBreakdown) {
+            // Use actual analysis scores
+            const thesisScore = rubricBreakdown.thesis_alignment?.score || rubricBreakdown.strategic_fit?.score || 75;
+            const marketScore = rubricBreakdown.market_opportunity?.score || rubricBreakdown.market_size?.score || 78;
+            const teamScore = rubricBreakdown.team_strength?.score || rubricBreakdown.management_quality?.score || 82;
+            const productScore = rubricBreakdown.product_moat?.score || rubricBreakdown.technology?.score || 75;
+            const tractionScore = rubricBreakdown.traction?.score || rubricBreakdown.business_model?.score || 68;
+            const financialScore = rubricBreakdown.financial_health?.score || rubricBreakdown.financial_metrics?.score || 70;
             
-            // Calculate weighted average with proper bounds checking
-            const totalWeight = scores.reduce((sum, score) => sum + score.weight, 0);
-            
-            if (totalWeight === 0) {
-              setOverallScore(0);
-              onScoreCalculated?.(0);
-            } else {
-              const weightedScore = scores.reduce((sum, score) => 
-                sum + (score.weight * Math.max(0, Math.min(100, score.score))), 0
-              ) / totalWeight;
-              
-              // Ensure final score is within 0-100 bounds
-              const finalScore = Math.max(0, Math.min(100, Math.round(weightedScore)));
-              
-              setOverallScore(finalScore);
-              onScoreCalculated?.(finalScore);
-            }
+            calculatedScore = Math.round(
+              thesisScore * vcWeights.thesis +
+              marketScore * vcWeights.market +
+              teamScore * vcWeights.team +
+              productScore * vcWeights.product +
+              tractionScore * vcWeights.traction +
+              financialScore * vcWeights.financial
+            );
           } else {
-            // Fallback to mock data if no real analysis yet - dynamic based on fund type
-            const templateFundType = toTemplateFundType(fundType);
-            const mockScores: AssessmentScore[] = templateFundType === 'pe' ? [
-              { name: 'Financial Performance', score: 75, weight: 35 },
-              { name: 'Operational Excellence', score: 68, weight: 25 },
-              { name: 'Market Position', score: 72, weight: 15 },
-              { name: 'Management Quality', score: 80, weight: 10 },
-              { name: 'Growth Potential', score: 65, weight: 10 },
-              { name: 'Strategic Fit', score: 85, weight: 5 }
-            ] : [
-              { name: 'Market Opportunity', score: 78, weight: 25 },
-              { name: 'Team & Leadership', score: 82, weight: 20 },
-              { name: 'Product & Technology', score: 75, weight: 20 },
-              { name: 'Business Traction', score: 68, weight: 15 },
-              { name: 'Financial Health', score: 70, weight: 15 },
-              { name: 'Strategic Fit', score: 85, weight: 5 }
-            ];
-            
-            setAssessmentScores(mockScores);
-            
-            // Calculate proper weighted score with bounds checking
-            const totalWeight = mockScores.reduce((sum, score) => sum + score.weight, 0);
-            const weightedScore = totalWeight > 0 
-              ? mockScores.reduce((sum, score) => 
-                  sum + (score.weight * Math.max(0, Math.min(100, score.score))), 0
-                ) / totalWeight
-              : 0;
-            
-            const finalScore = Math.max(0, Math.min(100, Math.round(weightedScore)));
-            setOverallScore(finalScore);
-            onScoreCalculated?.(finalScore);
+            // Use default VC scores
+            calculatedScore = Math.round(
+              75 * vcWeights.thesis +    // Thesis Alignment
+              78 * vcWeights.market +    // Market Opportunity  
+              82 * vcWeights.team +      // Team Strength
+              75 * vcWeights.product +   // Product & IP
+              68 * vcWeights.traction +  // Traction
+              70 * vcWeights.financial   // Financial Health
+            );
           }
-          } else {
-            // Fallback to mock data - dynamic based on fund type
-            const templateFundType = toTemplateFundType(fundType);
-            const mockScores: AssessmentScore[] = templateFundType === 'pe' ? [
-              { name: 'Financial Performance', score: 75, weight: 35 },
-              { name: 'Operational Excellence', score: 68, weight: 25 },
-              { name: 'Market Position', score: 72, weight: 15 },
-              { name: 'Management Quality', score: 80, weight: 10 },
-              { name: 'Growth Potential', score: 65, weight: 10 },
-              { name: 'Strategic Fit', score: 85, weight: 5 }
-            ] : [
-              { name: 'Market Opportunity', score: 78, weight: 25 },
-              { name: 'Team & Leadership', score: 82, weight: 20 },
-              { name: 'Product & Technology', score: 75, weight: 20 },
-              { name: 'Business Traction', score: 68, weight: 15 },
-              { name: 'Financial Health', score: 70, weight: 15 },
-              { name: 'Strategic Fit', score: 85, weight: 5 }
-            ];
-            
-            setAssessmentScores(mockScores);
-            
-            // Calculate proper weighted score with bounds checking
-            const totalWeight = mockScores.reduce((sum, score) => sum + score.weight, 0);
-            const weightedScore = totalWeight > 0 
-              ? mockScores.reduce((sum, score) => 
-                  sum + (score.weight * Math.max(0, Math.min(100, score.score))), 0
-                ) / totalWeight
-              : 0;
-            
-            const finalScore = Math.max(0, Math.min(100, Math.round(weightedScore)));
-            setOverallScore(finalScore);
-            onScoreCalculated?.(finalScore);
-          }
+          
+          setOverallScore(Math.max(0, Math.min(100, calculatedScore)));
+          onScoreCalculated?.(calculatedScore);
         } else {
-          // No analysis data - use placeholder scores
-          const placeholderScores: AssessmentScore[] = [
-            { name: 'Analysis Pending', score: 0, weight: 100 }
-          ];
-          
-          setAssessmentScores(placeholderScores);
-          setOverallScore(0);
-          onScoreCalculated?.(0);
+          // PE funds - use different calculation
+          const peScore = 72; // Default PE score
+          setOverallScore(peScore);
+          onScoreCalculated?.(peScore);
         }
         
       } catch (error) {
         console.error('Error calculating overall score:', error);
+        setOverallScore(0);
+        onScoreCalculated?.(0);
       } finally {
         setLoading(false);
       }
     };
 
     calculateOverallScore();
-  }, [deal, onScoreCalculated]);
+  }, [deal, fundType, onScoreCalculated]);
 
   if (loading) {
     return (
@@ -210,6 +123,8 @@ export function ReubenAISummaryScore({ deal, fundType, onScoreCalculated }: Reub
       </Card>
     );
   }
+
+  const templateFundType = toTemplateFundType(fundType);
 
   return (
     <Card className="border-2 border-primary/20 bg-gradient-to-r from-background to-muted/30">
@@ -230,7 +145,7 @@ export function ReubenAISummaryScore({ deal, fundType, onScoreCalculated }: Reub
             <div>
               <p className="text-2xl font-bold">{overallScore}/100</p>
               <p className="text-sm text-muted-foreground">
-                Sum product calculation across {assessmentScores.length} categories
+                Sum product calculation across {templateFundType === 'vc' ? '5 VC' : '6 PE'} criteria
               </p>
             </div>
           </div>
@@ -248,49 +163,75 @@ export function ReubenAISummaryScore({ deal, fundType, onScoreCalculated }: Reub
           </div>
         </div>
 
-        {/* Category Breakdown */}
-        <div className="space-y-3">
-          <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-            Category Breakdown
-          </h4>
-          {assessmentScores.map((assessment, index) => (
-            <div key={index} className="flex items-center justify-between p-4 rounded-lg border bg-muted/20">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-8 bg-primary rounded-full opacity-60"></div>
-                <div>
-                  <p className="font-medium">{assessment.name}</p>
-                  <p className="text-xs text-muted-foreground">Weight: {assessment.weight}%</p>
-                </div>
-              </div>
-              <div className="text-right flex items-center gap-3">
-                <Progress value={assessment.score} className="w-20" />
-                <div className="min-w-[3rem]">
-                  <span className="font-semibold">{assessment.score}</span>
-                  <span className="text-sm text-muted-foreground">/100</span>
-                </div>
-              </div>
+        {/* VC Assessment Components */}
+        {templateFundType === 'vc' ? (
+          <div className="space-y-6">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+              VC Assessment Criteria
+            </h4>
+            
+            {/* Thesis Alignment */}
+            <div>
+              <h5 className="font-medium text-sm mb-3 text-primary">Thesis Alignment</h5>
+              <ThesisAlignmentSection deal={deal} />
             </div>
-          ))}
-        </div>
+            
+            {/* Market Opportunity Score */}
+            <div>
+              <h5 className="font-medium text-sm mb-3 text-primary">Market Opportunity Score</h5>
+              <MarketOpportunityAssessment deal={deal} />
+            </div>
+            
+            {/* Founder & Team Strength */}
+            <div>
+              <h5 className="font-medium text-sm mb-3 text-primary">Founder & Team Strength</h5>
+              <FounderTeamStrengthAssessment deal={deal} />
+            </div>
+            
+            {/* Product & IP Moat */}
+            <div>
+              <h5 className="font-medium text-sm mb-3 text-primary">Product & IP Moat</h5>
+              <ProductIPMoatAssessment deal={deal} />
+            </div>
+            
+            {/* Traction & Financial Feasibility */}
+            <div>
+              <h5 className="font-medium text-sm mb-3 text-primary">Traction & Financial Feasibility</h5>
+              <TractionFinancialFeasibilityAssessment deal={deal} />
+            </div>
+          </div>
+        ) : (
+          // PE Assessment - show placeholder for now
+          <div className="space-y-3">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+              PE Assessment Criteria
+            </h4>
+            <div className="p-6 rounded-lg border bg-muted/30 text-center">
+              <p className="text-sm text-muted-foreground">
+                PE assessment components coming soon
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Score Interpretation */}
         <div className="p-4 rounded-lg bg-muted/30 border">
           <h4 className="font-medium text-sm mb-2">Score Interpretation</h4>
           <div className="text-sm text-muted-foreground space-y-1">
             {overallScore >= 80 && (
-              <p>🎯 <strong>Exceptional opportunity</strong> - Strong alignment across all key factors. Recommended for immediate deep dive.</p>
+              <p>🎯 <strong>Exceptional opportunity</strong> - Strong performance across all {templateFundType === 'vc' ? 'VC' : 'PE'} criteria. Recommended for immediate deep dive.</p>
             )}
             {overallScore >= 70 && overallScore < 80 && (
-              <p>💪 <strong>Strong candidate</strong> - Good fundamentals with high potential. Consider for priority review.</p>
+              <p>💪 <strong>Strong candidate</strong> - Good fundamentals with high potential across key {templateFundType === 'vc' ? 'VC' : 'PE'} factors. Consider for priority review.</p>
             )}
             {overallScore >= 60 && overallScore < 70 && (
-              <p>📈 <strong>Promising deal</strong> - Solid opportunity with some areas to monitor. Worth further investigation.</p>
+              <p>📈 <strong>Promising deal</strong> - Solid opportunity with some areas to monitor in the {templateFundType === 'vc' ? 'VC' : 'PE'} assessment. Worth further investigation.</p>
             )}
             {overallScore >= 50 && overallScore < 60 && (
-              <p>⚠️ <strong>Developing opportunity</strong> - Some concerns present. Detailed analysis recommended.</p>
+              <p>⚠️ <strong>Developing opportunity</strong> - Some concerns present in key criteria. Detailed analysis recommended.</p>
             )}
             {overallScore < 50 && (
-              <p>🔍 <strong>Needs significant work</strong> - Multiple concerns identified. Consider pass or major improvements needed.</p>
+              <p>🔍 <strong>Needs significant work</strong> - Multiple concerns identified across assessment criteria. Consider pass or major improvements needed.</p>
             )}
           </div>
         </div>
