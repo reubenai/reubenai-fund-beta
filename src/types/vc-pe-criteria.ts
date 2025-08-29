@@ -574,8 +574,11 @@ export const PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
 };
 
 // Helper functions
-export function getTemplateByFundType(fundType: 'vc' | 'pe'): EnhancedCriteriaTemplate {
-  return fundType === 'vc' ? VC_CRITERIA_TEMPLATE : PE_CRITERIA_TEMPLATE;
+import { toTemplateFundType, AnyFundType } from '@/utils/fundTypeConversion';
+
+export function getTemplateByFundType(fundType: AnyFundType): EnhancedCriteriaTemplate {
+  const templateType = toTemplateFundType(fundType);
+  return templateType === 'vc' ? VC_CRITERIA_TEMPLATE : PE_CRITERIA_TEMPLATE;
 }
 
 export function validateCriteriaWeights(template: EnhancedCriteriaTemplate): { isValid: boolean; errors: string[] } {
