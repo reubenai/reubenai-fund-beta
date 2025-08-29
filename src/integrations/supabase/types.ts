@@ -2786,6 +2786,72 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_enrichment_perplexity_company_export_pe: {
+        Row: {
+          business_model: string | null
+          company_overview: string | null
+          competitive_landscape: string | null
+          confidence_level: number | null
+          created_at: string
+          data_quality_score: number | null
+          deal_id: string
+          financial_highlights: Json | null
+          fund_id: string
+          growth_metrics: Json | null
+          id: string
+          industry_trends: string[] | null
+          key_success_factors: string[] | null
+          market_position: string | null
+          operational_metrics: Json | null
+          organization_id: string
+          retrieved_at: string
+          risk_factors: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          business_model?: string | null
+          company_overview?: string | null
+          competitive_landscape?: string | null
+          confidence_level?: number | null
+          created_at?: string
+          data_quality_score?: number | null
+          deal_id: string
+          financial_highlights?: Json | null
+          fund_id: string
+          growth_metrics?: Json | null
+          id?: string
+          industry_trends?: string[] | null
+          key_success_factors?: string[] | null
+          market_position?: string | null
+          operational_metrics?: Json | null
+          organization_id: string
+          retrieved_at?: string
+          risk_factors?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          business_model?: string | null
+          company_overview?: string | null
+          competitive_landscape?: string | null
+          confidence_level?: number | null
+          created_at?: string
+          data_quality_score?: number | null
+          deal_id?: string
+          financial_highlights?: Json | null
+          fund_id?: string
+          growth_metrics?: Json | null
+          id?: string
+          industry_trends?: string[] | null
+          key_success_factors?: string[] | null
+          market_position?: string | null
+          operational_metrics?: Json | null
+          organization_id?: string
+          retrieved_at?: string
+          risk_factors?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       deal_enrichment_perplexity_company_export_vc: {
         Row: {
           addressable_customers: string | null
@@ -2888,6 +2954,72 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_enrichment_perplexity_founder_export_pe: {
+        Row: {
+          confidence_level: number | null
+          created_at: string
+          data_quality_score: number | null
+          deal_id: string
+          educational_background: string[] | null
+          execution_capability: number | null
+          founder_profiles: Json | null
+          fund_id: string
+          id: string
+          industry_expertise: string[] | null
+          leadership_experience: string[] | null
+          leadership_style: string | null
+          organization_id: string
+          previous_exits: Json | null
+          professional_network: Json | null
+          retrieved_at: string
+          track_record: string[] | null
+          updated_at: string
+          vision_strategy: string | null
+        }
+        Insert: {
+          confidence_level?: number | null
+          created_at?: string
+          data_quality_score?: number | null
+          deal_id: string
+          educational_background?: string[] | null
+          execution_capability?: number | null
+          founder_profiles?: Json | null
+          fund_id: string
+          id?: string
+          industry_expertise?: string[] | null
+          leadership_experience?: string[] | null
+          leadership_style?: string | null
+          organization_id: string
+          previous_exits?: Json | null
+          professional_network?: Json | null
+          retrieved_at?: string
+          track_record?: string[] | null
+          updated_at?: string
+          vision_strategy?: string | null
+        }
+        Update: {
+          confidence_level?: number | null
+          created_at?: string
+          data_quality_score?: number | null
+          deal_id?: string
+          educational_background?: string[] | null
+          execution_capability?: number | null
+          founder_profiles?: Json | null
+          fund_id?: string
+          id?: string
+          industry_expertise?: string[] | null
+          leadership_experience?: string[] | null
+          leadership_style?: string | null
+          organization_id?: string
+          previous_exits?: Json | null
+          professional_network?: Json | null
+          retrieved_at?: string
+          track_record?: string[] | null
+          updated_at?: string
+          vision_strategy?: string | null
+        }
+        Relationships: []
+      }
       deal_enrichment_perplexity_founder_export_vc: {
         Row: {
           academic_background: Json | null
@@ -2969,6 +3101,75 @@ export type Database = {
           thought_leadership?: Json | null
           updated_at?: string
           value_creation?: Json | null
+        }
+        Relationships: []
+      }
+      deal_enrichment_perplexity_market_export_pe: {
+        Row: {
+          barriers_to_entry: string[] | null
+          competitive_analysis: Json | null
+          confidence_level: number | null
+          consolidation_opportunities: string[] | null
+          created_at: string
+          customer_segments: string[] | null
+          data_quality_score: number | null
+          deal_id: string
+          fund_id: string
+          growth_drivers: string[] | null
+          id: string
+          market_dynamics: string | null
+          market_maturity: string | null
+          market_size_analysis: Json | null
+          market_trends: string[] | null
+          organization_id: string
+          regulatory_environment: string[] | null
+          retrieved_at: string
+          target_market: string | null
+          updated_at: string
+        }
+        Insert: {
+          barriers_to_entry?: string[] | null
+          competitive_analysis?: Json | null
+          confidence_level?: number | null
+          consolidation_opportunities?: string[] | null
+          created_at?: string
+          customer_segments?: string[] | null
+          data_quality_score?: number | null
+          deal_id: string
+          fund_id: string
+          growth_drivers?: string[] | null
+          id?: string
+          market_dynamics?: string | null
+          market_maturity?: string | null
+          market_size_analysis?: Json | null
+          market_trends?: string[] | null
+          organization_id: string
+          regulatory_environment?: string[] | null
+          retrieved_at?: string
+          target_market?: string | null
+          updated_at?: string
+        }
+        Update: {
+          barriers_to_entry?: string[] | null
+          competitive_analysis?: Json | null
+          confidence_level?: number | null
+          consolidation_opportunities?: string[] | null
+          created_at?: string
+          customer_segments?: string[] | null
+          data_quality_score?: number | null
+          deal_id?: string
+          fund_id?: string
+          growth_drivers?: string[] | null
+          id?: string
+          market_dynamics?: string | null
+          market_maturity?: string | null
+          market_size_analysis?: Json | null
+          market_trends?: string[] | null
+          organization_id?: string
+          regulatory_environment?: string[] | null
+          retrieved_at?: string
+          target_market?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -3758,6 +3959,81 @@ export type Database = {
           created_at?: string | null
           enabled?: boolean
           id?: string
+        }
+        Relationships: []
+      }
+      engine_completion_tracking: {
+        Row: {
+          active_engines: string[] | null
+          completed_at: string | null
+          completed_engines: string[] | null
+          created_at: string
+          crunchbase_status: string | null
+          deal_id: string
+          documents_status: string | null
+          failed_engines: string[] | null
+          fund_id: string
+          fund_type: string
+          id: string
+          last_check_at: string | null
+          linkedin_export_status: string | null
+          linkedin_profile_status: string | null
+          organization_id: string
+          overall_status: string | null
+          perplexity_company_status: string | null
+          perplexity_founder_status: string | null
+          perplexity_market_status: string | null
+          timeout_at: string
+          tracking_started_at: string
+          updated_at: string
+        }
+        Insert: {
+          active_engines?: string[] | null
+          completed_at?: string | null
+          completed_engines?: string[] | null
+          created_at?: string
+          crunchbase_status?: string | null
+          deal_id: string
+          documents_status?: string | null
+          failed_engines?: string[] | null
+          fund_id: string
+          fund_type: string
+          id?: string
+          last_check_at?: string | null
+          linkedin_export_status?: string | null
+          linkedin_profile_status?: string | null
+          organization_id: string
+          overall_status?: string | null
+          perplexity_company_status?: string | null
+          perplexity_founder_status?: string | null
+          perplexity_market_status?: string | null
+          timeout_at?: string
+          tracking_started_at?: string
+          updated_at?: string
+        }
+        Update: {
+          active_engines?: string[] | null
+          completed_at?: string | null
+          completed_engines?: string[] | null
+          created_at?: string
+          crunchbase_status?: string | null
+          deal_id?: string
+          documents_status?: string | null
+          failed_engines?: string[] | null
+          fund_id?: string
+          fund_type?: string
+          id?: string
+          last_check_at?: string | null
+          linkedin_export_status?: string | null
+          linkedin_profile_status?: string | null
+          organization_id?: string
+          overall_status?: string | null
+          perplexity_company_status?: string | null
+          perplexity_founder_status?: string | null
+          perplexity_market_status?: string | null
+          timeout_at?: string
+          tracking_started_at?: string
+          updated_at?: string
         }
         Relationships: []
       }
