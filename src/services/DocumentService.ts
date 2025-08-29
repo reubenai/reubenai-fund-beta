@@ -76,19 +76,10 @@ class DocumentService {
 
       console.log('✅ Upload permission granted:', permissionCheck.reason);
 
-      // Get deal and fund info for document metadata
+      // Get deal info first
       const { data: dealData, error: dealError } = await supabase
         .from('deals')
-        .select(`
-          id, 
-          fund_id, 
-          company_name,
-          funds (
-            id,
-            name,
-            organization_id
-          )
-        `)
+        .select('id, fund_id, company_name')
         .eq('id', input.dealId)
         .single();
 
@@ -97,7 +88,17 @@ class DocumentService {
         throw new Error(`Deal not found: ${dealError?.message || 'Unknown error'}`);
       }
 
-      const fundData = dealData.funds as any;
+      // Get fund info separately using the fund_id
+      const { data: fundData, error: fundError } = await supabase
+        .from('funds')
+        .select('id, name, organization_id')
+        .eq('id', dealData.fund_id)
+        .single();
+
+      if (fundError || !fundData) {
+        console.error('💼 Fund lookup failed:', fundError);
+        throw new Error(`Fund not found: ${fundError?.message || 'Unknown error'}`);
+      }
       console.log('💼 Deal and fund found:', { 
         dealId: dealData.id, 
         fundId: dealData.fund_id, 
