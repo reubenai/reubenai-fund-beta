@@ -2,13 +2,17 @@ import { useCallback } from 'react';
 import { useAnalysisOnceEnforcement } from './useAnalysisOnceEnforcement';
 import { useFundMemoryIsolation } from './useFundMemoryIsolation';
 import { useEnhancedAnalysisQueue } from './useEnhancedAnalysisQueue';
+import { useDealDataIntegration } from './useDealDataIntegration';
+import { DealAnalysisOrchestrationService } from '@/services/dealAnalysisOrchestrationService';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { AnyFundType } from '@/utils/fundTypeConversion';
 
 export function useAnalysisIntegration() {
   const { enforceAnalysisOnce, markFirstAnalysisComplete } = useAnalysisOnceEnforcement();
   const { checkFundMemoryIsolation } = useFundMemoryIsolation();
   const { queueDealAnalysis } = useEnhancedAnalysisQueue();
+  const { integrateDealData } = useDealDataIntegration();
   const { toast } = useToast();
 
   const triggerDealAnalysis = useCallback(async (
@@ -32,7 +36,60 @@ export function useAnalysisIntegration() {
         }
       }
 
-      // Step 3: Queue analysis with appropriate priority
+      // Step 3: Get deal and fund information for orchestration
+      if (!fundId) {
+        return { success: false, message: "Fund ID is required for analysis orchestration" };
+      }
+
+      const { data: deal, error: dealError } = await supabase
+        .from('deals')
+        .select(`
+          *,
+          funds!inner(
+            id,
+            fund_type,
+            organization_id
+          )
+        `)
+        .eq('id', dealId)
+        .single();
+
+      if (dealError || !deal) {
+        return { success: false, message: "Could not fetch deal information" };
+      }
+
+      // Step 4: Trigger the new orchestrated analysis pipeline
+      const orchestrationResult = await DealAnalysisOrchestrationService.orchestrateAnalysis({
+        dealId,
+        fundId,
+        organizationId: deal.funds.organization_id,
+        fundType: deal.funds.fund_type as AnyFundType,
+        triggerReason: triggerType === 'initial' ? 'new_deal' : 
+                      triggerType === 'document_upload' ? 'document_upload' :
+                      'manual_trigger',
+        priority: triggerType === 'manual_trigger' ? 'high' : 'normal'
+      });
+
+      if (orchestrationResult.success) {
+        // Step 5: Mark first analysis complete if this was initial
+        if (triggerType === 'initial') {
+          await markFirstAnalysisComplete(dealId);
+        }
+
+        toast({
+          title: "Analysis Orchestration Started",
+          description: `End-to-end analysis pipeline initiated for ${deal.funds.fund_type} fund`,
+          variant: "default"
+        });
+
+        return { 
+          success: true, 
+          orchestrationId: orchestrationResult.orchestrationId,
+          message: "Analysis orchestration started successfully" 
+        };
+      }
+
+      // Fallback to legacy queue system
       const priority = triggerType === 'manual_trigger' ? 'high' : 
                       triggerType === 'initial' ? 'normal' : 'low';
       
@@ -43,7 +100,6 @@ export function useAnalysisIntegration() {
       });
 
       if (queueResult.success) {
-        // Step 4: Mark first analysis complete if this was initial
         if (triggerType === 'initial') {
           await markFirstAnalysisComplete(dealId);
         }
@@ -68,7 +124,7 @@ export function useAnalysisIntegration() {
       });
       return { success: false, message: "Analysis trigger failed" };
     }
-  }, [enforceAnalysisOnce, markFirstAnalysisComplete, checkFundMemoryIsolation, queueDealAnalysis, toast]);
+  }, [enforceAnalysisOnce, markFirstAnalysisComplete, checkFundMemoryIsolation, queueDealAnalysis, integrateDealData, toast]);
 
   const validateThesisScoring = useCallback(async (fundId: string) => {
     try {

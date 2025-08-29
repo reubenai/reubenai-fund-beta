@@ -1293,6 +1293,423 @@ export type Database = {
           },
         ]
       }
+      deal_analysis_datapoints_pe: {
+        Row: {
+          acquisition_opportunities: string[] | null
+          automation_opportunities: string[] | null
+          board_composition: Json | null
+          brand_strength: number | null
+          capital_allocation_efficiency: Json | null
+          cash_flow_generation: Json | null
+          competitive_advantages: string[] | null
+          cost_reduction_opportunities: Json | null
+          cost_structure_analysis: Json | null
+          created_at: string
+          customer_concentration: Json | null
+          data_completeness_score: number | null
+          deal_id: string
+          debt_capacity: number | null
+          distribution_channels: Json | null
+          ebitda_growth_rate: number | null
+          ebitda_margin: number | null
+          environmental_impact_assessment: Json | null
+          esg_score: number | null
+          exit_strategy_options: string[] | null
+          expansion_markets: string[] | null
+          free_cash_flow_yield: number | null
+          fund_id: string
+          geography: string | null
+          governance_best_practices: Json | null
+          governance_structure: Json | null
+          historical_financial_performance: Json | null
+          id: string
+          industry_focus: string | null
+          investment_size: number | null
+          key_signals: string[] | null
+          last_updated_by: string | null
+          leadership_track_record: Json | null
+          leverage_ratios: Json | null
+          management_incentives: Json | null
+          management_quality_assessment: Json | null
+          margin_improvement_opportunities: string[] | null
+          market_position: string | null
+          market_share: number | null
+          operational_efficiency_metrics: Json | null
+          organic_growth_potential: Json | null
+          organization_id: string
+          organizational_capabilities: string[] | null
+          pricing_optimization_potential: number | null
+          process_optimization_potential: string[] | null
+          product_line_extensions: string[] | null
+          quality_score: number | null
+          regulatory_compliance: Json | null
+          return_on_invested_capital: number | null
+          revenue_growth_rate: number | null
+          risk_mitigation_strategies: string[] | null
+          scalability_factors: string[] | null
+          social_responsibility_metrics: Json | null
+          source_engines: string[] | null
+          succession_planning: Json | null
+          supplier_relationships: Json | null
+          supply_chain_efficiency: Json | null
+          sustainability_initiatives: string[] | null
+          talent_retention_metrics: Json | null
+          technology_infrastructure: Json | null
+          updated_at: string
+          value_creation_timeline: Json | null
+          working_capital_management: Json | null
+        }
+        Insert: {
+          acquisition_opportunities?: string[] | null
+          automation_opportunities?: string[] | null
+          board_composition?: Json | null
+          brand_strength?: number | null
+          capital_allocation_efficiency?: Json | null
+          cash_flow_generation?: Json | null
+          competitive_advantages?: string[] | null
+          cost_reduction_opportunities?: Json | null
+          cost_structure_analysis?: Json | null
+          created_at?: string
+          customer_concentration?: Json | null
+          data_completeness_score?: number | null
+          deal_id: string
+          debt_capacity?: number | null
+          distribution_channels?: Json | null
+          ebitda_growth_rate?: number | null
+          ebitda_margin?: number | null
+          environmental_impact_assessment?: Json | null
+          esg_score?: number | null
+          exit_strategy_options?: string[] | null
+          expansion_markets?: string[] | null
+          free_cash_flow_yield?: number | null
+          fund_id: string
+          geography?: string | null
+          governance_best_practices?: Json | null
+          governance_structure?: Json | null
+          historical_financial_performance?: Json | null
+          id?: string
+          industry_focus?: string | null
+          investment_size?: number | null
+          key_signals?: string[] | null
+          last_updated_by?: string | null
+          leadership_track_record?: Json | null
+          leverage_ratios?: Json | null
+          management_incentives?: Json | null
+          management_quality_assessment?: Json | null
+          margin_improvement_opportunities?: string[] | null
+          market_position?: string | null
+          market_share?: number | null
+          operational_efficiency_metrics?: Json | null
+          organic_growth_potential?: Json | null
+          organization_id: string
+          organizational_capabilities?: string[] | null
+          pricing_optimization_potential?: number | null
+          process_optimization_potential?: string[] | null
+          product_line_extensions?: string[] | null
+          quality_score?: number | null
+          regulatory_compliance?: Json | null
+          return_on_invested_capital?: number | null
+          revenue_growth_rate?: number | null
+          risk_mitigation_strategies?: string[] | null
+          scalability_factors?: string[] | null
+          social_responsibility_metrics?: Json | null
+          source_engines?: string[] | null
+          succession_planning?: Json | null
+          supplier_relationships?: Json | null
+          supply_chain_efficiency?: Json | null
+          sustainability_initiatives?: string[] | null
+          talent_retention_metrics?: Json | null
+          technology_infrastructure?: Json | null
+          updated_at?: string
+          value_creation_timeline?: Json | null
+          working_capital_management?: Json | null
+        }
+        Update: {
+          acquisition_opportunities?: string[] | null
+          automation_opportunities?: string[] | null
+          board_composition?: Json | null
+          brand_strength?: number | null
+          capital_allocation_efficiency?: Json | null
+          cash_flow_generation?: Json | null
+          competitive_advantages?: string[] | null
+          cost_reduction_opportunities?: Json | null
+          cost_structure_analysis?: Json | null
+          created_at?: string
+          customer_concentration?: Json | null
+          data_completeness_score?: number | null
+          deal_id?: string
+          debt_capacity?: number | null
+          distribution_channels?: Json | null
+          ebitda_growth_rate?: number | null
+          ebitda_margin?: number | null
+          environmental_impact_assessment?: Json | null
+          esg_score?: number | null
+          exit_strategy_options?: string[] | null
+          expansion_markets?: string[] | null
+          free_cash_flow_yield?: number | null
+          fund_id?: string
+          geography?: string | null
+          governance_best_practices?: Json | null
+          governance_structure?: Json | null
+          historical_financial_performance?: Json | null
+          id?: string
+          industry_focus?: string | null
+          investment_size?: number | null
+          key_signals?: string[] | null
+          last_updated_by?: string | null
+          leadership_track_record?: Json | null
+          leverage_ratios?: Json | null
+          management_incentives?: Json | null
+          management_quality_assessment?: Json | null
+          margin_improvement_opportunities?: string[] | null
+          market_position?: string | null
+          market_share?: number | null
+          operational_efficiency_metrics?: Json | null
+          organic_growth_potential?: Json | null
+          organization_id?: string
+          organizational_capabilities?: string[] | null
+          pricing_optimization_potential?: number | null
+          process_optimization_potential?: string[] | null
+          product_line_extensions?: string[] | null
+          quality_score?: number | null
+          regulatory_compliance?: Json | null
+          return_on_invested_capital?: number | null
+          revenue_growth_rate?: number | null
+          risk_mitigation_strategies?: string[] | null
+          scalability_factors?: string[] | null
+          social_responsibility_metrics?: Json | null
+          source_engines?: string[] | null
+          succession_planning?: Json | null
+          supplier_relationships?: Json | null
+          supply_chain_efficiency?: Json | null
+          sustainability_initiatives?: string[] | null
+          talent_retention_metrics?: Json | null
+          technology_infrastructure?: Json | null
+          updated_at?: string
+          value_creation_timeline?: Json | null
+          working_capital_management?: Json | null
+        }
+        Relationships: []
+      }
+      deal_analysis_datapoints_vc: {
+        Row: {
+          academic_background: string[] | null
+          addressable_customers: number | null
+          cac_trend: number | null
+          cagr: number | null
+          capital_efficiency_ratios: Json | null
+          capital_requirements: number | null
+          cash_flow_analysis: Json | null
+          certifications: string[] | null
+          channel_effectiveness: Json | null
+          competitive_moat_assessment: Json | null
+          competitive_positioning_studies: Json | null
+          competitive_window: string | null
+          created_at: string
+          customer_acquisition_metrics: Json | null
+          data_completeness_score: number | null
+          deal_id: string
+          distribution_challenges: string[] | null
+          diversity_metrics: Json | null
+          economic_sensitivity: string | null
+          exit_history: Json | null
+          fund_id: string
+          geographic_constraints: string[] | null
+          geography: string | null
+          growth_drivers: string[] | null
+          growth_rate_analysis: Json | null
+          id: string
+          industry_focus: string | null
+          innovation_record: string[] | null
+          investment_climate: string | null
+          investment_size: number | null
+          investor_network: string[] | null
+          ip_landscape_mapping: Json | null
+          ip_strength_scoring: number | null
+          key_market_players: string[] | null
+          key_signals: string[] | null
+          last_updated_by: string | null
+          leadership_experience: string[] | null
+          ltv_cac_ratio: number | null
+          market_cycle: string | null
+          market_differentiation_analysis: Json | null
+          market_knowledge: string[] | null
+          market_share_distribution: Json | null
+          market_traction_indicators: Json | null
+          organization_id: string
+          partnership_ecosystem: string[] | null
+          patent_portfolio_analysis: Json | null
+          previous_roles: Json | null
+          profitability_metrics: Json | null
+          quality_score: number | null
+          regulatory_requirements: string[] | null
+          regulatory_timeline: string | null
+          retention_rate: number | null
+          revenue_statements: Json | null
+          sam: number | null
+          scalability_readiness: string | null
+          skill_coverage: Json | null
+          som: number | null
+          source_engines: string[] | null
+          strategic_advisors: string[] | null
+          tam: number | null
+          team_building: string[] | null
+          technical_skills: string[] | null
+          technology_moats: string[] | null
+          technology_readiness_level: number | null
+          thought_leadership: string[] | null
+          trade_secret_documentation: string[] | null
+          unit_economics_breakdown: Json | null
+          updated_at: string
+          value_creation: string[] | null
+          whitespace_opportunities: string[] | null
+        }
+        Insert: {
+          academic_background?: string[] | null
+          addressable_customers?: number | null
+          cac_trend?: number | null
+          cagr?: number | null
+          capital_efficiency_ratios?: Json | null
+          capital_requirements?: number | null
+          cash_flow_analysis?: Json | null
+          certifications?: string[] | null
+          channel_effectiveness?: Json | null
+          competitive_moat_assessment?: Json | null
+          competitive_positioning_studies?: Json | null
+          competitive_window?: string | null
+          created_at?: string
+          customer_acquisition_metrics?: Json | null
+          data_completeness_score?: number | null
+          deal_id: string
+          distribution_challenges?: string[] | null
+          diversity_metrics?: Json | null
+          economic_sensitivity?: string | null
+          exit_history?: Json | null
+          fund_id: string
+          geographic_constraints?: string[] | null
+          geography?: string | null
+          growth_drivers?: string[] | null
+          growth_rate_analysis?: Json | null
+          id?: string
+          industry_focus?: string | null
+          innovation_record?: string[] | null
+          investment_climate?: string | null
+          investment_size?: number | null
+          investor_network?: string[] | null
+          ip_landscape_mapping?: Json | null
+          ip_strength_scoring?: number | null
+          key_market_players?: string[] | null
+          key_signals?: string[] | null
+          last_updated_by?: string | null
+          leadership_experience?: string[] | null
+          ltv_cac_ratio?: number | null
+          market_cycle?: string | null
+          market_differentiation_analysis?: Json | null
+          market_knowledge?: string[] | null
+          market_share_distribution?: Json | null
+          market_traction_indicators?: Json | null
+          organization_id: string
+          partnership_ecosystem?: string[] | null
+          patent_portfolio_analysis?: Json | null
+          previous_roles?: Json | null
+          profitability_metrics?: Json | null
+          quality_score?: number | null
+          regulatory_requirements?: string[] | null
+          regulatory_timeline?: string | null
+          retention_rate?: number | null
+          revenue_statements?: Json | null
+          sam?: number | null
+          scalability_readiness?: string | null
+          skill_coverage?: Json | null
+          som?: number | null
+          source_engines?: string[] | null
+          strategic_advisors?: string[] | null
+          tam?: number | null
+          team_building?: string[] | null
+          technical_skills?: string[] | null
+          technology_moats?: string[] | null
+          technology_readiness_level?: number | null
+          thought_leadership?: string[] | null
+          trade_secret_documentation?: string[] | null
+          unit_economics_breakdown?: Json | null
+          updated_at?: string
+          value_creation?: string[] | null
+          whitespace_opportunities?: string[] | null
+        }
+        Update: {
+          academic_background?: string[] | null
+          addressable_customers?: number | null
+          cac_trend?: number | null
+          cagr?: number | null
+          capital_efficiency_ratios?: Json | null
+          capital_requirements?: number | null
+          cash_flow_analysis?: Json | null
+          certifications?: string[] | null
+          channel_effectiveness?: Json | null
+          competitive_moat_assessment?: Json | null
+          competitive_positioning_studies?: Json | null
+          competitive_window?: string | null
+          created_at?: string
+          customer_acquisition_metrics?: Json | null
+          data_completeness_score?: number | null
+          deal_id?: string
+          distribution_challenges?: string[] | null
+          diversity_metrics?: Json | null
+          economic_sensitivity?: string | null
+          exit_history?: Json | null
+          fund_id?: string
+          geographic_constraints?: string[] | null
+          geography?: string | null
+          growth_drivers?: string[] | null
+          growth_rate_analysis?: Json | null
+          id?: string
+          industry_focus?: string | null
+          innovation_record?: string[] | null
+          investment_climate?: string | null
+          investment_size?: number | null
+          investor_network?: string[] | null
+          ip_landscape_mapping?: Json | null
+          ip_strength_scoring?: number | null
+          key_market_players?: string[] | null
+          key_signals?: string[] | null
+          last_updated_by?: string | null
+          leadership_experience?: string[] | null
+          ltv_cac_ratio?: number | null
+          market_cycle?: string | null
+          market_differentiation_analysis?: Json | null
+          market_knowledge?: string[] | null
+          market_share_distribution?: Json | null
+          market_traction_indicators?: Json | null
+          organization_id?: string
+          partnership_ecosystem?: string[] | null
+          patent_portfolio_analysis?: Json | null
+          previous_roles?: Json | null
+          profitability_metrics?: Json | null
+          quality_score?: number | null
+          regulatory_requirements?: string[] | null
+          regulatory_timeline?: string | null
+          retention_rate?: number | null
+          revenue_statements?: Json | null
+          sam?: number | null
+          scalability_readiness?: string | null
+          skill_coverage?: Json | null
+          som?: number | null
+          source_engines?: string[] | null
+          strategic_advisors?: string[] | null
+          tam?: number | null
+          team_building?: string[] | null
+          technical_skills?: string[] | null
+          technology_moats?: string[] | null
+          technology_readiness_level?: number | null
+          thought_leadership?: string[] | null
+          trade_secret_documentation?: string[] | null
+          unit_economics_breakdown?: Json | null
+          updated_at?: string
+          value_creation?: string[] | null
+          whitespace_opportunities?: string[] | null
+        }
+        Relationships: []
+      }
       deal_analysis_sources: {
         Row: {
           confidence_score: number | null

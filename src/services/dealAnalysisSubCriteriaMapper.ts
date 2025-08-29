@@ -3,6 +3,7 @@
 
 import { getTemplateByFundType, EnhancedCriteriaTemplate } from '@/types/vc-pe-criteria';
 import { RubricBreakdown, EnhancedDealAnalysis } from '@/types/enhanced-deal-analysis';
+import { toTemplateFundType, AnyFundType } from '@/utils/fundTypeConversion';
 
 interface SubCriteriaItem {
   name: string;
@@ -30,7 +31,7 @@ export class DealAnalysisSubCriteriaMapper {
    */
   static mapCategoryToSubCriteria(
     categoryName: string,
-    fundType: 'vc' | 'pe',
+    fundType: AnyFundType,
     categoryScore: number,
     engineData?: EngineDataSources,
     analysisEngines?: Record<string, any>
@@ -80,7 +81,7 @@ export class DealAnalysisSubCriteriaMapper {
   private static mapSubCriteriaToEngineData(
     categoryName: string,
     subCriteriaName: string,
-    fundType: 'vc' | 'pe',
+    fundType: AnyFundType,
     engineData?: EngineDataSources,
     analysisEngines?: Record<string, any>
   ): {
@@ -258,7 +259,7 @@ export class DealAnalysisSubCriteriaMapper {
    */
   static generateComprehensiveSubCriteria(
     dealAnalysis: EnhancedDealAnalysis,
-    fundType: 'vc' | 'pe',
+    fundType: AnyFundType,
     engineData?: EngineDataSources
   ): Record<string, SubCriteriaItem[]> {
     
@@ -340,7 +341,7 @@ export class DealAnalysisSubCriteriaMapper {
    */
   static getEngineDataStatus(
     categoryName: string,
-    fundType: 'vc' | 'pe',
+    fundType: AnyFundType,
     engineData?: EngineDataSources,
     analysisEngines?: Record<string, any>
   ): {
