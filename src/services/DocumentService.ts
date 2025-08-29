@@ -65,10 +65,25 @@ class DocumentService {
         throw new Error('You must be signed in to upload documents');
       }
 
+      console.log('🔐 User authenticated:', {
+        userId: userData.user.id,
+        userEmail: userData.user.email,
+        dealId: input.dealId
+      });
+
       // Use simple permission service to check upload permissions
       onProgress?.({ progress: 10, status: 'uploading', message: 'Checking permissions...' });
       
+      console.log('🔍 Checking upload permissions for deal:', input.dealId);
       const permissionCheck = await simplePermissionService.checkDocumentUploadPermission(input.dealId);
+      
+      console.log('🔍 Permission check result:', {
+        canAccess: permissionCheck.canAccess,
+        reason: permissionCheck.reason,
+        userOrgId: permissionCheck.userOrganizationId,
+        dealOrgId: permissionCheck.dealOrganizationId
+      });
+      
       if (!permissionCheck.canAccess) {
         console.error('🔒 Permission denied:', permissionCheck.reason);
         throw new Error(`Access denied: ${permissionCheck.reason}`);
@@ -93,10 +108,14 @@ class DocumentService {
         .from('funds')
         .select('id, name, organization_id')
         .eq('id', dealData.fund_id)
-        .single();
+        .maybeSingle();
 
       if (fundError || !fundData) {
-        console.error('💼 Fund lookup failed:', fundError);
+        console.error('💼 Fund lookup failed:', {
+          fundId: dealData.fund_id,
+          error: fundError,
+          message: fundError?.message
+        });
         throw new Error(`Fund not found: ${fundError?.message || 'Unknown error'}`);
       }
       console.log('💼 Deal and fund found:', { 
@@ -137,6 +156,11 @@ class DocumentService {
 
       // Get user information for metadata
       const userInfo = await simplePermissionService.getUserInfo();
+      console.log('👤 User info for document:', {
+        organizationId: userInfo.organizationId,
+        role: userInfo.role,
+        isReubenAdmin: userInfo.isReubenAdmin
+      });
 
       // Create document record with enhanced logging and proper data sanitization
       const documentData: DealDocumentInsert = {

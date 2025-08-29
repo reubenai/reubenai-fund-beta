@@ -61,16 +61,17 @@ export class SimplePermissionService {
       }
 
       // Then get fund organization (separate query to avoid join complexity)
-      const { data: fund } = await supabase
+      const { data: fund, error: fundError } = await supabase
         .from('funds')
         .select('organization_id')
         .eq('id', deal.fund_id)
-        .single();
+        .maybeSingle();
 
-      if (!fund) {
+      if (fundError || !fund) {
+        console.error('❌ Fund lookup error:', fundError);
         return {
           canAccess: false,
-          reason: 'Fund not found'
+          reason: `Fund not found: ${fundError?.message || 'Unknown error'}`
         };
       }
 
