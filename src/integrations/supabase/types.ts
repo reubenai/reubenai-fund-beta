@@ -947,6 +947,150 @@ export type Database = {
         }
         Relationships: []
       }
+      blueprint_v2_scores_pe: {
+        Row: {
+          analysis_version: number | null
+          category_id: string
+          concerns: string[] | null
+          confidence_score: number | null
+          created_at: string
+          data_completeness_score: number | null
+          data_sources: Json | null
+          deal_id: string
+          engine_name: string | null
+          fund_id: string
+          id: string
+          insights: string[] | null
+          organization_id: string
+          reasoning: string | null
+          recommendations: string[] | null
+          score: number
+          strengths: string[] | null
+          subcategory_id: string
+          updated_at: string
+          validation_flags: Json | null
+          weight: number | null
+        }
+        Insert: {
+          analysis_version?: number | null
+          category_id: string
+          concerns?: string[] | null
+          confidence_score?: number | null
+          created_at?: string
+          data_completeness_score?: number | null
+          data_sources?: Json | null
+          deal_id: string
+          engine_name?: string | null
+          fund_id: string
+          id?: string
+          insights?: string[] | null
+          organization_id: string
+          reasoning?: string | null
+          recommendations?: string[] | null
+          score: number
+          strengths?: string[] | null
+          subcategory_id: string
+          updated_at?: string
+          validation_flags?: Json | null
+          weight?: number | null
+        }
+        Update: {
+          analysis_version?: number | null
+          category_id?: string
+          concerns?: string[] | null
+          confidence_score?: number | null
+          created_at?: string
+          data_completeness_score?: number | null
+          data_sources?: Json | null
+          deal_id?: string
+          engine_name?: string | null
+          fund_id?: string
+          id?: string
+          insights?: string[] | null
+          organization_id?: string
+          reasoning?: string | null
+          recommendations?: string[] | null
+          score?: number
+          strengths?: string[] | null
+          subcategory_id?: string
+          updated_at?: string
+          validation_flags?: Json | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
+      blueprint_v2_scores_vc: {
+        Row: {
+          analysis_version: number | null
+          category_id: string
+          concerns: string[] | null
+          confidence_score: number | null
+          created_at: string
+          data_completeness_score: number | null
+          data_sources: Json | null
+          deal_id: string
+          engine_name: string | null
+          fund_id: string
+          id: string
+          insights: string[] | null
+          organization_id: string
+          reasoning: string | null
+          recommendations: string[] | null
+          score: number
+          strengths: string[] | null
+          subcategory_id: string
+          updated_at: string
+          validation_flags: Json | null
+          weight: number | null
+        }
+        Insert: {
+          analysis_version?: number | null
+          category_id: string
+          concerns?: string[] | null
+          confidence_score?: number | null
+          created_at?: string
+          data_completeness_score?: number | null
+          data_sources?: Json | null
+          deal_id: string
+          engine_name?: string | null
+          fund_id: string
+          id?: string
+          insights?: string[] | null
+          organization_id: string
+          reasoning?: string | null
+          recommendations?: string[] | null
+          score: number
+          strengths?: string[] | null
+          subcategory_id: string
+          updated_at?: string
+          validation_flags?: Json | null
+          weight?: number | null
+        }
+        Update: {
+          analysis_version?: number | null
+          category_id?: string
+          concerns?: string[] | null
+          confidence_score?: number | null
+          created_at?: string
+          data_completeness_score?: number | null
+          data_sources?: Json | null
+          deal_id?: string
+          engine_name?: string | null
+          fund_id?: string
+          id?: string
+          insights?: string[] | null
+          organization_id?: string
+          reasoning?: string | null
+          recommendations?: string[] | null
+          score?: number
+          strengths?: string[] | null
+          subcategory_id?: string
+          updated_at?: string
+          validation_flags?: Json | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
       circuit_breaker_logs: {
         Row: {
           created_at: string
