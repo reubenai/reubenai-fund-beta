@@ -46,18 +46,12 @@ export class SimplePermissionService {
         };
       }
 
-      // Get deal and fund information to find organization
+      // Get deal information first
       const { data: deal } = await supabase
         .from('deals')
-        .select(`
-          id,
-          fund_id,
-          funds (
-            organization_id
-          )
-        `)
+        .select('id, fund_id')
         .eq('id', dealId)
-        .single();
+        .maybeSingle();
 
       if (!deal) {
         return {
@@ -66,7 +60,21 @@ export class SimplePermissionService {
         };
       }
 
-      const dealOrganizationId = (deal.funds as any)?.organization_id;
+      // Then get fund organization (separate query to avoid join complexity)
+      const { data: fund } = await supabase
+        .from('funds')
+        .select('organization_id')
+        .eq('id', deal.fund_id)
+        .single();
+
+      if (!fund) {
+        return {
+          canAccess: false,
+          reason: 'Fund not found'
+        };
+      }
+
+      const dealOrganizationId = fund.organization_id;
       
       // Check if organizations match
       const canAccess = profile.organization_id === dealOrganizationId;
