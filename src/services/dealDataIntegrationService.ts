@@ -11,15 +11,19 @@ export interface DataIntegrationRequest {
   fundId: string;
   organizationId: string;
   fundType: AnyFundType;
-  triggerReason?: 'new_deal' | 'enrichment_update' | 'manual_refresh';
+  triggerReason?: 'new_deal' | 'enrichment_update' | 'manual_refresh' | 'waterfall_processing';
 }
 
 export interface DataIntegrationResult {
   success: boolean;
   vcDataPointsCreated?: boolean;
   peDataPointsCreated?: boolean;
+  dataPointsCreated: number;
+  completenessScore: number;
   dataCompleteness: number;
   sourceEnginesProcessed: string[];
+  processedSources: string[];
+  errors: string[];
   error?: string;
 }
 
@@ -44,8 +48,12 @@ export class DealDataIntegrationService {
       console.error('❌ Deal data integration failed:', error);
       return {
         success: false,
+        dataPointsCreated: 0,
+        completenessScore: 0,
         dataCompleteness: 0,
         sourceEnginesProcessed: [],
+        processedSources: [],
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
@@ -57,8 +65,9 @@ export class DealDataIntegrationService {
   private static async integrateVCData(request: DataIntegrationRequest): Promise<DataIntegrationResult> {
     const sourceEngines: string[] = [];
     
-    // Fetch data from all VC enrichment sources
+    // Fetch data from all VC enrichment sources including documents
     const [
+      documentData,
       crunchbaseData,
       linkedinData,
       linkedinProfileData,
@@ -66,6 +75,7 @@ export class DealDataIntegrationService {
       perplexityFounderData,
       perplexityMarketData
     ] = await Promise.all([
+      this.fetchDocumentData(request.dealId),
       this.fetchCrunchbaseData(request.dealId),
       this.fetchLinkedInData(request.dealId),
       this.fetchLinkedInProfileData(request.dealId),
@@ -77,9 +87,10 @@ export class DealDataIntegrationService {
     // Build consolidated VC datapoints
     const consolidatedData = this.buildVCDataPoints(
       request,
-      { crunchbaseData, linkedinData, linkedinProfileData, perplexityCompanyData, perplexityFounderData, perplexityMarketData }
+      { documentData, crunchbaseData, linkedinData, linkedinProfileData, perplexityCompanyData, perplexityFounderData, perplexityMarketData }
     );
     
+    if (documentData) sourceEngines.push('documents');
     if (crunchbaseData) sourceEngines.push('crunchbase-export');
     if (linkedinData) sourceEngines.push('linkedin-export');
     if (linkedinProfileData) sourceEngines.push('linkedin-profile-export');
@@ -107,37 +118,53 @@ export class DealDataIntegrationService {
     return {
       success: true,
       vcDataPointsCreated: true,
+      dataPointsCreated: 1,
+      completenessScore: dataCompleteness,
       dataCompleteness,
-      sourceEnginesProcessed: sourceEngines
+      sourceEnginesProcessed: sourceEngines,
+      processedSources: sourceEngines,
+      errors: []
     };
   }
   
   /**
-   * Integrates PE-specific data (currently uses available sources, can be extended for PE-specific tables)
+   * Integrates PE-specific data including new PE Perplexity sources and documents
    */
   private static async integratePEData(request: DataIntegrationRequest): Promise<DataIntegrationResult> {
     const sourceEngines: string[] = [];
     
-    // For now, use available sources (can be extended when PE-specific tables are added)
+    // Fetch data from all PE enrichment sources including PE-specific Perplexity and documents
     const [
+      documentData,
       crunchbaseData,
       linkedinData,
-      linkedinProfileData
+      linkedinProfileData,
+      perplexityCompanyDataPE,
+      perplexityFounderDataPE,
+      perplexityMarketDataPE
     ] = await Promise.all([
+      this.fetchDocumentData(request.dealId),
       this.fetchCrunchbaseData(request.dealId),
       this.fetchLinkedInData(request.dealId),
-      this.fetchLinkedInProfileData(request.dealId)
+      this.fetchLinkedInProfileData(request.dealId),
+      this.fetchPerplexityCompanyDataPE(request.dealId),
+      this.fetchPerplexityFounderDataPE(request.dealId),
+      this.fetchPerplexityMarketDataPE(request.dealId)
     ]);
     
     // Build consolidated PE datapoints
     const consolidatedData = this.buildPEDataPoints(
       request,
-      { crunchbaseData, linkedinData, linkedinProfileData }
+      { documentData, crunchbaseData, linkedinData, linkedinProfileData, perplexityCompanyDataPE, perplexityFounderDataPE, perplexityMarketDataPE }
     );
     
+    if (documentData) sourceEngines.push('documents');
     if (crunchbaseData) sourceEngines.push('crunchbase-export');
     if (linkedinData) sourceEngines.push('linkedin-export');
     if (linkedinProfileData) sourceEngines.push('linkedin-profile-export');
+    if (perplexityCompanyDataPE) sourceEngines.push('perplexity-company-pe');
+    if (perplexityFounderDataPE) sourceEngines.push('perplexity-founder-pe');
+    if (perplexityMarketDataPE) sourceEngines.push('perplexity-market-pe');
     
     // Upsert into PE datapoints table
     const { error } = await supabase
@@ -159,14 +186,29 @@ export class DealDataIntegrationService {
     return {
       success: true,
       peDataPointsCreated: true,
+      dataPointsCreated: 1,
+      completenessScore: dataCompleteness,
       dataCompleteness,
-      sourceEnginesProcessed: sourceEngines
+      sourceEnginesProcessed: sourceEngines,
+      processedSources: sourceEngines,
+      errors: []
     };
   }
   
   /**
    * Fetch methods for each enrichment source
    */
+  
+  private static async fetchDocumentData(dealId: string) {
+    const { data } = await supabase
+      .from('deal_documents')
+      .select('extracted_text, parsed_data, document_summary, document_type, processing_status')
+      .eq('deal_id', dealId)
+      .eq('processing_status', 'completed')
+      .order('created_at', { ascending: false });
+    
+    return data && data.length > 0 ? data : null;
+  }
   private static async fetchCrunchbaseData(dealId: string) {
     const { data } = await supabase
       .from('deal_enrichment_crunchbase_export')
@@ -239,11 +281,49 @@ export class DealDataIntegrationService {
     return data || null;
   }
   
+  // PE-specific Perplexity fetch methods
+  private static async fetchPerplexityCompanyDataPE(dealId: string) {
+    const { data } = await supabase
+      .from('deal_enrichment_perplexity_company_export_pe')
+      .select('*')
+      .eq('deal_id', dealId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    
+    return data || null;
+  }
+  
+  private static async fetchPerplexityFounderDataPE(dealId: string) {
+    const { data } = await supabase
+      .from('deal_enrichment_perplexity_founder_export_pe')
+      .select('*')
+      .eq('deal_id', dealId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    
+    return data || null;
+  }
+  
+  private static async fetchPerplexityMarketDataPE(dealId: string) {
+    const { data } = await supabase
+      .from('deal_enrichment_perplexity_market_export_pe')
+      .select('*')
+      .eq('deal_id', dealId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    
+    return data || null;
+  }
+  
   /**
    * Builds consolidated VC datapoints from various sources
    */
   private static buildVCDataPoints(request: DataIntegrationRequest, sources: any) {
     const { 
+      documentData,
       crunchbaseData, 
       linkedinData, 
       linkedinProfileData, 
@@ -251,6 +331,13 @@ export class DealDataIntegrationService {
       perplexityFounderData, 
       perplexityMarketData 
     } = sources;
+    
+    // Extract document insights
+    const documentInsights = documentData ? documentData.map((doc: any) => ({
+      type: doc.document_type,
+      summary: doc.document_summary,
+      keyData: doc.parsed_data
+    })) : [];
     
     return {
       deal_id: request.dealId,
@@ -277,6 +364,10 @@ export class DealDataIntegrationService {
       innovation_record: perplexityFounderData?.innovation_track_record || [],
       academic_background: perplexityFounderData?.education || [],
       
+      // Document-derived data points
+      document_insights: documentInsights,
+      document_derived_metrics: this.extractDocumentMetrics(documentData),
+      
       // Financial Data Points
       revenue_statements: perplexityCompanyData?.financial_metrics || {},
       unit_economics_breakdown: perplexityCompanyData?.business_model || {},
@@ -297,42 +388,78 @@ export class DealDataIntegrationService {
   }
   
   /**
-   * Builds consolidated PE datapoints from available sources
+   * Builds consolidated PE datapoints from available sources including PE Perplexity and documents
    */
   private static buildPEDataPoints(request: DataIntegrationRequest, sources: any) {
-    const { crunchbaseData, linkedinData, linkedinProfileData } = sources;
+    const { 
+      documentData, 
+      crunchbaseData, 
+      linkedinData, 
+      linkedinProfileData, 
+      perplexityCompanyDataPE, 
+      perplexityFounderDataPE, 
+      perplexityMarketDataPE 
+    } = sources;
+    
+    // Extract document insights
+    const documentInsights = documentData ? documentData.map((doc: any) => ({
+      type: doc.document_type,
+      summary: doc.document_summary,
+      keyData: doc.parsed_data
+    })) : [];
     
     return {
       deal_id: request.dealId,
       fund_id: request.fundId,
       organization_id: request.organizationId,
       
-      // Market & Strategic Data Points
+      // Market & Strategic Data Points (enhanced with PE Perplexity data)
       geography: crunchbaseData?.location || null,
-      industry_focus: crunchbaseData?.industries || null,
-      market_position: crunchbaseData?.company_type || null,
-      brand_strength: crunchbaseData?.heat_trend ? 75 : 50, // Estimated from trend data
+      industry_focus: crunchbaseData?.industries || perplexityCompanyDataPE?.industry_trends?.[0] || null,
+      market_position: crunchbaseData?.company_type || perplexityCompanyDataPE?.market_position || null,
+      brand_strength: crunchbaseData?.heat_trend ? 75 : 50,
+      market_share: perplexityMarketDataPE?.market_share || null,
       
-      // Financial Performance Data Points (estimated from available data)
-      revenue_growth_rate: crunchbaseData?.monthly_visits_growth || null,
-      cash_flow_generation: {},
-      historical_financial_performance: {},
+      // Financial Performance Data Points (enhanced with PE data)
+      revenue_growth_rate: perplexityCompanyDataPE?.growth_metrics?.revenue_growth || crunchbaseData?.monthly_visits_growth || null,
+      ebitda_margin: perplexityCompanyDataPE?.financial_highlights?.ebitda_margin || null,
+      ebitda_growth_rate: perplexityCompanyDataPE?.financial_highlights?.ebitda_growth || null,
+      cash_flow_generation: perplexityCompanyDataPE?.financial_highlights?.cash_flow || {},
+      historical_financial_performance: perplexityCompanyDataPE?.financial_highlights || {},
       
-      // Operational Excellence Data Points
-      operational_efficiency_metrics: {},
-      technology_infrastructure: crunchbaseData?.builtwith_tech || {},
+      // Operational Excellence Data Points (PE-specific)
+      operational_efficiency_metrics: perplexityCompanyDataPE?.operational_metrics || {},
+      technology_infrastructure: crunchbaseData?.builtwith_tech || perplexityCompanyDataPE?.technology_infrastructure || {},
+      process_optimization_potential: perplexityCompanyDataPE?.key_success_factors || [],
+      cost_structure_analysis: perplexityCompanyDataPE?.operational_metrics?.cost_structure || {},
       
-      // Management & Governance Data Points
-      management_quality_assessment: {},
-      leadership_track_record: {},
+      // Management & Governance Data Points (enhanced with founder data)
+      management_quality_assessment: perplexityFounderDataPE?.leadership_experience || {},
+      leadership_track_record: perplexityFounderDataPE?.track_record || [],
+      succession_planning: perplexityFounderDataPE?.succession_planning || {},
+      governance_structure: perplexityFounderDataPE?.governance_best_practices || {},
       
-      // Value Creation Data Points
-      organic_growth_potential: {},
-      expansion_markets: [],
+      // Value Creation Data Points (PE-specific enhancements)
+      organic_growth_potential: perplexityMarketDataPE?.growth_drivers || {},
+      expansion_markets: perplexityMarketDataPE?.target_market || [],
+      acquisition_opportunities: perplexityMarketDataPE?.consolidation_opportunities || [],
+      cost_reduction_opportunities: perplexityCompanyDataPE?.operational_metrics?.cost_optimization || {},
+      margin_improvement_opportunities: perplexityCompanyDataPE?.operational_metrics?.margin_improvement || [],
+      
+      // Market Intelligence (from PE Perplexity data)
+      competitive_advantages: perplexityCompanyDataPE?.key_success_factors || [],
+      competitive_landscape: perplexityMarketDataPE?.competitive_analysis || {},
+      market_size_analysis: perplexityMarketDataPE?.market_size_analysis || {},
+      customer_concentration: perplexityMarketDataPE?.customer_segments || {},
+      
+      // Document-derived insights
+      document_insights: documentInsights,
+      document_derived_metrics: this.extractDocumentMetrics(documentData),
       
       // ESG & Regulatory Data Points
-      esg_score: null,
-      regulatory_compliance: {},
+      esg_score: perplexityCompanyDataPE?.esg_score || null,
+      regulatory_compliance: perplexityMarketDataPE?.regulatory_environment || {},
+      environmental_impact_assessment: perplexityCompanyDataPE?.environmental_impact || {},
       
       // Metadata
       data_completeness_score: this.calculateRowCompleteness(sources),
@@ -361,10 +488,39 @@ export class DealDataIntegrationService {
   }
   
   /**
+   * Extract metrics from document analysis
+   */
+  private static extractDocumentMetrics(documents: any): any {
+    if (!documents || documents.length === 0) return {};
+    
+    const metrics: any = {
+      document_count: documents.length,
+      document_types: documents.map((doc: any) => doc.document_type).filter(Boolean),
+      total_content_length: documents.reduce((sum: number, doc: any) => sum + (doc.extracted_text?.length || 0), 0),
+      key_financial_data: [],
+      business_metrics: []
+    };
+    
+    // Extract financial data from parsed documents
+    documents.forEach((doc: any) => {
+      if (doc.parsed_data && typeof doc.parsed_data === 'object') {
+        // Look for financial metrics in parsed data
+        Object.entries(doc.parsed_data).forEach(([key, value]) => {
+          if (key.toLowerCase().includes('revenue') || key.toLowerCase().includes('financial')) {
+            metrics.key_financial_data.push({ metric: key, value, source: doc.document_type });
+          }
+        });
+      }
+    });
+    
+    return metrics;
+  }
+
+  /**
    * Calculate overall data completeness for fund type
    */
   private static calculateDataCompleteness(sourceEngines: string[], fundType: 'vc' | 'pe'): number {
-    const expectedSources = fundType === 'vc' ? 6 : 3; // VC has more specialized sources
+    const expectedSources = fundType === 'vc' ? 7 : 7; // Both now have same number of sources (documents + 6 enrichment engines)
     return Math.round((sourceEngines.length / expectedSources) * 100);
   }
   
