@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useEmergencyDealChecker } from './useEmergencyDealChecker';
 
 // Master kill switch for the entire analysis system + emergency deal blocking
 export function useAnalysisSystemKillSwitch() {
-  const [isAnalysisDisabled, setIsAnalysisDisabled] = useState(true); // Default to disabled
+  const [isAnalysisDisabled, setIsAnalysisDisabled] = useState(false); // Default to enabled
   const { isBlacklisted } = useEmergencyDealChecker();
 
   // Hard disable all analysis operations
@@ -17,9 +18,11 @@ export function useAnalysisSystemKillSwitch() {
     console.log('✅ Analysis system enabled');
   };
 
-  // Initialize as disabled
+  // Check database switch on initialization (simplified for now)
   useEffect(() => {
-    disableAnalysisSystem();
+    // For now, keep system enabled by default
+    // TODO: Add proper database-backed switch when needed
+    console.log('📊 Analysis system enabled by default');
   }, []);
 
   // Emergency check for specific deals

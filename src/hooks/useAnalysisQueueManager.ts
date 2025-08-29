@@ -43,7 +43,7 @@ export function useAnalysisQueueManager() {
       setIsProcessing(true);
       console.log('🔄 Starting controlled queue processing...');
 
-      const { data, error } = await supabase.functions.invoke('analysis-queue-processor');
+      const { data, error } = await supabase.functions.invoke('universal-analysis-processor');
 
       if (error) {
         console.error('❌ Queue processing failed:', error);

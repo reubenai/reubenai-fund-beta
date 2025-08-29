@@ -70,7 +70,7 @@ export function useResilientAnalysisScheduler({
         console.log(`📬 Found ${queueCheck.length} queued analyses (max ${maxProcessingItems})`);
 
         // Process with controlled invocation
-        const { data, error } = await supabase.functions.invoke('enhanced-analysis-queue-processor');
+        const { data, error } = await supabase.functions.invoke('universal-analysis-processor');
 
         if (error) {
           throw new Error(`Queue processing failed: ${error.message}`);

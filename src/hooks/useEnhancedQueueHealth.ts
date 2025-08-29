@@ -85,7 +85,7 @@ export function useEnhancedQueueHealth() {
 
   const forceQueueProcessing = useCallback(async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('enhanced-analysis-queue-processor');
+      const { data, error } = await supabase.functions.invoke('universal-analysis-processor');
       
       if (error) throw error;
       

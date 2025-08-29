@@ -101,7 +101,7 @@ export function useAnalysisQueueResilience(fundId?: string): QueueResilience {
 
   const forceProcessQueue = useCallback(async () => {
     try {
-      await supabase.functions.invoke('analysis-queue-processor', {
+      await supabase.functions.invoke('universal-analysis-processor', {
         body: { forceProcess: true, maxConcurrent: 5 }
       });
     } catch (error) {

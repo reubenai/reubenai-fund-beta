@@ -41,7 +41,7 @@ export function useEnhancedAnalysisQueue() {
       if (immediate) {
         console.log('🚀 Triggering immediate queue processing...');
         
-        const { data: processResult, error: processError } = await supabase.functions.invoke('analysis-queue-processor');
+        const { data: processResult, error: processError } = await supabase.functions.invoke('universal-analysis-processor');
         
         if (processError) {
           console.error('❌ Immediate processing failed:', processError);
@@ -91,8 +91,8 @@ export function useEnhancedAnalysisQueue() {
         variant: "default"
       });
 
-      // Use the force processor to handle all pending items
-      const { data, error } = await supabase.functions.invoke('force-analysis-queue-processor');
+      // Use the universal processor to handle all pending items
+      const { data, error } = await supabase.functions.invoke('universal-analysis-processor');
       
       if (error) {
         console.error('❌ Backlog processing failed:', error);
