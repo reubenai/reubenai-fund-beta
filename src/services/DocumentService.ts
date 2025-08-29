@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
+import { simplePermissionService } from './SimplePermissionService';
 
 type DealDocument = Database['public']['Tables']['deal_documents']['Row'];
 type DealDocumentInsert = Database['public']['Tables']['deal_documents']['Insert'];
@@ -64,16 +65,30 @@ class DocumentService {
         throw new Error('You must be signed in to upload documents');
       }
 
-      console.log('🔐 User authenticated:', { 
-        userId: userData.user.id, 
-        email: userData.user.email,
-        dealId: input.dealId 
-      });
+      // Use simple permission service to check upload permissions
+      onProgress?.({ progress: 10, status: 'uploading', message: 'Checking permissions...' });
+      
+      const permissionCheck = await simplePermissionService.checkDocumentUploadPermission(input.dealId);
+      if (!permissionCheck.canAccess) {
+        console.error('🔒 Permission denied:', permissionCheck.reason);
+        throw new Error(`Access denied: ${permissionCheck.reason}`);
+      }
 
-      // First get basic deal info
+      console.log('✅ Upload permission granted:', permissionCheck.reason);
+
+      // Get deal and fund info for document metadata
       const { data: dealData, error: dealError } = await supabase
         .from('deals')
-        .select('id, fund_id, company_name')
+        .select(`
+          id, 
+          fund_id, 
+          company_name,
+          funds (
+            id,
+            name,
+            organization_id
+          )
+        `)
         .eq('id', input.dealId)
         .single();
 
@@ -82,67 +97,13 @@ class DocumentService {
         throw new Error(`Deal not found: ${dealError?.message || 'Unknown error'}`);
       }
 
-      // Then get fund and organization info
-      const { data: fundData, error: fundError } = await supabase
-        .from('funds')
-        .select('id, name, organization_id')
-        .eq('id', dealData.fund_id)
-        .single();
-
-      if (fundError || !fundData) {
-        console.error('💼 Fund lookup failed:', fundError);
-        throw new Error(`Fund not found: ${fundError?.message || 'Unknown error'}`);
-      }
-
+      const fundData = dealData.funds as any;
       console.log('💼 Deal and fund found:', { 
         dealId: dealData.id, 
         fundId: dealData.fund_id, 
         companyName: dealData.company_name,
         organizationId: fundData.organization_id
       });
-
-      // Check if user is super admin first
-      const isSuperAdmin = userData.user.email?.includes('@goreuben.com') || 
-                          userData.user.email?.includes('@reuben.com');
-
-      console.log('🔐 Super admin check:', { 
-        email: userData.user.email,
-        isSuperAdmin,
-        organizationId: fundData.organization_id 
-      });
-
-      // Super admins can upload to any organization
-      if (!isSuperAdmin) {
-        // For regular users, verify organization access
-        const { data: accessData, error: accessError } = await supabase
-          .from('profiles')
-          .select('user_id, organization_id, role, is_deleted')
-          .eq('user_id', userData.user.id)
-          .eq('organization_id', fundData.organization_id)
-          .maybeSingle();
-
-        if (accessError) {
-          console.error('🔒 Organization access check failed:', accessError);
-          throw new Error(`Access validation failed: ${accessError.message}`);
-        }
-
-        if (!accessData || accessData.is_deleted) {
-          console.error('🔒 User lacks access to organization:', {
-            userId: userData.user.id,
-            organizationId: fundData.organization_id,
-            accessData
-          });
-          throw new Error('Access denied: You do not have permission to upload documents for this deal');
-        }
-
-        console.log('✅ Organization access verified:', { 
-          userId: accessData.user_id,
-          organizationId: accessData.organization_id,
-          userRole: accessData.role
-        });
-      } else {
-        console.log('✅ Super admin access granted for cross-organization upload');
-      }
 
 
       // Generate unique filename
@@ -173,11 +134,14 @@ class DocumentService {
 
       onProgress?.({ progress: 60, status: 'processing', message: 'Creating document record...' });
 
+      // Get user information for metadata
+      const userInfo = await simplePermissionService.getUserInfo();
+
       // Create document record with enhanced logging and proper data sanitization
       const documentData: DealDocumentInsert = {
         deal_id: input.dealId,
         fund_id: dealData.fund_id,
-        organization_id: fundData.organization_id,
+        organization_id: userInfo.organizationId || fundData.organization_id,
         name: input.file.name,
         file_path: uploadData.path,          // e.g. "<dealId>/<timestamp>_file.ext"
         storage_path: uploadData.path,       // Use same path for consistency
@@ -281,18 +245,30 @@ class DocumentService {
   }
 
   async getDocumentsByDeal(dealId: string): Promise<DealDocument[]> {
-    const { data, error } = await supabase
-      .from('deal_documents')
-      .select('*')
-      .eq('deal_id', dealId)
-      .order('created_at', { ascending: false });
+    try {
+      // Check if user has access to the deal
+      const permissionCheck = await simplePermissionService.checkDealAccess(dealId);
+      if (!permissionCheck.canAccess) {
+        console.error('🔒 Deal access denied:', permissionCheck.reason);
+        throw new Error(`Access denied: ${permissionCheck.reason}`);
+      }
 
-    if (error) {
-      console.error('Error fetching documents:', error);
+      const { data, error } = await supabase
+        .from('deal_documents')
+        .select('*')
+        .eq('deal_id', dealId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching documents:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getDocumentsByDeal:', error);
       return [];
     }
-
-    return data || [];
   }
 
   async deleteDocument(documentId: string): Promise<boolean> {
