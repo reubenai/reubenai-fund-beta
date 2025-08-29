@@ -3,7 +3,7 @@ import { useAnalysisOnceEnforcement } from './useAnalysisOnceEnforcement';
 import { useFundMemoryIsolation } from './useFundMemoryIsolation';
 import { useEnhancedAnalysisQueue } from './useEnhancedAnalysisQueue';
 import { useDealDataIntegration } from './useDealDataIntegration';
-import { DealAnalysisOrchestrationService } from '@/services/dealAnalysisOrchestrationService';
+import { SimplifiedOrchestrationService } from '@/services/simplifiedOrchestrationService';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AnyFundType } from '@/utils/fundTypeConversion';
@@ -43,14 +43,7 @@ export function useAnalysisIntegration() {
 
       const { data: deal, error: dealError } = await supabase
         .from('deals')
-        .select(`
-          *,
-          funds!inner(
-            id,
-            fund_type,
-            organization_id
-          )
-        `)
+        .select('*')
         .eq('id', dealId)
         .single();
 
@@ -58,12 +51,22 @@ export function useAnalysisIntegration() {
         return { success: false, message: "Could not fetch deal information" };
       }
 
+      const { data: fund, error: fundError } = await supabase
+        .from('funds')
+        .select('fund_type, organization_id')
+        .eq('id', fundId)
+        .single();
+
+      if (fundError || !fund) {
+        return { success: false, message: "Could not fetch fund information" };
+      }
+
       // Step 4: Trigger the new orchestrated analysis pipeline
-      const orchestrationResult = await DealAnalysisOrchestrationService.orchestrateAnalysis({
+      const orchestrationResult = await SimplifiedOrchestrationService.orchestrateAnalysis({
         dealId,
         fundId,
-        organizationId: deal.funds.organization_id,
-        fundType: deal.funds.fund_type as AnyFundType,
+        organizationId: fund.organization_id,
+        fundType: fund.fund_type as AnyFundType,
         triggerReason: triggerType === 'initial' ? 'new_deal' : 
                       triggerType === 'document_upload' ? 'document_upload' :
                       'manual_trigger',
@@ -78,14 +81,14 @@ export function useAnalysisIntegration() {
 
         toast({
           title: "Analysis Orchestration Started",
-          description: `End-to-end analysis pipeline initiated for ${deal.funds.fund_type} fund`,
+          description: `End-to-end analysis pipeline initiated with ${orchestrationResult.dataCompleteness}% data completeness`,
           variant: "default"
         });
 
         return { 
           success: true, 
           orchestrationId: orchestrationResult.orchestrationId,
-          message: "Analysis orchestration started successfully" 
+          message: orchestrationResult.message 
         };
       }
 

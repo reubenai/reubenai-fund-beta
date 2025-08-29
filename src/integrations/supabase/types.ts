@@ -624,6 +624,54 @@ export type Database = {
         }
         Relationships: []
       }
+      analysis_orchestration_tracking: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          deal_id: string
+          estimated_completion: string | null
+          fund_id: string
+          id: string
+          last_updated: string
+          organization_id: string
+          overall_status: string
+          priority: string
+          progress: number
+          stages: Json
+          trigger_reason: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          deal_id: string
+          estimated_completion?: string | null
+          fund_id: string
+          id?: string
+          last_updated?: string
+          organization_id: string
+          overall_status?: string
+          priority?: string
+          progress?: number
+          stages?: Json
+          trigger_reason: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          deal_id?: string
+          estimated_completion?: string | null
+          fund_id?: string
+          id?: string
+          last_updated?: string
+          organization_id?: string
+          overall_status?: string
+          priority?: string
+          progress?: number
+          stages?: Json
+          trigger_reason?: string
+        }
+        Relationships: []
+      }
       analysis_quality_monitor: {
         Row: {
           analysis_type: string
