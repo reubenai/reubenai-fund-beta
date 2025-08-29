@@ -1,5 +1,8 @@
 project_id = "bueuioozcgmedkuxawju"
 
+[functions.custom-access-token-hook]
+verify_jwt = false
+
 [functions.crm-sync-engine]
 verify_jwt = false
 
