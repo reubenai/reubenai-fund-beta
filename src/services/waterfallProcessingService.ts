@@ -266,7 +266,7 @@ export class WaterfallProcessingService {
       .from('deal_documents')
       .select('id')
       .eq('deal_id', dealId)
-      .eq('processing_status', 'completed')
+      .or('processing_status.eq.processed,processing_status.eq.completed')
       .limit(1);
     
     return !error && data && data.length > 0;
@@ -277,6 +277,7 @@ export class WaterfallProcessingService {
       .from('deal_enrichment_crunchbase_export')
       .select('id')
       .eq('deal_id', dealId)
+      .or('processing_status.eq.processed,processing_status.eq.completed')
       .limit(1);
     
     return !error && data && data.length > 0;
@@ -287,6 +288,7 @@ export class WaterfallProcessingService {
       .from('deal_enrichment_linkedin_profile_export')
       .select('id')
       .eq('deal_id', dealId)
+      .or('processing_status.eq.processed,processing_status.eq.completed')
       .limit(1);
     
     return !error && data && data.length > 0;
@@ -297,6 +299,7 @@ export class WaterfallProcessingService {
       .from('deal_enrichment_linkedin_export')
       .select('id')
       .eq('deal_id', dealId)
+      .or('processing_status.eq.processed,processing_status.eq.completed')
       .limit(1);
     
     return !error && data && data.length > 0;
@@ -311,6 +314,7 @@ export class WaterfallProcessingService {
       .from(tableName)
       .select('id')
       .eq('deal_id', dealId)
+      .or('processing_status.eq.processed,processing_status.eq.completed')
       .limit(1);
     
     return !error && data && data.length > 0;
@@ -325,6 +329,7 @@ export class WaterfallProcessingService {
       .from(tableName)
       .select('id')
       .eq('deal_id', dealId)
+      .or('processing_status.eq.processed,processing_status.eq.completed')
       .limit(1);
     
     return !error && data && data.length > 0;
@@ -339,6 +344,7 @@ export class WaterfallProcessingService {
       .from(tableName)
       .select('id')
       .eq('deal_id', dealId)
+      .or('processing_status.eq.processed,processing_status.eq.completed')
       .limit(1);
     
     return !error && data && data.length > 0;
