@@ -71,6 +71,16 @@ export class SimplePermissionService {
       // Check if organizations match
       const canAccess = profile.organization_id === dealOrganizationId;
 
+      // Add debugging
+      console.log('🔍 [SimplePermissionService] Deal access check:', {
+        dealId,
+        userOrgId: profile.organization_id,
+        dealOrgId: dealOrganizationId,
+        userRole: profile.role,
+        canAccess,
+        userEmail
+      });
+
       return {
         canAccess,
         userOrganizationId: profile.organization_id,

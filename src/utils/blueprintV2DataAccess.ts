@@ -50,17 +50,35 @@ export class BlueprintV2DataAccess {
    * Fetch Blueprint v2 scores for a deal
    */
   async getBlueprintScores(dealId: string, fundType: FundType): Promise<BlueprintV2Scores | null> {
-    const tableName = this.getTableName(fundType);
+    const templateType = toTemplateFundType(fundType);
     
-    const { data: scoresData, error } = await supabase
-      .from(tableName)
-      .select('*')
-      .eq('deal_id', dealId)
-      .order('category_id', { ascending: true })
-      .order('subcategory_id', { ascending: true });
+    let scoresData: BlueprintV2ScoreRow[] | null = null;
+    let error: any = null;
+
+    if (templateType === 'vc') {
+      const result = await supabase
+        .from('blueprint_v2_scores_vc')
+        .select('*')
+        .eq('deal_id', dealId)
+        .order('category_id', { ascending: true })
+        .order('subcategory_id', { ascending: true });
+      
+      scoresData = result.data as BlueprintV2ScoreRow[];
+      error = result.error;
+    } else {
+      const result = await supabase
+        .from('blueprint_v2_scores_pe')
+        .select('*')
+        .eq('deal_id', dealId)
+        .order('category_id', { ascending: true })
+        .order('subcategory_id', { ascending: true });
+      
+      scoresData = result.data as BlueprintV2ScoreRow[];
+      error = result.error;
+    }
 
     if (error) {
-      console.error(`Error fetching Blueprint v2 scores from ${tableName}:`, error);
+      console.error(`Error fetching Blueprint v2 scores for ${templateType}:`, error);
       return null;
     }
 
@@ -75,22 +93,34 @@ export class BlueprintV2DataAccess {
    * Store Blueprint v2 scores for a deal
    */
   async storeBlueprintScores(scores: BlueprintV2Scores): Promise<boolean> {
-    const tableName = this.getTableName(scores.fund_type);
+    const templateType = toTemplateFundType(scores.fund_type);
     
     try {
       // Flatten categories and subcategories into rows
       const rows = this.transformBlueprintToRows(scores);
       
-      // Upsert rows (update if exists, insert if new)
-      const { error } = await supabase
-        .from(tableName)
-        .upsert(rows, {
-          onConflict: 'deal_id,category_id,subcategory_id',
-          ignoreDuplicates: false
-        });
+      let error: any = null;
+
+      if (templateType === 'vc') {
+        const result = await supabase
+          .from('blueprint_v2_scores_vc')
+          .upsert(rows, {
+            onConflict: 'deal_id,category_id,subcategory_id',
+            ignoreDuplicates: false
+          });
+        error = result.error;
+      } else {
+        const result = await supabase
+          .from('blueprint_v2_scores_pe')
+          .upsert(rows, {
+            onConflict: 'deal_id,category_id,subcategory_id',
+            ignoreDuplicates: false
+          });
+        error = result.error;
+      }
 
       if (error) {
-        console.error(`Error storing Blueprint v2 scores to ${tableName}:`, error);
+        console.error(`Error storing Blueprint v2 scores for ${templateType}:`, error);
         return false;
       }
 
