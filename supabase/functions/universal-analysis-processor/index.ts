@@ -47,62 +47,6 @@ interface QueueItem {
   scheduled_for: string;
 }
 
-async function getVectorContext(dealId: string, fundId: string) {
-  try {
-    console.log(`🔍 Getting vector context for deal: ${dealId}`);
-    
-    // Get deal details for context
-    const { data: deal } = await supabase
-      .from('deals')
-      .select('company_name, industry, description')
-      .eq('id', dealId)
-      .single();
-    
-    if (!deal) return { similarDeals: [], insights: [] };
-    
-    // Generate search query from deal information
-    const searchQuery = `${deal.company_name} ${deal.industry} ${deal.description || ''}`.trim();
-    
-    // Search for similar deals using vector similarity
-    const { data: vectorResults, error: vectorError } = await supabase.functions.invoke(
-      'vector-embedding-generator',
-      {
-        body: {
-          text: searchQuery,
-          contentType: 'deal_search',
-          fundId: fundId
-        }
-      }
-    );
-    
-    if (vectorError || !vectorResults?.embedding) {
-      console.warn('⚠️ Vector search unavailable, continuing without context');
-      return { similarDeals: [], insights: [] };
-    }
-    
-    // Find similar deals
-    const { data: similarDeals } = await supabase.rpc('vector_similarity_search', {
-      query_embedding: vectorResults.embedding,
-      content_type_filter: 'deal',
-      fund_id_filter: fundId,
-      similarity_threshold: 0.7,
-      max_results: 5
-    });
-    
-    return {
-      similarDeals: similarDeals || [],
-      insights: [
-        `Found ${similarDeals?.length || 0} similar deals for context`,
-        `Search query: ${searchQuery}`,
-        `Vector context enabled`
-      ]
-    };
-    
-  } catch (error) {
-    console.warn('⚠️ Vector context error:', error);
-    return { similarDeals: [], insights: ['Vector context unavailable'] };
-  }
-}
 
 async function processQueueItem(item: QueueItem): Promise<{ success: boolean; error?: string; processingTime: number }> {
   const startTime = Date.now();
@@ -111,13 +55,9 @@ async function processQueueItem(item: QueueItem): Promise<{ success: boolean; er
   console.log(`🧠 [${traceId}] Processing ${item.trigger_reason} for deal: ${item.deal_id}`);
   
   try {
-    // Get vector context for enhanced analysis
-    const vectorContext = await getVectorContext(item.deal_id, item.fund_id);
-    
-    // Enhanced metadata with vector context
+    // Enhanced metadata without vector context
     const enhancedMetadata = {
       ...item.metadata,
-      vectorContext,
       traceId,
       processingStarted: new Date().toISOString()
     };
