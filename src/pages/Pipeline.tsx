@@ -2,6 +2,7 @@ import React from 'react';
 import { EnhancedPipelineView } from '@/components/pipeline/EnhancedPipelineView';
 import { InvestmentStatusIndicator } from '@/components/pipeline/InvestmentStatusIndicator';
 import { useFund } from '@/contexts/FundContext';
+import { PanggilinWaterfallFix } from '@/components/debug/PanggilinWaterfallFix';
 
 import { useSearchParams } from 'react-router-dom';
 // Breadcrumbs removed - using Layout breadcrumbs
@@ -52,6 +53,9 @@ export default function Pipeline() {
           The v1 Deal Pipeline enables teams to upload and stage deals, attach key documents for AI parsing, and begin basic analysis—rubrics will refine as deal activity increases. Moving a Deal to Investment Committee stage will trigger IC workflows.
         </p>
       </div>
+
+      {/* Debug: Manual Waterfall Fix for Panggilin */}
+      <PanggilinWaterfallFix />
 
       
       {/* Controlled Analysis Status - Temporarily disabled */}

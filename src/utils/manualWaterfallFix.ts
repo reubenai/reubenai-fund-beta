@@ -19,7 +19,7 @@ export async function manuallyFixWaterfallProcessing(dealId: string, fundId: str
       fundId,
       organizationId,
       fundType,
-      triggerReason: 'manual_fix'
+      triggerReason: 'manual_refresh'
     });
     
     console.log('✅ Manual integration result:', result);
