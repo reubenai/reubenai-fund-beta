@@ -9,9 +9,11 @@ import { MarketOpportunityAssessment } from './MarketOpportunityAssessment';
 import { FounderTeamStrengthAssessment } from './FounderTeamStrengthAssessment';
 import { ProductIPMoatAssessment } from './ProductIPMoatAssessment';
 import { TractionFinancialFeasibilityAssessment } from './TractionFinancialFeasibilityAssessment';
+import { toTemplateFundType, type AnyFundType } from '@/utils/fundTypeConversion';
 
 interface ReubenAISummaryScoreProps {
   deal: Deal;
+  fundType: AnyFundType;
   onScoreCalculated?: (score: number) => void;
 }
 
@@ -37,7 +39,7 @@ const getOverallStatusLabel = (score: number): string => {
   return 'Needs Work';
 };
 
-export function ReubenAISummaryScore({ deal, onScoreCalculated }: ReubenAISummaryScoreProps) {
+export function ReubenAISummaryScore({ deal, fundType, onScoreCalculated }: ReubenAISummaryScoreProps) {
   const [overallScore, setOverallScore] = useState<number>(0);
   const [assessmentScores, setAssessmentScores] = useState<AssessmentScore[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,23 +61,26 @@ export function ReubenAISummaryScore({ deal, onScoreCalculated }: ReubenAISummar
             const scores: AssessmentScore[] = [];
           
           // Map rubric categories to assessment scores with proper weights
+          const templateFundType = toTemplateFundType(fundType);
+          const isPE = templateFundType === 'pe';
+          
           Object.entries(rubricBreakdown).forEach(([category, categoryData]: [string, any]) => {
             if (categoryData && typeof categoryData === 'object' && categoryData.score !== undefined) {
               let weight = 20; // Default weight
               
-              // Apply proper category weights based on fund type
+              // Apply proper category weights based on actual fund type
               if (category.toLowerCase().includes('financial')) {
-                weight = deal.fund_id ? 35 : 20; // PE: 35%, VC: 20%
+                weight = isPE ? 35 : 15; // PE: 35%, VC: 15%
               } else if (category.toLowerCase().includes('operational')) {
-                weight = deal.fund_id ? 25 : 15; // PE: 25%, VC: 15%
+                weight = isPE ? 25 : 15; // PE: 25%, VC: 15%
               } else if (category.toLowerCase().includes('market')) {
-                weight = deal.fund_id ? 15 : 25; // PE: 15%, VC: 25%
-              } else if (category.toLowerCase().includes('management') || category.toLowerCase().includes('team')) {
-                weight = deal.fund_id ? 10 : 20; // PE: 10%, VC: 20%
-              } else if (category.toLowerCase().includes('growth')) {
-                weight = deal.fund_id ? 10 : 15; // PE: 10%, VC: 15%
-              } else if (category.toLowerCase().includes('strategic')) {
-                weight = deal.fund_id ? 5 : 5; // PE: 5%, VC: 5%
+                weight = isPE ? 15 : 25; // PE: 15%, VC: 25%
+              } else if (category.toLowerCase().includes('management') || category.toLowerCase().includes('team') || category.toLowerCase().includes('leadership')) {
+                weight = isPE ? 10 : 20; // PE: 10%, VC: 20%
+              } else if (category.toLowerCase().includes('growth') || category.toLowerCase().includes('traction')) {
+                weight = isPE ? 10 : 15; // PE: 10%, VC: 15%
+              } else if (category.toLowerCase().includes('strategic') || category.toLowerCase().includes('product') || category.toLowerCase().includes('technology')) {
+                weight = isPE ? 5 : 20; // PE: 5%, VC: 20%
               }
               
               scores.push({
@@ -108,13 +113,21 @@ export function ReubenAISummaryScore({ deal, onScoreCalculated }: ReubenAISummar
               onScoreCalculated?.(finalScore);
             }
           } else {
-            // Fallback to mock data if no real analysis yet
-            const mockScores: AssessmentScore[] = [
+            // Fallback to mock data if no real analysis yet - dynamic based on fund type
+            const templateFundType = toTemplateFundType(fundType);
+            const mockScores: AssessmentScore[] = templateFundType === 'pe' ? [
               { name: 'Financial Performance', score: 75, weight: 35 },
               { name: 'Operational Excellence', score: 68, weight: 25 },
               { name: 'Market Position', score: 72, weight: 15 },
               { name: 'Management Quality', score: 80, weight: 10 },
               { name: 'Growth Potential', score: 65, weight: 10 },
+              { name: 'Strategic Fit', score: 85, weight: 5 }
+            ] : [
+              { name: 'Market Opportunity', score: 78, weight: 25 },
+              { name: 'Team & Leadership', score: 82, weight: 20 },
+              { name: 'Product & Technology', score: 75, weight: 20 },
+              { name: 'Business Traction', score: 68, weight: 15 },
+              { name: 'Financial Health', score: 70, weight: 15 },
               { name: 'Strategic Fit', score: 85, weight: 5 }
             ];
             
@@ -133,13 +146,21 @@ export function ReubenAISummaryScore({ deal, onScoreCalculated }: ReubenAISummar
             onScoreCalculated?.(finalScore);
           }
           } else {
-            // Fallback to mock PE data
-            const mockScores: AssessmentScore[] = [
+            // Fallback to mock data - dynamic based on fund type
+            const templateFundType = toTemplateFundType(fundType);
+            const mockScores: AssessmentScore[] = templateFundType === 'pe' ? [
               { name: 'Financial Performance', score: 75, weight: 35 },
               { name: 'Operational Excellence', score: 68, weight: 25 },
               { name: 'Market Position', score: 72, weight: 15 },
               { name: 'Management Quality', score: 80, weight: 10 },
               { name: 'Growth Potential', score: 65, weight: 10 },
+              { name: 'Strategic Fit', score: 85, weight: 5 }
+            ] : [
+              { name: 'Market Opportunity', score: 78, weight: 25 },
+              { name: 'Team & Leadership', score: 82, weight: 20 },
+              { name: 'Product & Technology', score: 75, weight: 20 },
+              { name: 'Business Traction', score: 68, weight: 15 },
+              { name: 'Financial Health', score: 70, weight: 15 },
               { name: 'Strategic Fit', score: 85, weight: 5 }
             ];
             

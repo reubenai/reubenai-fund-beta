@@ -416,6 +416,15 @@ export function EnhancedDealDetailsModal({
                 </CardContent>
               </Card>
               
+              {/* ReubenAI Summary Score */}
+              <ReubenAISummaryScore
+                deal={deal}
+                fundType={fundType}
+                onScoreCalculated={(score) => {
+                  console.log('Overall score calculated in modal:', score);
+                }}
+              />
+              
               {/* Assessment Sections with Accordion - Dynamic based on fund type */}
               {fundType === 'private_equity' ? (
                 <Accordion type="multiple" className="w-full space-y-4" defaultValue={["thesis", "financial", "operational", "market", "management", "growth", "strategic"]}>
