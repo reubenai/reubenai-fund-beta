@@ -3649,6 +3649,56 @@ export type Database = {
         }
         Relationships: []
       }
+      deal2_enrichment_linkedin_export: {
+        Row: {
+          company_name: string
+          created_at: string
+          deal_id: string
+          error_details: string | null
+          id: string
+          linkedin_url: string
+          processing_status: string
+          raw_brightdata_response: Json | null
+          snapshot_id: string | null
+          timestamp: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          deal_id: string
+          error_details?: string | null
+          id?: string
+          linkedin_url: string
+          processing_status?: string
+          raw_brightdata_response?: Json | null
+          snapshot_id?: string | null
+          timestamp?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          deal_id?: string
+          error_details?: string | null
+          id?: string
+          linkedin_url?: string
+          processing_status?: string
+          raw_brightdata_response?: Json | null
+          snapshot_id?: string | null
+          timestamp?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal2_enrichment_linkedin_export_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           analysis_blocked_until: string | null

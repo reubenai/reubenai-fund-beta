@@ -96,24 +96,25 @@ serve(async (req) => {
     const brightdataData = await pollBrightdataSnapshot(snapshotId, brightdataApiKey);
     console.log(`✅ [Brightdata] Final data retrieved:`, JSON.stringify(brightdataData, null, 2));
 
-    // Store raw response first - database triggers will handle processing
-    const { error: rawInsertError } = await supabaseClient
-      .from('deal_enrichment_linkedin_export')
-      .insert({
-        deal_id: dealId,
-        snapshot_id: snapshotId,
-        company_name: companyName,
+    // Store the raw Brightdata response in the simplified table
+    const { error: updateError } = await supabaseClient
+      .from('deal2_enrichment_linkedin_export')
+      .update({
         raw_brightdata_response: brightdataData,
-        processing_status: 'raw',
-        timestamp: new Date().toISOString()
-      });
+        processing_status: 'completed',
+        snapshot_id: snapshotId,
+        timestamp: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('deal_id', dealId)
+      .eq('processing_status', 'processing');
 
-    if (rawInsertError) {
-      console.error('❌ [Brightdata] Failed to store raw LinkedIn response:', rawInsertError);
-      throw new Error('Failed to store raw LinkedIn response');
+    if (updateError) {
+      console.error('❌ [Brightdata] Failed to update LinkedIn response:', updateError);
+      throw new Error('Failed to update LinkedIn response');
     }
 
-    console.log('✅ [Brightdata] Raw LinkedIn response stored, processing will be triggered automatically');
+    console.log('✅ [Brightdata] Raw LinkedIn response stored successfully');
 
     return new Response(JSON.stringify({
       success: true,
@@ -139,175 +140,7 @@ serve(async (req) => {
   }
 });
 
-async function processBrightdataResponse(rawData: any, companyName: string, dealId: string, snapshotId: string, supabaseClient: any): Promise<any> {
-  console.log(`🔄 [Brightdata] Processing response for ${companyName}`);
-  
-  // Handle different response formats from Brightdata
-  let companyData = rawData;
-  
-  // If response is an array, take the first item
-  if (Array.isArray(rawData) && rawData.length > 0) {
-    companyData = rawData[0];
-  }
-  
-  // If response has a data property, use that
-  if (rawData.data) {
-    companyData = rawData.data;
-  }
-
-  // Extract from raw response structure - use direct field mapping where possible
-  let sourceData = companyData;
-  
-  // If raw_response exists and has data, extract from it
-  if (rawData.raw_response && Array.isArray(rawData.raw_response) && rawData.raw_response.length > 0) {
-    sourceData = rawData.raw_response[0];
-  } else if (Array.isArray(rawData) && rawData.length > 0) {
-    sourceData = rawData[0];
-  }
-  
-  // Store structured LinkedIn export data with proper field mapping
-  const linkedinExportData = {
-    deal_id: dealId,
-    snapshot_id: snapshotId,
-    timestamp: new Date().toISOString(),
-    
-    // Company identification - direct mapping where field names match
-    company_id: sourceData.company_id || sourceData.id || null,
-    linkedin_url: sourceData.linkedin_url || 
-      (sourceData.id || sourceData.company_id ? 
-        `https://www.linkedin.com/company/${sourceData.id || sourceData.company_id}` : null),
-    company_name: sourceData.company_name || sourceData.name || companyName,
-    
-    // Company description and details - direct mapping
-    about: sourceData.about || null,
-    description: sourceData.about || sourceData.description || null,
-    organization_type: sourceData.organization_type || null,
-    industries: sourceData.industries || null,
-    specialties: typeof sourceData.specialties === 'string' ? 
-      sourceData.specialties.split(',').map(s => s.trim()).filter(s => s.length > 0) : 
-      (Array.isArray(sourceData.specialties) ? sourceData.specialties : []),
-    slogan: sourceData.slogan || null,
-    
-    // Metrics and following - direct mapping where possible
-    followers: sourceData.followers || null,
-    employees_in_linkedin: sourceData.employees_in_linkedin || null,
-    company_size: sourceData.company_size || null,
-    
-    // Location information - direct mapping
-    headquarters: sourceData.headquarters || null,
-    country_code: sourceData.country_code || null,
-    country_codes_array: sourceData.country_codes || [],
-    locations: sourceData.locations || [],
-    formatted_locations: sourceData.formatted_locations || [],
-    get_directions_url: sourceData.get_directions_url || null,
-    
-    // Web presence - direct mapping
-    website: sourceData.website || null,
-    website_simplified: sourceData.website_simplified || null,
-    crunchbase_url: sourceData.crunchbase_url || null,
-    
-    // Financial and company data - direct mapping
-    founded: sourceData.founded || null,
-    funding: sourceData.funding || {},
-    investors: sourceData.investors || [],
-    stock_info: sourceData.stock_info || {},
-    
-    // Social and network data - direct mapping
-    employees: sourceData.employees || [],
-    alumni: sourceData.alumni || [],
-    alumni_information: sourceData.alumni_information || {},
-    updates: sourceData.updates || [],
-    similar_companies: sourceData.similar_companies || sourceData.similar || [],
-    affiliated: sourceData.affiliated || [],
-    
-    // Visual assets - direct mapping
-    image: sourceData.image || null,
-    logo: sourceData.logo || null,
-    
-    // Raw data and processing
-    raw_brightdata_response: rawData,
-    unformatted_about: sourceData.about || null,
-    processing_status: 'processed'
-  };
-
-  // Insert into the new LinkedIn export table with detailed error handling
-  console.log('🔄 [Brightdata] Attempting to insert LinkedIn export data...');
-  console.log('📋 [Brightdata] Data to insert:', JSON.stringify({
-    deal_id: linkedinExportData.deal_id,
-    snapshot_id: linkedinExportData.snapshot_id,
-    company_name: linkedinExportData.company_name,
-    linkedin_url: linkedinExportData.linkedin_url,
-    has_raw_data: !!linkedinExportData.raw_brightdata_response
-  }, null, 2));
-
-  const { data: insertData, error: insertError } = await supabaseClient
-    .from('deal_enrichment_linkedin_export')
-    .insert(linkedinExportData)
-    .select();
-
-  if (insertError) {
-    console.error('❌ [Brightdata] Failed to insert LinkedIn export:', {
-      error: insertError,
-      code: insertError.code,
-      message: insertError.message,
-      details: insertError.details,
-      hint: insertError.hint
-    });
-    
-    // Try a simpler insert with just required fields
-    console.log('🔄 [Brightdata] Attempting simplified insert...');
-    const simplifiedData = {
-      deal_id: dealId,
-      snapshot_id: snapshotId,
-      raw_brightdata_response: rawData,
-      company_name: companyData.name || companyName,
-      processing_status: 'raw'
-    };
-    
-    const { error: simpleInsertError } = await supabaseClient
-      .from('deal_enrichment_linkedin_export')
-      .insert(simplifiedData);
-    
-    if (simpleInsertError) {
-      console.error('❌ [Brightdata] Simplified insert also failed:', simpleInsertError);
-    } else {
-      console.log('✅ [Brightdata] Simplified LinkedIn export saved');
-    }
-  } else {
-    console.log('✅ [Brightdata] Full LinkedIn export saved successfully:', insertData);
-  }
-
-  // Return legacy format for backward compatibility
-  const processed = {
-    company_name: companyData.company_name || companyData.name || companyName,
-    website: companyData.website || companyData.company_website || null,
-    Founded: companyData.founded || companyData.founded_year || null,
-    'Team Size': companyData.employee_count || companyData.employees || companyData.company_size || null,
-    Headquarters: companyData.location || companyData.headquarters || null,
-    industry: companyData.industry || companyData.sector || null,
-    description: companyData.description || companyData.about || null,
-    specialties: companyData.specialties || [],
-    
-    // LinkedIn specific data
-    linkedin_followers: companyData.followers || companyData.follower_count || null,
-    linkedin_updates: companyData.recent_updates || [],
-    
-    // Key personnel
-    key_personnel: companyData.employees || companyData.leadership || [],
-    
-    // Financial estimates
-    revenue_estimate: estimateRevenue(companyData.employee_count || companyData.employees, companyData.industry),
-    
-    // Metadata
-    dataQuality: calculateDataQuality(companyData),
-    lastUpdated: new Date().toISOString(),
-    source: 'brightdata',
-    raw_response: rawData // Store full response for debugging
-  };
-
-  console.log(`✅ [Brightdata] Processed data for ${companyName}:`, JSON.stringify(processed, null, 2));
-  return processed;
-}
+// Remove the complex processing function - we're storing raw data only
 
 async function pollBrightdataSnapshot(snapshotId: string, apiKey: string, maxAttempts: number = 10): Promise<any> {
   console.log(`🔄 [Brightdata] Polling snapshot ${snapshotId}...`);
@@ -346,43 +179,4 @@ async function pollBrightdataSnapshot(snapshotId: string, apiKey: string, maxAtt
   }
   
   throw new Error(`Snapshot data not ready after ${maxAttempts} attempts`);
-}
-
-function estimateRevenue(employeeCount: number | null, industry: string | null): number | null {
-  if (!employeeCount) return null;
-  
-  // Industry-specific revenue per employee estimates
-  const industryMultipliers: Record<string, number> = {
-    'technology': 250000,
-    'software': 300000,
-    'financial services': 400000,
-    'consulting': 200000,
-    'healthcare': 180000,
-    'manufacturing': 150000,
-    'retail': 120000,
-    'default': 200000
-  };
-  
-  const multiplier = industry ? 
-    industryMultipliers[industry.toLowerCase()] || industryMultipliers.default :
-    industryMultipliers.default;
-    
-  return employeeCount * multiplier;
-}
-
-function calculateDataQuality(data: any): number {
-  let score = 0;
-  const fields = [
-    'company_name', 'employee_count', 'industry', 'location', 
-    'description', 'website', 'founded'
-  ];
-  
-  fields.forEach(field => {
-    if (data[field] && data[field] !== null && data[field] !== '') {
-      score += 1;
-    }
-  });
-  
-  // Convert to percentage
-  return Math.round((score / fields.length) * 100);
 }

@@ -22,7 +22,7 @@ serve(async (req) => {
 
     // Step 1: Fetch all queued LinkedIn enrichment records
     const { data: queuedRecords, error: fetchError } = await supabaseClient
-      .from('deal_enrichment_linkedin_export')
+      .from('deal2_enrichment_linkedin_export')
       .select('*')
       .eq('processing_status', 'queued')
       .order('created_at', { ascending: true })
@@ -56,7 +56,7 @@ serve(async (req) => {
 
         // Update status to 'processing'
         await supabaseClient
-          .from('deal_enrichment_linkedin_export')
+          .from('deal2_enrichment_linkedin_export')
           .update({ 
             processing_status: 'processing',
             updated_at: new Date().toISOString()
@@ -77,7 +77,7 @@ serve(async (req) => {
           
           // Update status to 'failed'
           await supabaseClient
-            .from('deal_enrichment_linkedin_export')
+            .from('deal2_enrichment_linkedin_export')
             .update({ 
               processing_status: 'failed',
               error_details: enrichmentResponse.error.message || 'Enrichment API call failed',
@@ -102,7 +102,7 @@ serve(async (req) => {
         
         // Update status to 'failed'
         await supabaseClient
-          .from('deal_enrichment_linkedin_export')
+          .from('deal2_enrichment_linkedin_export')
           .update({ 
             processing_status: 'failed',
             error_details: recordError.message || 'Unknown processing error',
