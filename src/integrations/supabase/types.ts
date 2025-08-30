@@ -7704,14 +7704,6 @@ export type Database = {
         Args: { queue_name: string }
         Returns: Json
       }
-      queue_crunchbase_enrichment_job: {
-        Args: {
-          p_company_name: string
-          p_crunchbase_url: string
-          p_deal_id: string
-        }
-        Returns: string
-      }
       queue_deal_analysis: {
         Args: {
           deal_id_param: string
