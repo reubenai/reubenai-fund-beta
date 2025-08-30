@@ -1502,9 +1502,16 @@ export type Database = {
           created_at: string
           customer_concentration: Json | null
           data_completeness_score: number | null
+          deal_enrichment_crunchbase_export: Json | null
+          deal_enrichment_linkedin_export: Json | null
+          deal_enrichment_linkedin_profile_export: Json | null
+          deal_enrichment_perplexity_company_export_pe: Json | null
+          deal_enrichment_perplexity_founder_export_pe: Json | null
+          deal_enrichment_perplexity_market_export_pe: Json | null
           deal_id: string
           debt_capacity: number | null
           distribution_channels: Json | null
+          documents_data_points_pe: Json | null
           ebitda_growth_rate: number | null
           ebitda_margin: number | null
           employee_count: number | null
@@ -1576,9 +1583,16 @@ export type Database = {
           created_at?: string
           customer_concentration?: Json | null
           data_completeness_score?: number | null
+          deal_enrichment_crunchbase_export?: Json | null
+          deal_enrichment_linkedin_export?: Json | null
+          deal_enrichment_linkedin_profile_export?: Json | null
+          deal_enrichment_perplexity_company_export_pe?: Json | null
+          deal_enrichment_perplexity_founder_export_pe?: Json | null
+          deal_enrichment_perplexity_market_export_pe?: Json | null
           deal_id: string
           debt_capacity?: number | null
           distribution_channels?: Json | null
+          documents_data_points_pe?: Json | null
           ebitda_growth_rate?: number | null
           ebitda_margin?: number | null
           employee_count?: number | null
@@ -1650,9 +1664,16 @@ export type Database = {
           created_at?: string
           customer_concentration?: Json | null
           data_completeness_score?: number | null
+          deal_enrichment_crunchbase_export?: Json | null
+          deal_enrichment_linkedin_export?: Json | null
+          deal_enrichment_linkedin_profile_export?: Json | null
+          deal_enrichment_perplexity_company_export_pe?: Json | null
+          deal_enrichment_perplexity_founder_export_pe?: Json | null
+          deal_enrichment_perplexity_market_export_pe?: Json | null
           deal_id?: string
           debt_capacity?: number | null
           distribution_channels?: Json | null
+          documents_data_points_pe?: Json | null
           ebitda_growth_rate?: number | null
           ebitda_margin?: number | null
           employee_count?: number | null
@@ -1730,9 +1751,16 @@ export type Database = {
           created_at: string
           customer_acquisition_metrics: Json | null
           data_completeness_score: number | null
+          deal_enrichment_crunchbase_export: Json | null
+          deal_enrichment_linkedin_export: Json | null
+          deal_enrichment_linkedin_profile_export: Json | null
+          deal_enrichment_perplexity_company_export_vc: Json | null
+          deal_enrichment_perplexity_founder_export_vc: Json | null
+          deal_enrichment_perplexity_market_export_vc: Json | null
           deal_id: string
           distribution_challenges: string[] | null
           diversity_metrics: Json | null
+          documents_data_points_vc: Json | null
           economic_sensitivity: string | null
           employee_count: number | null
           exit_history: Json | null
@@ -1811,9 +1839,16 @@ export type Database = {
           created_at?: string
           customer_acquisition_metrics?: Json | null
           data_completeness_score?: number | null
+          deal_enrichment_crunchbase_export?: Json | null
+          deal_enrichment_linkedin_export?: Json | null
+          deal_enrichment_linkedin_profile_export?: Json | null
+          deal_enrichment_perplexity_company_export_vc?: Json | null
+          deal_enrichment_perplexity_founder_export_vc?: Json | null
+          deal_enrichment_perplexity_market_export_vc?: Json | null
           deal_id: string
           distribution_challenges?: string[] | null
           diversity_metrics?: Json | null
+          documents_data_points_vc?: Json | null
           economic_sensitivity?: string | null
           employee_count?: number | null
           exit_history?: Json | null
@@ -1892,9 +1927,16 @@ export type Database = {
           created_at?: string
           customer_acquisition_metrics?: Json | null
           data_completeness_score?: number | null
+          deal_enrichment_crunchbase_export?: Json | null
+          deal_enrichment_linkedin_export?: Json | null
+          deal_enrichment_linkedin_profile_export?: Json | null
+          deal_enrichment_perplexity_company_export_vc?: Json | null
+          deal_enrichment_perplexity_founder_export_vc?: Json | null
+          deal_enrichment_perplexity_market_export_vc?: Json | null
           deal_id?: string
           distribution_challenges?: string[] | null
           diversity_metrics?: Json | null
+          documents_data_points_vc?: Json | null
           economic_sensitivity?: string | null
           employee_count?: number | null
           exit_history?: Json | null

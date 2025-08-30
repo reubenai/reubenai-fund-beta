@@ -1,0 +1,19 @@
+-- Add enrichment data columns to deal_analysis_datapoints_vc table
+ALTER TABLE public.deal_analysis_datapoints_vc 
+ADD COLUMN documents_data_points_vc JSONB,
+ADD COLUMN deal_enrichment_crunchbase_export JSONB,
+ADD COLUMN deal_enrichment_linkedin_export JSONB,
+ADD COLUMN deal_enrichment_linkedin_profile_export JSONB,
+ADD COLUMN deal_enrichment_perplexity_company_export_vc JSONB,
+ADD COLUMN deal_enrichment_perplexity_founder_export_vc JSONB,
+ADD COLUMN deal_enrichment_perplexity_market_export_vc JSONB;
+
+-- Add enrichment data columns to deal_analysis_datapoints_pe table  
+ALTER TABLE public.deal_analysis_datapoints_pe
+ADD COLUMN documents_data_points_pe JSONB,
+ADD COLUMN deal_enrichment_crunchbase_export JSONB,
+ADD COLUMN deal_enrichment_linkedin_export JSONB,
+ADD COLUMN deal_enrichment_linkedin_profile_export JSONB,
+ADD COLUMN deal_enrichment_perplexity_company_export_pe JSONB,
+ADD COLUMN deal_enrichment_perplexity_founder_export_pe JSONB,
+ADD COLUMN deal_enrichment_perplexity_market_export_pe JSONB;
