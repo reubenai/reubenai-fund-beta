@@ -206,3 +206,9 @@ verify_jwt = false
 [functions.linkedin-enrichment-queue-processor]
 verify_jwt = false
 
+[functions.brightdata-linkedin-profile-enrichment-v2]
+verify_jwt = false
+
+[functions.linkedin-profile-enrichment-queue-processor]
+verify_jwt = false
+
