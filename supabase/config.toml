@@ -215,3 +215,6 @@ verify_jwt = false
 [functions.deal2-crunchbase-export-post-processor]
 verify_jwt = false
 
+[functions.deal2-linkedin-profile-export-post-processor]
+verify_jwt = false
+

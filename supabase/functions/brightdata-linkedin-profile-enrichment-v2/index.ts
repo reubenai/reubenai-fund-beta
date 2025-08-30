@@ -81,13 +81,7 @@ Deno.serve(async (req) => {
 
     const actualSnapshotId = triggerResult.snapshot_id;
     
-    // Poll for data
-    console.log(`🔄 [LinkedIn Profile V2] Polling for data with snapshot_id: ${actualSnapshotId}`);
-    const snapshotData = await pollBrightdataSnapshot(actualSnapshotId, brightdataApiKey);
-    console.log(`✅ [LinkedIn Profile V2] Data ready for snapshot ${actualSnapshotId}`);
-    console.log(`✅ [LinkedIn Profile V2] Final data retrieved:`, snapshotData);
-
-    // Check for existing record
+    // Check for existing record and update with snapshot_id (no longer polling here)
     console.log(`🔍 [LinkedIn Profile V2] Checking for existing profile record with dealId: ${dealId}`);
     const { data: existingRecord } = await supabase
       .from('deal2_enrichment_linkedin_profile_export')
@@ -98,22 +92,21 @@ Deno.serve(async (req) => {
     let upsertResult;
     
     if (existingRecord) {
-      // Update existing record
+      // Update existing record with snapshot_id
       console.log(`📝 [LinkedIn Profile V2] Updating existing record (id: ${existingRecord.id}, status: ${existingRecord.processing_status})`);
       
       upsertResult = await supabase
         .from('deal2_enrichment_linkedin_profile_export')
         .update({
           snapshot_id: actualSnapshotId,
-          raw_brightdata_response: snapshotData,
-          processing_status: 'completed',
+          processing_status: 'triggered',
           error_details: null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', existingRecord.id);
         
     } else {
-      // Create new record
+      // Create new record with just trigger data
       console.log(`📝 [LinkedIn Profile V2] Creating new profile record`);
       
       upsertResult = await supabase
@@ -124,22 +117,21 @@ Deno.serve(async (req) => {
           first_name: firstName,
           last_name: lastName,
           snapshot_id: actualSnapshotId,
-          raw_brightdata_response: snapshotData,
-          processing_status: 'completed',
+          processing_status: 'triggered',
         });
     }
 
     if (upsertResult.error) {
-      console.error(`❌ [LinkedIn Profile V2] Failed to store LinkedIn profile response:`, upsertResult.error);
-      throw new Error(`Failed to store LinkedIn profile response: ${upsertResult.error.message}`);
+      console.error(`❌ [LinkedIn Profile V2] Failed to store LinkedIn profile trigger:`, upsertResult.error);
+      throw new Error(`Failed to store LinkedIn profile trigger: ${upsertResult.error.message}`);
     }
 
-    console.log(`✅ [LinkedIn Profile V2] Raw LinkedIn profile response stored successfully`);
+    console.log(`✅ [LinkedIn Profile V2] LinkedIn profile trigger stored successfully`);
     console.log(`✅ [LinkedIn Profile V2] Updated ${upsertResult.data?.length || 1} record(s)`);
 
     const response: BrightdataProfileResponse = {
       success: true,
-      data: snapshotData,
+      data: { snapshot_id: actualSnapshotId, status: 'triggered' },
       dataSource: 'brightdata_linkedin_profile',
       trustScore: 95,
       dataQuality: 90,
@@ -168,42 +160,4 @@ Deno.serve(async (req) => {
   }
 });
 
-async function pollBrightdataSnapshot(snapshotId: string, apiKey: string): Promise<any> {
-  const maxAttempts = 10;
-  let attempt = 1;
-  
-  console.log(`🔄 [LinkedIn Profile V2] Polling snapshot ${snapshotId}...`);
-
-  while (attempt <= maxAttempts) {
-    console.log(`📊 [LinkedIn Profile V2] Poll attempt ${attempt}/${maxAttempts}`);
-    
-    const response = await fetch(
-      `https://api.brightdata.com/datasets/v3/snapshot/${snapshotId}?format=json`,
-      {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Snapshot polling failed: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
-    if (data && Array.isArray(data) && data.length > 0) {
-      console.log(`✅ [LinkedIn Profile V2] Data ready for snapshot ${snapshotId}`);
-      return data;
-    }
-
-    // Exponential backoff
-    const delay = Math.min(1000 * Math.pow(2, attempt - 1), 30000);
-    console.log(`⏱️ [LinkedIn Profile V2] Waiting ${delay}ms before next poll...`);
-    await new Promise(resolve => setTimeout(resolve, delay));
-    
-    attempt++;
-  }
-
-  throw new Error(`Timeout: Data not ready after ${maxAttempts} attempts`);
-}
+// Polling function removed - now handled by post-processor
