@@ -7700,6 +7700,10 @@ export type Database = {
         Args: { batch_size?: number; max_concurrent?: number }
         Returns: Json
       }
+      process_enrichment_queue: {
+        Args: { queue_name: string }
+        Returns: Json
+      }
       queue_deal_analysis: {
         Args: {
           deal_id_param: string

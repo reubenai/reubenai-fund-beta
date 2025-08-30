@@ -75,10 +75,12 @@ export function useAnalysisQueueManager() {
       // Process analysis queue
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('universal-analysis-processor');
       
-      // Process enrichment queues using QueueManager
+      // Process enrichment queues using QueueManager directly
+      const { QueueManager } = await import('@/lib/queue/QueueManager');
+      
       const enrichmentResults = await Promise.allSettled([
-        supabase.rpc('process_enrichment_queue', { queue_name: 'crunchbase_enrichment_queue' }),
-        supabase.rpc('process_enrichment_queue', { queue_name: 'linkedin_profile_enrichment_queue' })
+        QueueManager.processQueue('crunchbase_enrichment_queue'),
+        QueueManager.processQueue('linkedin_profile_enrichment_queue')
       ]);
 
       let totalProcessed = 0;
@@ -102,11 +104,11 @@ export function useAnalysisQueueManager() {
       // Process enrichment results
       enrichmentResults.forEach((result, index) => {
         const queueName = index === 0 ? 'Crunchbase' : 'LinkedIn';
-        if (result.status === 'fulfilled' && result.value.data) {
-          const enrichmentData = result.value.data;
-          totalProcessed += (enrichmentData.processed || 0);
-          totalSuccessful += (enrichmentData.processed || 0) - (enrichmentData.failed || 0);
-          totalFailed += (enrichmentData.failed || 0);
+        if (result.status === 'fulfilled' && result.value.success) {
+          const enrichmentData = result.value;
+          totalProcessed += enrichmentData.processed;
+          totalSuccessful += enrichmentData.processed - enrichmentData.failed;
+          totalFailed += enrichmentData.failed;
           console.log(`✅ ${queueName} enrichment queue processed:`, enrichmentData);
         } else {
           console.warn(`⚠️ ${queueName} enrichment queue processing warning:`, result);
