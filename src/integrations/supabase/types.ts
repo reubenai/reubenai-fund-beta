@@ -3673,7 +3673,7 @@ export type Database = {
           current_round_size: number | null
           deal_size: number | null
           description: string | null
-          employee_count: number | null
+          employee_count: string | null
           enhanced_analysis: Json | null
           first_analysis_completed: boolean | null
           founder: string | null
@@ -3740,7 +3740,7 @@ export type Database = {
           current_round_size?: number | null
           deal_size?: number | null
           description?: string | null
-          employee_count?: number | null
+          employee_count?: string | null
           enhanced_analysis?: Json | null
           first_analysis_completed?: boolean | null
           founder?: string | null
@@ -3807,7 +3807,7 @@ export type Database = {
           current_round_size?: number | null
           deal_size?: number | null
           description?: string | null
-          employee_count?: number | null
+          employee_count?: string | null
           enhanced_analysis?: Json | null
           first_analysis_completed?: boolean | null
           founder?: string | null
