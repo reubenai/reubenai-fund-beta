@@ -7758,6 +7758,8 @@ export type Database = {
         | "linkedin_url_validation_failed"
         | "analysis_triggered"
         | "conflict_detected"
+        | "founder_profile_enrichment_triggered"
+        | "founder_profile_enrichment_skipped"
       deal_score_level:
         | "exciting"
         | "promising"
@@ -7957,6 +7959,8 @@ export const Constants = {
         "linkedin_url_validation_failed",
         "analysis_triggered",
         "conflict_detected",
+        "founder_profile_enrichment_triggered",
+        "founder_profile_enrichment_skipped",
       ],
       deal_score_level: [
         "exciting",
