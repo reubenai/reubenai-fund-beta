@@ -8,6 +8,7 @@ export interface WaterfallProcessingOptions {
 }
 
 export interface EngineCompletionStatus {
+  dealId: string;
   documents_status: string;
   crunchbase_status: string;
   linkedin_profile_status: string;
@@ -15,11 +16,11 @@ export interface EngineCompletionStatus {
   perplexity_company_status: string;
   perplexity_founder_status: string;
   perplexity_market_status: string;
-  overall_status: string;
-  completed_engines: string[];
-  failed_engines: string[];
-  last_check_at: string;
-  timeout_at: string;
+  overallStatus: string;
+  engines: Record<string, string>;
+  completedEngines: number;
+  totalEngines: number;
+  lastChecked: Date;
 }
 
 export interface WaterfallProcessingResult {
@@ -48,8 +49,8 @@ export class WaterfallProcessingService {
     try {
       console.log(`🌊 Starting waterfall processing for deal ${dealId}`);
       
-      // Get or create engine tracking record
-      let trackingRecord = await this.getOrCreateEngineTracking(dealId, fundId, fundType);
+      // With new trigger system, datapoints are automatically created
+      console.log('🔄 Using trigger-based datapoint system for deal:', dealId);
       
       // Start monitoring engines with database-only approach
       const completionResult = await this.monitorEnginesWithTimeout(
@@ -60,12 +61,23 @@ export class WaterfallProcessingService {
       
       console.log(`🔍 Engine monitoring completed:`, completionResult);
       
+      // Get deal organization info for integration
+      const { data: deal } = await supabase
+        .from('deals')
+        .select('organization_id')
+        .eq('id', dealId)
+        .single();
+      
+      if (!deal) {
+        throw new Error('Deal not found');
+      }
+      
       // Process available data regardless of completion status
       const integrationResult = await DealDataIntegrationService.integrateDealData({
         dealId,
         fundId,
         fundType,
-        organizationId: trackingRecord.organization_id,
+        organizationId: deal.organization_id,
         triggerReason: 'waterfall_processing'
       });
       
@@ -73,9 +85,6 @@ export class WaterfallProcessingService {
       if (options.enableAIEnhancement && integrationResult.success) {
         await this.enhanceWithAI(dealId, fundType);
       }
-      
-      // Update final tracking status
-      await this.updateTrackingCompletion(dealId, completionResult.status);
       
       const processingTime = Date.now() - startTime;
       
@@ -91,7 +100,6 @@ export class WaterfallProcessingService {
       
     } catch (error) {
       console.error('❌ Waterfall processing failed:', error);
-      await this.updateTrackingCompletion(dealId, 'failed');
       
       return {
         success: false,
@@ -130,29 +138,26 @@ export class WaterfallProcessingService {
       checkCount++;
       const status = await this.checkAllEnginesCompletion(dealId);
       
-      console.log(`🔍 Check #${checkCount} - Overall status: ${status.overall_status}`);
-      console.log(`✅ Completed: [${status.completed_engines.join(', ')}]`);
-      console.log(`❌ Failed: [${status.failed_engines.join(', ')}]`);
+      console.log(`🔍 Check #${checkCount} - Overall status: ${status.overallStatus}`);
+      console.log(`✅ Completed: ${status.completedEngines}/${status.totalEngines} engines`);
       
-      // Update last check time
-      await this.updateLastCheckTime(dealId);
-      
-      if (status.overall_status === 'completed') {
-        console.log(`🎉 All engines completed after ${checkCount} checks`);
+      // Check if completed or timed out
+      if (status.overallStatus === 'completed') {
+        console.log('✅ All engines completed successfully');
         return {
           status: 'completed',
-          completedEngines: status.completed_engines,
-          failedEngines: status.failed_engines,
+          completedEngines: Object.keys(status.engines).filter(key => status.engines[key] === 'completed'),
+          failedEngines: Object.keys(status.engines).filter(key => status.engines[key] === 'failed'),
           checkCount
         };
       }
       
-      if (status.overall_status === 'failed') {
+      if (status.overallStatus === 'failed') {
         console.log(`💥 Engine monitoring failed after ${checkCount} checks`);
         return {
           status: 'failed',
-          completedEngines: status.completed_engines,
-          failedEngines: status.failed_engines,
+          completedEngines: Object.keys(status.engines).filter(key => status.engines[key] === 'completed'),
+          failedEngines: Object.keys(status.engines).filter(key => status.engines[key] === 'failed'),
           checkCount
         };
       }
@@ -167,94 +172,101 @@ export class WaterfallProcessingService {
     
     return {
       status: 'timeout',
-      completedEngines: finalStatus.completed_engines,
-      failedEngines: finalStatus.failed_engines,
+      completedEngines: Object.keys(finalStatus.engines).filter(key => finalStatus.engines[key] === 'completed'),
+      failedEngines: Object.keys(finalStatus.engines).filter(key => finalStatus.engines[key] === 'failed'),
       checkCount
     };
   }
   
   /**
-   * Check completion status of all engines (database queries only)
+   * Check completion status of all engines using new datapoints tables
    */
   private static async checkAllEnginesCompletion(dealId: string): Promise<EngineCompletionStatus> {
-    // Get current tracking status
-    const { data: tracking, error: trackingError } = await supabase
-      .from('engine_completion_tracking')
-      .select('*')
+    // Get fund type to determine which datapoints table to query
+    const { data: deal, error: dealError } = await supabase
+      .from('deals')
+      .select(`
+        fund_id,
+        funds!inner(fund_type)
+      `)
+      .eq('id', dealId)
+      .single();
+    
+    if (dealError || !deal) {
+      throw new Error(`Failed to get deal info: ${dealError?.message}`);
+    }
+    
+    const fundType = (deal.funds as any)?.fund_type || 'venture_capital';
+    const tableName = fundType === 'private_equity' ? 'deal_analysis_datapoints_pe' : 'deal_analysis_datapoints_vc';
+    
+    // Check if datapoints exist (created by triggers)
+    const { data: datapoints, error: datapointsError } = await supabase
+      .from(tableName)
+      .select('source_engines, data_completeness_score')
       .eq('deal_id', dealId)
       .single();
     
-    if (trackingError || !tracking) {
-      throw new Error(`Failed to get engine tracking: ${trackingError?.message}`);
+    if (datapointsError || !datapoints) {
+      // No datapoints yet, check individual enrichment tables
+      const documentsStatus = await this.checkDocumentsCompletion(dealId);
+      const crunchbaseStatus = await this.checkCrunchbaseCompletion(dealId);
+      const linkedInProfileStatus = await this.checkLinkedInProfileCompletion(dealId);
+      const linkedInExportStatus = await this.checkLinkedInExportCompletion(dealId);
+      const perplexityCompanyStatus = await this.checkPerplexityCompanyCompletion(dealId, fundType);
+      const perplexityFounderStatus = await this.checkPerplexityFounderCompletion(dealId, fundType);
+      const perplexityMarketStatus = await this.checkPerplexityMarketCompletion(dealId, fundType);
+      
+      const engineStatuses = {
+        documents_status: documentsStatus ? 'completed' : 'pending',
+        crunchbase_status: crunchbaseStatus ? 'completed' : 'pending',
+        linkedin_profile_status: linkedInProfileStatus ? 'completed' : 'pending',
+        linkedin_export_status: linkedInExportStatus ? 'completed' : 'pending',
+        perplexity_company_status: perplexityCompanyStatus ? 'completed' : 'pending',
+        perplexity_founder_status: perplexityFounderStatus ? 'completed' : 'pending',
+        perplexity_market_status: perplexityMarketStatus ? 'completed' : 'pending'
+      };
+      
+      const statusValues = Object.values(engineStatuses);
+      const completedCount = statusValues.filter(status => status === 'completed').length;
+      const totalEngines = statusValues.length;
+      
+      return {
+        dealId,
+        overallStatus: 'processing',
+        engines: engineStatuses,
+        completedEngines: completedCount,
+        totalEngines,
+        lastChecked: new Date(),
+        ...engineStatuses
+      };
     }
     
-    const fundType = tracking.fund_type;
+    // Use source_engines from datapoints to determine completion
+    const sourceEngines = datapoints.source_engines || [];
+    const expectedEngines = ['documents', 'crunchbase', 'linkedin_profile', 'linkedin_export', 'perplexity_company', 'perplexity_founder', 'perplexity_market'];
     
-    // Check each engine completion by querying enrichment tables directly
-    const engineChecks = await Promise.allSettled([
-      this.checkDocumentsCompletion(dealId),
-      this.checkCrunchbaseCompletion(dealId),
-      this.checkLinkedInProfileCompletion(dealId),
-      this.checkLinkedInExportCompletion(dealId),
-      this.checkPerplexityCompanyCompletion(dealId, fundType),
-      this.checkPerplexityFounderCompletion(dealId, fundType),
-      this.checkPerplexityMarketCompletion(dealId, fundType)
-    ]);
-    
-    // Process results
     const engineStatuses = {
-      documents_status: this.getEngineStatus(engineChecks[0]),
-      crunchbase_status: this.getEngineStatus(engineChecks[1]),
-      linkedin_profile_status: this.getEngineStatus(engineChecks[2]),
-      linkedin_export_status: this.getEngineStatus(engineChecks[3]),
-      perplexity_company_status: this.getEngineStatus(engineChecks[4]),
-      perplexity_founder_status: this.getEngineStatus(engineChecks[5]),
-      perplexity_market_status: this.getEngineStatus(engineChecks[6])
+      documents_status: sourceEngines.includes('documents') ? 'completed' : 'pending',
+      crunchbase_status: sourceEngines.includes('crunchbase') ? 'completed' : 'pending',
+      linkedin_profile_status: sourceEngines.includes('linkedin_profile') ? 'completed' : 'pending',
+      linkedin_export_status: sourceEngines.includes('linkedin_export') ? 'completed' : 'pending',
+      perplexity_company_status: sourceEngines.includes('perplexity_company') ? 'completed' : 'pending',
+      perplexity_founder_status: sourceEngines.includes('perplexity_founder') ? 'completed' : 'pending',
+      perplexity_market_status: sourceEngines.includes('perplexity_market') ? 'completed' : 'pending'
     };
     
-    const completedEngines: string[] = [];
-    const failedEngines: string[] = [];
-    
-    Object.entries(engineStatuses).forEach(([engine, status]) => {
-      const engineName = engine.replace('_status', '');
-      if (status === 'complete') {
-        completedEngines.push(engineName);
-      } else if (status === 'error' || status === 'failed') {
-        failedEngines.push(engineName);
-      }
-    });
-    
-    // Determine overall status
-    const totalEngines = Object.keys(engineStatuses).length;
-    const completedCount = completedEngines.length;
-    const failedCount = failedEngines.length;
-    
-    let overallStatus = 'monitoring';
-    if (completedCount === totalEngines) {
-      overallStatus = 'completed';
-    } else if (failedCount >= totalEngines / 2) { // More than half failed
-      overallStatus = 'failed';
-    }
-    
-    // Update tracking record with latest status
-    await supabase
-      .from('engine_completion_tracking')
-      .update({
-        ...engineStatuses,
-        completed_engines: completedEngines,
-        failed_engines: failedEngines,
-        overall_status: overallStatus,
-        updated_at: new Date().toISOString()
-      })
-      .eq('deal_id', dealId);
+    const completedCount = sourceEngines.length;
+    const totalEngines = expectedEngines.length;
+    const overallStatus = completedCount === totalEngines ? 'completed' : 'processing';
     
     return {
-      ...engineStatuses,
-      overall_status: overallStatus,
-      completed_engines: completedEngines,
-      failed_engines: failedEngines,
-      last_check_at: new Date().toISOString(),
-      timeout_at: tracking.timeout_at
+      dealId,
+      overallStatus,
+      engines: engineStatuses,
+      completedEngines: completedCount,
+      totalEngines,
+      lastChecked: new Date(),
+      ...engineStatuses
     };
   }
   
@@ -360,80 +372,8 @@ export class WaterfallProcessingService {
     return result.value ? 'complete' : 'pending';
   }
   
-  /**
-   * Get or create engine tracking record
-   */
-  private static async getOrCreateEngineTracking(dealId: string, fundId: string, fundType: string) {
-    // Try to get existing record
-    const { data: existing, error } = await supabase
-      .from('engine_completion_tracking')
-      .select('*')
-      .eq('deal_id', dealId)
-      .single();
-    
-    if (existing && !error) {
-      return existing;
-    }
-    
-    // Get organization_id from deal
-    const { data: deal } = await supabase
-      .from('deals')
-      .select('organization_id')
-      .eq('id', dealId)
-      .single();
-    
-    if (!deal) {
-      throw new Error('Deal not found');
-    }
-    
-    // Create new tracking record
-    const { data: newTracking, error: createError } = await supabase
-      .from('engine_completion_tracking')
-      .insert({
-        deal_id: dealId,
-        fund_id: fundId,
-        organization_id: deal.organization_id,
-        fund_type: fundType,
-        active_engines: ['documents', 'crunchbase', 'linkedin_profile', 'linkedin_export', 'perplexity_company', 'perplexity_founder', 'perplexity_market'],
-        timeout_at: new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 minutes from now
-      })
-      .select()
-      .single();
-    
-    if (createError || !newTracking) {
-      throw new Error(`Failed to create engine tracking: ${createError?.message}`);
-    }
-    
-    return newTracking;
-  }
-  
-  /**
-   * Update last check time
-   */
-  private static async updateLastCheckTime(dealId: string): Promise<void> {
-    await supabase
-      .from('engine_completion_tracking')
-      .update({
-        last_check_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('deal_id', dealId);
-  }
-  
-  /**
-   * Update tracking completion status
-   */
-  private static async updateTrackingCompletion(dealId: string, status: string): Promise<void> {
-    await supabase
-      .from('engine_completion_tracking')
-      .update({
-        overall_status: status,
-        completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('deal_id', dealId);
-  }
-  
+  // Removed old tracking functions - no longer needed with trigger-based system
+
   /**
    * Enhance data with AI using GPT-4o-mini
    */
@@ -458,34 +398,16 @@ export class WaterfallProcessingService {
       console.error('AI enhancement error:', error);
     }
   }
-  
+
   /**
-   * Get current waterfall processing status for a deal
+   * Get current waterfall processing status for a deal using new trigger system
    */
   static async getWaterfallStatus(dealId: string): Promise<EngineCompletionStatus | null> {
-    const { data, error } = await supabase
-      .from('engine_completion_tracking')
-      .select('*')
-      .eq('deal_id', dealId)
-      .single();
-    
-    if (error || !data) {
+    try {
+      return await this.checkAllEnginesCompletion(dealId);
+    } catch (error) {
+      console.error('Error getting waterfall status:', error);
       return null;
     }
-    
-    return {
-      documents_status: data.documents_status,
-      crunchbase_status: data.crunchbase_status,
-      linkedin_profile_status: data.linkedin_profile_status,
-      linkedin_export_status: data.linkedin_export_status,
-      perplexity_company_status: data.perplexity_company_status,
-      perplexity_founder_status: data.perplexity_founder_status,
-      perplexity_market_status: data.perplexity_market_status,
-      overall_status: data.overall_status,
-      completed_engines: data.completed_engines || [],
-      failed_engines: data.failed_engines || [],
-      last_check_at: data.last_check_at,
-      timeout_at: data.timeout_at
-    };
   }
 }

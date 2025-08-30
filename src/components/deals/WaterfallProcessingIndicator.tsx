@@ -92,8 +92,8 @@ export function WaterfallProcessingIndicator({
   const calculateProgress = (status: EngineCompletionStatus | null) => {
     if (!status) return 0;
     
-    const totalEngines = 7; // documents + 6 enrichment engines
-    const completedCount = status.completed_engines.length;
+    const totalEngines = status.totalEngines || 7;
+    const completedCount = status.completedEngines;
     return Math.round((completedCount / totalEngines) * 100);
   };
 
@@ -121,9 +121,9 @@ export function WaterfallProcessingIndicator({
   }
 
   const progress = calculateProgress(currentStatus);
-  const isCompleted = currentStatus?.overall_status === 'completed';
-  const isTimeout = currentStatus?.overall_status === 'timeout';
-  const isFailed = currentStatus?.overall_status === 'failed';
+  const isCompleted = currentStatus?.overallStatus === 'completed';
+  const isTimeout = currentStatus?.overallStatus === 'timeout';
+  const isFailed = currentStatus?.overallStatus === 'failed';
 
   return (
     <div className="space-y-3 p-4 border rounded-lg bg-card">
