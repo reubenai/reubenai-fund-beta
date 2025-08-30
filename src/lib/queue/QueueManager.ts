@@ -273,6 +273,12 @@ export class QueueManager {
       case 'note_analysis':
         await this.processNoteAnalysis(job);
         break;
+      case 'crunchbase_enrichment':
+        await this.processCrunchbaseEnrichment(job);
+        break;
+      case 'linkedin_profile_enrichment':
+        await this.processLinkedInEnrichment(job);
+        break;
       default:
         throw new Error(`Unknown engine: ${job.engine}`);
     }
@@ -328,6 +334,34 @@ export class QueueManager {
   private static async processNoteAnalysis(job: any): Promise<void> {
     // Future: implement note intelligence analysis
     console.log(`Note analysis queued for future implementation: ${job.related_ids.note_id}`);
+  }
+
+  private static async processCrunchbaseEnrichment(job: any): Promise<void> {
+    // Delegate to existing crunchbase-enrichment-queue-processor function
+    const { error } = await supabase.functions.invoke('crunchbase-enrichment-queue-processor', {
+      body: {
+        job_id: job.job_id,
+        deal_id: job.related_ids.deal_id
+      }
+    });
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  private static async processLinkedInEnrichment(job: any): Promise<void> {
+    // Delegate to existing linkedin-profile-enrichment-queue-processor function
+    const { error } = await supabase.functions.invoke('linkedin-profile-enrichment-queue-processor', {
+      body: {
+        job_id: job.job_id,
+        deal_id: job.related_ids.deal_id
+      }
+    });
+
+    if (error) {
+      throw error;
+    }
   }
 
   /**
