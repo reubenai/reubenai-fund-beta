@@ -212,3 +212,6 @@ verify_jwt = false
 [functions.linkedin-profile-enrichment-queue-processor]
 verify_jwt = false
 
+[functions.deal2-crunchbase-export-post-processor]
+verify_jwt = false
+
