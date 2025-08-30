@@ -2015,6 +2015,8 @@ export type Database = {
           bucket_name: string | null
           content_type: string | null
           created_at: string
+          data_points_pe: Json | null
+          data_points_vc: Json | null
           deal_id: string
           document_analysis_id: string | null
           document_analysis_status:
@@ -2047,6 +2049,8 @@ export type Database = {
           bucket_name?: string | null
           content_type?: string | null
           created_at?: string
+          data_points_pe?: Json | null
+          data_points_vc?: Json | null
           deal_id: string
           document_analysis_id?: string | null
           document_analysis_status?:
@@ -2079,6 +2083,8 @@ export type Database = {
           bucket_name?: string | null
           content_type?: string | null
           created_at?: string
+          data_points_pe?: Json | null
+          data_points_vc?: Json | null
           deal_id?: string
           document_analysis_id?: string | null
           document_analysis_status?:

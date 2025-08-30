@@ -46,11 +46,33 @@ export function EnhancedDocumentAnalysis({ dealId, documentId, companyName }: Do
   const { getRAGCategory } = useStrategyThresholds();
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [documentInsights, setDocumentInsights] = useState<any>(null);
+  const [analysisInsights, setAnalysisInsights] = useState<any>(null);
 
+  // Get document data including new separated fields
+  const [documents, setDocuments] = useState<any[]>([]);
+  
   useEffect(() => {
-    loadExistingAnalysis();
+    if (dealId) {
+      loadDocumentData();
+    }
   }, [dealId, documentId]);
+  
+  const loadDocumentData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('deal_documents')
+        .select('id, name, document_summary, data_points_vc, data_points_pe, document_type, created_at')
+        .eq('deal_id', dealId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setDocuments(data || []);
+    } catch (error) {
+      console.error('Error loading document data:', error);
+    }
+  };
+  
+  const documentInsights = analysis?.document_insights || analysis?.engine_results?.document_insights;
 
   const loadExistingAnalysis = async () => {
     try {
@@ -72,7 +94,7 @@ export function EnhancedDocumentAnalysis({ dealId, documentId, companyName }: Do
         if (latestAnalysis.engine_results && typeof latestAnalysis.engine_results === 'object') {
           const engineResults = latestAnalysis.engine_results as any;
           if (engineResults.document_analysis) {
-            setDocumentInsights(engineResults.document_analysis);
+            setAnalysisInsights(engineResults.document_analysis);
           }
         }
       }
@@ -116,7 +138,7 @@ export function EnhancedDocumentAnalysis({ dealId, documentId, companyName }: Do
       if (updateError) throw updateError;
 
       setAnalysis(updatedAnalysis);
-      setDocumentInsights(analysisResult);
+      setAnalysisInsights(analysisResult);
       
       toast({
         title: "Analysis Complete",
@@ -249,21 +271,100 @@ export function EnhancedDocumentAnalysis({ dealId, documentId, companyName }: Do
             </CardContent>
           </Card>
 
-          {/* Document Insights */}
-          {documentInsights && (
+          {/* Document Data Points Section */}
+          {documents.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  Document Insights
+                  Document Data & Insights
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {documentInsights.key_findings && (
-                  <div>
-                    <h4 className="font-medium mb-2">Key Findings</h4>
-                    <ul className="space-y-1">
-                      {documentInsights.key_findings.map((finding: string, index: number) => (
+              <CardContent className="space-y-6">
+                {documents.map((doc) => (
+                  <div key={doc.id} className="border rounded-lg p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">{doc.name}</h4>
+                      <Badge variant="outline">{doc.document_type || 'Document'}</Badge>
+                    </div>
+                    
+                    {/* Document Summary */}
+                    {doc.document_summary?.narrative && (
+                      <div>
+                        <h5 className="text-sm font-medium mb-2">Summary</h5>
+                        <p className="text-sm text-muted-foreground">{doc.document_summary.narrative}</p>
+                      </div>
+                    )}
+                    
+                    {/* VC Data Points */}
+                    {doc.data_points_vc && (
+                      <div>
+                        <h5 className="text-sm font-medium mb-3">VC Data Points</h5>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {Object.entries(doc.data_points_vc).map(([key, value]: [string, any]) => (
+                            <div key={key} className="text-xs">
+                              <span className="font-medium">{key}:</span>
+                              <span className="text-muted-foreground ml-1">
+                                {typeof value === 'string' ? value : JSON.stringify(value)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* PE Data Points */}
+                    {doc.data_points_pe && (
+                      <div>
+                        <h5 className="text-sm font-medium mb-3">PE Data Points (Blueprint v2)</h5>
+                        <div className="space-y-3">
+                          {Object.entries(doc.data_points_pe).map(([subcategory, data]: [string, any]) => (
+                            <div key={subcategory} className="border-l-2 border-muted pl-3">
+                              <span className="text-xs font-medium">{subcategory}:</span>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {typeof data === 'string' ? (
+                                  <span>{data}</span>
+                                ) : typeof data === 'object' ? (
+                                  <div className="grid grid-cols-2 gap-2 mt-1">
+                                    {Object.entries(data).map(([key, value]: [string, any]) => (
+                                      <div key={key}>
+                                        <span className="font-medium">{key.replace(/_/g, ' ')}:</span>
+                                        <span className="ml-1">
+                                          {Array.isArray(value) ? value.join(', ') : String(value)}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <span>{JSON.stringify(data)}</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Document Insights */}
+          {documentInsights && (
+            <Card>
+              <CardHeader>
+                 <CardTitle className="flex items-center gap-2">
+                   <FileText className="h-5 w-5" />
+                   Analysis Insights
+                 </CardTitle>
+               </CardHeader>
+               <CardContent className="space-y-4">
+                 {analysisInsights.key_findings && (
+                   <div>
+                     <h4 className="font-medium mb-2">Key Findings</h4>
+                     <ul className="space-y-1">
+                       {analysisInsights.key_findings.map((finding: string, index: number) => (
                         <li key={index} className="flex items-start gap-2 text-sm">
                           <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                           <span>{finding}</span>
@@ -275,11 +376,11 @@ export function EnhancedDocumentAnalysis({ dealId, documentId, companyName }: Do
 
                 <Separator />
 
-                {documentInsights.financial_highlights && (
-                  <div>
-                    <h4 className="font-medium mb-2">Financial Highlights</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {Object.entries(documentInsights.financial_highlights).map(([key, value]: [string, any]) => (
+                 {analysisInsights.financial_highlights && (
+                   <div>
+                     <h4 className="font-medium mb-2">Financial Highlights</h4>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       {Object.entries(analysisInsights.financial_highlights).map(([key, value]: [string, any]) => (
                         <div key={key} className="flex justify-between">
                           <span className="text-sm text-muted-foreground capitalize">
                             {key.replace(/_/g, ' ')}:
@@ -293,11 +394,11 @@ export function EnhancedDocumentAnalysis({ dealId, documentId, companyName }: Do
 
                 <Separator />
 
-                {documentInsights.risks && (
-                  <div>
-                    <h4 className="font-medium mb-2 text-red-600">Risk Factors</h4>
-                    <ul className="space-y-1">
-                      {documentInsights.risks.map((risk: string, index: number) => (
+                 {analysisInsights.risks && (
+                   <div>
+                     <h4 className="font-medium mb-2 text-red-600">Risk Factors</h4>
+                     <ul className="space-y-1">
+                       {analysisInsights.risks.map((risk: string, index: number) => (
                         <li key={index} className="flex items-start gap-2 text-sm">
                           <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
                           <span>{risk}</span>
@@ -307,11 +408,11 @@ export function EnhancedDocumentAnalysis({ dealId, documentId, companyName }: Do
                   </div>
                 )}
 
-                {documentInsights.opportunities && (
-                  <div>
-                    <h4 className="font-medium mb-2 text-green-600">Opportunities</h4>
-                    <ul className="space-y-1">
-                      {documentInsights.opportunities.map((opportunity: string, index: number) => (
+                 {analysisInsights.opportunities && (
+                   <div>
+                     <h4 className="font-medium mb-2 text-green-600">Opportunities</h4>
+                     <ul className="space-y-1">
+                       {analysisInsights.opportunities.map((opportunity: string, index: number) => (
                         <li key={index} className="flex items-start gap-2 text-sm">
                           <TrendingUp className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                           <span>{opportunity}</span>

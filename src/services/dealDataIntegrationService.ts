@@ -203,7 +203,7 @@ export class DealDataIntegrationService {
     try {
       const { data, error } = await supabase
         .from('deal_documents')
-        .select('extracted_text, parsed_data, document_summary, document_type')
+        .select('extracted_text, parsed_data, document_summary, data_points_vc, data_points_pe, document_type')
         .eq('deal_id', dealId)
         .order('created_at', { ascending: false });
       
@@ -341,10 +341,11 @@ export class DealDataIntegrationService {
       perplexityMarketData 
     } = sources;
     
-    // Extract document insights
+    // Extract document insights - use new structure
     const documentInsights = documentData ? documentData.map((doc: any) => ({
       type: doc.document_type,
-      summary: doc.document_summary,
+      summary: doc.document_summary?.narrative || doc.document_summary,
+      vcDataPoints: doc.data_points_vc,
       keyData: doc.parsed_data
     })) : [];
     
@@ -410,10 +411,11 @@ export class DealDataIntegrationService {
       perplexityMarketDataPE 
     } = sources;
     
-    // Extract document insights
+    // Extract document insights - use new structure  
     const documentInsights = documentData ? documentData.map((doc: any) => ({
       type: doc.document_type,
-      summary: doc.document_summary,
+      summary: doc.document_summary?.narrative || doc.document_summary,
+      peDataPoints: doc.data_points_pe,
       keyData: doc.parsed_data
     })) : [];
     

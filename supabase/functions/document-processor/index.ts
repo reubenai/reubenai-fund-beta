@@ -129,13 +129,13 @@ function parseAIAnalysis(analysis: string, analysisType: string) {
   }
 }
 
-// Investment Summary Generator
+// Investment Summary Generator - generates narrative summary
 async function generateInvestmentSummary(extractedText: string, document: any, openAIApiKey: string) {
   if (!openAIApiKey) {
     throw new Error('OpenAI API key is required for investment summary generation');
   }
 
-  const prompt = `You are an expert VC analyst. Analyze the following document and generate an investment summary with specific data points.
+  const prompt = `You are an expert investment analyst. Analyze the following document and generate a concise narrative investment summary.
 
 Document: ${document.name}
 Category: ${document.document_category}
@@ -144,8 +144,74 @@ Extracted Text:
 ${extractedText.substring(0, 6000)}
 
 Generate a JSON response with:
-1. "narrative" - A concise 2-3 sentence summary of the company/opportunity
-2. "data_points" - An object with these exact keys, using "not listed" if data is not found:
+1. "narrative" - A concise 2-3 sentence summary of the company/opportunity highlighting key value proposition and market opportunity
+
+Example format:
+{
+  "narrative": "Company description in 2-3 sentences highlighting key value proposition and market opportunity."
+}`;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { 
+            role: 'system', 
+            content: 'You are an expert investment analyst specializing in investment summary generation. Always respond with valid JSON containing narrative field.'
+          },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.2,
+        max_tokens: 500
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const summaryContent = data.choices[0].message.content;
+    
+    // Parse the JSON response
+    const summaryData = JSON.parse(summaryContent);
+    
+    // Validate the structure
+    if (!summaryData.narrative) {
+      throw new Error('Invalid summary structure received from AI');
+    }
+    
+    return summaryData;
+  } catch (error) {
+    console.error('Investment summary generation failed:', error);
+    // Return a fallback structure
+    return {
+      narrative: `Investment summary for ${document.name}. Document analysis completed with available data extraction.`
+    };
+  }
+}
+
+// VC Data Points Generator - extracts VC-specific metrics
+async function generateVCDataPoints(extractedText: string, document: any, openAIApiKey: string) {
+  if (!openAIApiKey) {
+    return generateFallbackVCDataPoints();
+  }
+
+  const prompt = `You are an expert VC analyst. Analyze the following document and extract specific VC data points.
+
+Document: ${document.name}
+Category: ${document.document_category}
+
+Extracted Text:
+${extractedText.substring(0, 6000)}
+
+Generate a JSON response with these exact keys, using "not listed" if data is not found:
 
 Required data points:
 - TAM
@@ -167,25 +233,22 @@ Required data points:
 
 Example format:
 {
-  "narrative": "Company description in 2-3 sentences highlighting key value proposition and market opportunity.",
-  "data_points": {
-    "TAM": "not listed",
-    "SAM": "not listed", 
-    "SOM": "not listed",
-    "CAGR": "15.1%",
-    "Growth Drivers": "Key growth factors identified",
-    "Market Share Distribution": "not listed",
-    "Key Market Players": "Competitor names if mentioned",
-    "Whitespace Opportunities": "Market gaps identified",
-    "Addressable Customers": "Customer count or description",
-    "CAC Trend": "not listed",
-    "LTV:CAC Ratio": "not listed", 
-    "Retention Rate": "not listed",
-    "Channel Effectiveness": "Distribution channels mentioned",
-    "Strategic Advisors": "not listed",
-    "Investor Network": "Investor names if mentioned",
-    "Partnership Ecosystem": "Partners mentioned"
-  }
+  "TAM": "not listed",
+  "SAM": "not listed", 
+  "SOM": "not listed",
+  "CAGR": "15.1%",
+  "Growth Drivers": "Key growth factors identified",
+  "Market Share Distribution": "not listed",
+  "Key Market Players": "Competitor names if mentioned",
+  "Whitespace Opportunities": "Market gaps identified",
+  "Addressable Customers": "Customer count or description",
+  "CAC Trend": "not listed",
+  "LTV:CAC Ratio": "not listed", 
+  "Retention Rate": "not listed",
+  "Channel Effectiveness": "Distribution channels mentioned",
+  "Strategic Advisors": "not listed",
+  "Investor Network": "Investor names if mentioned",
+  "Partnership Ecosystem": "Partners mentioned"
 }`;
 
   try {
@@ -200,12 +263,12 @@ Example format:
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert VC analyst specializing in investment summary generation. Always respond with valid JSON containing narrative and data_points fields.'
+            content: 'You are an expert VC analyst specializing in data point extraction. Always respond with valid JSON containing the specified data points.'
           },
           { role: 'user', content: prompt }
         ],
         temperature: 0.2,
-        max_tokens: 1500
+        max_tokens: 1000
       }),
     });
 
@@ -214,42 +277,307 @@ Example format:
     }
 
     const data = await response.json();
-    const summaryContent = data.choices[0].message.content;
+    const dataPointsContent = data.choices[0].message.content;
     
     // Parse the JSON response
-    const summaryData = JSON.parse(summaryContent);
+    const dataPoints = JSON.parse(dataPointsContent);
     
-    // Validate the structure
-    if (!summaryData.narrative || !summaryData.data_points) {
-      throw new Error('Invalid summary structure received from AI');
-    }
-    
-    return summaryData;
+    return dataPoints;
   } catch (error) {
-    console.error('Investment summary generation failed:', error);
-    // Return a fallback structure
-    return {
-      narrative: `Investment summary for ${document.name}. Document analysis completed with available data extraction.`,
-      data_points: {
-        "TAM": "not listed",
-        "SAM": "not listed",
-        "SOM": "not listed", 
-        "CAGR": "not listed",
-        "Growth Drivers": "not listed",
-        "Market Share Distribution": "not listed",
-        "Key Market Players": "not listed", 
-        "Whitespace Opportunities": "not listed",
-        "Addressable Customers": "not listed",
-        "CAC Trend": "not listed",
-        "LTV:CAC Ratio": "not listed",
-        "Retention Rate": "not listed",
-        "Channel Effectiveness": "not listed",
-        "Strategic Advisors": "not listed",
-        "Investor Network": "not listed",
-        "Partnership Ecosystem": "not listed"
-      }
-    };
+    console.error('VC data points generation failed:', error);
+    return generateFallbackVCDataPoints();
   }
+}
+
+// PE Data Points Generator - extracts data from PE Perplexity tables and maps to Blueprint v2
+async function generatePEDataPoints(dealId: string, supabaseClient: any) {
+  try {
+    console.log(`Generating PE data points for deal: ${dealId}`);
+    
+    // Fetch PE enrichment data from all 3 PE Perplexity tables
+    const [companyData, founderData, marketData] = await Promise.all([
+      fetchPECompanyData(dealId, supabaseClient),
+      fetchPEFounderData(dealId, supabaseClient),
+      fetchPEMarketData(dealId, supabaseClient)
+    ]);
+    
+    // Map to PE Blueprint v2 subcriteria structure
+    const peDataPoints = {
+      // Financial Performance subcriteria
+      "Revenue Quality": extractRevenueQuality(companyData),
+      "Profitability Analysis": extractProfitabilityAnalysis(companyData),
+      "Cash Management": extractCashManagement(companyData),
+      
+      // Operational Excellence subcriteria
+      "Management Team Strength": extractManagementStrength(founderData),
+      "Operational Efficiency": extractOperationalEfficiency(companyData),
+      "Technology & Systems": extractTechnologySystems(companyData),
+      
+      // Market Position subcriteria
+      "Market Share & Position": extractMarketPosition(companyData, marketData),
+      "Competitive Advantages": extractCompetitiveAdvantages(companyData),
+      "Customer Base Quality": extractCustomerBaseQuality(companyData, marketData),
+      
+      // Management Quality subcriteria
+      "Leadership Track Record": extractLeadershipTrackRecord(founderData),
+      "Organizational Strength": extractOrganizationalStrength(founderData),
+      "Strategic Vision": extractStrategicVision(founderData),
+      
+      // Growth Potential subcriteria
+      "Market Expansion Opportunities": extractMarketExpansion(marketData),
+      "Value Creation Initiatives": extractValueCreation(companyData),
+      "Exit Strategy Potential": extractExitStrategy(marketData),
+      
+      // Strategic Fit subcriteria
+      "Fund Strategy Alignment": "to be determined based on fund criteria",
+      "Portfolio Synergies": "to be determined based on portfolio analysis",
+      "Risk-Return Profile": "to be determined based on fund objectives"
+    };
+    
+    console.log('✅ PE data points generated successfully');
+    return peDataPoints;
+    
+  } catch (error) {
+    console.error('PE data points generation failed:', error);
+    return generateFallbackPEDataPoints();
+  }
+}
+
+// Helper functions for PE data extraction
+async function fetchPECompanyData(dealId: string, supabaseClient: any) {
+  const { data } = await supabaseClient
+    .from('deal_enrichment_perplexity_company_export_pe')
+    .select('*')
+    .eq('deal_id', dealId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+  return data;
+}
+
+async function fetchPEFounderData(dealId: string, supabaseClient: any) {
+  const { data } = await supabaseClient
+    .from('deal_enrichment_perplexity_founder_export_pe')
+    .select('*')
+    .eq('deal_id', dealId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+  return data;
+}
+
+async function fetchPEMarketData(dealId: string, supabaseClient: any) {
+  const { data } = await supabaseClient
+    .from('deal_enrichment_perplexity_market_export_pe')
+    .select('*')
+    .eq('deal_id', dealId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+  return data;
+}
+
+// PE Data extraction functions mapping to Blueprint v2 subcriteria
+function extractRevenueQuality(companyData: any) {
+  if (!companyData) return "not listed";
+  const financial = companyData.financial_highlights || {};
+  const growth = companyData.growth_metrics || {};
+  return {
+    recurring_revenue: financial.recurring_revenue || "not listed",
+    revenue_predictability: growth.revenue_stability || "not listed",
+    customer_retention: financial.churn_rate || "not listed",
+    contract_length: financial.avg_contract_length || "not listed"
+  };
+}
+
+function extractProfitabilityAnalysis(companyData: any) {
+  if (!companyData) return "not listed";
+  const financial = companyData.financial_highlights || {};
+  const operational = companyData.operational_metrics || {};
+  return {
+    ebitda_margins: financial.ebitda_margin || "not listed",
+    margin_trends: financial.margin_evolution || "not listed",
+    operating_leverage: operational.operating_leverage || "not listed",
+    cost_structure: operational.cost_breakdown || "not listed"
+  };
+}
+
+function extractCashManagement(companyData: any) {
+  if (!companyData) return "not listed";
+  const financial = companyData.financial_highlights || {};
+  return {
+    free_cash_flow: financial.free_cash_flow || "not listed",
+    working_capital_efficiency: financial.working_capital_cycle || "not listed",
+    cash_conversion_cycle: financial.cash_conversion || "not listed",
+    dso_metrics: financial.days_sales_outstanding || "not listed"
+  };
+}
+
+function extractManagementStrength(founderData: any) {
+  if (!founderData) return "not listed";
+  return {
+    leadership_experience: founderData.leadership_experience || [],
+    track_record: founderData.track_record || [],
+    industry_expertise: founderData.industry_expertise || [],
+    team_stability: founderData.team_retention || "not listed"
+  };
+}
+
+function extractOperationalEfficiency(companyData: any) {
+  if (!companyData) return "not listed";
+  const operational = companyData.operational_metrics || {};
+  return {
+    productivity_metrics: operational.productivity_indicators || "not listed",
+    process_automation: operational.automation_level || "not listed",
+    operational_kpis: operational.key_performance_indicators || {},
+    efficiency_benchmarks: operational.industry_benchmarks || "not listed"
+  };
+}
+
+function extractTechnologySystems(companyData: any) {
+  if (!companyData) return "not listed";
+  return {
+    technology_stack: companyData.technology_infrastructure || "not listed",
+    digital_capabilities: companyData.digital_transformation || "not listed",
+    automation_potential: companyData.automation_opportunities || [],
+    system_scalability: companyData.scalability_factors || []
+  };
+}
+
+function extractMarketPosition(companyData: any, marketData: any) {
+  const market = marketData?.market_position || "not listed";
+  const company = companyData?.market_position || "not listed";
+  return {
+    market_share: market,
+    competitive_position: company,
+    brand_recognition: companyData?.brand_strength || "not listed",
+    pricing_power: marketData?.pricing_dynamics || "not listed"
+  };
+}
+
+function extractCompetitiveAdvantages(companyData: any) {
+  if (!companyData) return "not listed";
+  return {
+    competitive_moats: companyData.key_success_factors || [],
+    differentiation: companyData.competitive_advantages || [],
+    barriers_to_entry: companyData.market_barriers || [],
+    unique_value_proposition: companyData.value_proposition || "not listed"
+  };
+}
+
+function extractCustomerBaseQuality(companyData: any, marketData: any) {
+  const customer = marketData?.customer_segments || {};
+  return {
+    customer_diversification: customer.diversification || "not listed",
+    customer_retention_rates: companyData?.financial_highlights?.retention_rate || "not listed",
+    customer_satisfaction: customer.satisfaction_scores || "not listed",
+    contract_duration: customer.avg_contract_length || "not listed"
+  };
+}
+
+function extractLeadershipTrackRecord(founderData: any) {
+  if (!founderData) return "not listed";
+  return {
+    leadership_history: founderData.track_record || [],
+    value_creation_experience: founderData.previous_exits || {},
+    industry_relationships: founderData.professional_network || {},
+    leadership_capabilities: founderData.leadership_style || "not listed"
+  };
+}
+
+function extractOrganizationalStrength(founderData: any) {
+  if (!founderData) return "not listed";
+  return {
+    organizational_depth: founderData.team_structure || "not listed",
+    employee_retention: founderData.retention_metrics || "not listed",
+    company_culture: founderData.culture_assessment || "not listed",
+    succession_planning: founderData.succession_plans || "not listed"
+  };
+}
+
+function extractStrategicVision(founderData: any) {
+  if (!founderData) return "not listed";
+  return {
+    strategic_planning: founderData.vision_strategy || "not listed",
+    execution_track_record: founderData.execution_capability || "not listed",
+    adaptability: founderData.change_management || "not listed",
+    strategic_clarity: founderData.strategic_direction || "not listed"
+  };
+}
+
+function extractMarketExpansion(marketData: any) {
+  if (!marketData) return "not listed";
+  return {
+    geographic_expansion: marketData.expansion_opportunities || [],
+    product_expansion: marketData.product_line_extensions || [],
+    market_penetration: marketData.market_penetration || "not listed",
+    expansion_runway: marketData.growth_potential || "not listed"
+  };
+}
+
+function extractValueCreation(companyData: any) {
+  if (!companyData) return "not listed";
+  return {
+    operational_improvements: companyData.process_optimization_potential || [],
+    cost_reduction_opportunities: companyData.cost_optimization || [],
+    efficiency_gains: companyData.efficiency_opportunities || [],
+    value_creation_roadmap: companyData.value_creation_plan || "not listed"
+  };
+}
+
+function extractExitStrategy(marketData: any) {
+  if (!marketData) return "not listed";
+  return {
+    strategic_buyers: marketData.potential_acquirers || [],
+    exit_multiples: marketData.exit_valuations || "not listed",
+    exit_timing: marketData.exit_timeline || "not listed",
+    market_receptivity: marketData.exit_market_conditions || "not listed"
+  };
+}
+
+// Fallback functions
+function generateFallbackVCDataPoints() {
+  return {
+    "TAM": "not listed",
+    "SAM": "not listed",
+    "SOM": "not listed", 
+    "CAGR": "not listed",
+    "Growth Drivers": "not listed",
+    "Market Share Distribution": "not listed",
+    "Key Market Players": "not listed", 
+    "Whitespace Opportunities": "not listed",
+    "Addressable Customers": "not listed",
+    "CAC Trend": "not listed",
+    "LTV:CAC Ratio": "not listed",
+    "Retention Rate": "not listed",
+    "Channel Effectiveness": "not listed",
+    "Strategic Advisors": "not listed",
+    "Investor Network": "not listed",
+    "Partnership Ecosystem": "not listed"
+  };
+}
+
+function generateFallbackPEDataPoints() {
+  return {
+    "Revenue Quality": "not listed",
+    "Profitability Analysis": "not listed",
+    "Cash Management": "not listed",
+    "Management Team Strength": "not listed",
+    "Operational Efficiency": "not listed",
+    "Technology & Systems": "not listed",
+    "Market Share & Position": "not listed",
+    "Competitive Advantages": "not listed",
+    "Customer Base Quality": "not listed",
+    "Leadership Track Record": "not listed",
+    "Organizational Strength": "not listed",
+    "Strategic Vision": "not listed",
+    "Market Expansion Opportunities": "not listed",
+    "Value Creation Initiatives": "not listed",
+    "Exit Strategy Potential": "not listed",
+    "Fund Strategy Alignment": "not listed",
+    "Portfolio Synergies": "not listed",
+    "Risk-Return Profile": "not listed"
+  };
 }
 
 const corsHeaders = {
@@ -329,20 +657,36 @@ serve(async (req) => {
     // Perform intelligent analysis on the extracted text
     const analysisResult = await analyzeDocument(extractedText, document, analysisType);
 
-    // Generate investment summary with structured VC data points
+    // Generate investment narrative summary
     let investmentSummary = null;
+    let vcDataPoints = null;
+    let peDataPoints = null;
+    
     if (extractedText && extractedText.length > 100) {
       try {
         console.log(`Generating investment summary for document: ${document.name}`);
         investmentSummary = await generateInvestmentSummary(extractedText, document, openAIApiKey);
         console.log('✅ Investment summary generated successfully');
+        
+        // Generate VC data points from document text
+        console.log(`Generating VC data points for document: ${document.name}`);
+        vcDataPoints = await generateVCDataPoints(extractedText, document, openAIApiKey);
+        console.log('✅ VC data points generated successfully');
+        
+        // Generate PE data points from Perplexity tables (if deal exists)
+        if (document.deal_id) {
+          console.log(`Generating PE data points for deal: ${document.deal_id}`);
+          peDataPoints = await generatePEDataPoints(document.deal_id, supabaseClient);
+          console.log('✅ PE data points generated successfully');
+        }
+        
       } catch (summaryError) {
-        console.warn('Investment summary generation failed:', summaryError);
-        // Continue processing even if summary fails
+        console.warn('Investment summary/data points generation failed:', summaryError);
+        // Continue processing even if generation fails
       }
     }
 
-    // Update document with analysis results, extracted text, and investment summary
+    // Update document with analysis results, extracted text, and all 3 new fields
     const { error: updateError } = await supabaseClient
       .from('deal_documents')
       .update({
@@ -351,13 +695,17 @@ serve(async (req) => {
         extracted_text: extractedText,
         parsed_data: analysisResult.parsed_data || {},
         document_summary: investmentSummary,
+        data_points_vc: vcDataPoints,
+        data_points_pe: peDataPoints,
         metadata: {
           ...document.metadata,
           analysis_completed_at: new Date().toISOString(),
           analysis_result: analysisResult,
           analysis_type: analysisType,
           text_extraction_completed: true,
-          investment_summary_generated: !!investmentSummary
+          investment_summary_generated: !!investmentSummary,
+          vc_data_points_generated: !!vcDataPoints,
+          pe_data_points_generated: !!peDataPoints
         }
       })
       .eq('id', documentId);
