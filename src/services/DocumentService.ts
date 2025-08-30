@@ -240,15 +240,27 @@ class DocumentService {
 
       onProgress?.({ progress: 100, status: 'complete', message: 'Upload complete!' });
 
-      // Trigger document processing (non-blocking)
+      // Trigger modern document processing (non-blocking)
       try {
-        await supabase.functions.invoke('document-processor', {
-          body: {
-            documentId: documentRecord.id,
-            analysisType: 'quick'
-          }
-        });
-        console.log(`📋 Document processing triggered for ${documentRecord.id}`);
+        // Get fund type for proper data point extraction
+        const { data: fundWithType } = await supabase
+          .from('funds')
+          .select('fund_type')
+          .eq('id', dealData.fund_id)
+          .single();
+
+        if (fundWithType) {
+          const fundType = fundWithType.fund_type;
+          await supabase.functions.invoke('modern-document-processor', {
+            body: { 
+              documentId: documentRecord.id, 
+              fundType: fundType 
+            }
+          });
+          console.log(`📋 Modern document processing triggered for ${documentRecord.id} (${fundType})`);
+        } else {
+          console.warn('⚠️ Could not determine fund type for document processing');
+        }
       } catch (processingError) {
         console.warn('⚠️ Failed to trigger document processing:', processingError);
         // Don't fail the upload if processing trigger fails

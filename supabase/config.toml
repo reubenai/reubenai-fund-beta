@@ -202,3 +202,6 @@ verify_jwt = false
 
 [functions.background-deal-enrichment]
 verify_jwt = false
+
+[functions.modern-document-processor]
+verify_jwt = false
