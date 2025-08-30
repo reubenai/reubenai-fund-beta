@@ -17,7 +17,17 @@ export function useAnalysisQueueManager() {
 
       if (error) throw error;
 
-      const stats = {
+      // Also get job queue stats for enrichment engines
+      const { data: jobData, error: jobError } = await supabase
+        .from('job_queues')
+        .select('status, engine, created_at, retry_count')
+        .in('engine', ['crunchbase_enrichment', 'linkedin_profile_enrichment'])
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (jobError) throw jobError;
+
+      const analysisStats = {
         total: data?.length || 0,
         queued: data?.filter(item => item.status === 'queued').length || 0,
         processing: data?.filter(item => item.status === 'processing').length || 0,
@@ -28,6 +38,25 @@ export function useAnalysisQueueManager() {
           item.status === 'failed' && 
           new Date(item.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)
         ).length || 0
+      };
+
+      const enrichmentStats = {
+        total: jobData?.length || 0,
+        queued: jobData?.filter(item => item.status === 'queued').length || 0,
+        processing: jobData?.filter(item => item.status === 'processing').length || 0,
+        completed: jobData?.filter(item => item.status === 'completed').length || 0,
+        failed: jobData?.filter(item => item.status === 'failed').length || 0,
+        crunchbase_queued: jobData?.filter(item => item.engine === 'crunchbase_enrichment' && item.status === 'queued').length || 0,
+        linkedin_queued: jobData?.filter(item => item.engine === 'linkedin_profile_enrichment' && item.status === 'queued').length || 0,
+      };
+
+      const stats = {
+        analysis: analysisStats,
+        enrichment: enrichmentStats,
+        combined: {
+          total_queued: analysisStats.queued + enrichmentStats.queued,
+          total_processing: analysisStats.processing + enrichmentStats.processing
+        }
       };
 
       setQueueStats(stats);
@@ -43,22 +72,51 @@ export function useAnalysisQueueManager() {
       setIsProcessing(true);
       console.log('🔄 Starting controlled queue processing...');
 
-      const { data, error } = await supabase.functions.invoke('universal-analysis-processor');
+      // Process analysis queue
+      const { data: analysisData, error: analysisError } = await supabase.functions.invoke('universal-analysis-processor');
+      
+      // Process enrichment queues using QueueManager
+      const enrichmentResults = await Promise.allSettled([
+        supabase.rpc('process_enrichment_queue', { queue_name: 'crunchbase_enrichment_queue' }),
+        supabase.rpc('process_enrichment_queue', { queue_name: 'linkedin_profile_enrichment_queue' })
+      ]);
 
-      if (error) {
-        console.error('❌ Queue processing failed:', error);
+      let totalProcessed = 0;
+      let totalSuccessful = 0;
+      let totalFailed = 0;
+
+      if (analysisError) {
+        console.error('❌ Analysis queue processing failed:', analysisError);
         toast({
-          title: "Queue Processing Failed",
-          description: error.message || "Could not process analysis queue",
+          title: "Analysis Queue Processing Failed",
+          description: analysisError.message || "Could not process analysis queue",
           variant: "destructive"
         });
         return false;
       }
 
-      console.log('✅ Queue processing completed:', data);
+      totalProcessed += (analysisData?.processed || 0);
+      totalSuccessful += (analysisData?.successful || 0);
+      totalFailed += (analysisData?.failed || 0);
+
+      // Process enrichment results
+      enrichmentResults.forEach((result, index) => {
+        const queueName = index === 0 ? 'Crunchbase' : 'LinkedIn';
+        if (result.status === 'fulfilled' && result.value.data) {
+          const enrichmentData = result.value.data;
+          totalProcessed += (enrichmentData.processed || 0);
+          totalSuccessful += (enrichmentData.processed || 0) - (enrichmentData.failed || 0);
+          totalFailed += (enrichmentData.failed || 0);
+          console.log(`✅ ${queueName} enrichment queue processed:`, enrichmentData);
+        } else {
+          console.warn(`⚠️ ${queueName} enrichment queue processing warning:`, result);
+        }
+      });
+
+      console.log('✅ All queue processing completed:', { totalProcessed, totalSuccessful, totalFailed });
       toast({
-        title: "Queue Processed",
-        description: `Processed ${data?.processed || 0} items (${data?.successful || 0} successful, ${data?.failed || 0} failed)`,
+        title: "Queues Processed",
+        description: `Processed ${totalProcessed} items (${totalSuccessful} successful, ${totalFailed} failed)`,
       });
 
       // Refresh queue stats
