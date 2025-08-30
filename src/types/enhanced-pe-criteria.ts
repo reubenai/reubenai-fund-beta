@@ -32,7 +32,7 @@ export const ENHANCED_PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
   categories: [
     {
       name: 'Financial Performance',
-      weight: 35,
+      weight: 25,
       enabled: true,
       icon: 'DollarSign',
       description: 'Assess financial health, profitability, and cash generation',
@@ -68,7 +68,7 @@ export const ENHANCED_PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
     },
     {
       name: 'Operational Excellence',
-      weight: 25,
+      weight: 20,
       enabled: true,
       icon: 'Shield',
       description: 'Evaluate operational efficiency and management quality',
@@ -104,7 +104,7 @@ export const ENHANCED_PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
     },
     {
       name: 'Market Position',
-      weight: 15,
+      weight: 20,
       enabled: true,
       icon: 'Target',
       description: 'Evaluate competitive position and market dynamics',
@@ -140,7 +140,7 @@ export const ENHANCED_PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
     },
     {
       name: 'Management Quality',
-      weight: 10,
+      weight: 15,
       enabled: true,
       icon: 'Users',
       description: 'Assess leadership quality and organizational capabilities',
@@ -212,7 +212,7 @@ export const ENHANCED_PE_CRITERIA_TEMPLATE: EnhancedCriteriaTemplate = {
     },
     {
       name: 'Strategic Fit',
-      weight: 5,
+      weight: 10,
       enabled: true,
       icon: 'Target',
       description: 'Evaluate alignment with fund strategy and portfolio synergies',

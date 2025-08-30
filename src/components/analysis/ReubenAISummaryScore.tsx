@@ -9,6 +9,12 @@ import { MarketOpportunityAssessment } from './MarketOpportunityAssessment';
 import { FounderTeamStrengthAssessment } from './FounderTeamStrengthAssessment';
 import { ProductIPMoatAssessment } from './ProductIPMoatAssessment';
 import { TractionFinancialFeasibilityAssessment } from './TractionFinancialFeasibilityAssessment';
+import { BlueprintPEFinancialPerformance } from './blueprint/BlueprintPEFinancialPerformance';
+import { BlueprintPEOperationalExcellence } from './blueprint/BlueprintPEOperationalExcellence';
+import { BlueprintPEMarketPosition } from './blueprint/BlueprintPEMarketPosition';
+import { BlueprintPEManagementQuality } from './blueprint/BlueprintPEManagementQuality';
+import { BlueprintPEGrowthPotential } from './blueprint/BlueprintPEGrowthPotential';
+import { BlueprintPEStrategicFit } from './blueprint/BlueprintPEStrategicFit';
 import { toTemplateFundType, type AnyFundType } from '@/utils/fundTypeConversion';
 
 interface ReubenAISummaryScoreProps {
@@ -201,15 +207,46 @@ export function ReubenAISummaryScore({ deal, fundType, onScoreCalculated }: Reub
             </div>
           </div>
         ) : (
-          // PE Assessment - show placeholder for now
-          <div className="space-y-3">
+          // PE Assessment Components
+          <div className="space-y-6">
             <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
               PE Assessment Criteria
             </h4>
-            <div className="p-6 rounded-lg border bg-muted/30 text-center">
-              <p className="text-sm text-muted-foreground">
-                PE assessment components coming soon
-              </p>
+            
+            {/* Financial Performance */}
+            <div>
+              <h5 className="font-medium text-sm mb-3 text-primary">Financial Performance (25%)</h5>
+              <BlueprintPEFinancialPerformance deal={deal} />
+            </div>
+            
+            {/* Operational Excellence */}
+            <div>
+              <h5 className="font-medium text-sm mb-3 text-primary">Operational Excellence (20%)</h5>
+              <BlueprintPEOperationalExcellence deal={deal} />
+            </div>
+            
+            {/* Market Position */}
+            <div>
+              <h5 className="font-medium text-sm mb-3 text-primary">Market Position (20%)</h5>
+              <BlueprintPEMarketPosition deal={deal} />
+            </div>
+            
+            {/* Management Quality */}
+            <div>
+              <h5 className="font-medium text-sm mb-3 text-primary">Management Quality (15%)</h5>
+              <BlueprintPEManagementQuality deal={deal} />
+            </div>
+            
+            {/* Growth Potential */}
+            <div>
+              <h5 className="font-medium text-sm mb-3 text-primary">Growth Potential (10%)</h5>
+              <BlueprintPEGrowthPotential deal={deal} />
+            </div>
+            
+            {/* Strategic Fit */}
+            <div>
+              <h5 className="font-medium text-sm mb-3 text-primary">Strategic Fit (10%)</h5>
+              <BlueprintPEStrategicFit deal={deal} />
             </div>
           </div>
         )}

@@ -1522,6 +1522,7 @@ export type Database = {
           founding_year: number | null
           free_cash_flow_yield: number | null
           fund_id: string
+          fund_strategy_alignment: Json | null
           funding_stage: string | null
           geography: string | null
           governance_best_practices: Json | null
@@ -1544,6 +1545,7 @@ export type Database = {
           organic_growth_potential: Json | null
           organization_id: string
           organizational_capabilities: string[] | null
+          portfolio_synergies: Json | null
           pricing_optimization_potential: number | null
           process_optimization_potential: string[] | null
           product_line_extensions: string[] | null
@@ -1552,9 +1554,11 @@ export type Database = {
           return_on_invested_capital: number | null
           revenue_growth_rate: number | null
           risk_mitigation_strategies: string[] | null
+          risk_return_profile: Json | null
           scalability_factors: string[] | null
           social_responsibility_metrics: Json | null
           source_engines: string[] | null
+          strategic_vision_assessment: Json | null
           succession_planning: Json | null
           supplier_relationships: Json | null
           supply_chain_efficiency: Json | null
@@ -1603,6 +1607,7 @@ export type Database = {
           founding_year?: number | null
           free_cash_flow_yield?: number | null
           fund_id: string
+          fund_strategy_alignment?: Json | null
           funding_stage?: string | null
           geography?: string | null
           governance_best_practices?: Json | null
@@ -1625,6 +1630,7 @@ export type Database = {
           organic_growth_potential?: Json | null
           organization_id: string
           organizational_capabilities?: string[] | null
+          portfolio_synergies?: Json | null
           pricing_optimization_potential?: number | null
           process_optimization_potential?: string[] | null
           product_line_extensions?: string[] | null
@@ -1633,9 +1639,11 @@ export type Database = {
           return_on_invested_capital?: number | null
           revenue_growth_rate?: number | null
           risk_mitigation_strategies?: string[] | null
+          risk_return_profile?: Json | null
           scalability_factors?: string[] | null
           social_responsibility_metrics?: Json | null
           source_engines?: string[] | null
+          strategic_vision_assessment?: Json | null
           succession_planning?: Json | null
           supplier_relationships?: Json | null
           supply_chain_efficiency?: Json | null
@@ -1684,6 +1692,7 @@ export type Database = {
           founding_year?: number | null
           free_cash_flow_yield?: number | null
           fund_id?: string
+          fund_strategy_alignment?: Json | null
           funding_stage?: string | null
           geography?: string | null
           governance_best_practices?: Json | null
@@ -1706,6 +1715,7 @@ export type Database = {
           organic_growth_potential?: Json | null
           organization_id?: string
           organizational_capabilities?: string[] | null
+          portfolio_synergies?: Json | null
           pricing_optimization_potential?: number | null
           process_optimization_potential?: string[] | null
           product_line_extensions?: string[] | null
@@ -1714,9 +1724,11 @@ export type Database = {
           return_on_invested_capital?: number | null
           revenue_growth_rate?: number | null
           risk_mitigation_strategies?: string[] | null
+          risk_return_profile?: Json | null
           scalability_factors?: string[] | null
           social_responsibility_metrics?: Json | null
           source_engines?: string[] | null
+          strategic_vision_assessment?: Json | null
           succession_planning?: Json | null
           supplier_relationships?: Json | null
           supply_chain_efficiency?: Json | null
@@ -1762,7 +1774,7 @@ export type Database = {
           diversity_metrics: Json | null
           documents_data_points_vc: Json | null
           economic_sensitivity: string | null
-          employee_count: number | null
+          employee_count: string | null
           exit_history: Json | null
           founding_year: number | null
           fund_id: string
@@ -1850,7 +1862,7 @@ export type Database = {
           diversity_metrics?: Json | null
           documents_data_points_vc?: Json | null
           economic_sensitivity?: string | null
-          employee_count?: number | null
+          employee_count?: string | null
           exit_history?: Json | null
           founding_year?: number | null
           fund_id: string
@@ -1938,7 +1950,7 @@ export type Database = {
           diversity_metrics?: Json | null
           documents_data_points_vc?: Json | null
           economic_sensitivity?: string | null
-          employee_count?: number | null
+          employee_count?: string | null
           exit_history?: Json | null
           founding_year?: number | null
           fund_id?: string
