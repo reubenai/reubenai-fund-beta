@@ -163,7 +163,7 @@ export function DocumentDataPointsDisplay({ documents, fundType }: DocumentDataP
             )}
             
             {/* VC Data Points */}
-            {doc.data_points_vc && (
+            {doc.data_points_vc && (!fundType || fundType === 'vc') && (
               <div className="mb-4">
                 <h5 className="text-sm font-medium mb-3 flex items-center gap-2">
                   <Target className="h-4 w-4" />
@@ -176,7 +176,7 @@ export function DocumentDataPointsDisplay({ documents, fundType }: DocumentDataP
             )}
             
             {/* PE Data Points */}
-            {doc.data_points_pe && (
+            {doc.data_points_pe && (!fundType || fundType === 'pe') && (
               <div className="mb-4">
                 <h5 className="text-sm font-medium mb-3 flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
