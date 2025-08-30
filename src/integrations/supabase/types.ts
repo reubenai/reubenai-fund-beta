@@ -3649,6 +3649,48 @@ export type Database = {
         }
         Relationships: []
       }
+      deal2_enrichment_crunchbase_export: {
+        Row: {
+          company_name: string
+          created_at: string
+          crunchbase_url: string
+          deal_id: string
+          error_details: string | null
+          id: string
+          processing_status: string
+          raw_brightdata_response: Json | null
+          snapshot_id: string | null
+          timestamp: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          crunchbase_url: string
+          deal_id: string
+          error_details?: string | null
+          id?: string
+          processing_status?: string
+          raw_brightdata_response?: Json | null
+          snapshot_id?: string | null
+          timestamp?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          crunchbase_url?: string
+          deal_id?: string
+          error_details?: string | null
+          id?: string
+          processing_status?: string
+          raw_brightdata_response?: Json | null
+          snapshot_id?: string | null
+          timestamp?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       deal2_enrichment_linkedin_export: {
         Row: {
           company_name: string
