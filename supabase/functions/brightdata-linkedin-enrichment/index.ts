@@ -96,28 +96,31 @@ serve(async (req) => {
     const brightdataData = await pollBrightdataSnapshot(snapshotId, brightdataApiKey);
     console.log(`✅ [Brightdata] Final data retrieved:`, JSON.stringify(brightdataData, null, 2));
 
-    // Process and structure the Brightdata response
-    const processedData = await processBrightdataResponse(brightdataData, companyName, dealId, snapshotId, supabaseClient);
-    
-    // Store the enrichment result in deal_analysis_sources for backward compatibility
-    await supabaseClient.from('deal_analysis_sources').insert({
-      deal_id: dealId,
-      engine_name: 'brightdata-linkedin-enrichment',
-      source_type: 'linkedin_api',
-      data_retrieved: processedData,
-      confidence_score: processedData.dataQuality || 85,
-      validated: true,
-      source_url: linkedinUrl
-    });
+    // Store raw response first - database triggers will handle processing
+    const { error: rawInsertError } = await supabaseClient
+      .from('deal_enrichment_linkedin_export')
+      .insert({
+        deal_id: dealId,
+        snapshot_id: snapshotId,
+        company_name: companyName,
+        raw_brightdata_response: brightdataData,
+        processing_status: 'pending',
+        timestamp: new Date().toISOString()
+      });
 
-    console.log(`✅ [Brightdata] Enrichment completed for ${companyName}`);
+    if (rawInsertError) {
+      console.error('❌ [Brightdata] Failed to store raw LinkedIn response:', rawInsertError);
+      throw new Error('Failed to store raw LinkedIn response');
+    }
+
+    console.log('✅ [Brightdata] Raw LinkedIn response stored, processing will be triggered automatically');
 
     return new Response(JSON.stringify({
       success: true,
-      data: processedData,
+      data: { stored: true, snapshot_id: snapshotId },
       dataSource: 'brightdata',
       trustScore: 95,
-      dataQuality: processedData.dataQuality || 85
+      dataQuality: 85
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

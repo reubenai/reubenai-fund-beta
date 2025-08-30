@@ -96,28 +96,33 @@ serve(async (req) => {
     const brightdataData = await pollBrightdataSnapshot(snapshotId, brightdataApiKey);
     console.log(`✅ [Brightdata Profile] Final data retrieved:`, JSON.stringify(brightdataData, null, 2));
 
-    // Process and structure the Brightdata response
-    const processedData = await processBrightdataProfileResponse(brightdataData, firstName, lastName, dealId, snapshotId, supabaseClient);
-    
-    // Store the enrichment result in deal_analysis_sources for backward compatibility
-    await supabaseClient.from('deal_analysis_sources').insert({
-      deal_id: dealId,
-      engine_name: 'brightdata-linkedin-profile-enrichment',
-      source_type: 'linkedin_profile_api',
-      data_retrieved: processedData,
-      confidence_score: processedData.dataQuality || 85,
-      validated: true,
-      source_url: processedData.url || null
-    });
+    // Store raw response first - database triggers will handle processing
+    const { error: rawInsertError } = await supabaseClient
+      .from('deal_enrichment_linkedin_profile_export')
+      .insert({
+        deal_id: dealId,
+        snapshot_id: snapshotId,
+        first_name: firstName,
+        last_name: lastName,
+        name: `${firstName} ${lastName}`,
+        raw_brightdata_response: brightdataData,
+        processing_status: 'pending',
+        timestamp: new Date().toISOString()
+      });
 
-    console.log(`✅ [Brightdata Profile] Profile enrichment completed for ${firstName} ${lastName}`);
+    if (rawInsertError) {
+      console.error('❌ [Brightdata Profile] Failed to store raw LinkedIn profile response:', rawInsertError);
+      throw new Error('Failed to store raw LinkedIn profile response');
+    }
+
+    console.log('✅ [Brightdata Profile] Raw LinkedIn profile response stored, processing will be triggered automatically');
 
     return new Response(JSON.stringify({
       success: true,
-      data: processedData,
+      data: { stored: true, snapshot_id: snapshotId },
       dataSource: 'brightdata',
       trustScore: 95,
-      dataQuality: processedData.dataQuality || 85
+      dataQuality: 85
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
