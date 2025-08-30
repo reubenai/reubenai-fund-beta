@@ -99,13 +99,12 @@ const GEOGRAPHIC_REGIONS = {
   }
 };
 
-// Streamlined 6-step wizard
+// Streamlined 5-step wizard (RAG thresholds step hidden)
 const WIZARD_STEPS = [
   { id: 'basics', title: 'Fund Basics', icon: Target, description: 'Core fund information and strategy overview' },
   { id: 'focus', title: 'Investment Focus', icon: Globe, description: 'Sectors, stages, and geographic focus' },
   { id: 'philosophy', title: 'Investment Philosophy', icon: Sparkles, description: 'Your investment beliefs and approach' },
   { id: 'criteria', title: 'Investment Criteria', icon: Settings, description: 'Detailed evaluation criteria and weights' },
-  { id: 'thresholds', title: 'Scoring Thresholds', icon: Target, description: 'AI scoring thresholds for deal evaluation' },
   { id: 'review', title: 'Review & Launch', icon: CheckCircle, description: 'Review configuration and activate strategy' }
 ];
 
@@ -337,8 +336,7 @@ export function EnhancedStrategyWizard({
                   wizardData.philosophyConfig?.valueCreationApproach?.length);
       case 3: // Investment Criteria
         return validateEnhancedCriteria();
-      case 4: // Scoring Thresholds
-        return !!(wizardData.dealThresholds?.exciting && wizardData.dealThresholds?.promising);
+      // Step 4 (Scoring Thresholds) removed - RAG analysis disabled
       default:
         return true;
     }
@@ -1100,83 +1098,9 @@ export function EnhancedStrategyWizard({
                 </div>
               )}
 
-              {currentStep === 4 && (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <p className="text-muted-foreground">Set the scoring thresholds for deal categorization</p>
-                  </div>
-                  
-                  <div className="space-y-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-base font-medium text-success">Exciting Threshold</Label>
-                        <Badge variant="outline" className="text-success border-success">
-                          {wizardData.dealThresholds?.exciting || 85}%
-                        </Badge>
-                      </div>
-                      <Slider
-                        value={[wizardData.dealThresholds?.exciting || 85]}
-                        onValueChange={(values) => updateWizardData({
-                          dealThresholds: { ...wizardData.dealThresholds, exciting: values[0] }
-                        })}
-                        min={70}
-                        max={100}
-                        step={5}
-                        className="w-full"
-                      />
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-base font-medium text-warning">Promising Threshold</Label>
-                        <Badge variant="outline" className="text-warning border-warning">
-                          {wizardData.dealThresholds?.promising || 70}%
-                        </Badge>
-                      </div>
-                      <Slider
-                        value={[wizardData.dealThresholds?.promising || 70]}
-                        onValueChange={(values) => updateWizardData({
-                          dealThresholds: { ...wizardData.dealThresholds, promising: values[0] }
-                        })}
-                        min={50}
-                        max={90}
-                        step={5}
-                        className="w-full"
-                      />
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-base font-medium text-muted-foreground">Needs Development Threshold</Label>
-                        <Badge variant="outline">
-                          {wizardData.dealThresholds?.needs_development || 50}%
-                        </Badge>
-                      </div>
-                      <Slider
-                        value={[wizardData.dealThresholds?.needs_development || 50]}
-                        onValueChange={(values) => updateWizardData({
-                          dealThresholds: { ...wizardData.dealThresholds, needs_development: values[0] }
-                        })}
-                        min={20}
-                        max={70}
-                        step={5}
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 bg-muted/50 rounded-lg">
-                    <h4 className="font-medium mb-2">Threshold Guide</h4>
-                    <div className="space-y-1 text-sm text-muted-foreground">
-                      <div>• <span className="text-success">Exciting</span>: High-priority deals with strong investment potential</div>
-                      <div>• <span className="text-warning">Promising</span>: Solid opportunities worth deeper investigation</div>
-                      <div>• <span className="text-muted-foreground">Needs Development</span>: Early-stage or developing opportunities</div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Step 4 (Scoring Thresholds) hidden - RAG analysis disabled */}
 
-              {currentStep === 5 && (
+              {currentStep === 4 && (
                 <div className="space-y-6">
                   <div className="text-center">
                     <CheckCircle className="h-16 w-16 mx-auto text-success mb-4" />

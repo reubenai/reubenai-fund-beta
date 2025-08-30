@@ -363,67 +363,7 @@ export function CleanThesisConfiguration({
             </CardContent>
           </Card>
 
-          {/* Scoring Configuration */}
-          <Card className="border-0 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base font-medium">
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                Scoring Thresholds
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-6">
-                <div>
-                  <Label htmlFor="exciting-threshold" className="text-sm font-medium">
-                    Exciting
-                  </Label>
-                  <Input
-                    id="exciting-threshold"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editedStrategy.exciting_threshold || 85}
-                    onChange={(e) => updateField('exciting_threshold', parseInt(e.target.value))}
-                    className="mt-2 border-0 bg-muted/30"
-                    readOnly={!canConfigureStrategy}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Deals scoring above this threshold are categorized as "Exciting"</p>
-                </div>
-                <div>
-                  <Label htmlFor="promising-threshold" className="text-sm font-medium">
-                    Promising
-                  </Label>
-                  <Input
-                    id="promising-threshold"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editedStrategy.promising_threshold || 70}
-                    onChange={(e) => updateField('promising_threshold', parseInt(e.target.value))}
-                    className="mt-2 border-0 bg-muted/30"
-                    readOnly={!canConfigureStrategy}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Deals scoring above this threshold are categorized as "Promising"</p>
-                </div>
-                <div>
-                  <Label htmlFor="needs-development-threshold" className="text-sm font-medium">
-                    Needs Development
-                  </Label>
-                  <Input
-                    id="needs-development-threshold"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editedStrategy.needs_development_threshold || 50}
-                    onChange={(e) => updateField('needs_development_threshold', parseInt(e.target.value))}
-                    className="mt-2 border-0 bg-muted/30"
-                    readOnly={!canConfigureStrategy}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Deals scoring above this threshold are categorized as "Needs Development"</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Scoring Configuration - Hidden per RAG analysis disablement */}
         </div>
 
         {/* Sidebar */}
