@@ -2676,10 +2676,10 @@ export type Database = {
           organization_type: string | null
           processed_at: string | null
           processing_status: string | null
-          raw_brightdata_response: Json
+          raw_brightdata_response: Json | null
           similar_companies: Json | null
           slogan: string | null
-          snapshot_id: string
+          snapshot_id: string | null
           specialties: string[] | null
           stock_info: Json | null
           timestamp: string | null
@@ -2722,10 +2722,10 @@ export type Database = {
           organization_type?: string | null
           processed_at?: string | null
           processing_status?: string | null
-          raw_brightdata_response: Json
+          raw_brightdata_response?: Json | null
           similar_companies?: Json | null
           slogan?: string | null
-          snapshot_id: string
+          snapshot_id?: string | null
           specialties?: string[] | null
           stock_info?: Json | null
           timestamp?: string | null
@@ -2768,10 +2768,10 @@ export type Database = {
           organization_type?: string | null
           processed_at?: string | null
           processing_status?: string | null
-          raw_brightdata_response?: Json
+          raw_brightdata_response?: Json | null
           similar_companies?: Json | null
           slogan?: string | null
-          snapshot_id?: string
+          snapshot_id?: string | null
           specialties?: string[] | null
           stock_info?: Json | null
           timestamp?: string | null
