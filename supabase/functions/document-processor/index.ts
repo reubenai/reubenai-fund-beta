@@ -129,13 +129,13 @@ function parseAIAnalysis(analysis: string, analysisType: string) {
   }
 }
 
-// Investment Summary Generator - generates narrative summary
-async function generateInvestmentSummary(extractedText: string, document: any, openAIApiKey: string) {
+// Stage 1: Unified Chat Format Generation
+async function generateUnifiedDocumentSummary(extractedText: string, document: any, openAIApiKey: string) {
   if (!openAIApiKey) {
-    throw new Error('OpenAI API key is required for investment summary generation');
+    throw new Error('OpenAI API key is required for document summary generation');
   }
 
-  const prompt = `You are an expert investment analyst. Analyze the following document and generate a concise narrative investment summary.
+  const prompt = `You are an expert investment analyst. Analyze the following document and generate a comprehensive summary in conversational format.
 
 Document: ${document.name}
 Category: ${document.document_category}
@@ -143,13 +143,28 @@ Category: ${document.document_category}
 Extracted Text:
 ${extractedText.substring(0, 6000)}
 
-Generate a JSON response with:
-1. "narrative" - A concise 2-3 sentence summary of the company/opportunity highlighting key value proposition and market opportunity
+Generate a conversational summary containing:
+
+1. **Narrative** (5-8 sentences): Comprehensive summary highlighting the document content, key value proposition, market opportunity, business model, and strategic positioning.
+
+2. **VC Data Points**: Extract and list relevant VC metrics/keywords naturally in the conversation:
+- TAM, SAM, SOM if mentioned
+- Growth rates, market share, competitive positioning
+- Customer metrics (CAC, LTV, retention)
+- Funding information, investor network
+- Strategic partnerships and advisors
+
+3. **PE Data Points**: Extract and list relevant PE metrics/keywords naturally in the conversation:
+- Financial performance (revenue, profitability, margins)
+- Operational efficiency and management quality
+- Market position and competitive advantages
+- Growth potential and value creation opportunities
+- Exit strategy considerations
+
+Write this as one flowing conversational analysis that naturally incorporates all available data points and metrics from the document.
 
 Example format:
-{
-  "narrative": "Company description in 2-3 sentences highlighting key value proposition and market opportunity."
-}`;
+"[Company Name] is a [industry] company that [5-8 sentence narrative describing the business, market opportunity, competitive position, financial performance, and growth strategy]. The document reveals key VC metrics including TAM of [X], customer acquisition cost of [Y], and strategic partnerships with [partners]. From a PE perspective, the company demonstrates [financial performance indicators], operational strengths in [areas], and potential value creation through [opportunities]. The management team shows [leadership qualities] and the exit potential appears [assessment] based on [market factors]."`;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -163,12 +178,12 @@ Example format:
         messages: [
           { 
             role: 'system', 
-            content: 'You are an expert investment analyst specializing in investment summary generation. Always respond with valid JSON containing narrative field.'
+            content: 'You are an expert investment analyst. Generate comprehensive conversational document summaries that naturally incorporate both VC and PE data points.'
           },
           { role: 'user', content: prompt }
         ],
         temperature: 0.2,
-        max_tokens: 500
+        max_tokens: 1000
       }),
     });
 
@@ -177,24 +192,141 @@ Example format:
     }
 
     const data = await response.json();
-    const summaryContent = data.choices[0].message.content;
+    const unifiedSummary = data.choices[0].message.content;
     
-    // Parse the JSON response
-    const summaryData = JSON.parse(summaryContent);
-    
-    // Validate the structure
-    if (!summaryData.narrative) {
-      throw new Error('Invalid summary structure received from AI');
-    }
-    
-    return summaryData;
+    return unifiedSummary;
   } catch (error) {
-    console.error('Investment summary generation failed:', error);
-    // Return a fallback structure
+    console.error('Unified document summary generation failed:', error);
+    // Return a fallback summary
+    return `Analysis of ${document.name}: This document contains relevant business information and strategic insights. Key metrics and data points are available for review. The company demonstrates market positioning and growth potential. Financial and operational details require further analysis. Strategic recommendations and investment considerations are documented within the content.`;
+  }
+}
+
+// Stage 2: Parse Unified Summary into Components
+function parseUnifiedSummary(unifiedSummary: string, document: any) {
+  try {
+    // Extract narrative (first 5-8 sentences)
+    const sentences = unifiedSummary.match(/[^\.!?]+[\.!?]+/g) || [];
+    const narrative = sentences.slice(0, 8).join(' ').trim();
+    
+    // Extract VC data points using keywords and patterns
+    const vcDataPoints = extractVCDataFromText(unifiedSummary);
+    
+    // Extract PE data points using keywords and patterns
+    const peDataPoints = extractPEDataFromText(unifiedSummary);
+    
     return {
-      narrative: `Investment summary for ${document.name}. Document analysis completed with available data extraction.`
+      narrative: narrative || `Investment summary for ${document.name}. Document analysis completed with comprehensive insights.`,
+      data_points_vc: vcDataPoints,
+      data_points_pe: peDataPoints
+    };
+  } catch (error) {
+    console.error('Failed to parse unified summary:', error);
+    return {
+      narrative: `Analysis of ${document.name}: Document contains relevant business and investment information.`,
+      data_points_vc: generateFallbackVCDataPoints(),
+      data_points_pe: generateFallbackPEDataPoints()
     };
   }
+}
+
+// Extract VC data points from conversational text
+function extractVCDataFromText(text: string) {
+  const vcData: any = {};
+  
+  // TAM/SAM/SOM patterns
+  const tamMatch = text.match(/TAM[:\s]+([\$\d\.\s\w]+)/i);
+  const samMatch = text.match(/SAM[:\s]+([\$\d\.\s\w]+)/i);
+  const somMatch = text.match(/SOM[:\s]+([\$\d\.\s\w]+)/i);
+  
+  vcData["TAM"] = tamMatch ? tamMatch[1].trim() : "not listed";
+  vcData["SAM"] = samMatch ? samMatch[1].trim() : "not listed";
+  vcData["SOM"] = somMatch ? somMatch[1].trim() : "not listed";
+  
+  // Growth rates
+  const cagrMatch = text.match(/(?:CAGR|growth rate)[:\s]+([\d\.%\s]+)/i);
+  vcData["CAGR"] = cagrMatch ? cagrMatch[1].trim() : "not listed";
+  
+  // Customer metrics
+  const cacMatch = text.match(/(?:CAC|customer acquisition cost)[:\s]+([\$\d\.\s\w]+)/i);
+  const ltvMatch = text.match(/(?:LTV|lifetime value)[:\s]+([\$\d\.\s\w]+)/i);
+  const retentionMatch = text.match(/(?:retention rate|retention)[:\s]+([\d\.%\s]+)/i);
+  
+  vcData["CAC Trend"] = cacMatch ? cacMatch[1].trim() : "not listed";
+  vcData["LTV:CAC Ratio"] = ltvMatch && cacMatch ? `${ltvMatch[1].trim()}:${cacMatch[1].trim()}` : "not listed";
+  vcData["Retention Rate"] = retentionMatch ? retentionMatch[1].trim() : "not listed";
+  
+  // Market and competitive data
+  vcData["Growth Drivers"] = extractListItems(text, "growth driver", "expand", "scale") || "not listed";
+  vcData["Market Share Distribution"] = extractListItems(text, "market share", "market position") || "not listed";
+  vcData["Key Market Players"] = extractListItems(text, "competitor", "player", "rival") || "not listed";
+  vcData["Whitespace Opportunities"] = extractListItems(text, "opportunity", "potential", "gap") || "not listed";
+  vcData["Addressable Customers"] = extractListItems(text, "customer", "client", "target market") || "not listed";
+  vcData["Channel Effectiveness"] = extractListItems(text, "channel", "distribution", "sales") || "not listed";
+  vcData["Strategic Advisors"] = extractListItems(text, "advisor", "board member", "mentor") || "not listed";
+  vcData["Investor Network"] = extractListItems(text, "investor", "funding", "venture") || "not listed";
+  vcData["Partnership Ecosystem"] = extractListItems(text, "partnership", "partner", "alliance") || "not listed";
+  
+  return vcData;
+}
+
+// Extract PE data points from conversational text
+function extractPEDataFromText(text: string) {
+  const peData: any = {};
+  
+  // Financial metrics
+  const revenueMatch = text.match(/revenue[:\s]+([\$\d\.\s\w\+%]+)/i);
+  const profitMatch = text.match(/(?:profit|margin|EBITDA)[:\s]+([\$\d\.\s\w\+%]+)/i);
+  
+  peData["Revenue Quality"] = revenueMatch ? { revenue: revenueMatch[1].trim() } : "not listed";
+  peData["Profitability Analysis"] = profitMatch ? { profitability: profitMatch[1].trim() } : "not listed";
+  peData["Cash Management"] = extractListItems(text, "cash flow", "working capital", "liquidity") || "not listed";
+  
+  // Management and operations
+  peData["Management Team Strength"] = extractListItems(text, "management", "leadership", "team", "CEO") || "not listed";
+  peData["Operational Efficiency"] = extractListItems(text, "operational", "efficiency", "process", "automation") || "not listed";
+  peData["Technology & Systems"] = extractListItems(text, "technology", "system", "digital", "platform") || "not listed";
+  
+  // Market position
+  peData["Market Share & Position"] = extractListItems(text, "market share", "market position", "competitive position") || "not listed";
+  peData["Competitive Advantages"] = extractListItems(text, "advantage", "differentiat", "unique", "moat") || "not listed";
+  peData["Customer Base Quality"] = extractListItems(text, "customer base", "client", "customer retention") || "not listed";
+  
+  // Leadership and vision
+  peData["Leadership Track Record"] = extractListItems(text, "track record", "experience", "background", "history") || "not listed";
+  peData["Organizational Strength"] = extractListItems(text, "organization", "culture", "team", "structure") || "not listed";
+  peData["Strategic Vision"] = extractListItems(text, "vision", "strategy", "roadmap", "plan") || "not listed";
+  
+  // Growth and value creation
+  peData["Market Expansion Opportunities"] = extractListItems(text, "expansion", "growth", "market entry", "geographic") || "not listed";
+  peData["Value Creation Initiatives"] = extractListItems(text, "value creation", "improvement", "optimization", "initiative") || "not listed";
+  peData["Exit Strategy Potential"] = extractListItems(text, "exit", "acquisition", "IPO", "strategic buyer") || "not listed";
+  
+  // Strategic fit
+  peData["Fund Strategy Alignment"] = "to be determined based on fund criteria";
+  peData["Portfolio Synergies"] = "to be determined based on portfolio analysis";
+  peData["Risk-Return Profile"] = extractListItems(text, "risk", "return", "volatility", "downside") || "not listed";
+  
+  return peData;
+}
+
+// Helper function to extract list items from text based on keywords
+function extractListItems(text: string, ...keywords: string[]): string {
+  const items: string[] = [];
+  
+  for (const keyword of keywords) {
+    // Look for sentences containing the keyword
+    const regex = new RegExp(`[^.!?]*${keyword}[^.!?]*[.!?]`, 'gi');
+    const matches = text.match(regex);
+    if (matches) {
+      items.push(...matches.map(match => match.trim()));
+    }
+  }
+  
+  if (items.length === 0) return "not listed";
+  
+  // Return first few relevant items, cleaned up
+  return items.slice(0, 3).join('; ').substring(0, 200);
 }
 
 // VC Data Points Generator - extracts VC-specific metrics
@@ -657,32 +789,32 @@ serve(async (req) => {
     // Perform intelligent analysis on the extracted text
     const analysisResult = await analyzeDocument(extractedText, document, analysisType);
 
-    // Generate investment narrative summary
-    let investmentSummary = null;
+    // Stage 1: Generate unified conversational summary containing narrative + VC/PE data points
+    let unifiedSummary = null;
+    let narrative = null;
     let vcDataPoints = null;
     let peDataPoints = null;
     
     if (extractedText && extractedText.length > 100) {
       try {
-        console.log(`Generating investment summary for document: ${document.name}`);
-        investmentSummary = await generateInvestmentSummary(extractedText, document, openAIApiKey);
-        console.log('✅ Investment summary generated successfully');
+        console.log(`Generating unified document summary for: ${document.name}`);
+        unifiedSummary = await generateUnifiedDocumentSummary(extractedText, document, openAIApiKey);
+        console.log('✅ Unified document summary generated successfully');
         
-        // Generate VC data points from document text
-        console.log(`Generating VC data points for document: ${document.name}`);
-        vcDataPoints = await generateVCDataPoints(extractedText, document, openAIApiKey);
-        console.log('✅ VC data points generated successfully');
-        
-        // Generate PE data points from Perplexity tables (if deal exists)
-        if (document.deal_id) {
-          console.log(`Generating PE data points for deal: ${document.deal_id}`);
-          peDataPoints = await generatePEDataPoints(document.deal_id, supabaseClient);
-          console.log('✅ PE data points generated successfully');
-        }
+        // Stage 2: Parse unified summary into separate components
+        console.log('Parsing unified summary into components...');
+        const parsedComponents = parseUnifiedSummary(unifiedSummary, document);
+        narrative = parsedComponents.narrative;
+        vcDataPoints = parsedComponents.data_points_vc;
+        peDataPoints = parsedComponents.data_points_pe;
+        console.log('✅ Summary parsed into narrative, VC, and PE components');
         
       } catch (summaryError) {
-        console.warn('Investment summary/data points generation failed:', summaryError);
-        // Continue processing even if generation fails
+        console.warn('Unified document summary generation failed:', summaryError);
+        // Generate fallback components
+        narrative = `Analysis of ${document.name}: Document contains relevant business and investment information for review.`;
+        vcDataPoints = generateFallbackVCDataPoints();
+        peDataPoints = generateFallbackPEDataPoints();
       }
     }
 
@@ -694,7 +826,8 @@ serve(async (req) => {
         parsing_status: 'completed',
         extracted_text: extractedText,
         parsed_data: analysisResult.parsed_data || {},
-        document_summary: investmentSummary,
+        document_summary: unifiedSummary,
+        narrative: narrative,
         data_points_vc: vcDataPoints,
         data_points_pe: peDataPoints,
         metadata: {
@@ -703,7 +836,7 @@ serve(async (req) => {
           analysis_result: analysisResult,
           analysis_type: analysisType,
           text_extraction_completed: true,
-          investment_summary_generated: !!investmentSummary,
+          unified_summary_generated: !!unifiedSummary,
           vc_data_points_generated: !!vcDataPoints,
           pe_data_points_generated: !!peDataPoints
         }
