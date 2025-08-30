@@ -105,18 +105,19 @@ export class WaterfallDataExtractionService {
   }
 
   static extractFoundingYear(data: EnrichmentData): WaterfallResult<number> {
-    // Check documents first
-    const docFoundingYear = this.getNestedValue(data.documents, 'data_points_vc.founding_year');
-    if (!this.isMissing(docFoundingYear)) {
+    // Priority 1: LinkedIn Export table - founded
+    const linkedinYear = data.linkedin?.founded;
+    if (!this.isMissing(linkedinYear)) {
       return {
-        value: typeof docFoundingYear === 'number' ? docFoundingYear : parseInt(docFoundingYear),
-        source: 'Documents',
+        value: typeof linkedinYear === 'number' ? linkedinYear : parseInt(linkedinYear),
+        source: 'LinkedIn Export',
         confidence: 'high',
+        lastUpdated: data.linkedin?.created_at,
         isFallback: false
       };
     }
 
-    // Check Crunchbase table
+    // Priority 2: Crunchbase Export table - founded_date (extract year)
     const crunchbaseYear = data.crunchbase?.founded_date;
     if (!this.isMissing(crunchbaseYear)) {
       // Extract year from date string
@@ -132,34 +133,8 @@ export class WaterfallDataExtractionService {
       }
     }
 
-    // Check LinkedIn table
-    const linkedinYear = data.linkedin?.founded;
-    if (!this.isMissing(linkedinYear)) {
-      return {
-        value: typeof linkedinYear === 'number' ? linkedinYear : parseInt(linkedinYear),
-        source: 'LinkedIn Export',
-        confidence: 'medium',
-        lastUpdated: data.linkedin?.created_at,
-        isFallback: false
-      };
-    }
-
-    // Check VC Datapoints JSON columns
-    const vcCrunchbaseYear = this.getNestedValue(data.vc_datapoints, 'deal_enrichment_crunchbase_export.founded_date');
-    if (!this.isMissing(vcCrunchbaseYear)) {
-      const year = vcCrunchbaseYear ? new Date(vcCrunchbaseYear).getFullYear() : null;
-      if (year && !isNaN(year)) {
-        return {
-          value: year,
-          source: 'Crunchbase (Stored)',
-          confidence: 'medium',
-          isFallback: false
-        };
-      }
-    }
-
     return {
-      value: 'Require more information. Add company documents or research data',
+      value: 'Require more information. Add LinkedIn or Crunchbase',
       source: 'fallback',
       confidence: 'low',
       isFallback: true
