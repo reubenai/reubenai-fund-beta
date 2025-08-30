@@ -106,7 +106,7 @@ async function collectDealData(dealId: string, fundType: string) {
       .eq('deal_id', dealId),
     
     // LinkedIn Profile
-    supabase.from('deal_enrichment_linkedin_profile_export')
+    supabase.from('deal2_enrichment_linkedin_profile_export')
       .select('*')
       .eq('deal_id', dealId),
     

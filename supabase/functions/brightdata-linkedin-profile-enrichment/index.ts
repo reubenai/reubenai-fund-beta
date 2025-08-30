@@ -101,7 +101,7 @@ serve(async (req) => {
     
     // Check if record already exists
     const { data: existingProfile, error: selectError } = await supabaseClient
-      .from('deal_enrichment_linkedin_profile_export')
+      .from('deal2_enrichment_linkedin_profile_export')
       .select('id, processing_status')
       .eq('deal_id', dealId)
       .single();
@@ -114,7 +114,7 @@ serve(async (req) => {
     if (existingProfile) {
       console.log(`📝 [Brightdata Profile] Updating existing profile record (id: ${existingProfile.id})`);
       const { data, error } = await supabaseClient
-        .from('deal_enrichment_linkedin_profile_export')
+        .from('deal2_enrichment_linkedin_profile_export')
         .update({
           snapshot_id: snapshotId,
           first_name: firstName,
@@ -132,7 +132,7 @@ serve(async (req) => {
     } else {
       console.log(`📝 [Brightdata Profile] Creating new profile record`);
       const { data, error } = await supabaseClient
-        .from('deal_enrichment_linkedin_profile_export')
+        .from('deal2_enrichment_linkedin_profile_export')
         .insert({
           deal_id: dealId,
           snapshot_id: snapshotId,
@@ -275,7 +275,7 @@ async function processBrightdataProfileResponse(rawData: any, firstName: string,
   }, null, 2));
 
   const { data: insertData, error: insertError } = await supabaseClient
-    .from('deal_enrichment_linkedin_profile_export')
+    .from('deal2_enrichment_linkedin_profile_export')
     .insert(linkedinProfileExportData)
     .select();
 
@@ -301,7 +301,7 @@ async function processBrightdataProfileResponse(rawData: any, firstName: string,
     };
     
     const { error: simpleInsertError } = await supabaseClient
-      .from('deal_enrichment_linkedin_profile_export')
+      .from('deal2_enrichment_linkedin_profile_export')
       .insert(simplifiedData);
     
     if (simpleInsertError) {
