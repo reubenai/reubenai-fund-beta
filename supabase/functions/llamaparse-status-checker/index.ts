@@ -15,17 +15,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // 🚫 HARD CODED KILL SWITCH - ENGINE PERMANENTLY DISABLED
-  console.log('🚫 LlamaParse Status Checker: PERMANENTLY DISABLED');
-  return new Response(JSON.stringify({ 
-    success: false, 
-    error: 'LlamaParse status checking permanently disabled',
-    message: 'This engine has been shut down permanently'
-  }), {
-    status: 503,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-  });
-
   try {
     const { llamaParseId, documentId } = await req.json();
     
