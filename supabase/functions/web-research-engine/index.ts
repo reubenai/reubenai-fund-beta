@@ -26,17 +26,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // 🚫 HARD CODED KILL SWITCH - ENGINE PERMANENTLY DISABLED
-  console.log('🚫 Web Research Engine: PERMANENTLY DISABLED');
-  return new Response(JSON.stringify({ 
-    success: false, 
-    error: 'Web research engine permanently disabled',
-    message: 'This engine has been shut down permanently'
-  }), {
-    status: 503,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-  });
-
   try {
     const { dealData, researchType, searchDepth = 'detailed' }: WebResearchRequest = await req.json();
     

@@ -39,7 +39,7 @@ interface Deal {
   company_stage?: string;
   funding_stage?: string;
   founding_year?: number;
-  employee_count?: number;
+  employee_count?: string;
   current_round_size?: number;
   capital_raised_to_date?: number;
   previous_funding_amount?: number;
@@ -218,7 +218,7 @@ export const EditDealModal: React.FC<EditDealModalProps> = ({
           company_stage: formData.company_stage || null,
           funding_stage: formData.funding_stage || null,
           founding_year: formData.founding_year ? parseInt(formData.founding_year) : null,
-          employee_count: formData.employee_count ? parseInt(formData.employee_count) : null,
+          employee_count: formData.employee_count || null,
           current_round_size: formData.current_round_size ? parseInt(formData.current_round_size) : null,
           capital_raised_to_date: formData.capital_raised_to_date ? parseInt(formData.capital_raised_to_date) : null,
           previous_funding_amount: formData.previous_funding_amount ? parseInt(formData.previous_funding_amount) : null,
