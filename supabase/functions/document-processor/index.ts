@@ -129,43 +129,14 @@ function parseAIAnalysis(analysis: string, analysisType: string) {
   }
 }
 
-// Stage 1: Unified Chat Format Generation
+// Generate structured JSON document analysis 
 async function generateUnifiedDocumentSummary(extractedText: string, document: any, openAIApiKey: string) {
   if (!openAIApiKey) {
-    throw new Error('OpenAI API key is required for document summary generation');
+    throw new Error('OpenAI API key is required for document analysis');
   }
 
-  const prompt = `You are an expert investment analyst. Analyze the following document and generate a comprehensive summary in conversational format.
-
-Document: ${document.name}
-Category: ${document.document_category}
-
-Extracted Text:
-${extractedText.substring(0, 6000)}
-
-Generate a conversational summary containing:
-
-1. **Narrative** (5-8 sentences): Comprehensive summary highlighting the document content, key value proposition, market opportunity, business model, and strategic positioning.
-
-2. **VC Data Points**: Extract and list relevant VC metrics/keywords naturally in the conversation:
-- TAM, SAM, SOM if mentioned
-- Growth rates, market share, competitive positioning
-- Customer metrics (CAC, LTV, retention)
-- Funding information, investor network
-- Strategic partnerships and advisors
-
-3. **PE Data Points**: Extract and list relevant PE metrics/keywords naturally in the conversation:
-- Financial performance (revenue, profitability, margins)
-- Operational efficiency and management quality
-- Market position and competitive advantages
-- Growth potential and value creation opportunities
-- Exit strategy considerations
-
-Write this as one flowing conversational analysis that naturally incorporates all available data points and metrics from the document.
-
-Example format:
-"[Company Name] is a [industry] company that [5-8 sentence narrative describing the business, market opportunity, competitive position, financial performance, and growth strategy]. The document reveals key VC metrics including TAM of [X], customer acquisition cost of [Y], and strategic partnerships with [partners]. From a PE perspective, the company demonstrates [financial performance indicators], operational strengths in [areas], and potential value creation through [opportunities]. The management team shows [leadership qualities] and the exit potential appears [assessment] based on [market factors]."`;
-
+  console.log(`Generating structured document analysis for: ${document.name}`);
+  
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -176,14 +147,67 @@ Example format:
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { 
-            role: 'system', 
-            content: 'You are an expert investment analyst. Generate comprehensive conversational document summaries that naturally incorporate both VC and PE data points.'
+          {
+            role: 'system',
+            content: `You are an expert financial analyst specializing in venture capital and private equity deal analysis. 
+
+            Analyze the provided document and return a JSON object with exactly this structure:
+            {
+              "narrative": "3-5 sentence summary of the document",
+              "data_points_vc": {
+                "TAM": "value or 'not listed'",
+                "SAM": "value or 'not listed'", 
+                "SOM": "value or 'not listed'",
+                "CAGR": "value or 'not listed'",
+                "Growth Drivers": "value or 'not listed'",
+                "Market Share Distribution": "value or 'not listed'",
+                "Key Market Players": "value or 'not listed'",
+                "Whitespace Opportunities": "value or 'not listed'",
+                "Addressable Customers": "value or 'not listed'",
+                "CAC Trend": "value or 'not listed'",
+                "LTV:CAC Ratio": "value or 'not listed'",
+                "Retention Rate": "value or 'not listed'",
+                "Channel Effectiveness": "value or 'not listed'",
+                "Strategic Advisors": "value or 'not listed'",
+                "Investor Network": "value or 'not listed'",
+                "Partnership Ecosystem": "value or 'not listed'"
+              },
+              "data_points_pe": {
+                "Revenue Quality": "value or 'not listed'",
+                "Profitability Analysis": "value or 'not listed'",
+                "Cash Management": "value or 'not listed'",
+                "Management Team Strength": "value or 'not listed'",
+                "Operational Efficiency": "value or 'not listed'",
+                "Technology & Systems": "value or 'not listed'",
+                "Market Share & Position": "value or 'not listed'",
+                "Competitive Advantages": "value or 'not listed'",
+                "Customer Base Quality": "value or 'not listed'",
+                "Leadership Track Record": "value or 'not listed'",
+                "Organizational Strength": "value or 'not listed'",
+                "Strategic Vision": "value or 'not listed'",
+                "Market Expansion Opportunities": "value or 'not listed'",
+                "Value Creation Initiatives": "value or 'not listed'",
+                "Exit Strategy Potential": "value or 'not listed'",
+                "Fund Strategy Alignment": "to be determined based on fund criteria",
+                "Portfolio Synergies": "to be determined based on portfolio analysis",
+                "Risk-Return Profile": "value or 'not listed'"
+              }
+            }
+
+            IMPORTANT: Return ONLY the JSON object, no additional text. Extract quantitative data and strategic insights. Use "not listed" if information is not available.`
           },
-          { role: 'user', content: prompt }
+          {
+            role: 'user',
+            content: `Please analyze this document and return the structured JSON:
+
+Document: ${document.name}
+Category: ${document.document_category}
+
+${extractedText.substring(0, 12000)}`
+          }
         ],
-        temperature: 0.2,
-        max_tokens: 1000
+        max_tokens: 2000,
+        temperature: 0.1
       }),
     });
 
@@ -192,43 +216,36 @@ Example format:
     }
 
     const data = await response.json();
-    const unifiedSummary = data.choices[0].message.content;
+    const content = data.choices[0].message.content;
     
-    return unifiedSummary;
+    // Parse the JSON response
+    let structuredData;
+    try {
+      structuredData = JSON.parse(content);
+    } catch (parseError) {
+      console.error('Failed to parse JSON response:', parseError);
+      // Fallback structure if JSON parsing fails
+      structuredData = {
+        narrative: `Analysis of ${document.name}: Document analysis completed with structured data extraction.`,
+        data_points_vc: generateFallbackVCDataPoints(),
+        data_points_pe: generateFallbackPEDataPoints()
+      };
+    }
+    
+    console.log('✅ Structured document analysis generated successfully');
+    return structuredData;
   } catch (error) {
-    console.error('Unified document summary generation failed:', error);
-    // Return a fallback summary
-    return `Analysis of ${document.name}: This document contains relevant business information and strategic insights. Key metrics and data points are available for review. The company demonstrates market positioning and growth potential. Financial and operational details require further analysis. Strategic recommendations and investment considerations are documented within the content.`;
-  }
-}
-
-// Stage 2: Parse Unified Summary into Components
-function parseUnifiedSummary(unifiedSummary: string, document: any) {
-  try {
-    // Extract narrative (first 5-8 sentences)
-    const sentences = unifiedSummary.match(/[^\.!?]+[\.!?]+/g) || [];
-    const narrative = sentences.slice(0, 8).join(' ').trim();
-    
-    // Extract VC data points using keywords and patterns
-    const vcDataPoints = extractVCDataFromText(unifiedSummary);
-    
-    // Extract PE data points using keywords and patterns
-    const peDataPoints = extractPEDataFromText(unifiedSummary);
-    
+    console.error('Error generating structured analysis:', error);
+    // Return fallback structure
     return {
-      narrative: narrative || `Investment summary for ${document.name}. Document analysis completed with comprehensive insights.`,
-      data_points_vc: vcDataPoints,
-      data_points_pe: peDataPoints
-    };
-  } catch (error) {
-    console.error('Failed to parse unified summary:', error);
-    return {
-      narrative: `Analysis of ${document.name}: Document contains relevant business and investment information.`,
+      narrative: `Analysis of ${document.name}: Document contains relevant business information and strategic insights.`,
       data_points_vc: generateFallbackVCDataPoints(),
       data_points_pe: generateFallbackPEDataPoints()
     };
   }
 }
+
+// Fallback functions for data points generation
 
 // Extract VC data points from conversational text
 function extractVCDataFromText(text: string) {
@@ -789,36 +806,39 @@ serve(async (req) => {
     // Perform intelligent analysis on the extracted text
     const analysisResult = await analyzeDocument(extractedText, document, analysisType);
 
-    // Stage 1: Generate unified conversational summary containing narrative + VC/PE data points
-    let unifiedSummary = null;
+    // Generate structured JSON document analysis with all components
+    let structuredAnalysis = null;
     let narrative = null;
     let vcDataPoints = null;
     let peDataPoints = null;
     
     if (extractedText && extractedText.length > 100) {
       try {
-        console.log(`Generating unified document summary for: ${document.name}`);
-        unifiedSummary = await generateUnifiedDocumentSummary(extractedText, document, openAIApiKey);
-        console.log('✅ Unified document summary generated successfully');
+        console.log(`Generating structured document analysis for: ${document.name}`);
+        structuredAnalysis = await generateUnifiedDocumentSummary(extractedText, document, openAIApiKey);
         
-        // Stage 2: Parse unified summary into separate components
-        console.log('Parsing unified summary into components...');
-        const parsedComponents = parseUnifiedSummary(unifiedSummary, document);
-        narrative = parsedComponents.narrative;
-        vcDataPoints = parsedComponents.data_points_vc;
-        peDataPoints = parsedComponents.data_points_pe;
-        console.log('✅ Summary parsed into narrative, VC, and PE components');
+        // Extract components from structured JSON
+        narrative = structuredAnalysis.narrative;
+        vcDataPoints = structuredAnalysis.data_points_vc;
+        peDataPoints = structuredAnalysis.data_points_pe;
+        
+        console.log('✅ Structured analysis completed with all components extracted');
         
       } catch (summaryError) {
-        console.warn('Unified document summary generation failed:', summaryError);
+        console.warn('Structured document analysis generation failed:', summaryError);
         // Generate fallback components
         narrative = `Analysis of ${document.name}: Document contains relevant business and investment information for review.`;
         vcDataPoints = generateFallbackVCDataPoints();
         peDataPoints = generateFallbackPEDataPoints();
+        structuredAnalysis = {
+          narrative: narrative,
+          data_points_vc: vcDataPoints,
+          data_points_pe: peDataPoints
+        };
       }
     }
 
-    // Update document with analysis results, extracted text, and all 3 new fields
+    // Update document with analysis results, extracted text, and structured components
     console.log('Updating document with analysis results...');
     const { error: updateError } = await supabaseClient
       .from('deal_documents')
@@ -827,10 +847,8 @@ serve(async (req) => {
         parsing_status: 'completed', 
         extracted_text: extractedText,
         parsed_data: analysisResult.parsed_data || {},
-        document_summary: {
-          narrative: narrative,
-          unified_summary: unifiedSummary
-        },
+        document_summary: structuredAnalysis, // Store complete JSON structure
+        summary_narrative: narrative, // Extract narrative to dedicated field
         data_points_vc: vcDataPoints,
         data_points_pe: peDataPoints,
         metadata: {
@@ -839,7 +857,7 @@ serve(async (req) => {
           analysis_result: analysisResult,
           analysis_type: analysisType,
           text_extraction_completed: true,
-          unified_summary_generated: !!unifiedSummary,
+          structured_analysis_generated: !!structuredAnalysis,
           vc_data_points_generated: !!vcDataPoints,
           pe_data_points_generated: !!peDataPoints
         }

@@ -2136,6 +2136,7 @@ export type Database = {
           parsed_data: Json | null
           parsing_status: string | null
           storage_path: string | null
+          summary_narrative: string | null
           tags: string[] | null
           triggers_reanalysis: boolean | null
           uploaded_by: string
@@ -2170,6 +2171,7 @@ export type Database = {
           parsed_data?: Json | null
           parsing_status?: string | null
           storage_path?: string | null
+          summary_narrative?: string | null
           tags?: string[] | null
           triggers_reanalysis?: boolean | null
           uploaded_by: string
@@ -2204,6 +2206,7 @@ export type Database = {
           parsed_data?: Json | null
           parsing_status?: string | null
           storage_path?: string | null
+          summary_narrative?: string | null
           tags?: string[] | null
           triggers_reanalysis?: boolean | null
           uploaded_by?: string
