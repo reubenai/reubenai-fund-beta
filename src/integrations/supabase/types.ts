@@ -7171,6 +7171,10 @@ export type Database = {
           status: string
         }[]
       }
+      backfill_waterfall_extractions: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
@@ -7325,6 +7329,10 @@ export type Database = {
         Args: { crunchbase_data: Json }
         Returns: Json
       }
+      extract_waterfall_datapoints: {
+        Args: { target_deal_id: string }
+        Returns: undefined
+      }
       generate_ic_packet: {
         Args: { deal_id_param: string }
         Returns: Json
@@ -7370,6 +7378,10 @@ export type Database = {
       }
       get_linkedin_processing_status: {
         Args: { target_deal_id: string }
+        Returns: Json
+      }
+      get_nested_json_value: {
+        Args: { obj: Json; path: string }
         Returns: Json
       }
       get_queue_health_status: {
@@ -7473,6 +7485,10 @@ export type Database = {
       }
       is_deal_safe_to_edit: {
         Args: { deal_id_param: string }
+        Returns: boolean
+      }
+      is_missing_value: {
+        Args: { value: unknown }
         Returns: boolean
       }
       is_reuben_admin: {
