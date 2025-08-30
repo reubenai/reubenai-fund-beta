@@ -382,16 +382,24 @@ Focus on quantitative data and specific metrics where available. For each catego
       perplexityData
     );
 
-    // Insert audit record into deal_analysis_sources
-    await supabase.from('deal_analysis_sources').insert({
-      deal_id: dealId,
-      engine_name: 'perplexity-company-intelligence',
-      source_type: 'market_research',
-      source_url: 'https://api.perplexity.ai',
-      data_retrieved: processedData,
-      confidence_score: calculateCompanyDataQuality(companyData),
-      validated: true
-    });
+    // Store raw response first - this will trigger processing via database trigger
+    const { error: rawInsertError } = await supabase
+      .from('deal_enrichment_perplexity_company_export_vc')
+      .insert({
+        deal_id: dealId,
+        snapshot_id: snapshotId,
+        company_name: companyName,
+        raw_perplexity_response: perplexityData,
+        processing_status: 'pending',
+        created_at: new Date().toISOString()
+      });
+
+    if (rawInsertError) {
+      console.error('❌ Failed to store raw Perplexity response:', rawInsertError);
+      throw new Error('Failed to store raw Perplexity response');
+    }
+
+    console.log('✅ Raw Perplexity response stored, processing will be triggered automatically');
 
     console.log('✅ Perplexity company enrichment completed successfully');
 

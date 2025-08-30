@@ -487,37 +487,33 @@ serve(async (req) => {
       throw new Error('Failed to parse Perplexity JSON response');
     }
 
-    // Process and store the data
-    const processedData = await processPerplexityFounderResponse(
-      founderData,
-      founderName,
-      companyName,
-      dealId,
-      snapshotId,
-      supabase
-    );
-
-    // Insert source record for audit trail
-    await supabase
-      .from('deal_analysis_sources')
+    // Store raw response first - database triggers will handle processing
+    const { error: rawInsertError } = await supabase
+      .from('deal_enrichment_perplexity_founder_export_vc')
       .insert({
         deal_id: dealId,
-        engine_name: 'perplexity-founder-enrichment',
-        source_type: 'perplexity_founder_search',
-        source_url: 'https://api.perplexity.ai',
-        data_retrieved: processedData,
-        confidence_score: processedData.confidence_score || 85
+        snapshot_id: snapshotId,
+        founder_name: founderName,
+        company_name: companyName,
+        raw_perplexity_response: perplexityResult,
+        processing_status: 'pending',
+        created_at: new Date().toISOString()
       });
 
-    console.log('✅ Perplexity founder enrichment completed successfully');
+    if (rawInsertError) {
+      console.error('❌ Failed to store raw Perplexity founder response:', rawInsertError);
+      throw new Error('Failed to store raw Perplexity founder response');
+    }
+
+    console.log('✅ Raw Perplexity founder response stored, processing will be triggered automatically');
 
     return new Response(
       JSON.stringify({
         success: true,
-        data: processedData,
+        data: { stored: true, snapshot_id: snapshotId },
         dataSource: 'perplexity_founder_search',
-        trustScore: processedData.confidence_score || 85,
-        dataQuality: calculateFounderDataQuality(founderData)
+        trustScore: 85,
+        dataQuality: 85
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
