@@ -295,6 +295,25 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
           description: `Deal ${formData.company_name} Successfully Added. Reuben is fetching data in background`,
         });
 
+        // Trigger the LinkedIn enrichment queue processor if LinkedIn URL was provided
+        if (formData.linkedin_url) {
+          try {
+            console.log('🚀 Triggering LinkedIn enrichment queue processor...');
+            supabase.functions.invoke('linkedin-enrichment-queue-processor', {}).then(({ data, error }) => {
+              if (error) {
+                console.error('❌ Queue processor failed:', error);
+              } else {
+                console.log('✅ Queue processor completed:', data);
+              }
+            }).catch(err => {
+              console.error('💥 Queue processor error:', err);
+            });
+          } catch (queueError) {
+            console.error('💥 Failed to trigger queue processor:', queueError);
+            // Don't block deal creation for queue processing errors
+          }
+        }
+
         // Close modal immediately after successful creation
         handleComplete();
       }

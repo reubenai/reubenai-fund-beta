@@ -203,3 +203,6 @@ verify_jwt = false
 [functions.background-deal-enrichment]
 verify_jwt = false
 
+[functions.linkedin-enrichment-queue-processor]
+verify_jwt = false
+
