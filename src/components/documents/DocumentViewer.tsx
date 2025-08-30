@@ -8,18 +8,23 @@ import { documentService } from '@/services/DocumentService';
 import { Database } from '@/integrations/supabase/types';
 import { formatDistanceToNow } from 'date-fns';
 import { usePermissions } from '@/hooks/usePermissions';
+import { supabase } from '@/integrations/supabase/client';
+import { DocumentDataPointsDisplay } from './DocumentDataPointsDisplay';
+import { toTemplateFundType } from '@/utils/fundTypeConversion';
 
 type DealDocument = Database['public']['Tables']['deal_documents']['Row'];
 
 interface DocumentViewerProps {
   document: DealDocument;
   onClose: () => void;
+  dealId?: string;
 }
 
-export function DocumentViewer({ document, onClose }: DocumentViewerProps) {
+export function DocumentViewer({ document, onClose, dealId }: DocumentViewerProps) {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fundType, setFundType] = useState<'vc' | 'pe' | null>(null);
   const { canDownloadDocuments } = usePermissions();
 
   useEffect(() => {
@@ -37,8 +42,37 @@ export function DocumentViewer({ document, onClose }: DocumentViewerProps) {
       }
     };
 
+    const getFundType = async () => {
+      if (dealId) {
+        try {
+          // First get the deal's fund_id
+          const { data: deal } = await supabase
+            .from('deals')
+            .select('fund_id')
+            .eq('id', dealId)
+            .single();
+          
+          if (deal?.fund_id) {
+            // Then get the fund's type
+            const { data: fund } = await supabase
+              .from('funds')
+              .select('fund_type')
+              .eq('id', deal.fund_id)
+              .single();
+              
+            if (fund?.fund_type) {
+              setFundType(toTemplateFundType(fund.fund_type));
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching fund type:', err);
+        }
+      }
+    };
+
     getDownloadUrl();
-  }, [document]);
+    getFundType();
+  }, [document, dealId]);
 
   const handleDownload = async () => {
     try {
@@ -175,32 +209,29 @@ export function DocumentViewer({ document, onClose }: DocumentViewerProps) {
             </Alert>
           )}
 
-          {/* Document Preview */}
+          {/* Document Summary and Data Points */}
           {loading ? (
             <div className="flex items-center justify-center h-96 border rounded-lg">
-              <div className="text-muted-foreground">Loading document...</div>
+              <div className="text-muted-foreground">Loading document analysis...</div>
             </div>
-          ) : downloadUrl && canPreview ? (
-            <div className="border rounded-lg overflow-hidden">
-              {document.content_type?.includes('pdf') ? (
-                <iframe
-                  src={downloadUrl}
-                  className="w-full h-96"
-                  title={document.name}
-                />
-              ) : document.content_type?.includes('image') ? (
-                <img
-                  src={downloadUrl}
-                  alt={document.name}
-                  className="w-full h-auto max-h-96 object-contain"
-                />
-              ) : null}
-            </div>
+          ) : (document.document_summary || document.data_points_vc || document.data_points_pe) ? (
+            <DocumentDataPointsDisplay
+              documents={[{
+                id: document.id,
+                name: document.name,
+                document_type: document.document_type,
+                document_summary: (document.document_summary as any) || null,
+                data_points_vc: (document.data_points_vc as any) || null,
+                data_points_pe: (document.data_points_pe as any) || null,
+                created_at: document.created_at
+              }]}
+              fundType={fundType}
+            />
           ) : (
             <div className="flex flex-col items-center justify-center h-96 border rounded-lg text-muted-foreground">
               <FileText className="h-16 w-16 mb-4" />
-              <p className="text-lg font-medium">Preview not available</p>
-              <p className="text-sm">Document is available for viewing but download is restricted</p>
+              <p className="text-lg font-medium">Analysis not yet available</p>
+              <p className="text-sm">Document analysis is still processing or hasn't been performed yet</p>
               {downloadUrl && canDownloadDocuments && (
                 <Button 
                   variant="outline" 
@@ -208,7 +239,7 @@ export function DocumentViewer({ document, onClose }: DocumentViewerProps) {
                   onClick={handleDownload}
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Download File
+                  Download Original File
                 </Button>
               )}
             </div>

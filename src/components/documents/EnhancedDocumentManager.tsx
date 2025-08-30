@@ -267,6 +267,7 @@ export function EnhancedDocumentManager({ dealId, companyName, className }: Enha
         <DocumentViewer
           document={selectedDocument}
           onClose={() => setSelectedDocument(null)}
+          dealId={dealId}
         />
       )}
     </div>

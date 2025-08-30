@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { EnhancedDocumentErrorHandler, DocumentErrors } from './EnhancedDocumentErrorHandler';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
-import { PermissionDebugger } from '@/components/debug/PermissionDebugger';
+
 import { useAuthDebug } from '@/hooks/useAuthDebug';
 
 interface DocumentUploadProps {
@@ -255,7 +255,6 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
       <div className="text-center p-8 bg-muted/20 rounded-lg">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
         <p className="text-muted-foreground">Loading permissions...</p>
-        <PermissionDebugger dealId={dealId} />
       </div>
     );
   }
@@ -277,7 +276,6 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
         <div className="text-xs text-muted-foreground/70">
           Current role: {permissions.role}
         </div>
-        <PermissionDebugger dealId={dealId} />
       </div>
     );
   }
@@ -476,7 +474,6 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
           ))}
         </div>
       )}
-      <PermissionDebugger dealId={dealId} />
-    </div>
-  );
-}
+      </div>
+    );
+  }

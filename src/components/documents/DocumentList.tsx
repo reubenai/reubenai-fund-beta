@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { File, Download, Trash2, Eye, Edit, MoreHorizontal, Search } from 'lucide-react';
+import { File, Download, Trash2, Eye, Edit, MoreHorizontal, Search, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -316,8 +316,9 @@ export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTri
                       variant="ghost"
                       size="sm"
                       onClick={() => onDocumentSelect?.(document)}
+                      title="View Summary"
                     >
-                      <Eye className="h-4 w-4" />
+                      <FileText className="h-4 w-4" />
                     </Button>
                     
                     {canDownloadDocuments && (
@@ -338,8 +339,8 @@ export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTri
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => onDocumentSelect?.(document)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          View
+                          <FileText className="h-4 w-4 mr-2" />
+                          View Summary
                         </DropdownMenuItem>
                         {canDownloadDocuments && (
                           <DropdownMenuItem onClick={() => handleDownload(document)}>

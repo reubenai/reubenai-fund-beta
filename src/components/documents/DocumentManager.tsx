@@ -96,6 +96,7 @@ export const DocumentManager = React.memo(function DocumentManager({ dealId, com
         <DocumentViewer
           document={selectedDocument}
           onClose={() => setSelectedDocument(null)}
+          dealId={dealId}
         />
       )}
     </div>
