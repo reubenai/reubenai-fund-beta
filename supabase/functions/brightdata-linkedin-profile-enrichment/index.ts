@@ -106,7 +106,7 @@ serve(async (req) => {
         last_name: lastName,
         name: `${firstName} ${lastName}`,
         raw_brightdata_response: brightdataData,
-        processing_status: 'pending',
+        processing_status: 'raw',
         timestamp: new Date().toISOString()
       });
 

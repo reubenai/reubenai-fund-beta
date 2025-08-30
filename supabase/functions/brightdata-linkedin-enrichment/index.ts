@@ -104,7 +104,7 @@ serve(async (req) => {
         snapshot_id: snapshotId,
         company_name: companyName,
         raw_brightdata_response: brightdataData,
-        processing_status: 'pending',
+        processing_status: 'raw',
         timestamp: new Date().toISOString()
       });
 
