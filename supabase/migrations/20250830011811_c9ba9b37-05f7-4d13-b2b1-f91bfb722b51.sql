@@ -1,0 +1,21 @@
+-- Add fundamental company data points to VC datapoints table
+ALTER TABLE public.deal_analysis_datapoints_vc ADD COLUMN IF NOT EXISTS founding_year integer;
+ALTER TABLE public.deal_analysis_datapoints_vc ADD COLUMN IF NOT EXISTS employee_count integer;
+ALTER TABLE public.deal_analysis_datapoints_vc ADD COLUMN IF NOT EXISTS business_model text;
+ALTER TABLE public.deal_analysis_datapoints_vc ADD COLUMN IF NOT EXISTS target_market text;
+ALTER TABLE public.deal_analysis_datapoints_vc ADD COLUMN IF NOT EXISTS funding_stage text;
+ALTER TABLE public.deal_analysis_datapoints_vc ADD COLUMN IF NOT EXISTS countries_of_operation text[];
+ALTER TABLE public.deal_analysis_datapoints_vc ADD COLUMN IF NOT EXISTS competitors text[];
+ALTER TABLE public.deal_analysis_datapoints_vc ADD COLUMN IF NOT EXISTS key_customers text[];
+ALTER TABLE public.deal_analysis_datapoints_vc ADD COLUMN IF NOT EXISTS technology_stack text[];
+
+-- Add fundamental company data points to PE datapoints table
+ALTER TABLE public.deal_analysis_datapoints_pe ADD COLUMN IF NOT EXISTS founding_year integer;
+ALTER TABLE public.deal_analysis_datapoints_pe ADD COLUMN IF NOT EXISTS employee_count integer;
+ALTER TABLE public.deal_analysis_datapoints_pe ADD COLUMN IF NOT EXISTS business_model text;
+ALTER TABLE public.deal_analysis_datapoints_pe ADD COLUMN IF NOT EXISTS target_market text;
+ALTER TABLE public.deal_analysis_datapoints_pe ADD COLUMN IF NOT EXISTS funding_stage text;
+ALTER TABLE public.deal_analysis_datapoints_pe ADD COLUMN IF NOT EXISTS countries_of_operation text[];
+ALTER TABLE public.deal_analysis_datapoints_pe ADD COLUMN IF NOT EXISTS competitors text[];
+ALTER TABLE public.deal_analysis_datapoints_pe ADD COLUMN IF NOT EXISTS key_customers text[];
+ALTER TABLE public.deal_analysis_datapoints_pe ADD COLUMN IF NOT EXISTS technology_stack text[];

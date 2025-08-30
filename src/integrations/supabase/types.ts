@@ -1491,11 +1491,14 @@ export type Database = {
           automation_opportunities: string[] | null
           board_composition: Json | null
           brand_strength: number | null
+          business_model: string | null
           capital_allocation_efficiency: Json | null
           cash_flow_generation: Json | null
           competitive_advantages: string[] | null
+          competitors: string[] | null
           cost_reduction_opportunities: Json | null
           cost_structure_analysis: Json | null
+          countries_of_operation: string[] | null
           created_at: string
           customer_concentration: Json | null
           data_completeness_score: number | null
@@ -1504,12 +1507,15 @@ export type Database = {
           distribution_channels: Json | null
           ebitda_growth_rate: number | null
           ebitda_margin: number | null
+          employee_count: number | null
           environmental_impact_assessment: Json | null
           esg_score: number | null
           exit_strategy_options: string[] | null
           expansion_markets: string[] | null
+          founding_year: number | null
           free_cash_flow_yield: number | null
           fund_id: string
+          funding_stage: string | null
           geography: string | null
           governance_best_practices: Json | null
           governance_structure: Json | null
@@ -1517,6 +1523,7 @@ export type Database = {
           id: string
           industry_focus: string | null
           investment_size: number | null
+          key_customers: string[] | null
           key_signals: string[] | null
           last_updated_by: string | null
           leadership_track_record: Json | null
@@ -1546,7 +1553,9 @@ export type Database = {
           supply_chain_efficiency: Json | null
           sustainability_initiatives: string[] | null
           talent_retention_metrics: Json | null
+          target_market: string | null
           technology_infrastructure: Json | null
+          technology_stack: string[] | null
           updated_at: string
           value_creation_timeline: Json | null
           working_capital_management: Json | null
@@ -1556,11 +1565,14 @@ export type Database = {
           automation_opportunities?: string[] | null
           board_composition?: Json | null
           brand_strength?: number | null
+          business_model?: string | null
           capital_allocation_efficiency?: Json | null
           cash_flow_generation?: Json | null
           competitive_advantages?: string[] | null
+          competitors?: string[] | null
           cost_reduction_opportunities?: Json | null
           cost_structure_analysis?: Json | null
+          countries_of_operation?: string[] | null
           created_at?: string
           customer_concentration?: Json | null
           data_completeness_score?: number | null
@@ -1569,12 +1581,15 @@ export type Database = {
           distribution_channels?: Json | null
           ebitda_growth_rate?: number | null
           ebitda_margin?: number | null
+          employee_count?: number | null
           environmental_impact_assessment?: Json | null
           esg_score?: number | null
           exit_strategy_options?: string[] | null
           expansion_markets?: string[] | null
+          founding_year?: number | null
           free_cash_flow_yield?: number | null
           fund_id: string
+          funding_stage?: string | null
           geography?: string | null
           governance_best_practices?: Json | null
           governance_structure?: Json | null
@@ -1582,6 +1597,7 @@ export type Database = {
           id?: string
           industry_focus?: string | null
           investment_size?: number | null
+          key_customers?: string[] | null
           key_signals?: string[] | null
           last_updated_by?: string | null
           leadership_track_record?: Json | null
@@ -1611,7 +1627,9 @@ export type Database = {
           supply_chain_efficiency?: Json | null
           sustainability_initiatives?: string[] | null
           talent_retention_metrics?: Json | null
+          target_market?: string | null
           technology_infrastructure?: Json | null
+          technology_stack?: string[] | null
           updated_at?: string
           value_creation_timeline?: Json | null
           working_capital_management?: Json | null
@@ -1621,11 +1639,14 @@ export type Database = {
           automation_opportunities?: string[] | null
           board_composition?: Json | null
           brand_strength?: number | null
+          business_model?: string | null
           capital_allocation_efficiency?: Json | null
           cash_flow_generation?: Json | null
           competitive_advantages?: string[] | null
+          competitors?: string[] | null
           cost_reduction_opportunities?: Json | null
           cost_structure_analysis?: Json | null
+          countries_of_operation?: string[] | null
           created_at?: string
           customer_concentration?: Json | null
           data_completeness_score?: number | null
@@ -1634,12 +1655,15 @@ export type Database = {
           distribution_channels?: Json | null
           ebitda_growth_rate?: number | null
           ebitda_margin?: number | null
+          employee_count?: number | null
           environmental_impact_assessment?: Json | null
           esg_score?: number | null
           exit_strategy_options?: string[] | null
           expansion_markets?: string[] | null
+          founding_year?: number | null
           free_cash_flow_yield?: number | null
           fund_id?: string
+          funding_stage?: string | null
           geography?: string | null
           governance_best_practices?: Json | null
           governance_structure?: Json | null
@@ -1647,6 +1671,7 @@ export type Database = {
           id?: string
           industry_focus?: string | null
           investment_size?: number | null
+          key_customers?: string[] | null
           key_signals?: string[] | null
           last_updated_by?: string | null
           leadership_track_record?: Json | null
@@ -1676,7 +1701,9 @@ export type Database = {
           supply_chain_efficiency?: Json | null
           sustainability_initiatives?: string[] | null
           talent_retention_metrics?: Json | null
+          target_market?: string | null
           technology_infrastructure?: Json | null
+          technology_stack?: string[] | null
           updated_at?: string
           value_creation_timeline?: Json | null
           working_capital_management?: Json | null
@@ -1687,6 +1714,7 @@ export type Database = {
         Row: {
           academic_background: string[] | null
           addressable_customers: number | null
+          business_model: string | null
           cac_trend: number | null
           cagr: number | null
           capital_efficiency_ratios: Json | null
@@ -1697,6 +1725,8 @@ export type Database = {
           competitive_moat_assessment: Json | null
           competitive_positioning_studies: Json | null
           competitive_window: string | null
+          competitors: string[] | null
+          countries_of_operation: string[] | null
           created_at: string
           customer_acquisition_metrics: Json | null
           data_completeness_score: number | null
@@ -1704,8 +1734,11 @@ export type Database = {
           distribution_challenges: string[] | null
           diversity_metrics: Json | null
           economic_sensitivity: string | null
+          employee_count: number | null
           exit_history: Json | null
+          founding_year: number | null
           fund_id: string
+          funding_stage: string | null
           geographic_constraints: string[] | null
           geography: string | null
           growth_drivers: string[] | null
@@ -1718,6 +1751,7 @@ export type Database = {
           investor_network: string[] | null
           ip_landscape_mapping: Json | null
           ip_strength_scoring: number | null
+          key_customers: string[] | null
           key_market_players: string[] | null
           key_signals: string[] | null
           last_updated_by: string | null
@@ -1745,10 +1779,12 @@ export type Database = {
           source_engines: string[] | null
           strategic_advisors: string[] | null
           tam: number | null
+          target_market: string | null
           team_building: string[] | null
           technical_skills: string[] | null
           technology_moats: string[] | null
           technology_readiness_level: number | null
+          technology_stack: string[] | null
           thought_leadership: string[] | null
           trade_secret_documentation: string[] | null
           unit_economics_breakdown: Json | null
@@ -1759,6 +1795,7 @@ export type Database = {
         Insert: {
           academic_background?: string[] | null
           addressable_customers?: number | null
+          business_model?: string | null
           cac_trend?: number | null
           cagr?: number | null
           capital_efficiency_ratios?: Json | null
@@ -1769,6 +1806,8 @@ export type Database = {
           competitive_moat_assessment?: Json | null
           competitive_positioning_studies?: Json | null
           competitive_window?: string | null
+          competitors?: string[] | null
+          countries_of_operation?: string[] | null
           created_at?: string
           customer_acquisition_metrics?: Json | null
           data_completeness_score?: number | null
@@ -1776,8 +1815,11 @@ export type Database = {
           distribution_challenges?: string[] | null
           diversity_metrics?: Json | null
           economic_sensitivity?: string | null
+          employee_count?: number | null
           exit_history?: Json | null
+          founding_year?: number | null
           fund_id: string
+          funding_stage?: string | null
           geographic_constraints?: string[] | null
           geography?: string | null
           growth_drivers?: string[] | null
@@ -1790,6 +1832,7 @@ export type Database = {
           investor_network?: string[] | null
           ip_landscape_mapping?: Json | null
           ip_strength_scoring?: number | null
+          key_customers?: string[] | null
           key_market_players?: string[] | null
           key_signals?: string[] | null
           last_updated_by?: string | null
@@ -1817,10 +1860,12 @@ export type Database = {
           source_engines?: string[] | null
           strategic_advisors?: string[] | null
           tam?: number | null
+          target_market?: string | null
           team_building?: string[] | null
           technical_skills?: string[] | null
           technology_moats?: string[] | null
           technology_readiness_level?: number | null
+          technology_stack?: string[] | null
           thought_leadership?: string[] | null
           trade_secret_documentation?: string[] | null
           unit_economics_breakdown?: Json | null
@@ -1831,6 +1876,7 @@ export type Database = {
         Update: {
           academic_background?: string[] | null
           addressable_customers?: number | null
+          business_model?: string | null
           cac_trend?: number | null
           cagr?: number | null
           capital_efficiency_ratios?: Json | null
@@ -1841,6 +1887,8 @@ export type Database = {
           competitive_moat_assessment?: Json | null
           competitive_positioning_studies?: Json | null
           competitive_window?: string | null
+          competitors?: string[] | null
+          countries_of_operation?: string[] | null
           created_at?: string
           customer_acquisition_metrics?: Json | null
           data_completeness_score?: number | null
@@ -1848,8 +1896,11 @@ export type Database = {
           distribution_challenges?: string[] | null
           diversity_metrics?: Json | null
           economic_sensitivity?: string | null
+          employee_count?: number | null
           exit_history?: Json | null
+          founding_year?: number | null
           fund_id?: string
+          funding_stage?: string | null
           geographic_constraints?: string[] | null
           geography?: string | null
           growth_drivers?: string[] | null
@@ -1862,6 +1913,7 @@ export type Database = {
           investor_network?: string[] | null
           ip_landscape_mapping?: Json | null
           ip_strength_scoring?: number | null
+          key_customers?: string[] | null
           key_market_players?: string[] | null
           key_signals?: string[] | null
           last_updated_by?: string | null
@@ -1889,10 +1941,12 @@ export type Database = {
           source_engines?: string[] | null
           strategic_advisors?: string[] | null
           tam?: number | null
+          target_market?: string | null
           team_building?: string[] | null
           technical_skills?: string[] | null
           technology_moats?: string[] | null
           technology_readiness_level?: number | null
+          technology_stack?: string[] | null
           thought_leadership?: string[] | null
           trade_secret_documentation?: string[] | null
           unit_economics_breakdown?: Json | null
