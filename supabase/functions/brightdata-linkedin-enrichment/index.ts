@@ -96,22 +96,62 @@ serve(async (req) => {
     const brightdataData = await pollBrightdataSnapshot(snapshotId, brightdataApiKey);
     console.log(`✅ [Brightdata] Final data retrieved:`, JSON.stringify(brightdataData, null, 2));
 
-    // Store the raw Brightdata response in the simplified table
-    const { error: updateError } = await supabaseClient
+    // Check if record exists before updating
+    console.log(`🔍 [Brightdata] Checking for existing record with dealId: ${dealId}`);
+    const { data: existingRecord, error: selectError } = await supabaseClient
       .from('deal2_enrichment_linkedin_export')
-      .update({
-        raw_brightdata_response: brightdataData,
-        processing_status: 'completed',
-        snapshot_id: snapshotId,
-        timestamp: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
+      .select('id, processing_status')
       .eq('deal_id', dealId)
-      .eq('processing_status', 'processing');
+      .single();
 
-    if (updateError) {
-      console.error('❌ [Brightdata] Failed to update LinkedIn response:', updateError);
-      throw new Error('Failed to update LinkedIn response');
+    if (selectError && selectError.code !== 'PGRST116') {
+      console.error('❌ [Brightdata] Error checking for existing record:', selectError);
+      throw new Error(`Failed to check for existing record: ${selectError.message}`);
+    }
+
+    // Store the raw Brightdata response using upsert pattern
+    if (existingRecord) {
+      console.log(`📝 [Brightdata] Updating existing record (id: ${existingRecord.id}, status: ${existingRecord.processing_status})`);
+      const { data: updatedData, error: updateError } = await supabaseClient
+        .from('deal2_enrichment_linkedin_export')
+        .update({
+          raw_brightdata_response: brightdataData,
+          processing_status: 'completed',
+          snapshot_id: snapshotId,
+          timestamp: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('deal_id', dealId)
+        .select();
+
+      if (updateError) {
+        console.error('❌ [Brightdata] Failed to update LinkedIn response:', updateError);
+        throw new Error(`Failed to update LinkedIn response: ${updateError.message}`);
+      }
+
+      console.log(`✅ [Brightdata] Updated ${updatedData?.length || 0} record(s)`);
+    } else {
+      console.log(`📝 [Brightdata] No existing record found, creating new record`);
+      const { data: insertedData, error: insertError } = await supabaseClient
+        .from('deal2_enrichment_linkedin_export')
+        .insert({
+          deal_id: dealId,
+          company_name: companyName,
+          linkedin_url: linkedinUrl,
+          raw_brightdata_response: brightdataData,
+          processing_status: 'completed',
+          snapshot_id: snapshotId,
+          timestamp: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select();
+
+      if (insertError) {
+        console.error('❌ [Brightdata] Failed to insert LinkedIn response:', insertError);
+        throw new Error(`Failed to insert LinkedIn response: ${insertError.message}`);
+      }
+
+      console.log(`✅ [Brightdata] Inserted new record with id: ${insertedData?.[0]?.id}`);
     }
 
     console.log('✅ [Brightdata] Raw LinkedIn response stored successfully');

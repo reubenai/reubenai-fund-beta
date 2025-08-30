@@ -96,23 +96,66 @@ serve(async (req) => {
     const brightdataData = await pollBrightdataSnapshot(snapshotId, brightdataApiKey);
     console.log(`✅ [Brightdata Profile] Final data retrieved:`, JSON.stringify(brightdataData, null, 2));
 
-    // Store raw response first - database triggers will handle processing
-    const { error: rawInsertError } = await supabaseClient
+    // Store raw response with upsert pattern to avoid conflicts
+    console.log(`🔍 [Brightdata Profile] Checking for existing profile record with dealId: ${dealId}`);
+    
+    // Check if record already exists
+    const { data: existingProfile, error: selectError } = await supabaseClient
       .from('deal_enrichment_linkedin_profile_export')
-      .insert({
-        deal_id: dealId,
-        snapshot_id: snapshotId,
-        first_name: firstName,
-        last_name: lastName,
-        name: `${firstName} ${lastName}`,
-        raw_brightdata_response: brightdataData,
-        processing_status: 'raw',
-        timestamp: new Date().toISOString()
-      });
+      .select('id, processing_status')
+      .eq('deal_id', dealId)
+      .single();
 
-    if (rawInsertError) {
-      console.error('❌ [Brightdata Profile] Failed to store raw LinkedIn profile response:', rawInsertError);
-      throw new Error('Failed to store raw LinkedIn profile response');
+    if (selectError && selectError.code !== 'PGRST116') {
+      console.error('❌ [Brightdata Profile] Error checking for existing profile record:', selectError);
+    }
+
+    let result;
+    if (existingProfile) {
+      console.log(`📝 [Brightdata Profile] Updating existing profile record (id: ${existingProfile.id})`);
+      const { data, error } = await supabaseClient
+        .from('deal_enrichment_linkedin_profile_export')
+        .update({
+          snapshot_id: snapshotId,
+          first_name: firstName,
+          last_name: lastName,
+          name: `${firstName} ${lastName}`,
+          raw_brightdata_response: brightdataData,
+          processing_status: 'completed',
+          timestamp: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('deal_id', dealId)
+        .select();
+      
+      result = { data, error };
+    } else {
+      console.log(`📝 [Brightdata Profile] Creating new profile record`);
+      const { data, error } = await supabaseClient
+        .from('deal_enrichment_linkedin_profile_export')
+        .insert({
+          deal_id: dealId,
+          snapshot_id: snapshotId,
+          first_name: firstName,
+          last_name: lastName,
+          name: `${firstName} ${lastName}`,
+          raw_brightdata_response: brightdataData,
+          processing_status: 'completed',
+          timestamp: new Date().toISOString()
+        })
+        .select();
+      
+      result = { data, error };
+    }
+
+    if (result.error) {
+      console.error('❌ [Brightdata Profile] Failed to store LinkedIn profile response:', {
+        error: result.error,
+        code: result.error.code,
+        message: result.error.message,
+        details: result.error.details
+      });
+      throw new Error(`Failed to store LinkedIn profile response: ${result.error.message}`);
     }
 
     console.log('✅ [Brightdata Profile] Raw LinkedIn profile response stored, processing will be triggered automatically');
