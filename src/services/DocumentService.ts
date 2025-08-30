@@ -191,11 +191,16 @@ class DocumentService {
         category: documentData.document_category
       });
 
+      // Add debug logging to identify the exact error
+      console.log('🔍 About to insert document with data:', documentData);
+      
       const { data: documentRecord, error: dbError } = await supabase
         .from('deal_documents')
         .insert(documentData)
         .select()
         .single();
+        
+      console.log('🔍 Database operation result:', { documentRecord, dbError });
 
       if (dbError) {
         console.error('💾 Database insert failed:', {
