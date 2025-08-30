@@ -109,10 +109,10 @@ export function useDealDataIntegration() {
         const result: DataIntegrationResult = {
           success: true,
           dataPointsCreated: 1,
-          completenessScore: status.data_completeness_score,
-          dataCompleteness: status.data_completeness_score,
-          sourceEnginesProcessed: status.source_engines,
-          processedSources: status.source_engines,
+          completenessScore: status.completenessScore || 0,
+          dataCompleteness: status.dataCompleteness || 0,
+          sourceEnginesProcessed: status.sourceEnginesProcessed || [],
+          processedSources: status.processedSources || [],
           errors: [],
           vcDataPointsCreated: fundType === 'venture_capital' || fundType === 'vc',
           peDataPointsCreated: fundType === 'private_equity' || fundType === 'pe'

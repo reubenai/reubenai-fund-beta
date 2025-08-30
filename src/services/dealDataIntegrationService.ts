@@ -1,6 +1,10 @@
 /**
- * Deal Data Integration Service
- * Consolidates data from various enrichment tables into centralized datapoints tables
+ * Deal Data Integration Service - Enhanced with Trigger-Based Auto Integration
+ * 
+ * New Architecture:
+ * 1. Triggers automatically populate datapoints when enrichment data arrives
+ * 2. This service provides status checking and manual fallback integration
+ * 3. Manual integration is used for bulk operations or trigger failures
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -11,7 +15,7 @@ export interface DataIntegrationRequest {
   fundId: string;
   organizationId: string;
   fundType: AnyFundType;
-  triggerReason?: 'new_deal' | 'enrichment_update' | 'manual_refresh' | 'waterfall_processing';
+  triggerReason?: 'new_deal' | 'enrichment_update' | 'manual_refresh' | 'waterfall_processing' | 'trigger_fallback';
 }
 
 export interface DataIntegrationResult {
@@ -25,16 +29,31 @@ export interface DataIntegrationResult {
   processedSources: string[];
   errors: string[];
   error?: string;
+  triggerBased?: boolean; // New: indicates if result from triggers vs manual
+  lastUpdated?: string;   // New: when datapoints were last updated
 }
 
 export class DealDataIntegrationService {
   
   /**
-   * Main integration method - consolidates all data sources into centralized tables
+   * Main integration method - now checks trigger-based results first, then manual fallback
    */
   static async integrateDealData(request: DataIntegrationRequest): Promise<DataIntegrationResult> {
     try {
       console.log('🔄 Starting deal data integration for:', request.dealId);
+      
+      // First, check if trigger-based integration has already populated datapoints
+      const existingStatus = await this.getIntegrationStatus(request.dealId, request.fundType);
+      
+      if (existingStatus && existingStatus.success && request.triggerReason !== 'manual_refresh') {
+        console.log('✅ Using trigger-based integration results for:', request.dealId);
+        return {
+          ...existingStatus,
+          triggerBased: true
+        };
+      }
+      
+      console.log('📝 Proceeding with manual integration for:', request.dealId);
       
       const templateFundType = toTemplateFundType(request.fundType);
       
@@ -54,9 +73,63 @@ export class DealDataIntegrationService {
         sourceEnginesProcessed: [],
         processedSources: [],
         errors: [error instanceof Error ? error.message : 'Unknown error'],
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
+        triggerBased: false
       };
     }
+  }
+
+  /**
+   * NEW: Get current integration status from datapoints tables (populated by triggers)
+   */
+  static async getIntegrationStatus(dealId: string, fundType: AnyFundType): Promise<DataIntegrationResult | null> {
+    try {
+      const templateFundType = toTemplateFundType(fundType);
+      const tableName = templateFundType === 'vc' 
+        ? 'deal_analysis_datapoints_vc' 
+        : 'deal_analysis_datapoints_pe';
+      
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('data_completeness_score, source_engines, updated_at')
+        .eq('deal_id', dealId)
+        .single();
+      
+      if (error || !data) {
+        console.log('No existing datapoints found for:', dealId);
+        return null;
+      }
+      
+      return {
+        success: true,
+        dataPointsCreated: 1,
+        completenessScore: data.data_completeness_score || 0,
+        dataCompleteness: data.data_completeness_score || 0,
+        sourceEnginesProcessed: data.source_engines || [],
+        processedSources: data.source_engines || [],
+        errors: [],
+        triggerBased: true,
+        lastUpdated: data.updated_at,
+        [templateFundType === 'vc' ? 'vcDataPointsCreated' : 'peDataPointsCreated']: true
+      };
+      
+    } catch (error) {
+      console.error('Error fetching integration status:', error);
+      return null;
+    }
+  }
+
+  /**
+   * NEW: Force manual refresh (bypasses trigger-based results)
+   */
+  static async forceManualIntegration(dealId: string, fundId: string, organizationId: string, fundType: AnyFundType): Promise<DataIntegrationResult> {
+    return this.integrateDealData({
+      dealId,
+      fundId,
+      organizationId,
+      fundType,
+      triggerReason: 'manual_refresh'
+    });
   }
   
   /**
@@ -533,21 +606,5 @@ export class DealDataIntegrationService {
   private static calculateDataCompleteness(sourceEngines: string[], fundType: 'vc' | 'pe'): number {
     const expectedSources = fundType === 'vc' ? 7 : 7; // Both now have same number of sources (documents + 6 enrichment engines)
     return Math.round((sourceEngines.length / expectedSources) * 100);
-  }
-  
-  /**
-   * Get integration status for a deal
-   */
-  static async getIntegrationStatus(dealId: string, fundType: AnyFundType) {
-    const templateFundType = toTemplateFundType(fundType);
-    const tableName = templateFundType === 'vc' ? 'deal_analysis_datapoints_vc' : 'deal_analysis_datapoints_pe';
-    
-    const { data } = await supabase
-      .from(tableName)
-      .select('data_completeness_score, source_engines, updated_at')
-      .eq('deal_id', dealId)
-      .single();
-    
-    return data || null;
   }
 }

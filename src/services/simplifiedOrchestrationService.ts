@@ -83,10 +83,10 @@ export class SimplifiedOrchestrationService {
         return {
           dealId,
           overallStatus: 'complete',
-          progress: integrationStatus.data_completeness_score,
-          dataCompleteness: integrationStatus.data_completeness_score,
-          sourceEngines: integrationStatus.source_engines,
-          lastUpdated: integrationStatus.updated_at
+          progress: integrationStatus.completenessScore || 0,
+          dataCompleteness: integrationStatus.dataCompleteness || 0,
+          sourceEngines: integrationStatus.sourceEnginesProcessed || [],
+          lastUpdated: integrationStatus.lastUpdated || new Date().toISOString()
         };
       }
       
