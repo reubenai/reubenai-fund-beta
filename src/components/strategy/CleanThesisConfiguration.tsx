@@ -18,7 +18,7 @@ import {
 import { EnhancedStrategy } from '@/services/unifiedStrategyService';
 import { useUnifiedStrategy } from '@/hooks/useUnifiedStrategy';
 import { EnhancedCriteriaEditor } from './EnhancedCriteriaEditor';
-import { AnalysisStatusIndicator } from './AnalysisStatusIndicator';
+
 import { getTemplateByFundType } from '@/types/vc-pe-criteria';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
@@ -228,7 +228,6 @@ export function CleanThesisConfiguration({
           <p className="text-sm text-muted-foreground mt-1">Define your investment criteria and focus areas</p>
         </div>
         <div className="flex items-center gap-3">
-          <AnalysisStatusIndicator fundId={fundId} />
           {onLaunchWizard && canConfigureStrategy && (
             <Button 
               onClick={onLaunchWizard}
