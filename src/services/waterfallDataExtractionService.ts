@@ -17,8 +17,8 @@ interface EnrichmentData {
     deal_enrichment_perplexity_market_export_vc?: any;
   };
   crunchbase?: { num_employees?: string | number; founded_date?: string; created_at?: string };
-  linkedin?: { employees_in_linkedin?: number; founded?: number; created_at?: string };
-  perplexity_company?: { tam?: string; sam?: string; som?: string; cagr?: string; created_at?: string };
+  linkedin?: { employees_in_linkedin?: number; founded?: number; similar_companies?: any; created_at?: string };
+  perplexity_company?: { tam?: string; sam?: string; som?: string; cagr?: string; key_market_players?: any; created_at?: string };
   perplexity_founder?: { founder_name?: string; leadership_experience?: any; created_at?: string };
   perplexity_market?: { primary_industry?: string; market_cycle?: string; created_at?: string };
 }
@@ -167,6 +167,60 @@ export class WaterfallDataExtractionService {
 
     return {
       value: 'Require more information. Add business documents or market research',
+      source: 'fallback',
+      confidence: 'low',
+      isFallback: true
+    };
+  }
+
+  static extractCompetitors(data: EnrichmentData): WaterfallResult<string> {
+    // Priority 1: LinkedIn Export table - similar_companies
+    const linkedinCompetitors = data.linkedin?.similar_companies;
+    if (!this.isMissing(linkedinCompetitors)) {
+      // Handle different formats (array or string)
+      let competitorsText: string;
+      if (Array.isArray(linkedinCompetitors)) {
+        competitorsText = linkedinCompetitors.join(', ');
+      } else if (typeof linkedinCompetitors === 'object') {
+        competitorsText = JSON.stringify(linkedinCompetitors);
+      } else {
+        competitorsText = String(linkedinCompetitors);
+      }
+      
+      return {
+        value: competitorsText,
+        source: 'LinkedIn Export',
+        confidence: 'high',
+        lastUpdated: data.linkedin?.created_at,
+        isFallback: false
+      };
+    }
+
+    // Priority 2: Perplexity Company Export - key_market_players
+    const perplexityCompetitors = this.getNestedValue(data.perplexity_company, 'key_market_players');
+    if (!this.isMissing(perplexityCompetitors)) {
+      // Handle different formats (array or string)
+      let competitorsText: string;
+      if (Array.isArray(perplexityCompetitors)) {
+        competitorsText = perplexityCompetitors.join(', ');
+      } else if (typeof perplexityCompetitors === 'object') {
+        competitorsText = JSON.stringify(perplexityCompetitors);
+      } else {
+        competitorsText = String(perplexityCompetitors);
+      }
+      
+      return {
+        value: competitorsText,
+        source: 'Perplexity Research',
+        confidence: 'medium',
+        lastUpdated: data.perplexity_company?.created_at,
+        isFallback: false
+      };
+    }
+
+    // Fallback
+    return {
+      value: 'Require more information. Add Crunchbase or LinkedIn',
       source: 'fallback',
       confidence: 'low',
       isFallback: true

@@ -153,6 +153,36 @@ export function WaterfallDataDisplay({ dealId }: WaterfallDataDisplayProps) {
               </div>
             </div>
           </div>
+
+          {/* Competitors */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h4 className="font-medium text-sm mb-1">Competitors</h4>
+              <div className="mb-2">
+                {data.competitors.isFallback ? (
+                  <Alert className="w-full">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-sm">
+                      {data.competitors.value as string}
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <p className="text-sm">
+                    {data.competitors.value}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {getSourceIcon(data.competitors.source)}
+                <span className="text-sm text-muted-foreground">
+                  From {data.competitors.source}
+                </span>
+                <Badge variant={getConfidenceBadgeVariant(data.competitors.confidence)}>
+                  {data.competitors.confidence} confidence
+                </Badge>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

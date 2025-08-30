@@ -24,6 +24,13 @@ interface WaterfallVCDatapoints {
     lastUpdated?: string;
     isFallback: boolean;
   };
+  competitors: {
+    value: string;
+    source: string;
+    confidence: 'high' | 'medium' | 'low';
+    lastUpdated?: string;
+    isFallback: boolean;
+  };
 }
 
 interface UseVCDatapointsWaterfallReturn {
@@ -90,7 +97,7 @@ export function useVCDatapointsWaterfall(dealId: string): UseVCDatapointsWaterfa
         // LinkedIn export table
         supabase
           .from('deal_enrichment_linkedin_export')
-          .select('employees_in_linkedin, founded, created_at')
+          .select('employees_in_linkedin, founded, similar_companies, created_at')
           .eq('deal_id', dealId)
           .order('created_at', { ascending: false })
           .limit(1),
@@ -98,7 +105,7 @@ export function useVCDatapointsWaterfall(dealId: string): UseVCDatapointsWaterfa
         // Perplexity Company export
         supabase
           .from('deal_enrichment_perplexity_company_export_vc')
-          .select('tam, sam, som, cagr, created_at')
+          .select('tam, sam, som, cagr, key_market_players, created_at')
           .eq('deal_id', dealId)
           .order('created_at', { ascending: false })
           .limit(1),
@@ -136,6 +143,7 @@ export function useVCDatapointsWaterfall(dealId: string): UseVCDatapointsWaterfa
         employee_count: WaterfallDataExtractionService.extractEmployeeCount(enrichmentData),
         founding_year: WaterfallDataExtractionService.extractFoundingYear(enrichmentData),
         business_model: WaterfallDataExtractionService.extractBusinessModel(enrichmentData),
+        competitors: WaterfallDataExtractionService.extractCompetitors(enrichmentData),
       };
 
       setData(waterfallData);
