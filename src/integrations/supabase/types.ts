@@ -7377,6 +7377,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      extract_pe_data_from_crunchbase: {
+        Args: { crunchbase_data: Json }
+        Returns: Json
+      }
+      extract_vc_data_from_crunchbase: {
+        Args: { crunchbase_data: Json }
+        Returns: Json
+      }
       generate_ic_packet: {
         Args: { deal_id_param: string }
         Returns: Json
