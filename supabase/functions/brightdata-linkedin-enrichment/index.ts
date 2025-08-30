@@ -28,14 +28,15 @@ serve(async (req) => {
 
   try {
     // Create service role client for internal operations
+    const authHeader = req.headers.get('Authorization');
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
+      authHeader ? {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader },
         },
-      }
+      } : undefined
     );
 
     const { dealId, companyName, linkedinUrl }: BrightdataRequest = await req.json();

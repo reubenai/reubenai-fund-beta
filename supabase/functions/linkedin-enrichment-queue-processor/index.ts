@@ -63,12 +63,15 @@ serve(async (req) => {
           })
           .eq('id', record.id);
 
-        // Step 3: Call the brightdata-linkedin-enrichment function
+        // Step 3: Call the brightdata-linkedin-enrichment function with proper authorization
         const enrichmentResponse = await supabaseClient.functions.invoke('brightdata-linkedin-enrichment', {
           body: {
             dealId: record.deal_id,
             companyName: record.company_name,
             linkedinUrl: record.linkedin_url
+          },
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
           }
         });
 

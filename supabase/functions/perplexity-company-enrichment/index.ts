@@ -382,16 +382,19 @@ Focus on quantitative data and specific metrics where available. For each catego
       perplexityData
     );
 
-    // Store raw response first - this will trigger processing via database trigger
+    // Store raw response using upsert pattern to handle potential conflicts
     const { error: rawInsertError } = await supabase
       .from('deal_enrichment_perplexity_company_export_vc')
-      .insert({
+      .upsert({
         deal_id: dealId,
         snapshot_id: snapshotId,
         company_name: companyName,
         raw_perplexity_response: perplexityData,
         processing_status: 'pending',
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'deal_id'
       });
 
     if (rawInsertError) {
