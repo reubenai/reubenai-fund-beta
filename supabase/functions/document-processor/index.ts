@@ -784,7 +784,7 @@ serve(async (req) => {
     }
 
     // Extract text from document
-    const extractedText = await extractDocumentText(urlData.signedUrl, document);
+    const extractedText = await extractDocumentText(urlData.signedUrl, document, supabaseClient);
     
     // Perform intelligent analysis on the extracted text
     const analysisResult = await analyzeDocument(extractedText, document, analysisType);
@@ -819,15 +819,18 @@ serve(async (req) => {
     }
 
     // Update document with analysis results, extracted text, and all 3 new fields
+    console.log('Updating document with analysis results...');
     const { error: updateError } = await supabaseClient
       .from('deal_documents')
       .update({
         document_analysis_status: 'completed',
-        parsing_status: 'completed',
+        parsing_status: 'completed', 
         extracted_text: extractedText,
         parsed_data: analysisResult.parsed_data || {},
-        document_summary: unifiedSummary,
-        narrative: narrative,
+        document_summary: {
+          narrative: narrative,
+          unified_summary: unifiedSummary
+        },
         data_points_vc: vcDataPoints,
         data_points_pe: peDataPoints,
         metadata: {
@@ -974,7 +977,7 @@ serve(async (req) => {
 });
 
 // Extract text from document using LlamaParse
-async function extractDocumentText(documentUrl: string, document: any): Promise<string> {
+async function extractDocumentText(documentUrl: string, document: any, supabaseClient: any): Promise<string> {
   console.log(`Extracting text from ${document.name} (${document.content_type})`);
   
   const llamaParseApiKey = Deno.env.get('LLAMAPARSE_API_KEY');
@@ -985,11 +988,16 @@ async function extractDocumentText(documentUrl: string, document: any): Promise<
   }
 
   try {
+    console.log('🔄 Starting LlamaParse extraction...');
+    console.log('Document URL:', documentUrl.substring(0, 100) + '...');
+    
     // Download the document first
+    console.log('📥 Downloading document from storage...');
     const documentResponse = await fetch(documentUrl);
     if (!documentResponse.ok) {
       throw new Error(`Failed to download document: ${documentResponse.statusText}`);
     }
+    console.log('✅ Document downloaded successfully');
     
     const documentBlob = await documentResponse.blob();
     
@@ -999,7 +1007,7 @@ async function extractDocumentText(documentUrl: string, document: any): Promise<
     formData.append('language', 'en');
     formData.append('parsing_instruction', 'Extract all text content including tables, charts, and structured data. Preserve formatting and hierarchy.');
     
-    console.log('Uploading document to LlamaParse...');
+    console.log('📤 Uploading document to LlamaParse...');
     const uploadResponse = await fetch('https://api.cloud.llamaindex.ai/api/v1/parsing/upload', {
       method: 'POST',
       headers: {
@@ -1008,6 +1016,8 @@ async function extractDocumentText(documentUrl: string, document: any): Promise<
       },
       body: formData,
     });
+    
+    console.log('LlamaParse upload response status:', uploadResponse.status);
 
     if (!uploadResponse.ok) {
       const errorText = await uploadResponse.text();
@@ -1016,7 +1026,19 @@ async function extractDocumentText(documentUrl: string, document: any): Promise<
 
     const uploadResult = await uploadResponse.json();
     const jobId = uploadResult.id;
-    console.log(`LlamaParse job started: ${jobId}`);
+    console.log(`🚀 LlamaParse job started with ID: ${jobId}`);
+    
+    // Store job ID in document metadata for tracking
+    await supabaseClient
+      .from('deal_documents')
+      .update({
+        metadata: {
+          ...document.metadata,
+          llamaparse_job_id: jobId,
+          llamaparse_started_at: new Date().toISOString()
+        }
+      })
+      .eq('id', document.id);
 
     // Poll for completion
     let attempts = 0;
@@ -1053,7 +1075,21 @@ async function extractDocumentText(documentUrl: string, document: any): Promise<
         }
 
         const extractedText = await resultResponse.text();
-        console.log('LlamaParse extraction completed successfully');
+        console.log(`✅ LlamaParse extraction completed successfully! Text length: ${extractedText.length} characters`);
+        
+        // Update document with success metadata
+        await supabaseClient
+          .from('deal_documents')  
+          .update({
+            metadata: {
+              ...document.metadata,
+              llamaparse_completed_at: new Date().toISOString(),
+              llamaparse_success: true,
+              extracted_text_length: extractedText.length
+            }
+          })
+          .eq('id', document.id);
+          
         return extractedText;
       } else if (statusResult.status === 'ERROR') {
         throw new Error('LlamaParse job failed');
