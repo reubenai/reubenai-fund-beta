@@ -3741,6 +3741,51 @@ export type Database = {
           },
         ]
       }
+      deal2_enrichment_linkedin_profile_export: {
+        Row: {
+          created_at: string
+          deal_id: string
+          error_details: string | null
+          first_name: string | null
+          founder_name: string
+          id: string
+          last_name: string | null
+          processing_status: string
+          raw_brightdata_response: Json | null
+          snapshot_id: string | null
+          timestamp: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          error_details?: string | null
+          first_name?: string | null
+          founder_name: string
+          id?: string
+          last_name?: string | null
+          processing_status?: string
+          raw_brightdata_response?: Json | null
+          snapshot_id?: string | null
+          timestamp?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          error_details?: string | null
+          first_name?: string | null
+          founder_name?: string
+          id?: string
+          last_name?: string | null
+          processing_status?: string
+          raw_brightdata_response?: Json | null
+          snapshot_id?: string | null
+          timestamp?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       deals: {
         Row: {
           analysis_blocked_until: string | null
