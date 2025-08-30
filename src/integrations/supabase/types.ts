@@ -7721,15 +7721,6 @@ export type Database = {
         }
         Returns: string
       }
-      queue_linkedin_profile_enrichment_job: {
-        Args: {
-          p_deal_id: string
-          p_first_name?: string
-          p_founder_name: string
-          p_last_name?: string
-        }
-        Returns: string
-      }
       reclaim_zombie_analysis_jobs: {
         Args: Record<PropertyKey, never>
         Returns: Json
