@@ -2,15 +2,18 @@ import React from 'react';
 import { EnhancedPipelineView } from '@/components/pipeline/EnhancedPipelineView';
 import { InvestmentStatusIndicator } from '@/components/pipeline/InvestmentStatusIndicator';
 import { useFund } from '@/contexts/FundContext';
+import { useCrunchbasePostProcessor } from '@/hooks/useCrunchbasePostProcessor';
 
 import { useSearchParams } from 'react-router-dom';
 // Breadcrumbs removed - using Layout breadcrumbs
 import { useUserRole } from '@/hooks/useUserRole';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 export default function Pipeline() {
   const { selectedFund, funds, setSelectedFund } = useFund();
   const { isSuperAdmin, role, organizationId } = useUserRole();
+  const { isBackfilling, backfillAllRawRecords } = useCrunchbasePostProcessor();
   const [searchParams] = useSearchParams();
   const fundIdParam = searchParams.get('fund');
 
@@ -23,6 +26,10 @@ export default function Pipeline() {
       }
     }
   }, [fundIdParam, funds, selectedFund, setSelectedFund]);
+
+  const handleBackfill = async () => {
+    await backfillAllRawRecords();
+  };
 
   if (!selectedFund) {
     console.log('No selected fund. Available funds:', funds.length, 'Fund param:', fundIdParam);
@@ -53,6 +60,29 @@ export default function Pipeline() {
         </p>
       </div>
 
+      {/* Admin Section - Only for Super Admins */}
+      {isSuperAdmin && (
+        <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+          <h3 className="font-semibold text-orange-800 dark:text-orange-200 mb-2 flex items-center gap-2">
+            🔧 Admin Tools
+            <Badge variant="secondary" className="text-xs">Super Admin Only</Badge>
+          </h3>
+          <div className="flex gap-3">
+            <Button 
+              onClick={handleBackfill} 
+              disabled={isBackfilling}
+              variant="outline"
+              size="sm"
+              className="text-xs"
+            >
+              {isBackfilling ? 'Processing...' : 'Backfill Crunchbase Records'}
+            </Button>
+          </div>
+          <p className="text-xs text-orange-700 dark:text-orange-300 mt-2">
+            Process all raw Crunchbase data that's stuck in the queue
+          </p>
+        </div>
+      )}
       
       {/* Controlled Analysis Status - Temporarily disabled */}
       {/* <InvestmentStatusIndicator /> */}

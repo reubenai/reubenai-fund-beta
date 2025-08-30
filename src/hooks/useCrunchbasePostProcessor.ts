@@ -17,6 +17,7 @@ interface PostProcessResponse {
 
 export const useCrunchbasePostProcessor = () => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isBackfilling, setIsBackfilling] = useState(false);
 
   const processRawRecords = async (dealId?: string, crunchbaseExportId?: string) => {
     setIsProcessing(true);
@@ -76,10 +77,41 @@ export const useCrunchbasePostProcessor = () => {
     return processRawRecords(dealId); // Process records for specific deal
   };
 
+  const backfillAllRawRecords = async (): Promise<PostProcessResponse | null> => {
+    setIsBackfilling(true);
+    try {
+      console.log('🔄 Starting Crunchbase backfill for all raw records...');
+      
+      // Call without any filters to process all raw records
+      const { data, error } = await supabase.functions.invoke('crunchbase-export-post-processor', {
+        body: { forceReprocess: false } // Process only raw records
+      });
+
+      if (error) {
+        console.error('❌ Backfill error:', error);
+        toast.error('Failed to backfill raw records: ' + error.message);
+        return null;
+      }
+
+      const result = data as PostProcessResponse;
+      console.log('✅ Backfill completed:', result);
+      toast.success(`Successfully backfilled ${result.processed_count || 0} raw Crunchbase records`);
+      return result;
+    } catch (error: any) {
+      console.error('❌ Backfill failed:', error);
+      toast.error('Backfill failed: ' + error.message);
+      return null;
+    } finally {
+      setIsBackfilling(false);
+    }
+  };
+
   return {
     isProcessing,
+    isBackfilling,
     processRawRecords,
     processAllRawRecords,
-    processDealRecords
+    processDealRecords,
+    backfillAllRawRecords,
   };
 };
