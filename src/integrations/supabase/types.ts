@@ -7580,6 +7580,13 @@ export type Database = {
         Args: { "": unknown[] }
         Returns: number
       }
+      sync_existing_enrichment_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          records_updated: number
+          sync_type: string
+        }[]
+      }
       text_to_bytea: {
         Args: { data: string }
         Returns: string
