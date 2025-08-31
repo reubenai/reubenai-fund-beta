@@ -7393,6 +7393,42 @@ export type Database = {
           },
         ]
       }
+      vc_aggregation_trigger_log: {
+        Row: {
+          deal_id: string
+          error_message: string | null
+          execution_duration_ms: number | null
+          http_response: string | null
+          http_status: number | null
+          id: string
+          metadata: Json | null
+          trigger_source: string
+          trigger_timestamp: string | null
+        }
+        Insert: {
+          deal_id: string
+          error_message?: string | null
+          execution_duration_ms?: number | null
+          http_response?: string | null
+          http_status?: number | null
+          id?: string
+          metadata?: Json | null
+          trigger_source: string
+          trigger_timestamp?: string | null
+        }
+        Update: {
+          deal_id?: string
+          error_message?: string | null
+          execution_duration_ms?: number | null
+          http_response?: string | null
+          http_status?: number | null
+          id?: string
+          metadata?: Json | null
+          trigger_source?: string
+          trigger_timestamp?: string | null
+        }
+        Relationships: []
+      }
       vector_embeddings: {
         Row: {
           confidence_score: number | null
