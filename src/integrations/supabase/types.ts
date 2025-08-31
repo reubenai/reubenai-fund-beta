@@ -2014,7 +2014,15 @@ export type Database = {
           value_creation?: string[] | null
           whitespace_opportunities?: string[] | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "deal_analysis_datapoints_vc_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deal_analysis_sources: {
         Row: {

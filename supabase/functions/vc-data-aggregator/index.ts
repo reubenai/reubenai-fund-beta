@@ -211,9 +211,9 @@ async function collectDealData(dealId: string) {
       .limit(1)
       .single();
 
-    // Get Perplexity company export
+    // Get Perplexity company export (using duplicate table)
     const { data: perplexityCompanyData } = await supabase
-      .from('deal2_enrichment_perplexity_company_export_vc')
+      .from('deal2_enrichment_perplexity_company_export_vc_duplicate')
       .select('raw_perplexity_response')
       .eq('deal_id', dealId)
       .eq('processing_status', 'completed')
@@ -221,9 +221,9 @@ async function collectDealData(dealId: string) {
       .limit(1)
       .single();
 
-    // Get Perplexity founder export
+    // Get Perplexity founder export (using duplicate table)
     const { data: perplexityFounderData } = await supabase
-      .from('deal2_enrichment_perplexity_founder_export_vc')
+      .from('deal2_enrichment_perplexity_founder_export_vc_duplicate')
       .select('raw_perplexity_response')
       .eq('deal_id', dealId)
       .eq('processing_status', 'completed')
@@ -231,9 +231,9 @@ async function collectDealData(dealId: string) {
       .limit(1)
       .single();
 
-    // Get Perplexity market export
+    // Get Perplexity market export (using duplicate table)
     const { data: perplexityMarketData } = await supabase
-      .from('deal2_enrichment_perplexity_market_export_vc')
+      .from('deal2_enrichment_perplexity_market_export_vc_duplicate')
       .select('raw_perplexity_response')
       .eq('deal_id', dealId)
       .eq('processing_status', 'completed')
