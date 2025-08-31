@@ -370,9 +370,38 @@ Focus on quantitative data and specific metrics where available. For each catego
       );
     }
 
-    console.log('🔄 Processing Perplexity company response...');
+    console.log('🔄 Processing and storing Perplexity company response...');
 
-    // Process and store the company data
+    // Check for existing record to prevent duplicates
+    const { data: existingRecord } = await supabase
+      .from('deal_enrichment_perplexity_company_export_vc')
+      .select('id, processing_status')
+      .eq('deal_id', dealId)
+      .maybeSingle();
+
+    if (existingRecord && existingRecord.processing_status === 'processed') {
+      console.log('⚠️ Deal already has processed company enrichment data, skipping...');
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Deal already enriched',
+          data: existingRecord,
+          snapshot_id: snapshotId
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Delete any existing failed/pending records before inserting new one
+    if (existingRecord) {
+      await supabase
+        .from('deal_enrichment_perplexity_company_export_vc')
+        .delete()
+        .eq('deal_id', dealId);
+      console.log('🗑️ Removed existing failed/pending record for clean retry');
+    }
+
+    // Process and store the company data (includes raw response)
     const processedData = await processPerplexityCompanyResponse(
       supabase,
       dealId,
@@ -382,27 +411,11 @@ Focus on quantitative data and specific metrics where available. For each catego
       perplexityData
     );
 
-    // Store raw response using upsert pattern to handle potential conflicts
-    const { error: rawInsertError } = await supabase
-      .from('deal_enrichment_perplexity_company_export_vc')
-      .upsert({
-        deal_id: dealId,
-        snapshot_id: snapshotId,
-        company_name: companyName,
-        raw_perplexity_response: perplexityData,
-        processing_status: 'pending',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'deal_id'
-      });
-
-    if (rawInsertError) {
-      console.error('❌ Failed to store raw Perplexity response:', rawInsertError);
-      throw new Error('Failed to store raw Perplexity response');
+    if (!processedData) {
+      throw new Error('Failed to process and store company data');
     }
 
-    console.log('✅ Raw Perplexity response stored, processing will be triggered automatically');
+    console.log('✅ Company enrichment data processed and stored successfully');
 
     console.log('✅ Perplexity company enrichment completed successfully');
 

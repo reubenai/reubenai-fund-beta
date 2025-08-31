@@ -1763,6 +1763,7 @@ export type Database = {
           created_at: string
           customer_acquisition_metrics: Json | null
           data_completeness_score: number | null
+          deal_card_enrichment: Json | null
           deal_enrichment_crunchbase_export: Json | null
           deal_enrichment_linkedin_export: Json | null
           deal_enrichment_linkedin_profile_export: Json | null
@@ -1851,6 +1852,7 @@ export type Database = {
           created_at?: string
           customer_acquisition_metrics?: Json | null
           data_completeness_score?: number | null
+          deal_card_enrichment?: Json | null
           deal_enrichment_crunchbase_export?: Json | null
           deal_enrichment_linkedin_export?: Json | null
           deal_enrichment_linkedin_profile_export?: Json | null
@@ -1939,6 +1941,7 @@ export type Database = {
           created_at?: string
           customer_acquisition_metrics?: Json | null
           data_completeness_score?: number | null
+          deal_card_enrichment?: Json | null
           deal_enrichment_crunchbase_export?: Json | null
           deal_enrichment_linkedin_export?: Json | null
           deal_enrichment_linkedin_profile_export?: Json | null
@@ -3069,7 +3072,15 @@ export type Database = {
           updated_at?: string
           whitespace_opportunities?: string[] | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "deal_enrichment_perplexity_company_export_vc_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deal_enrichment_perplexity_founder_export_pe: {
         Row: {
@@ -3219,7 +3230,15 @@ export type Database = {
           updated_at?: string
           value_creation?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "deal_enrichment_perplexity_founder_export_vc_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deal_enrichment_perplexity_market_export_pe: {
         Row: {
@@ -3372,7 +3391,15 @@ export type Database = {
           technology_moats?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "deal_enrichment_perplexity_market_export_vc_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deal_execution_locks: {
         Row: {
@@ -4102,6 +4129,7 @@ export type Database = {
           crunchbase_url: string | null
           currency: string | null
           current_round_size: number | null
+          deal_card_enrichment: Json | null
           deal_size: number | null
           description: string | null
           employee_count: string | null
@@ -4169,6 +4197,7 @@ export type Database = {
           crunchbase_url?: string | null
           currency?: string | null
           current_round_size?: number | null
+          deal_card_enrichment?: Json | null
           deal_size?: number | null
           description?: string | null
           employee_count?: string | null
@@ -4236,6 +4265,7 @@ export type Database = {
           crunchbase_url?: string | null
           currency?: string | null
           current_round_size?: number | null
+          deal_card_enrichment?: Json | null
           deal_size?: number | null
           description?: string | null
           employee_count?: string | null
