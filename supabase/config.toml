@@ -221,3 +221,6 @@ verify_jwt = false
 [functions.brightdata-linkedin-enrichment]
 verify_jwt = false
 
+[functions.test-linkedin-profile-enrichment]
+verify_jwt = false
+
