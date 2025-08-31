@@ -233,3 +233,12 @@ verify_jwt = false
 [functions.test-queue-now]
 verify_jwt = false
 
+[functions.perplexity-founder-post-processor]
+verify_jwt = false
+
+[functions.perplexity-founder-post-processor-cron]
+verify_jwt = false
+
+[functions.manual-process-founder-enrichments]
+verify_jwt = false
+
