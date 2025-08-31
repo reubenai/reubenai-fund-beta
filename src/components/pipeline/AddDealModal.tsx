@@ -264,12 +264,24 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
           // 6. Perplexity Market Enrichment (if industry and location available)
           if (formData.industry.length > 0 && formData.location.length > 0) {
             enrichmentProcesses++;
-            console.log('📤 Starting Perplexity market enrichment...');
-            triggerMarketEnrichment(newDeal.id, formData.industry[0], formData.location[0]).then(() => {
-              console.log('✅ Perplexity market enrichment completed');
+            console.log('📤 Starting Perplexity market enrichment...', {
+              dealId: newDeal.id,
+              industry: formData.industry[0],
+              location: formData.location[0]
+            });
+            
+            triggerMarketEnrichment(newDeal.id, formData.industry[0], formData.location[0]).then((result) => {
+              console.log('✅ Perplexity market enrichment completed:', result);
+              if (!result?.success) {
+                console.error('⚠️ Market enrichment completed but failed:', result?.error);
+                // Don't show individual enrichment failures as they're background processes
+              }
             }).catch(err => {
               console.error('💥 Perplexity market enrichment error:', err);
+              // Don't show individual enrichment failures as they're background processes
             });
+          } else {
+            console.log('⏭️ Skipping Perplexity market enrichment - missing industry or location');
           }
 
           console.log(`🔄 ${enrichmentProcesses} independent enrichment processes started for: ${formData.company_name}`);
