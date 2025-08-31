@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
 
     // Build query to find records to process
     let query = supabase
-      .from('deal_enrichment_linkedin_export')
+      .from('deal2_enrichment_linkedin_export')
       .select('*')
       .eq('processing_status', 'raw');
 
@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
 
         // Update processing status
         await supabase
-          .from('deal_enrichment_linkedin_export')
+          .from('deal2_enrichment_linkedin_export')
           .update({ processing_status: 'processing' })
           .eq('id', record.id);
 
@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
         console.log(`📊 [Post-Processor] Updating record with:`, updateData);
 
         const { error: updateError } = await supabase
-          .from('deal_enrichment_linkedin_export')
+          .from('deal2_enrichment_linkedin_export')
           .update(updateData)
           .eq('id', record.id);
 
@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
           
           // Mark as failed
           await supabase
-            .from('deal_enrichment_linkedin_export')
+            .from('deal2_enrichment_linkedin_export')
             .update({ processing_status: 'failed' })
             .eq('id', record.id);
 
@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
         
         // Mark as failed
         await supabase
-          .from('deal_enrichment_linkedin_export')
+          .from('deal2_enrichment_linkedin_export')
           .update({ processing_status: 'failed' })
           .eq('id', record.id);
 
