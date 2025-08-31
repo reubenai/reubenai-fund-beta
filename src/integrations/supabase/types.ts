@@ -3689,7 +3689,15 @@ export type Database = {
           timestamp?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "deal2_enrichment_crunchbase_export_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deal2_enrichment_linkedin_export: {
         Row: {
