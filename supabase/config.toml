@@ -224,3 +224,12 @@ verify_jwt = false
 [functions.test-linkedin-profile-enrichment]
 verify_jwt = false
 
+[functions.manual-queue-test]
+verify_jwt = false
+
+[functions.trigger-queue]
+verify_jwt = false
+
+[functions.test-queue-now]
+verify_jwt = false
+
