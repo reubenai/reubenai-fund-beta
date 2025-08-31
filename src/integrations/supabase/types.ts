@@ -3912,6 +3912,174 @@ export type Database = {
           },
         ]
       }
+      deal2_enrichment_perplexity_founder_export_vc_duplicate: {
+        Row: {
+          academic_background: Json | null
+          certifications: Json | null
+          company_name: string
+          confidence_score: number | null
+          created_at: string
+          data_quality_score: number | null
+          deal_id: string
+          exit_history: Json | null
+          founder_name: string
+          id: string
+          innovation_record: Json | null
+          leadership_experience: Json | null
+          market_knowledge: Json | null
+          previous_roles: Json | null
+          processed_at: string | null
+          processing_status: string
+          raw_perplexity_response: Json
+          snapshot_id: string | null
+          subcategory_confidence: Json | null
+          subcategory_sources: Json | null
+          team_building: Json | null
+          technical_skills: Json | null
+          thought_leadership: Json | null
+          updated_at: string
+          value_creation: Json | null
+        }
+        Insert: {
+          academic_background?: Json | null
+          certifications?: Json | null
+          company_name: string
+          confidence_score?: number | null
+          created_at?: string
+          data_quality_score?: number | null
+          deal_id: string
+          exit_history?: Json | null
+          founder_name: string
+          id?: string
+          innovation_record?: Json | null
+          leadership_experience?: Json | null
+          market_knowledge?: Json | null
+          previous_roles?: Json | null
+          processed_at?: string | null
+          processing_status?: string
+          raw_perplexity_response?: Json
+          snapshot_id?: string | null
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
+          team_building?: Json | null
+          technical_skills?: Json | null
+          thought_leadership?: Json | null
+          updated_at?: string
+          value_creation?: Json | null
+        }
+        Update: {
+          academic_background?: Json | null
+          certifications?: Json | null
+          company_name?: string
+          confidence_score?: number | null
+          created_at?: string
+          data_quality_score?: number | null
+          deal_id?: string
+          exit_history?: Json | null
+          founder_name?: string
+          id?: string
+          innovation_record?: Json | null
+          leadership_experience?: Json | null
+          market_knowledge?: Json | null
+          previous_roles?: Json | null
+          processed_at?: string | null
+          processing_status?: string
+          raw_perplexity_response?: Json
+          snapshot_id?: string | null
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
+          team_building?: Json | null
+          technical_skills?: Json | null
+          thought_leadership?: Json | null
+          updated_at?: string
+          value_creation?: Json | null
+        }
+        Relationships: []
+      }
+      deal2_enrichment_perplexity_market_export_vc_duplicate: {
+        Row: {
+          capital_requirements: string | null
+          competitive_window: string | null
+          confidence_level: string | null
+          created_at: string
+          data_quality_score: number | null
+          deal_id: string
+          distribution_challenges: string | null
+          economic_sensitivity: string | null
+          geographic_constraints: string | null
+          id: string
+          investment_climate: string | null
+          last_updated: string | null
+          location: string | null
+          market_cycle: string | null
+          primary_industry: string | null
+          processed_at: string | null
+          processing_status: string
+          raw_perplexity_response: Json
+          regulatory_requirements: string | null
+          regulatory_timeline: string | null
+          snapshot_id: string
+          subcategory_confidence: Json | null
+          subcategory_sources: Json | null
+          technology_moats: string | null
+          updated_at: string
+        }
+        Insert: {
+          capital_requirements?: string | null
+          competitive_window?: string | null
+          confidence_level?: string | null
+          created_at?: string
+          data_quality_score?: number | null
+          deal_id: string
+          distribution_challenges?: string | null
+          economic_sensitivity?: string | null
+          geographic_constraints?: string | null
+          id?: string
+          investment_climate?: string | null
+          last_updated?: string | null
+          location?: string | null
+          market_cycle?: string | null
+          primary_industry?: string | null
+          processed_at?: string | null
+          processing_status?: string
+          raw_perplexity_response?: Json
+          regulatory_requirements?: string | null
+          regulatory_timeline?: string | null
+          snapshot_id: string
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
+          technology_moats?: string | null
+          updated_at?: string
+        }
+        Update: {
+          capital_requirements?: string | null
+          competitive_window?: string | null
+          confidence_level?: string | null
+          created_at?: string
+          data_quality_score?: number | null
+          deal_id?: string
+          distribution_challenges?: string | null
+          economic_sensitivity?: string | null
+          geographic_constraints?: string | null
+          id?: string
+          investment_climate?: string | null
+          last_updated?: string | null
+          location?: string | null
+          market_cycle?: string | null
+          primary_industry?: string | null
+          processed_at?: string | null
+          processing_status?: string
+          raw_perplexity_response?: Json
+          regulatory_requirements?: string | null
+          regulatory_timeline?: string | null
+          snapshot_id?: string
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
+          technology_moats?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       deals: {
         Row: {
           analysis_blocked_until: string | null
