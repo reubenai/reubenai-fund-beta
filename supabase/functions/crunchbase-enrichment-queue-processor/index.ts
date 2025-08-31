@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('🔄 [Queue Processor] Starting Crunchbase enrichment queue processing...');
+    console.log('🔄 [Crunchbase Queue Processor] Starting Crunchbase enrichment queue processing...');
 
     // Initialize Supabase client with service role key
     const supabaseClient = createClient(
@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
       .limit(10);
 
     if (fetchError) {
-      console.log(`❌ [Queue Processor] Error fetching queued records: ${fetchError.message}`);
+      console.log(`❌ [Crunchbase Queue Processor] Error fetching queued records: ${fetchError.message}`);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
     }
 
     if (!queuedRecords || queuedRecords.length === 0) {
-      console.log('📋 [Queue Processor] No queued records found');
+      console.log('📋 [Crunchbase Queue Processor] No queued records found');
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`📋 [Queue Processor] Found ${queuedRecords.length} queued records to process`);
+    console.log(`📋 [Crunchbase Queue Processor] Found ${queuedRecords.length} queued records to process`);
 
     let processedCount = 0;
     let errorCount = 0;
@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     // Step 2: Process each record
     for (const record of queuedRecords) {
       try {
-        console.log(`🚀 [Queue Processor] Processing record ${record.id} for deal ${record.deal_id}`);
+        console.log(`🚀 [Crunchbase Queue Processor] Processing record ${record.id} for deal ${record.deal_id}`);
 
         // Step 2a: Update status to 'processing'
         await supabaseClient
@@ -70,39 +70,58 @@ Deno.serve(async (req) => {
           })
           .eq('id', record.id);
 
-        // Step 3: Call the brightdata-crunchbase-enrichment function with proper authorization
-        const enrichmentResponse = await supabaseClient.functions.invoke('brightdata-crunchbase-enrichment', {
-          body: {
-            dealId: record.deal_id,
-            companyName: record.company_name,
-            crunchbaseUrl: record.crunchbase_url
-          },
-          headers: {
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
-          }
-        });
+        // Step 2b: Call BrightData API
+        const brightDataPayload = JSON.stringify([{
+          "url": record.crunchbase_url
+        }]);
 
-        if (enrichmentResponse.error) {
-          console.log(`❌ [Queue Processor] Enrichment failed for record ${record.id}: ${enrichmentResponse.error}`);
-          
-          // Update record status to failed
-          await supabaseClient
-            .from('deal2_enrichment_crunchbase_export')
-            .update({ 
-              processing_status: 'failed',
-              error_details: enrichmentResponse.error.toString(),
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', record.id);
-          
-          errorCount++;
-        } else {
-          console.log(`✅ [Queue Processor] Successfully processed record ${record.id}`);
-          processedCount++;
+        console.log(`📡 [Crunchbase Queue Processor] Calling BrightData API for ${record.crunchbase_url}`);
+
+        const brightDataResponse = await fetch(
+          'https://api.brightdata.com/datasets/v3/trigger?dataset_id=gd_l1vijqt9jfj7olije&include_errors=true',
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${Deno.env.get('BRIGHTDATA_API_KEY')}`,
+              'Content-Type': 'application/json'
+            },
+            body: brightDataPayload
+          }
+        );
+
+        if (!brightDataResponse.ok) {
+          throw new Error(`BrightData API error: ${brightDataResponse.status} - ${brightDataResponse.statusText}`);
         }
 
+        const brightDataResult = await brightDataResponse.json();
+        console.log(`📊 [Crunchbase Queue Processor] BrightData response:`, brightDataResult);
+
+        // Step 2c: Extract snapshot_id from response
+        const snapshotId = brightDataResult.snapshot_id;
+
+        if (!snapshotId) {
+          throw new Error('No snapshot_id received from BrightData API');
+        }
+
+        // Step 2d: Update record with snapshot_id and set status to 'triggered'
+        const { error: updateError } = await supabaseClient
+          .from('deal2_enrichment_crunchbase_export')
+          .update({
+            snapshot_id: snapshotId,
+            processing_status: 'triggered',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', record.id);
+
+        if (updateError) {
+          throw new Error(`Failed to update record with snapshot_id: ${updateError.message}`);
+        }
+
+        console.log(`✅ [Crunchbase Queue Processor] Successfully processed record ${record.id}, snapshot_id: ${snapshotId}`);
+        processedCount++;
+
       } catch (processingError) {
-        console.log(`❌ [Queue Processor] Processing error for record ${record.id}: ${processingError.message}`);
+        console.log(`❌ [Crunchbase Queue Processor] Processing error for record ${record.id}: ${processingError.message}`);
         
         // Update record status to failed
         await supabaseClient
@@ -121,7 +140,7 @@ Deno.serve(async (req) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
-    console.log(`🏁 [Queue Processor] Processing complete. Processed: ${processedCount}, Errors: ${errorCount}`);
+    console.log(`🏁 [Crunchbase Queue Processor] Processing complete. Processed: ${processedCount}, Errors: ${errorCount}`);
 
     // Log activity if any records were processed
     if (processedCount > 0 || errorCount > 0) {
@@ -131,7 +150,7 @@ Deno.serve(async (req) => {
           .insert({
             user_id: '00000000-0000-0000-0000-000000000000', // System user
             fund_id: '00000000-0000-0000-0000-000000000000', // System fund
-            activity_type: 'enrichment_batch_processed',
+            activity_type: 'crunchbase_enrichment_batch_processed',
             title: 'Crunchbase Enrichment Batch Processed',
             description: `Processed ${processedCount} records successfully, ${errorCount} errors`,
             context_data: {
@@ -144,7 +163,7 @@ Deno.serve(async (req) => {
             occurred_at: new Date().toISOString()
           });
       } catch (activityError) {
-        console.log(`⚠️ [Queue Processor] Failed to log activity: ${activityError.message}`);
+        console.log(`⚠️ [Crunchbase Queue Processor] Failed to log activity: ${activityError.message}`);
         // Don't fail the whole operation for logging issues
       }
     }
@@ -163,7 +182,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.log(`❌ [Queue Processor] Fatal error: ${error.message}`);
+    console.log(`❌ [Crunchbase Queue Processor] Fatal error: ${error.message}`);
     return new Response(
       JSON.stringify({ 
         success: false, 

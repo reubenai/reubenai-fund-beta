@@ -1,22 +1,9 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7'
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-interface PostProcessingResult {
-  recordId: string;
-  companyName: string;
-  success: boolean;
-  error?: string;
-}
-
-interface PostProcessingResponse {
-  success: boolean;
-  processed: number;
-  results: PostProcessingResult[];
-}
+};
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -25,90 +12,170 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
+    console.log('🔄 [Crunchbase Post Processor] Starting Crunchbase post-processing...');
+
+    // Initialize Supabase client with service role key
+    const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { dealId, crunchbaseExportId } = await req.json();
-    console.log('🔄 Processing deal2_enrichment_crunchbase_export records', { dealId, crunchbaseExportId });
-
-    // Build query to fetch records to process
-    let query = supabase
+    // Step 1: Fetch records with 'triggered' status that have snapshot_id
+    const { data: triggeredRecords, error: fetchError } = await supabaseClient
       .from('deal2_enrichment_crunchbase_export')
       .select('*')
-      .eq('processing_status', 'completed')
-      .not('raw_brightdata_response', 'is', null);
-
-    if (dealId) {
-      query = query.eq('deal_id', dealId);
-    }
-
-    if (crunchbaseExportId) {
-      query = query.eq('id', crunchbaseExportId);
-    }
-
-    const { data: records, error: fetchError } = await query;
+      .eq('processing_status', 'triggered')
+      .not('snapshot_id', 'is', null)
+      .limit(10);
 
     if (fetchError) {
-      console.error('❌ Error fetching records:', fetchError);
+      console.log(`❌ [Crunchbase Post Processor] Error fetching triggered records: ${fetchError.message}`);
       return new Response(
-        JSON.stringify({ success: false, error: fetchError.message }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ 
+          success: false, 
+          error: `Failed to fetch triggered records: ${fetchError.message}`,
+          processed: 0
+        }),
+        { status: 500, headers: corsHeaders }
       );
     }
 
-    if (!records || records.length === 0) {
-      console.log('ℹ️ No records found to process');
+    if (!triggeredRecords || triggeredRecords.length === 0) {
+      console.log('📋 [Crunchbase Post Processor] No triggered records found');
       return new Response(
-        JSON.stringify({ success: true, processed: 0, results: [] }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ 
+          success: true, 
+          message: 'No triggered records to process',
+          processed: 0
+        }),
+        { status: 200, headers: corsHeaders }
       );
     }
 
-    const results: PostProcessingResult[] = [];
+    console.log(`📋 [Crunchbase Post Processor] Found ${triggeredRecords.length} triggered records to process`);
 
-    for (const record of records) {
-      console.log(`🔄 Processing ${record.company_name} (${record.id})`);
-      
+    let processedCount = 0;
+    let errorCount = 0;
+
+    // Step 2: Process each record
+    for (const record of triggeredRecords) {
       try {
-        // Process the raw Crunchbase data
-        const processedData = await processCrunchbaseData(record, supabase);
+        console.log(`🚀 [Crunchbase Post Processor] Processing record ${record.id} with snapshot_id ${record.snapshot_id}`);
+
+        // Step 2a: Update status to 'processing'
+        await supabaseClient
+          .from('deal2_enrichment_crunchbase_export')
+          .update({ 
+            processing_status: 'processing',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', record.id);
+
+        // Step 2b: Poll BrightData for results
+        const snapshotUrl = `https://api.brightdata.com/datasets/v3/snapshot/${record.snapshot_id}?format=json`;
         
-        results.push({
-          recordId: record.id,
-          companyName: record.company_name,
-          success: true
+        console.log(`📡 [Crunchbase Post Processor] Polling BrightData for snapshot ${record.snapshot_id}`);
+
+        const snapshotResponse = await fetch(snapshotUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('BRIGHTDATA_API_KEY')}`,
+          }
         });
 
-        console.log(`✅ Successfully processed ${record.company_name}`);
-      } catch (error) {
-        console.error(`❌ Error processing ${record.company_name}:`, error);
-        results.push({
-          recordId: record.id,
-          companyName: record.company_name,
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
+        if (!snapshotResponse.ok) {
+          if (snapshotResponse.status === 202) {
+            // Data not ready yet, reset to 'triggered' status
+            console.log(`⏳ [Crunchbase Post Processor] Data not ready for snapshot ${record.snapshot_id}, will retry later`);
+            await supabaseClient
+              .from('deal2_enrichment_crunchbase_export')
+              .update({ 
+                processing_status: 'triggered',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', record.id);
+            continue;
+          } else {
+            throw new Error(`BrightData snapshot error: ${snapshotResponse.status} - ${snapshotResponse.statusText}`);
+          }
+        }
+
+        // Step 2c: Get the data
+        const snapshotData = await snapshotResponse.json();
+        console.log(`📊 [Crunchbase Post Processor] Received data for record ${record.id}`);
+
+        // Step 2d: Update record with data and set status to 'completed'
+        const { error: updateError } = await supabaseClient
+          .from('deal2_enrichment_crunchbase_export')
+          .update({
+            raw_brightdata_response: snapshotData,
+            processing_status: 'completed',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', record.id);
+
+        if (updateError) {
+          throw new Error(`Failed to update record with data: ${updateError.message}`);
+        }
+
+        console.log(`✅ [Crunchbase Post Processor] Successfully processed record ${record.id}`);
+        processedCount++;
+
+      } catch (processingError) {
+        console.log(`❌ [Crunchbase Post Processor] Processing error for record ${record.id}: ${processingError.message}`);
+        
+        // Update record status to failed
+        await supabaseClient
+          .from('deal2_enrichment_crunchbase_export')
+          .update({ 
+            processing_status: 'failed',
+            error_details: processingError.message,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', record.id);
+        
+        errorCount++;
+      }
+
+      // Add a small delay between processing to prevent rate limiting
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    console.log(`🏁 [Crunchbase Post Processor] Processing complete. Processed: ${processedCount}, Errors: ${errorCount}`);
+
+    // Log activity if any records were processed
+    if (processedCount > 0 || errorCount > 0) {
+      try {
+        await supabaseClient
+          .from('activity_events')
+          .insert({
+            user_id: '00000000-0000-0000-0000-000000000000', // System user
+            fund_id: '00000000-0000-0000-0000-000000000000', // System fund
+            activity_type: 'crunchbase_post_processing_batch_completed',
+            title: 'Crunchbase Post-Processing Batch Completed',
+            description: `Post-processed ${processedCount} records successfully, ${errorCount} errors`,
+            context_data: {
+              processor: 'deal2-crunchbase-export-post-processor',
+              processed_count: processedCount,
+              error_count: errorCount,
+              total_records: triggeredRecords.length
+            },
+            priority: 'low',
+            occurred_at: new Date().toISOString()
+          });
+      } catch (activityError) {
+        console.log(`⚠️ [Crunchbase Post Processor] Failed to log activity: ${activityError.message}`);
+        // Don't fail the whole operation for logging issues
       }
     }
 
-    const response: PostProcessingResponse = {
-      success: true,
-      processed: results.filter(r => r.success).length,
-      results
-    };
-
-    console.log('✅ Post-processing completed:', response);
-
     return new Response(
-      JSON.stringify(response),
+      JSON.stringify({ 
+        success: true, 
+        processed: processedCount,
+        errors: errorCount,
+        total_records: triggeredRecords.length
+      }),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -116,11 +183,12 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('❌ Unexpected error:', error);
+    console.log(`❌ [Crunchbase Post Processor] Fatal error: ${error.message}`);
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+        error: error.message,
+        processed: 0
       }),
       { 
         status: 500, 
@@ -129,317 +197,3 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-async function processCrunchbaseData(record: any, supabase: any) {
-  const rawData = record.raw_brightdata_response;
-  
-  if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
-    throw new Error('No valid Crunchbase data found');
-  }
-
-  const companyData = rawData[0]; // Get first item from array
-  console.log('📊 Processing company data for:', companyData.name);
-
-  // Get deal information to determine fund type
-  const { data: deal, error: dealError } = await supabase
-    .from('deals')
-    .select(`
-      id,
-      fund_id,
-      funds!inner(
-        fund_type,
-        organization_id
-      )
-    `)
-    .eq('id', record.deal_id)
-    .single();
-
-  if (dealError) {
-    throw new Error(`Failed to fetch deal: ${dealError.message}`);
-  }
-
-  const fundType = deal.funds.fund_type;
-  const organizationId = deal.funds.organization_id;
-
-  console.log(`📋 Fund type: ${fundType}, Organization: ${organizationId}`);
-
-  // Extract and update deal fields if they're missing or empty
-  await updateDealFields(record.deal_id, companyData, supabase);
-
-  // Process datapoints based on fund type
-  if (fundType === 'venture_capital' || fundType === 'vc') {
-    await processVCDatapoints(record.deal_id, organizationId, companyData, supabase);
-  } else if (fundType === 'private_equity' || fundType === 'pe') {
-    await processPEDatapoints(record.deal_id, organizationId, companyData, supabase);
-  }
-
-  // Update the export record status
-  await supabase
-    .from('deal2_enrichment_crunchbase_export')
-    .update({
-      processing_status: 'processed',
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', record.id);
-
-  console.log(`✅ Updated record status to processed for ${record.company_name}`);
-}
-
-async function updateDealFields(dealId: string, companyData: any, supabase: any) {
-  const updates: any = {};
-
-  // Extract founding year
-  if (companyData.founded_date && !updates.founding_year) {
-    const foundingYear = new Date(companyData.founded_date).getFullYear();
-    if (!isNaN(foundingYear)) {
-      updates.founding_year = foundingYear;
-    }
-  }
-
-  // Extract employee count
-  if (companyData.num_employees) {
-    const employeeRange = companyData.num_employees;
-    let employeeCount = null;
-    
-    // Parse employee ranges like "101-250", "51-100", etc.
-    if (typeof employeeRange === 'string') {
-      const match = employeeRange.match(/(\d+)-(\d+)/);
-      if (match) {
-        const min = parseInt(match[1]);
-        const max = parseInt(match[2]);
-        employeeCount = Math.floor((min + max) / 2); // Use average
-      } else if (employeeRange.includes('+')) {
-        const num = employeeRange.replace('+', '').replace(',', '');
-        employeeCount = parseInt(num);
-      }
-    }
-    
-    if (employeeCount) {
-      updates.employee_count = employeeCount;
-    }
-  }
-
-  // Extract industry if not set
-  if (companyData.industries && Array.isArray(companyData.industries) && companyData.industries.length > 0) {
-    updates.industry = companyData.industries[0].value;
-  }
-
-  // Extract location
-  if (companyData.address || (companyData.location && Array.isArray(companyData.location))) {
-    let location = companyData.address;
-    if (!location && companyData.location && companyData.location.length > 0) {
-      location = companyData.location.map((loc: any) => loc.name).join(', ');
-    }
-    if (location) {
-      updates.location = location;
-    }
-  }
-
-  // Extract website
-  if (companyData.website) {
-    updates.website = companyData.website;
-  }
-
-  if (Object.keys(updates).length > 0) {
-    updates.updated_at = new Date().toISOString();
-    
-    console.log('📝 Updating deal fields:', updates);
-    
-    const { error } = await supabase
-      .from('deals')
-      .update(updates)
-      .eq('id', dealId);
-
-    if (error) {
-      console.error('❌ Error updating deal fields:', error);
-    } else {
-      console.log('✅ Deal fields updated successfully');
-    }
-  }
-}
-
-async function processVCDatapoints(dealId: string, organizationId: string, companyData: any, supabase: any) {
-  console.log('📊 Processing VC datapoints');
-
-  // Check if VC datapoints record exists
-  const { data: existingDatapoints } = await supabase
-    .from('deal_analysis_datapoints_vc')
-    .select('id')
-    .eq('deal_id', dealId)
-    .maybeSingle();
-
-  const vcData: any = {
-    deal_id: dealId,
-    fund_id: companyData.fund_id || null,
-    organization_id: organizationId,
-    
-    // Basic company info
-    employee_count: extractEmployeeCount(companyData.num_employees),
-    founding_year: companyData.founded_date ? new Date(companyData.founded_date).getFullYear() : null,
-    website: companyData.website,
-    
-    // Technology and competitive data
-    technology_stack: companyData.builtwith_tech ? 
-      companyData.builtwith_tech.map((tech: any) => tech.name) : [],
-    competitors: companyData.similar_companies ? 
-      companyData.similar_companies.map((comp: any) => comp.name) : [],
-    
-    // Market and industry data
-    industry_focus: companyData.industries ? 
-      companyData.industries.map((ind: any) => ind.value) : [],
-    
-    // Traffic and traction metrics
-    monthly_traffic: companyData.monthly_visits || companyData.semrush_visits_latest_month,
-    traffic_growth_rate: companyData.monthly_visits_growth || companyData.semrush_visits_mom_pct,
-    
-    // App data if available
-    mobile_downloads: companyData.apptopia_total_downloads,
-    
-    // Heat score (market activity indicator)
-    market_activity_score: companyData.heat_score,
-    
-    // Update metadata
-    source_engines: ['crunchbase_export'],
-    data_completeness_score: calculateDataCompleteness(companyData),
-    updated_at: new Date().toISOString()
-  };
-
-  if (existingDatapoints) {
-    console.log('📝 Updating existing VC datapoints');
-    const { error } = await supabase
-      .from('deal_analysis_datapoints_vc')
-      .update(vcData)
-      .eq('id', existingDatapoints.id);
-    
-    if (error) {
-      console.error('❌ Error updating VC datapoints:', error);
-      throw error;
-    }
-  } else {
-    console.log('📝 Creating new VC datapoints');
-    vcData.created_at = new Date().toISOString();
-    
-    const { error } = await supabase
-      .from('deal_analysis_datapoints_vc')
-      .insert(vcData);
-    
-    if (error) {
-      console.error('❌ Error creating VC datapoints:', error);
-      throw error;
-    }
-  }
-
-  console.log('✅ VC datapoints processed successfully');
-}
-
-async function processPEDatapoints(dealId: string, organizationId: string, companyData: any, supabase: any) {
-  console.log('📊 Processing PE datapoints');
-
-  // Check if PE datapoints record exists
-  const { data: existingDatapoints } = await supabase
-    .from('deal_analysis_datapoints_pe')
-    .select('id')
-    .eq('deal_id', dealId)
-    .maybeSingle();
-
-  const peData: any = {
-    deal_id: dealId,
-    fund_id: companyData.fund_id || null,
-    organization_id: organizationId,
-    
-    // Basic company info
-    employee_count: extractEmployeeCount(companyData.num_employees),
-    founding_year: companyData.founded_date ? new Date(companyData.founded_date).getFullYear() : null,
-    website: companyData.website,
-    
-    // Technology and operational data
-    technology_stack: companyData.builtwith_tech ? 
-      companyData.builtwith_tech.map((tech: any) => tech.name) : [],
-    
-    // Competitive landscape
-    competitors: companyData.similar_companies ? 
-      companyData.similar_companies.map((comp: any) => comp.name) : [],
-    
-    // Market presence
-    countries_of_operation: companyData.headquarters_regions ? 
-      companyData.headquarters_regions.map((region: any) => region.value) : [],
-    
-    // Key customers (if leadership info available)
-    key_customers: companyData.contacts ? 
-      companyData.contacts.map((contact: any) => contact.name) : [],
-    
-    // Operational metrics
-    monthly_traffic: companyData.monthly_visits || companyData.semrush_visits_latest_month,
-    market_activity_score: companyData.heat_score,
-    
-    // Update metadata
-    source_engines: ['crunchbase_export'],
-    data_completeness_score: calculateDataCompleteness(companyData),
-    updated_at: new Date().toISOString()
-  };
-
-  if (existingDatapoints) {
-    console.log('📝 Updating existing PE datapoints');
-    const { error } = await supabase
-      .from('deal_analysis_datapoints_pe')
-      .update(peData)
-      .eq('id', existingDatapoints.id);
-    
-    if (error) {
-      console.error('❌ Error updating PE datapoints:', error);
-      throw error;
-    }
-  } else {
-    console.log('📝 Creating new PE datapoints');
-    peData.created_at = new Date().toISOString();
-    
-    const { error } = await supabase
-      .from('deal_analysis_datapoints_pe')
-      .insert(peData);
-    
-    if (error) {
-      console.error('❌ Error creating PE datapoints:', error);
-      throw error;
-    }
-  }
-
-  console.log('✅ PE datapoints processed successfully');
-}
-
-function extractEmployeeCount(employeeRange: string | null): number | null {
-  if (!employeeRange) return null;
-  
-  // Parse employee ranges like "101-250", "51-100", etc.
-  if (typeof employeeRange === 'string') {
-    const match = employeeRange.match(/(\d+)-(\d+)/);
-    if (match) {
-      const min = parseInt(match[1]);
-      const max = parseInt(match[2]);
-      return Math.floor((min + max) / 2); // Use average
-    } else if (employeeRange.includes('+')) {
-      const num = employeeRange.replace('+', '').replace(',', '');
-      return parseInt(num);
-    }
-  }
-  
-  return null;
-}
-
-function calculateDataCompleteness(companyData: any): number {
-  let score = 0;
-  const maxScore = 100;
-  
-  // Key fields for completeness scoring
-  if (companyData.name) score += 10;
-  if (companyData.about || companyData.full_description) score += 10;
-  if (companyData.founded_date) score += 10;
-  if (companyData.num_employees) score += 10;
-  if (companyData.website) score += 10;
-  if (companyData.industries && companyData.industries.length > 0) score += 10;
-  if (companyData.location && companyData.location.length > 0) score += 10;
-  if (companyData.similar_companies && companyData.similar_companies.length > 0) score += 10;
-  if (companyData.builtwith_tech && companyData.builtwith_tech.length > 0) score += 10;
-  if (companyData.monthly_visits || companyData.semrush_visits_latest_month) score += 10;
-  
-  return Math.min(score, maxScore);
-}

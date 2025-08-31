@@ -176,24 +176,18 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
             });
           }
 
-          // 2. Crunchbase Enrichment (if Crunchbase URL available)
+          // 2. Crunchbase Enrichment (triggered by database trigger automatically)
           if (formData.crunchbase_url) {
             enrichmentProcesses++;
-            console.log('📤 Starting Crunchbase enrichment...');
-            supabase.functions.invoke('company-enrichment-engine', {
-              body: {
-                dealId: newDeal.id,
-                companyName: formData.company_name,
-                crunchbaseUrl: formData.crunchbase_url
-              }
-            }).then(({ data, error }) => {
+            console.log('📤 Starting Crunchbase queue processing...');
+            supabase.functions.invoke('crunchbase-enrichment-queue-processor', {}).then(({ data, error }) => {
               if (error) {
-                console.error('❌ Crunchbase enrichment failed:', error);
+                console.error('❌ Crunchbase queue processing failed:', error);
               } else {
-                console.log('✅ Crunchbase enrichment completed:', data);
+                console.log('✅ Crunchbase queue processing completed:', data);
               }
             }).catch(err => {
-              console.error('💥 Crunchbase enrichment error:', err);
+              console.error('💥 Crunchbase queue processing error:', err);
             });
           }
 
