@@ -1776,6 +1776,7 @@ export type Database = {
           documents_data_points_vc: Json | null
           economic_sensitivity: string | null
           employee_count: string | null
+          engine_integration: Json | null
           exit_history: Json | null
           founding_year: number | null
           fund_id: string
@@ -1865,6 +1866,7 @@ export type Database = {
           documents_data_points_vc?: Json | null
           economic_sensitivity?: string | null
           employee_count?: string | null
+          engine_integration?: Json | null
           exit_history?: Json | null
           founding_year?: number | null
           fund_id: string
@@ -1954,6 +1956,7 @@ export type Database = {
           documents_data_points_vc?: Json | null
           economic_sensitivity?: string | null
           employee_count?: string | null
+          engine_integration?: Json | null
           exit_history?: Json | null
           founding_year?: number | null
           fund_id?: string
