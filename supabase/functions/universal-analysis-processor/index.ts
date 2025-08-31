@@ -97,6 +97,20 @@ async function processQueueItem(item: QueueItem): Promise<{ success: boolean; er
         analysisError = forceResponse.error;
         break;
         
+      case 'vc_aggregation_3min_delay':
+      case 'perplexity_company_processed':
+        console.log(`📊 [${traceId}] Processing VC data aggregation...`);
+        const vcResponse = await supabase.functions.invoke('vc-data-aggregator', {
+          body: { 
+            deal_id: item.deal_id,
+            trigger_reason: item.trigger_reason,
+            metadata: enhancedMetadata
+          }
+        });
+        analysisResult = vcResponse.data;
+        analysisError = vcResponse.error;
+        break;
+        
       case 'new_deal':
       case 'manual':
       case 'strategy_change':
