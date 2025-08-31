@@ -218,3 +218,6 @@ verify_jwt = false
 [functions.deal2-linkedin-profile-export-post-processor]
 verify_jwt = false
 
+[functions.brightdata-linkedin-enrichment]
+verify_jwt = false
+
