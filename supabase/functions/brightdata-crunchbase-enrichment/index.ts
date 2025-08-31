@@ -8,7 +8,7 @@ const corsHeaders = {
 interface BrightdataRequest {
   dealId: string;
   companyName: string;
-  crunchbaseUrl: string;
+  linkedinUrl: string;
 }
 
 interface BrightdataResponse {
@@ -39,17 +39,17 @@ Deno.serve(async (req) => {
       } : undefined
     );
 
-    const { dealId, companyName, crunchbaseUrl }: BrightdataRequest = await req.json();
+    const { dealId, companyName, linkedinUrl }: BrightdataRequest = await req.json();
 
-    console.log(`🔍 [Brightdata] Enriching company: ${companyName} with Crunchbase: ${crunchbaseUrl}`);
+    console.log(`🔍 [Brightdata] Enriching company: ${companyName} with LinkedIn: ${linkedinUrl}`);
 
     // Validate input
-    if (!crunchbaseUrl) {
-      console.log('❌ [Brightdata] Missing crunchbaseUrl');
+    if (!linkedinUrl) {
+      console.log('❌ [Brightdata] Missing linkedinUrl');
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Crunchbase URL is required',
+          error: 'LinkedIn URL is required',
           data_source: 'brightdata',
           trust_score: 0,
           data_quality: 'invalid'
@@ -74,18 +74,18 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`🚀 [Brightdata] Triggering data collection for: ${crunchbaseUrl}`);
+    console.log(`🚀 [Brightdata] Triggering data collection for: ${linkedinUrl}`);
 
     // Trigger BrightData collection
     const triggerResponse = await fetch(
-      'https://api.brightdata.com/datasets/v3/trigger?dataset_id=gd_l1vijqt9jfj7olije&include_errors=true',
+      'https://api.brightdata.com/datasets/v3/trigger?dataset_id=gd_l1vikfnt1wgvvqz95w&include_errors=true',
       {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${brightdataApiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify([{ url: crunchbaseUrl }])
+        body: JSON.stringify([{ url: linkedinUrl }])
       }
     );
 
@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
         .insert({
           deal_id: dealId,
           company_name: companyName,
-          crunchbase_url: crunchbaseUrl,
+          crunchbase_url: linkedinUrl,
           snapshot_id: snapshotId,
           raw_brightdata_response: collectedData,
           processing_status: 'completed',
@@ -230,16 +230,32 @@ async function pollBrightdataSnapshot(snapshotId: string, apiKey: string, maxAtt
         }
       );
 
+      console.log(`📡 [Brightdata] Poll response status: ${response.status} ${response.statusText}`);
+
       if (response.ok) {
         const data = await response.json();
+        console.log(`📊 [Brightdata] Received data length: ${data?.length || 0}`);
+        
         if (data && data.length > 0) {
           console.log(`✅ [Brightdata] Data ready for snapshot ${snapshotId}`);
           return data;
+        } else {
+          console.log(`⏳ [Brightdata] Data not ready yet for snapshot ${snapshotId}`);
+        }
+      } else {
+        const errorText = await response.text();
+        console.log(`❌ [Brightdata] Poll response error: ${response.status} - ${errorText}`);
+        
+        // If it's a 404, the snapshot might not exist or be ready yet
+        if (response.status === 404) {
+          console.log(`🔍 [Brightdata] Snapshot ${snapshotId} not found yet, continuing...`);
+        } else {
+          console.log(`❌ [Brightdata] Non-404 error, will retry: ${response.status}`);
         }
       }
 
       // Wait before next poll (exponential backoff)
-      const waitTime = Math.min(1000 * attempt, 5000);
+      const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 30000); // Max 30 seconds
       console.log(`⏱️ [Brightdata] Waiting ${waitTime}ms before next poll...`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
       
