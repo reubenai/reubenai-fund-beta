@@ -174,85 +174,41 @@ async function collectDealData(dealId: string) {
   console.log(`🔍 Collecting data for deal: ${dealId}`);
   
   try {
-    // Get VC datapoints (documents_data_points_vc)
-    const { data: vcDatapoints } = await supabase
+    // Get all enrichment data from single query to deal_analysis_datapoints_vc
+    const { data: vcData, error } = await supabase
       .from('deal_analysis_datapoints_vc')
-      .select('documents_data_points_vc')
+      .select(`
+        documents_data_points_vc,
+        deal_enrichment_crunchbase_export,
+        deal_enrichment_linkedin_export,
+        deal_enrichment_linkedin_profile_export,
+        deal_enrichment_perplexity_company_export_vc,
+        deal_enrichment_perplexity_founder_export_vc,
+        deal_enrichment_perplexity_market_export_vc
+      `)
       .eq('deal_id', dealId)
       .single();
 
-    // Get Crunchbase export
-    const { data: crunchbaseData } = await supabase
-      .from('deal2_enrichment_crunchbase_export')
-      .select('raw_brightdata_response')
-      .eq('deal_id', dealId)
-      .eq('processing_status', 'completed')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    // Get LinkedIn export
-    const { data: linkedinData } = await supabase
-      .from('deal2_enrichment_linkedin_export')
-      .select('raw_brightdata_response')
-      .eq('deal_id', dealId)
-      .eq('processing_status', 'completed')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    // Get LinkedIn profile export
-    const { data: linkedinProfileData } = await supabase
-      .from('deal2_enrichment_linkedin_profile_export')
-      .select('raw_brightdata_response')
-      .eq('deal_id', dealId)
-      .eq('processing_status', 'completed')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    // Get Perplexity company export (using duplicate table)
-    const { data: perplexityCompanyData } = await supabase
-      .from('deal2_enrichment_perplexity_company_export_vc_duplicate')
-      .select('raw_perplexity_response')
-      .eq('deal_id', dealId)
-      .eq('processing_status', 'completed')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    // Get Perplexity founder export (using duplicate table)
-    const { data: perplexityFounderData } = await supabase
-      .from('deal2_enrichment_perplexity_founder_export_vc_duplicate')
-      .select('raw_perplexity_response')
-      .eq('deal_id', dealId)
-      .eq('processing_status', 'completed')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    // Get Perplexity market export (using duplicate table)
-    const { data: perplexityMarketData } = await supabase
-      .from('deal2_enrichment_perplexity_market_export_vc_duplicate')
-      .select('raw_perplexity_response')
-      .eq('deal_id', dealId)
-      .eq('processing_status', 'completed')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+      throw error;
+    }
 
     const structuredData = {
       deal_id: dealId,
-      documents_data_points_vc: vcDatapoints?.documents_data_points_vc || null,
-      deal_enrichment_crunchbase_export: crunchbaseData?.raw_brightdata_response || null,
-      deal_enrichment_linkedin_export: linkedinData?.raw_brightdata_response || null,
-      deal_enrichment_linkedin_profile_export: linkedinProfileData?.raw_brightdata_response || null,
-      deal_enrichment_perplexity_company_export_vc: perplexityCompanyData?.raw_perplexity_response || null,
-      deal_enrichment_perplexity_founder_export_vc: perplexityFounderData?.raw_perplexity_response || null,
-      deal_enrichment_perplexity_market_export_vc: perplexityMarketData?.raw_perplexity_response || null
+      documents_data_points_vc: vcData?.documents_data_points_vc || null,
+      deal_enrichment_crunchbase_export: vcData?.deal_enrichment_crunchbase_export || null,
+      deal_enrichment_linkedin_export: vcData?.deal_enrichment_linkedin_export || null,
+      deal_enrichment_linkedin_profile_export: vcData?.deal_enrichment_linkedin_profile_export || null,
+      deal_enrichment_perplexity_company_export_vc: vcData?.deal_enrichment_perplexity_company_export_vc || null,
+      deal_enrichment_perplexity_founder_export_vc: vcData?.deal_enrichment_perplexity_founder_export_vc || null,
+      deal_enrichment_perplexity_market_export_vc: vcData?.deal_enrichment_perplexity_market_export_vc || null
     };
 
-    console.log(`✅ Data collection completed. Sources found: ${Object.entries(structuredData).filter(([key, value]) => key !== 'deal_id' && value !== null).map(([key]) => key).join(', ')}`);
+    const sourcesFound = Object.entries(structuredData)
+      .filter(([key, value]) => key !== 'deal_id' && value !== null)
+      .map(([key]) => key);
+
+    console.log(`✅ Data collection completed. Sources found: ${sourcesFound.join(', ')}`);
     
     return structuredData;
   } catch (error) {
