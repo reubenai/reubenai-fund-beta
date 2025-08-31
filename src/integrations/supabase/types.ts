@@ -7692,6 +7692,10 @@ export type Database = {
         Args: { p_analysis_type: string; p_deal_id: string }
         Returns: Json
       }
+      periodic_crunchbase_check: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       populate_enhanced_analysis: {
         Args: { target_deal_id: string }
         Returns: Json
@@ -7767,6 +7771,10 @@ export type Database = {
       text_to_bytea: {
         Args: { data: string }
         Returns: string
+      }
+      trigger_crunchbase_post_processor: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       urlencode: {
         Args: { data: Json } | { string: string } | { string: string }
