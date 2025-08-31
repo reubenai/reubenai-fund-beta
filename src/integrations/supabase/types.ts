@@ -3792,7 +3792,125 @@ export type Database = {
           timestamp?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "deal2_enrichment_linkedin_profile_export_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal2_enrichment_perplexity_company_export_vc_duplicate: {
+        Row: {
+          addressable_customers: string | null
+          cac_trend: string | null
+          cagr: string | null
+          channel_effectiveness: Json | null
+          company_name: string
+          confidence_level: string | null
+          created_at: string
+          data_quality_score: number | null
+          data_sources: Json | null
+          deal_id: string
+          growth_drivers: string[] | null
+          id: string
+          investor_network: string[] | null
+          key_market_players: string[] | null
+          last_updated: string | null
+          ltv_cac_ratio: string | null
+          market_share_distribution: Json | null
+          partnership_ecosystem: Json | null
+          processed_at: string | null
+          processing_status: string
+          raw_perplexity_response: Json
+          retention_rate: string | null
+          sam: string | null
+          snapshot_id: string
+          som: string | null
+          strategic_advisors: string[] | null
+          subcategory_confidence: Json | null
+          subcategory_sources: Json | null
+          tam: string | null
+          updated_at: string
+          whitespace_opportunities: string[] | null
+        }
+        Insert: {
+          addressable_customers?: string | null
+          cac_trend?: string | null
+          cagr?: string | null
+          channel_effectiveness?: Json | null
+          company_name: string
+          confidence_level?: string | null
+          created_at?: string
+          data_quality_score?: number | null
+          data_sources?: Json | null
+          deal_id: string
+          growth_drivers?: string[] | null
+          id?: string
+          investor_network?: string[] | null
+          key_market_players?: string[] | null
+          last_updated?: string | null
+          ltv_cac_ratio?: string | null
+          market_share_distribution?: Json | null
+          partnership_ecosystem?: Json | null
+          processed_at?: string | null
+          processing_status?: string
+          raw_perplexity_response?: Json
+          retention_rate?: string | null
+          sam?: string | null
+          snapshot_id: string
+          som?: string | null
+          strategic_advisors?: string[] | null
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
+          tam?: string | null
+          updated_at?: string
+          whitespace_opportunities?: string[] | null
+        }
+        Update: {
+          addressable_customers?: string | null
+          cac_trend?: string | null
+          cagr?: string | null
+          channel_effectiveness?: Json | null
+          company_name?: string
+          confidence_level?: string | null
+          created_at?: string
+          data_quality_score?: number | null
+          data_sources?: Json | null
+          deal_id?: string
+          growth_drivers?: string[] | null
+          id?: string
+          investor_network?: string[] | null
+          key_market_players?: string[] | null
+          last_updated?: string | null
+          ltv_cac_ratio?: string | null
+          market_share_distribution?: Json | null
+          partnership_ecosystem?: Json | null
+          processed_at?: string | null
+          processing_status?: string
+          raw_perplexity_response?: Json
+          retention_rate?: string | null
+          sam?: string | null
+          snapshot_id?: string
+          som?: string | null
+          strategic_advisors?: string[] | null
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
+          tam?: string | null
+          updated_at?: string
+          whitespace_opportunities?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal2_enrichment_perplexity_company_export_vc_dupl_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deals: {
         Row: {
