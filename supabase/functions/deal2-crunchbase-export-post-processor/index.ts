@@ -100,9 +100,45 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Step 2c: Get the data
+        // Step 2c: Get the data and check if it's actually ready
         const snapshotData = await snapshotResponse.json();
-        console.log(`📊 [Crunchbase Post Processor] Received data for record ${record.id}`);
+        console.log(`📊 [Crunchbase Post Processor] Received data for record ${record.id}:`, JSON.stringify(snapshotData).substring(0, 200));
+
+        // Check if the response indicates the snapshot is still running
+        if (snapshotData.status === 'running' || snapshotData.message?.includes('not ready yet')) {
+          console.log(`⏳ [Crunchbase Post Processor] Snapshot still running for ${record.snapshot_id}, resetting to triggered`);
+          
+          // Add 30-second delay if specifically requested
+          if (snapshotData.message?.includes('try again in 30s')) {
+            console.log(`⏱️ [Crunchbase Post Processor] Adding 30-second delay as requested`);
+            await new Promise(resolve => setTimeout(resolve, 30000));
+          }
+          
+          // Reset to 'triggered' status for retry
+          await supabaseClient
+            .from('deal2_enrichment_crunchbase_export')
+            .update({ 
+              processing_status: 'triggered',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', record.id);
+          continue;
+        }
+
+        // Validate that we have actual data (not just status messages)
+        if (!snapshotData.data || !Array.isArray(snapshotData.data) || snapshotData.data.length === 0) {
+          console.log(`⚠️ [Crunchbase Post Processor] No usable data in response for ${record.id}, resetting to triggered`);
+          await supabaseClient
+            .from('deal2_enrichment_crunchbase_export')
+            .update({ 
+              processing_status: 'triggered',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', record.id);
+          continue;
+        }
+
+        console.log(`✅ [Crunchbase Post Processor] Valid data received for record ${record.id} with ${snapshotData.data.length} records`);
 
         // Step 2d: Update record with data and set status to 'completed'
         const { error: updateError } = await supabaseClient
