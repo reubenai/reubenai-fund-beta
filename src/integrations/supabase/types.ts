@@ -8051,6 +8051,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      manual_trigger_vc_aggregation: {
+        Args: { p_deal_id: string }
+        Returns: Json
+      }
       monitor_analysis_quality: {
         Args: { p_analysis_type: string; p_deal_id: string }
         Returns: Json
@@ -8138,6 +8142,10 @@ export type Database = {
       trigger_crunchbase_post_processor: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      trigger_vc_data_aggregation_direct: {
+        Args: { p_deal_id: string }
+        Returns: boolean
       }
       urlencode: {
         Args: { data: Json } | { string: string } | { string: string }
