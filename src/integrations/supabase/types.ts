@@ -7909,6 +7909,7 @@ export type Database = {
         | "conflict_detected"
         | "founder_profile_enrichment_triggered"
         | "founder_profile_enrichment_skipped"
+        | "crunchbase_enrichment_queued"
       deal_score_level:
         | "exciting"
         | "promising"
@@ -8110,6 +8111,7 @@ export const Constants = {
         "conflict_detected",
         "founder_profile_enrichment_triggered",
         "founder_profile_enrichment_skipped",
+        "crunchbase_enrichment_queued",
       ],
       deal_score_level: [
         "exciting",
