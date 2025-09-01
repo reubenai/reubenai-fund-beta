@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { unifiedStrategyService, EnhancedStrategy, EnhancedWizardData } from '@/services/unifiedStrategyService';
 import { useToast } from '@/hooks/use-toast';
 import { useSecureDbOperation } from '@/hooks/useSecureDbOperation';
+import { toDatabaseFundType, toTemplateFundType, type TemplateFundType, type DatabaseFundType } from '@/utils/fundTypeConversion';
 
 export function useUnifiedStrategy(fundId?: string) {
   const [strategy, setStrategy] = useState<EnhancedStrategy | null>(null);
@@ -55,7 +56,7 @@ export function useUnifiedStrategy(fundId?: string) {
   };
 
   const saveStrategy = useCallback(async (
-    fundType: 'vc' | 'pe',
+    fundType: TemplateFundType,
     wizardData: EnhancedWizardData
   ): Promise<EnhancedStrategy | null> => {
     console.log('💾 [Hook] ENHANCED Save strategy with data validation');
@@ -105,8 +106,13 @@ export function useUnifiedStrategy(fundId?: string) {
 
         const savedStrategy = await executeSecureOperation(
           async () => {
-            console.log('🔒 [Hook] Phase 2: Executing secure save operation...');
-            return unifiedStrategyService.saveStrategy(fundId, wizardData);
+        console.log('🔒 [Hook] Phase 2: Executing secure save operation...');
+        // Convert template fund type to database format for consistency
+        const enhancedWizardData = {
+          ...wizardData,
+          fundType: toDatabaseFundType(wizardData.fundType || fundType)
+        };
+        return unifiedStrategyService.saveStrategy(fundId, enhancedWizardData);
           },
           {
             operation: 'Save Investment Strategy',
@@ -213,7 +219,7 @@ export function useUnifiedStrategy(fundId?: string) {
           console.error('❌ No strategy found for fund. Creating new strategy...');
           // Try to create a new strategy if none exists
           const newStrategy = await unifiedStrategyService.saveStrategy(fundId, {
-            fund_type: updates.fund_type || 'vc',
+            fund_type: toDatabaseFundType(updates.fund_type || 'vc'),
             industries: updates.industries || [],
             geography: updates.geography || [],
             ...updates
@@ -237,7 +243,7 @@ export function useUnifiedStrategy(fundId?: string) {
         const updatePayload = {
           ...updates,
           fund_id: fundId, // Always include fund_id
-          fund_type: updates.fund_type || strategy?.fund_type || 'vc'
+          fund_type: updates.fund_type ? toDatabaseFundType(updates.fund_type) : (strategy?.fund_type || toDatabaseFundType('vc'))
         };
         
         console.log('📝 Update payload:', updatePayload);
@@ -352,12 +358,12 @@ export function useUnifiedStrategy(fundId?: string) {
     }
   };
 
-  const getDefaultTemplate = (fundType: 'vc' | 'pe') => {
+  const getDefaultTemplate = (fundType: TemplateFundType) => {
     return unifiedStrategyService.getDefaultTemplate(fundType);
   };
 
   const getSpecializedTemplate = (
-    fundType: 'vc' | 'pe', 
+    fundType: TemplateFundType, 
     stage?: string, 
     industries?: string[], 
     geographies?: string[], 
