@@ -7,15 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// VC Data Categories for Perplexity Mining
-const VC_DATA_CATEGORIES = [
-  'tam', 'sam', 'som', 'cagr', 'business_model', 'revenue_model',
-  'funding_stage', 'funding_history', 'valuation', 'burn_rate',
-  'runway_months', 'growth_rate', 'customer_acquisition_cost',
-  'ltv_cac_ratio', 'retention_rate', 'competitors', 'key_customers',
-  'employee_count'
-];
-
 interface PerplexityDataMiningRequest {
   deal_id: string;
 }
@@ -90,7 +81,7 @@ serve(async (req) => {
     // Get deal information for context
     const { data: dealData, error: dealError } = await supabase
       .from('deals')
-      .select('company_name, industry, description')
+      .select('company_name, industry, description, website, linkedin_url, crunchbase_url, location, founders')
       .eq('id', dealId)
       .single();
 
@@ -101,113 +92,97 @@ serve(async (req) => {
     const companyName = dealData.company_name;
     const industry = dealData.industry || 'Unknown';
     const description = dealData.description || '';
+    const website = dealData.website || '';
+    const linkedinUrl = dealData.linkedin_url || '';
+    const crunchbaseUrl = dealData.crunchbase_url || '';
+    const location = dealData.location || '';
+    const founders = dealData.founders || '';
 
     console.log(`🏢 [VC Datamining] Processing company: ${companyName} in ${industry}`);
 
-    // Process each data category with Perplexity
-    const results: Record<string, any> = {};
-    const processingErrors: string[] = [];
-
-    for (const category of VC_DATA_CATEGORIES) {
-      try {
-        console.log(`📈 [VC Datamining] Processing category: ${category}`);
-        
-        const prompt = generatePromptForCategory(category, companyName, industry, description);
-        const result = await callPerplexityAPI(perplexityApiKey, prompt);
-        
-        results[category] = {
-          data: result.data,
-          confidence: result.confidence || 50,
-          sources: result.sources || []
-        };
-
-        console.log(`✅ [VC Datamining] Completed ${category} for ${companyName}`);
-        
-        // Small delay between API calls to respect rate limits
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-      } catch (error) {
-        console.error(`❌ [VC Datamining] Error processing ${category}:`, error);
-        processingErrors.push(`${category}: ${error.message}`);
-        
-        results[category] = {
-          data: null,
-          confidence: 0,
-          sources: [],
-          error: error.message
-        };
-      }
-    }
-
-    // Calculate overall data quality score
-    const successfulCategories = Object.values(results).filter(r => r.data !== null).length;
-    const dataQualityScore = Math.round((successfulCategories / VC_DATA_CATEGORIES.length) * 100);
-
-    // Update the record with all results
-    const updateData = {
-      processing_status: processingErrors.length > VC_DATA_CATEGORIES.length / 2 ? 'failed' : 'completed',
-      processing_completed_at: new Date().toISOString(),
-      data_quality_score: dataQualityScore,
-      raw_perplexity_response: results,
-      processing_errors: processingErrors.length > 0 ? processingErrors : null,
+    try {
+      // Generate comprehensive prompt using the user's template
+      const prompt = generateComprehensivePrompt(companyName, website, linkedinUrl, crunchbaseUrl, industry, location, founders);
       
-      // Individual data fields
-      tam: results.tam?.data || null,
-      sam: results.sam?.data || null,
-      som: results.som?.data || null,
-      cagr: results.cagr?.data || null,
-      business_model: results.business_model?.data || null,
-      revenue_model: results.revenue_model?.data || null,
-      funding_stage: results.funding_stage?.data || null,
-      funding_history: results.funding_history?.data || null,
-      valuation: results.valuation?.data || null,
-      burn_rate: results.burn_rate?.data || null,
-      runway_months: results.runway_months?.data || null,
-      growth_rate: results.growth_rate?.data || null,
-      customer_acquisition_cost: results.customer_acquisition_cost?.data || null,
-      ltv_cac_ratio: results.ltv_cac_ratio?.data || null,
-      retention_rate: results.retention_rate?.data || null,
-      competitors: results.competitors?.data || null,
-      key_customers: results.key_customers?.data || null,
-      employee_count: results.employee_count?.data || null,
+      console.log(`📊 [VC Datamining] Making single comprehensive API call to Perplexity`);
       
-      // Confidence scores
-      subcategory_confidence: Object.fromEntries(
-        VC_DATA_CATEGORIES.map(cat => [cat, results[cat]?.confidence || 0])
-      ),
+      // Make single API call to Perplexity
+      const rawResponse = await callPerplexityAPI(perplexityApiKey, prompt);
       
-      // Sources
-      subcategory_sources: Object.fromEntries(
-        VC_DATA_CATEGORIES.map(cat => [cat, results[cat]?.sources || []])
-      )
-    };
-
-    const { error: updateError } = await supabase
-      .from('perplexity_datamining_vc')
-      .update(updateData)
-      .eq('deal_id', dealId);
-
-    if (updateError) {
-      throw new Error(`Failed to update record: ${updateError.message}`);
-    }
-
-    const status = updateData.processing_status;
-    console.log(`🎉 [VC Datamining] ${status === 'completed' ? 'Successfully completed' : 'Completed with errors'} processing for ${companyName}`);
-    console.log(`📊 [VC Datamining] Data quality score: ${dataQualityScore}%`);
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: `VC datamining ${status} for ${companyName}`,
+      console.log(`✅ [VC Datamining] Received comprehensive response from Perplexity`);
+      
+      // Stage 2: Clean and structure the JSON response
+      const cleanedJson = buildPerplexityVCDataminingJSON(rawResponse);
+      
+      // Stage 3: Extract individual data fields for database columns
+      const extractedData = extractIndividualDataFields(cleanedJson);
+      
+      // Calculate data quality score based on populated fields
+      const dataQualityScore = calculateDataQualityScore(cleanedJson);
+      
+      // Update the record with comprehensive results
+      const updateData = {
+        processing_status: 'completed',
+        processing_completed_at: new Date().toISOString(),
         data_quality_score: dataQualityScore,
-        categories_processed: successfulCategories,
-        total_categories: VC_DATA_CATEGORIES.length,
-        errors: processingErrors
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        raw_perplexity_response: rawResponse,
+        perplexity_datamining_vc_json: cleanedJson,
+        processing_errors: null,
+        
+        // Individual data fields extracted from comprehensive response
+        ...extractedData
+      };
+
+      const { error: updateError } = await supabase
+        .from('perplexity_datamining_vc')
+        .update(updateData)
+        .eq('deal_id', dealId);
+
+      if (updateError) {
+        throw new Error(`Failed to update record: ${updateError.message}`);
       }
-    );
+
+      console.log(`🎉 [VC Datamining] Successfully completed comprehensive processing for ${companyName}`);
+      console.log(`📊 [VC Datamining] Data quality score: ${dataQualityScore}%`);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `VC datamining completed for ${companyName}`,
+          data_quality_score: dataQualityScore,
+          comprehensive_analysis: true,
+          subcategories_processed: 21
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+
+    } catch (error) {
+      console.error(`❌ [VC Datamining] Error during comprehensive processing:`, error);
+      
+      // Update status to failed
+      await supabase
+        .from('perplexity_datamining_vc')
+        .update({ 
+          processing_status: 'failed',
+          processing_completed_at: new Date().toISOString(),
+          processing_errors: [error.message]
+        })
+        .eq('deal_id', dealId);
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: `VC datamining failed for ${companyName}`,
+          error: error.message
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
   } catch (error) {
     console.error('❌ [VC Datamining] Function error:', error);
@@ -225,48 +200,224 @@ serve(async (req) => {
   }
 });
 
-function generatePromptForCategory(category: string, companyName: string, industry: string, description: string): string {
-  const baseContext = `Company: ${companyName}\nIndustry: ${industry}\nDescription: ${description}\n\n`;
-  
-  const prompts: Record<string, string> = {
-    tam: `${baseContext}What is the Total Addressable Market (TAM) for ${companyName}? Provide a specific dollar amount and explain the methodology. Be concise and factual.`,
+function generateComprehensivePrompt(companyName: string, website: string, linkedinUrl: string, crunchbaseUrl: string, industry: string, location: string, founders: string): string {
+  const systemContent = `You are Perplexity, a cautious data search engine and market research analyst. You return only verifiable facts with citations. Never fabricate numbers or entities. If data cannot be verified from credible sources, return null (or an empty array) and add a short reason in the notes field. Respond in pure JSON that strictly matches the provided schema.`;
+
+  const userContent = `Research the target: company=${companyName}; website=${website}; LinkedIn=${linkedinUrl}, Crunchbase=${crunchbaseUrl}, industry=${industry}; country=${location}; founders=${founders}. Answer the rubric below. For each subcriterion: (1) answer the guiding questions, (2) populate the structured fields, (3) include sources as [{title, url}], (4) set confidence to High/Medium/Low based on source quality and agreement.
+
+General rules:
+
+Use primary sources where possible (stat filings, regulator data, official releases), then reputable analysts/press.
+
+Prefer data from the last 24 months; allow older for TAM/SAM/SOM or foundational market sizing.
+
+Currency: USD unless the source is clearly another currency (then convert and note).
+
+No markdown; return JSON only.
+
+Rubric & guiding questions to answer:
+
+TEAM & LEADERSHIP
+
+1. Founder Experience — What prior startups and roles are verifiably linked to the founders? Outcomes (IPO, acquisition, shutdown), years active?
+
+2. Domain Expertise — What evidence shows deep, relevant expertise (education, prior roles, publications, patents)?
+
+3. Execution Track Record — Which milestones shipped on time/quality? Any case studies, deployments, or measurable delivery examples?
+
+MARKET OPPORTUNITY
+4) Market Size/TAM/SAM/SOM — What is the verifiable size of the total/serviceable/obtainable market? Methodology and year?
+5) Market Growth Rate — What CAGR and growth drivers are supported by credible sources?
+6) Market Timing — Why now? Adoption/readiness signals, regulatory catalysts, macro drivers?
+7) Competitive Landscape — Who are key competitors; how is the target differentiated; any share estimates?
+
+PRODUCT & TECHNOLOGY
+8) Product–Market Fit — What hard signals (NPS, retention, expansion, waitlists, case studies) exist?
+9) Technology Differentiation — What defensible moats (IP, algorithms, data, integrations)?
+10) Scalability — What are known bottlenecks and evidence of scaling (architecture notes, SLAs, volumes)?
+
+BUSINESS TRACTION
+11) Revenue Growth — Current ARR/MRR and YoY growth (if disclosed)?
+12) Customer Metrics — CAC, LTV, LTV/CAC, churn, NDR, active customers (if disclosed)?
+13) Partnership/Validation — Strategic partners, certifications, or third-party validations?
+
+FINANCIAL HEALTH
+14) Unit Economics — Gross margin, contribution margin, CAC, LTV, LTV/CAC.
+15) Burn Rate/Runway — Monthly burn and runway months (if disclosed).
+16) Funding History — Round details, amounts, dates, investors.
+
+STRATEGIC TIMING
+17) Market Entry Timing — What triggers make this an opportune entry point?
+18) Competitive Timing — What competitor moves open a window (product sunsets, price hikes, regulatory actions)?
+
+TRUST & TRANSPARENCY
+19) Corporate Governance — Board composition, committees, auditor, key policies.
+20) Stakeholder Relations — Investor updates cadence, customer satisfaction signals, employee sentiment.
+21) ESG Compliance — Policies, certifications, and salient risks.
+
+Return only valid JSON according to the schema provided.`;
+
+  return `${systemContent}\n\n${userContent}`;
+}
+
+function buildPerplexityVCDataminingJSON(rawResponse: any): any {
+  try {
+    // Try to parse the response content if it's a string
+    let parsedResponse = rawResponse;
+    if (typeof rawResponse === 'string') {
+      parsedResponse = JSON.parse(rawResponse);
+    }
     
-    sam: `${baseContext}What is the Serviceable Addressable Market (SAM) for ${companyName}? Provide a specific dollar amount and methodology. Focus on the realistic market they can capture.`,
+    // If the response has a 'data' field containing the JSON, extract it
+    if (parsedResponse.data && typeof parsedResponse.data === 'string') {
+      parsedResponse = JSON.parse(parsedResponse.data);
+    }
     
-    som: `${baseContext}What is the Serviceable Obtainable Market (SOM) for ${companyName}? Provide a specific dollar amount representing their realistic market share potential.`,
+    // Structure the comprehensive response with all 21 subcategories
+    const structuredData = {
+      subject: parsedResponse.subject || null,
+      team_leadership: {
+        founder_experience: parsedResponse.team_leadership?.founder_experience || { data: null, sources: [], confidence: "Low", notes: "Data not available" },
+        domain_expertise: parsedResponse.team_leadership?.domain_expertise || { data: null, sources: [], confidence: "Low", notes: "Data not available" },
+        execution_track_record: parsedResponse.team_leadership?.execution_track_record || { data: null, sources: [], confidence: "Low", notes: "Data not available" }
+      },
+      market_opportunity: {
+        market_size: parsedResponse.market_opportunity?.market_size || { data: { tam: null, sam: null, som: null }, sources: [], confidence: "Low", notes: "Data not available" },
+        market_growth_rate: parsedResponse.market_opportunity?.market_growth_rate || { data: { cagr: null, growth_drivers: [] }, sources: [], confidence: "Low", notes: "Data not available" },
+        market_timing: parsedResponse.market_opportunity?.market_timing || { data: { readiness_signals: [] }, sources: [], confidence: "Low", notes: "Data not available" },
+        competitive_landscape: parsedResponse.market_opportunity?.competitive_landscape || { data: { competitors: [], differentiation: null }, sources: [], confidence: "Low", notes: "Data not available" }
+      },
+      product_technology: {
+        product_market_fit: parsedResponse.product_technology?.product_market_fit || { data: null, sources: [], confidence: "Low", notes: "Data not available" },
+        technology_differentiation: parsedResponse.product_technology?.technology_differentiation || { data: { moats: [] }, sources: [], confidence: "Low", notes: "Data not available" },
+        scalability: parsedResponse.product_technology?.scalability || { data: null, sources: [], confidence: "Low", notes: "Data not available" }
+      },
+      business_traction: {
+        revenue_growth: parsedResponse.business_traction?.revenue_growth || { data: { arr_mrr: null, yoy_growth: null }, sources: [], confidence: "Low", notes: "Data not available" },
+        customer_metrics: parsedResponse.business_traction?.customer_metrics || { data: { cac: null, ltv: null, ltv_cac_ratio: null }, sources: [], confidence: "Low", notes: "Data not available" },
+        partnership_validation: parsedResponse.business_traction?.partnership_validation || { data: { partners: [] }, sources: [], confidence: "Low", notes: "Data not available" }
+      },
+      financial_health: {
+        unit_economics: parsedResponse.financial_health?.unit_economics || { data: null, sources: [], confidence: "Low", notes: "Data not available" },
+        burn_rate_runway: parsedResponse.financial_health?.burn_rate_runway || { data: { burn_rate: null, runway_months: null }, sources: [], confidence: "Low", notes: "Data not available" },
+        funding_history: parsedResponse.financial_health?.funding_history || { data: { rounds: [] }, sources: [], confidence: "Low", notes: "Data not available" }
+      },
+      strategic_timing: {
+        market_entry_timing: parsedResponse.strategic_timing?.market_entry_timing || { data: { optimal_entry_rationale: [], trigger_events: [] }, sources: [], confidence: "Low", notes: "Data not available" },
+        competitive_timing: parsedResponse.strategic_timing?.competitive_timing || { data: { recent_competitor_moves: [], window_of_opportunity: null }, sources: [], confidence: "Low", notes: "Data not available" }
+      },
+      trust_transparency: {
+        corporate_governance: parsedResponse.trust_transparency?.corporate_governance || { data: { board_members: [], auditor: null, policies: [] }, sources: [], confidence: "Low", notes: "Data not available" },
+        stakeholder_relations: parsedResponse.trust_transparency?.stakeholder_relations || { data: { investor_updates_frequency: null, customer_sentiment_summary: null }, sources: [], confidence: "Low", notes: "Data not available" },
+        esg_compliance: parsedResponse.trust_transparency?.esg_compliance || { data: { policies: [], certifications: [], risks: [] }, sources: [], confidence: "Low", notes: "Data not available" }
+      },
+      metadata: {
+        last_updated: new Date().toISOString(),
+        overall_confidence: parsedResponse.metadata?.overall_confidence || "Low",
+        origin: "perplexity_comprehensive_vc_analysis"
+      }
+    };
     
-    cagr: `${baseContext}What is the Compound Annual Growth Rate (CAGR) for the ${industry} industry that ${companyName} operates in? Provide a percentage and timeframe.`,
+    return structuredData;
+  } catch (error) {
+    console.error('Error building comprehensive VC JSON:', error);
+    // Return minimal structure if parsing fails
+    return {
+      subject: null,
+      team_leadership: {},
+      market_opportunity: {},
+      product_technology: {},
+      business_traction: {},
+      financial_health: {},
+      strategic_timing: {},
+      trust_transparency: {},
+      metadata: {
+        last_updated: new Date().toISOString(),
+        overall_confidence: "Low",
+        origin: "perplexity_comprehensive_vc_analysis"
+      },
+      parsing_error: error.message
+    };
+  }
+}
+
+function extractIndividualDataFields(cleanedJson: any): any {
+  // Extract individual fields from comprehensive JSON for database columns
+  return {
+    tam: cleanedJson.market_opportunity?.market_size?.data?.tam || null,
+    sam: cleanedJson.market_opportunity?.market_size?.data?.sam || null,
+    som: cleanedJson.market_opportunity?.market_size?.data?.som || null,
+    cagr: cleanedJson.market_opportunity?.market_growth_rate?.data?.cagr || null,
+    competitors: cleanedJson.market_opportunity?.competitive_landscape?.data?.competitors || null,
+    ltv_cac_ratio: cleanedJson.business_traction?.customer_metrics?.data?.ltv_cac_ratio || null,
+    burn_rate: cleanedJson.financial_health?.burn_rate_runway?.data?.burn_rate || null,
+    runway_months: cleanedJson.financial_health?.burn_rate_runway?.data?.runway_months || null,
+    funding_history: cleanedJson.financial_health?.funding_history?.data?.rounds || null,
     
-    business_model: `${baseContext}Describe ${companyName}'s business model in 2-3 sentences. How do they create, deliver, and capture value?`,
+    // Confidence scores for individual fields
+    subcategory_confidence: {
+      tam: cleanedJson.market_opportunity?.market_size?.confidence || "Low",
+      sam: cleanedJson.market_opportunity?.market_size?.confidence || "Low",
+      som: cleanedJson.market_opportunity?.market_size?.confidence || "Low",
+      cagr: cleanedJson.market_opportunity?.market_growth_rate?.confidence || "Low",
+      competitors: cleanedJson.market_opportunity?.competitive_landscape?.confidence || "Low",
+      ltv_cac_ratio: cleanedJson.business_traction?.customer_metrics?.confidence || "Low",
+      burn_rate: cleanedJson.financial_health?.burn_rate_runway?.confidence || "Low",
+      runway_months: cleanedJson.financial_health?.burn_rate_runway?.confidence || "Low",
+      funding_history: cleanedJson.financial_health?.funding_history?.confidence || "Low"
+    },
     
-    revenue_model: `${baseContext}How does ${companyName} generate revenue? List their primary revenue streams and monetization strategy.`,
-    
-    funding_stage: `${baseContext}What funding stage is ${companyName} currently at? (e.g., Pre-seed, Seed, Series A, B, C, etc.)`,
-    
-    funding_history: `${baseContext}What is ${companyName}'s funding history? List previous rounds, amounts, and lead investors if available.`,
-    
-    valuation: `${baseContext}What is ${companyName}'s latest valuation? Provide the amount and funding round when it was established.`,
-    
-    burn_rate: `${baseContext}What is ${companyName}'s estimated monthly burn rate? Provide amount in dollars and basis for estimate.`,
-    
-    runway_months: `${baseContext}How many months of runway does ${companyName} have based on current funding and burn rate? Provide number and calculation basis.`,
-    
-    growth_rate: `${baseContext}What is ${companyName}'s revenue or user growth rate? Provide percentage and timeframe (monthly/yearly).`,
-    
-    customer_acquisition_cost: `${baseContext}What is ${companyName}'s estimated Customer Acquisition Cost (CAC)? Provide amount and methodology.`,
-    
-    ltv_cac_ratio: `${baseContext}What is ${companyName}'s LTV/CAC ratio? Provide the ratio and explain how it was calculated.`,
-    
-    retention_rate: `${baseContext}What is ${companyName}'s customer retention rate? Provide percentage and timeframe (monthly/annual).`,
-    
-    competitors: `${baseContext}Who are ${companyName}'s top 5 direct competitors? List company names and brief differentiation.`,
-    
-    key_customers: `${baseContext}Who are ${companyName}'s key customers or customer segments? List notable clients or target demographics.`,
-    
-    employee_count: `${baseContext}How many employees does ${companyName} currently have? Provide current headcount and recent growth.`
+    // Sources for individual fields
+    subcategory_sources: {
+      tam: cleanedJson.market_opportunity?.market_size?.sources || [],
+      sam: cleanedJson.market_opportunity?.market_size?.sources || [],
+      som: cleanedJson.market_opportunity?.market_size?.sources || [],
+      cagr: cleanedJson.market_opportunity?.market_growth_rate?.sources || [],
+      competitors: cleanedJson.market_opportunity?.competitive_landscape?.sources || [],
+      ltv_cac_ratio: cleanedJson.business_traction?.customer_metrics?.sources || [],
+      burn_rate: cleanedJson.financial_health?.burn_rate_runway?.sources || [],
+      runway_months: cleanedJson.financial_health?.burn_rate_runway?.sources || [],
+      funding_history: cleanedJson.financial_health?.funding_history?.sources || []
+    }
   };
+}
+
+function calculateDataQualityScore(cleanedJson: any): number {
+  let populatedFields = 0;
+  let totalFields = 21; // Total number of subcategories
   
-  return prompts[category] || `${baseContext}Analyze ${category} for ${companyName}.`;
+  // Count populated subcategories
+  const subcategories = [
+    cleanedJson.team_leadership?.founder_experience,
+    cleanedJson.team_leadership?.domain_expertise,
+    cleanedJson.team_leadership?.execution_track_record,
+    cleanedJson.market_opportunity?.market_size,
+    cleanedJson.market_opportunity?.market_growth_rate,
+    cleanedJson.market_opportunity?.market_timing,
+    cleanedJson.market_opportunity?.competitive_landscape,
+    cleanedJson.product_technology?.product_market_fit,
+    cleanedJson.product_technology?.technology_differentiation,
+    cleanedJson.product_technology?.scalability,
+    cleanedJson.business_traction?.revenue_growth,
+    cleanedJson.business_traction?.customer_metrics,
+    cleanedJson.business_traction?.partnership_validation,
+    cleanedJson.financial_health?.unit_economics,
+    cleanedJson.financial_health?.burn_rate_runway,
+    cleanedJson.financial_health?.funding_history,
+    cleanedJson.strategic_timing?.market_entry_timing,
+    cleanedJson.strategic_timing?.competitive_timing,
+    cleanedJson.trust_transparency?.corporate_governance,
+    cleanedJson.trust_transparency?.stakeholder_relations,
+    cleanedJson.trust_transparency?.esg_compliance
+  ];
+  
+  subcategories.forEach(subcategory => {
+    if (subcategory && subcategory.data && subcategory.confidence !== "Low") {
+      populatedFields++;
+    }
+  });
+  
+  return Math.round((populatedFields / totalFields) * 100);
 }
 
 async function callPerplexityAPI(apiKey: string, prompt: string) {
@@ -277,20 +428,16 @@ async function callPerplexityAPI(apiKey: string, prompt: string) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'llama-3.1-sonar-small-128k-online',
+      model: 'llama-3.1-sonar-large-128k-online', // Using larger model for comprehensive analysis
       messages: [
-        {
-          role: 'system',
-          content: 'You are a venture capital analyst. Provide specific, factual data with numbers when possible. If exact data is not available, clearly state it as an estimate and explain your reasoning. Be concise and structured.'
-        },
         {
           role: 'user',
           content: prompt
         }
       ],
-      temperature: 0.2,
+      temperature: 0.1,
       top_p: 0.9,
-      max_tokens: 800,
+      max_tokens: 4000, // Increased for comprehensive response
       return_images: false,
       return_related_questions: false,
       search_recency_filter: 'month',
@@ -300,7 +447,8 @@ async function callPerplexityAPI(apiKey: string, prompt: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`Perplexity API error: ${response.status} - ${response.statusText}`);
+    const errorText = await response.text();
+    throw new Error(`Perplexity API error: ${response.status} - ${errorText}`);
   }
 
   const result = await response.json();
@@ -315,22 +463,10 @@ async function callPerplexityAPI(apiKey: string, prompt: string) {
     throw new Error('Empty response from Perplexity API');
   }
 
-  // Extract confidence level from response (basic heuristic)
-  const hasSpecificNumbers = /\$[\d,.]+(M|B|K)?|\d+%|\d+:\d+/.test(content);
-  const hasHedging = /estimate|approximately|around|roughly|uncertain/i.test(content);
-  
-  let confidence = 50;
-  if (hasSpecificNumbers && !hasHedging) {
-    confidence = 85;
-  } else if (hasSpecificNumbers && hasHedging) {
-    confidence = 70;
-  } else if (!hasSpecificNumbers && !hasHedging) {
-    confidence = 60;
-  }
-
+  // Return the full response for comprehensive processing
   return {
     data: content.trim(),
-    confidence: confidence,
-    sources: [] // Perplexity doesn't return structured sources in this response
+    raw_response: result,
+    timestamp: new Date().toISOString()
   };
 }
