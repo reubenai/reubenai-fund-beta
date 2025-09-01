@@ -242,6 +242,4 @@ verify_jwt = false
 [functions.manual-process-founder-enrichments]
 verify_jwt = false
 
-[functions.perplexity-datamining-vc]
-verify_jwt = false
 
