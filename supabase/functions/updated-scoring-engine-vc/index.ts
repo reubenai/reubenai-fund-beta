@@ -228,7 +228,7 @@ serve(async (req) => {
     // 1. Gather all required data
     console.log('📊 Gathering deal data from multiple sources...');
     
-    const [dealDataResult, datapointsResult, documentsResult, strategyResult] = await Promise.all([
+    const [dealDataResult, datapointsResult, documentsResult, strategyResult, perplexityMarketResult] = await Promise.all([
       supabaseClient
         .from('deals')
         .select('*, funds(fund_type, organization_id)')
@@ -236,7 +236,7 @@ serve(async (req) => {
         .single(),
       
       supabaseClient
-        .from('deal_datapoints_vc')
+        .from('deal_analysis_datapoints_vc')
         .select('*')
         .eq('deal_id', deal_id)
         .order('updated_at', { ascending: false })
@@ -253,6 +253,14 @@ serve(async (req) => {
         .from('investment_strategies')
         .select('*')
         .eq('fund_id', (await supabaseClient.from('deals').select('fund_id').eq('id', deal_id).single()).data?.fund_id)
+        .maybeSingle(),
+      
+      supabaseClient
+        .from('deal_enrichment_perplexity_market_export_vc')
+        .select('*')
+        .eq('deal_id', deal_id)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle()
     ]);
 
@@ -264,8 +272,9 @@ serve(async (req) => {
     const datapointsData = datapointsResult.data;
     const documentsData = documentsResult.data || [];
     const strategyData = strategyResult.data;
+    const perplexityMarketData = perplexityMarketResult.data;
 
-    console.log(`✅ Data gathered: Deal found, ${datapointsData ? '1' : '0'} datapoints, ${documentsData.length} documents`);
+    console.log(`✅ Data gathered: Deal found, ${datapointsData ? '1' : '0'} datapoints, ${documentsData.length} documents, ${perplexityMarketData ? '1' : '0'} perplexity market data`);
 
     // 2. Prepare analysis context
     const analysisContext = {
@@ -276,7 +285,10 @@ serve(async (req) => {
       datapoints: datapointsData,
       documents: documentsData,
       fund_strategy: strategyData?.enhanced_criteria || {},
-      fund_type: dealData.funds?.fund_type
+      fund_type: dealData.funds?.fund_type,
+      perplexity_market: perplexityMarketData,
+      data_quality_score: perplexityMarketData?.data_quality_score || 0,
+      confidence_level: perplexityMarketData?.confidence_level || 'medium'
     };
 
     // 3. Generate GPT-4 analysis for each scoring criterion
@@ -305,6 +317,7 @@ SCORING INSTRUCTIONS:
 4) Assign the corresponding numeric score exactly as specified.
 5) Keep all units and thresholds as written in the rubric.
 6) Prefer recent, primary evidence. If conflicting, state the conflict briefly.
+7) Prioritize Perplexity market intelligence when available for market-related criteria.
 
 RUBRIC FOR ${criteria.name.toUpperCase()}:
 - GREAT (${criteria.greatScore}): ${criteria.greatDescription}
@@ -318,6 +331,8 @@ Deal Size: $${analysisContext.deal_size?.toLocaleString() || 'N/A'}
 Valuation: $${analysisContext.valuation?.toLocaleString() || 'N/A'}
 
 DATAPOINTS: ${JSON.stringify(analysisContext.datapoints || {}, null, 2)}
+
+PERPLEXITY MARKET INTELLIGENCE: ${JSON.stringify(analysisContext.perplexity_market || {}, null, 2)}
 
 DOCUMENTS: ${analysisContext.documents.map(doc => `
 Document Summary: ${JSON.stringify(doc.document_summary || {})}
@@ -403,15 +418,21 @@ ANALYSIS RESULTS: ${JSON.stringify(scoringResults, null, 2)}
 COMPANY: ${analysisContext.company_name}
 INDUSTRY: ${analysisContext.industry}
 
-Generate detailed summaries (2-3 sentences each) for:
+Generate summaries with specific sentence requirements:
 
-1. Deal Executive Summary: Overall investment recommendation and key highlights
-2. Team & Leadership Summary: Founder experience, team composition, vision communication
-3. Market Opportunity Summary: Market size, timing, competitive landscape
-4. Product & Technology Summary: Innovation, technology advantage, product-market fit  
-5. Business Traction Summary: Revenue growth, customer metrics, market validation
-6. Financial Health Summary: Financial performance, capital efficiency, planning
-7. Strategic Fit Summary: Portfolio synergies, thesis alignment, value creation potential
+1. Deal Executive Summary: Write exactly 2-3 sentences about the whole deal, overall investment recommendation and key highlights
+
+2. Team & Leadership Summary: Write exactly 1-2 sentences covering Founder Experience, Team Composition, and Vision & Communication
+
+3. Market Opportunity Summary: Write exactly 1-2 sentences covering Market Size, Market Timing, and Competitive Landscape
+
+4. Product & Technology Summary: Write exactly 1-2 sentences covering Product Innovation, Technology Advantage, and Product-Market Fit
+
+5. Business Traction Summary: Write exactly 1-2 sentences covering Revenue Growth, Customer Metrics, and Market Validation
+
+6. Financial Health Summary: Write exactly 1-2 sentences covering Financial Performance, Capital Efficiency, and Financial Planning
+
+7. Strategic Fit Summary: Write exactly 1-2 sentences covering Portfolio Synergies, Investment Thesis Alignment, and Value Creation Potential
 
 OUTPUT FORMAT (JSON only):
 {
