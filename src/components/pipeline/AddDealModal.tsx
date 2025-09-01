@@ -270,7 +270,7 @@ export const AddDealModal = React.memo<AddDealModalProps>(({
               location: formData.location[0]
             });
             
-            triggerMarketEnrichment(newDeal.id, formData.industry[0], formData.location[0]).then((result) => {
+            triggerMarketEnrichment(newDeal.id).then((result) => {
               console.log('✅ Perplexity market enrichment completed:', result);
               if (!result?.success) {
                 console.error('⚠️ Market enrichment completed but failed:', result?.error);

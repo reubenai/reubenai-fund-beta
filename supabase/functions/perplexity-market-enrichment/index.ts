@@ -1017,25 +1017,46 @@ Return only valid JSON according to the schema provided.
     
     let parsedResponse: VCResearchResponse;
     try {
-      // Try to parse JSON from the response
-      const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        parsedResponse = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error('No JSON found in response');
+      // First attempt: direct parsing of content
+      parsedResponse = JSON.parse(rawContent);
+      console.log('✅ Successfully parsed JSON on first attempt');
+    } catch (firstError) {
+      console.log('❌ First parse attempt failed, trying to clean JSON...');
+      
+      try {
+        // Second attempt: extract JSON from response and clean it
+        const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error('No JSON found in response');
+        }
+        
+        const cleanedContent = jsonMatch[0]
+          .replace(/\\n/g, '')              // Remove escaped newlines
+          .replace(/\n/g, ' ')              // Replace actual newlines with spaces
+          .replace(/\r/g, '')               // Remove carriage returns
+          .replace(/\t/g, ' ')              // Replace tabs with spaces
+          .replace(/\s+/g, ' ')             // Collapse multiple spaces
+          .replace(/,(\s*[}\]])/g, '$1')    // Remove trailing commas
+          .trim();
+        
+        parsedResponse = JSON.parse(cleanedContent);
+        console.log('✅ Successfully parsed cleaned JSON');
+      } catch (secondError) {
+        console.error('❌ Failed to parse JSON response:', secondError);
+        console.error('Raw content length:', rawContent.length);
+        console.error('Content preview:', rawContent.substring(0, 500));
+        
+        // Return error response with better details
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'Failed to parse VC research data after multiple attempts',
+          parsing_error: secondError.message,
+          raw_response: rawContent.substring(0, 1000) // Limit to avoid massive logs
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
-      console.log('✅ Successfully parsed comprehensive VC research data from Perplexity response');
-    } catch (parseError) {
-      console.error('❌ Failed to parse JSON response:', parseError);
-      // Return error response but don't fail completely
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Failed to parse VC research data',
-        raw_response: rawContent
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
     }
 
     // Extract comprehensive data points from structured response

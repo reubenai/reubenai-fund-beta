@@ -36,12 +36,10 @@ export const usePerplexityMarketEnrichment = () => {
   const [enrichmentResult, setEnrichmentResult] = useState<MarketEnrichmentResult | null>(null);
 
   const enrichMarketProfile = async (
-    dealId: string, 
-    primaryIndustry: string, 
-    location: string
+    dealId: string
   ): Promise<MarketEnrichmentResult | null> => {
-    if (!dealId?.trim() || !primaryIndustry?.trim() || !location?.trim()) {
-      toast.error('Deal ID, Primary Industry, and Location are required for market enrichment');
+    if (!dealId?.trim()) {
+      toast.error('Deal ID is required for market enrichment');
       return null;
     }
 
@@ -49,13 +47,49 @@ export const usePerplexityMarketEnrichment = () => {
     setEnrichmentResult(null);
 
     try {
-      console.log('🚀 Calling Perplexity Market Enrichment function...');
+      console.log('🚀 Fetching deal data and calling Perplexity Market Enrichment function...');
       
+      // First, fetch comprehensive deal data
+      const { data: dealData, error: dealError } = await supabase
+        .from('deals')
+        .select(`
+          *,
+          funds!deals_fund_id_fkey(
+            organization_id,
+            fund_type
+          )
+        `)
+        .eq('id', dealId.trim())
+        .single();
+
+      if (dealError || !dealData) {
+        console.error('❌ Failed to fetch deal data:', dealError);
+        toast.error('Failed to fetch deal information');
+        return null;
+      }
+
+      // Build additional context from deal data
+      const additionalContext = {
+        website: dealData.website || undefined,
+        linkedin: dealData.linkedin_url || undefined,
+        crunchbase: dealData.crunchbase_url || undefined,
+        primaryIndustries: dealData.industry ? [dealData.industry] : [],
+        industry: dealData.industry || dealData.primary_industry || undefined,
+        location: dealData.location || dealData.headquarters || undefined,
+        founders: dealData.founder ? [dealData.founder] : [],
+        founder: dealData.founder || undefined,
+      };
+
+      console.log('📊 Built enrichment context:', {
+        companyName: dealData.company_name,
+        additionalContext
+      });
+
       const { data, error } = await supabase.functions.invoke('perplexity-market-enrichment', {
         body: { 
           dealId: dealId.trim(), 
-          primaryIndustry: primaryIndustry.trim(), 
-          location: location.trim() 
+          companyName: dealData.company_name || 'Unknown Company',
+          additionalContext
         },
       });
 
@@ -88,7 +122,7 @@ export const usePerplexityMarketEnrichment = () => {
       }
 
       console.log('✅ Market enrichment completed successfully');
-      toast.success(`Market intelligence enriched for ${primaryIndustry} industry`);
+      toast.success(`Market intelligence enriched for ${dealData.company_name}`);
       
       const result: MarketEnrichmentResult = {
         success: true,
@@ -118,9 +152,7 @@ export const usePerplexityMarketEnrichment = () => {
   };
 
   const triggerMarketEnrichment = async (
-    dealId: string, 
-    primaryIndustry: string, 
-    location: string
+    dealId: string
   ): Promise<MarketEnrichmentResult | null> => {
     try {
       // First check if this deal is from a venture capital fund
@@ -157,7 +189,7 @@ export const usePerplexityMarketEnrichment = () => {
       }
 
       // Proceed with enrichment if it's a VC deal
-      return await enrichMarketProfile(dealId, primaryIndustry, location);
+      return await enrichMarketProfile(dealId);
 
     } catch (error) {
       console.error('❌ Error in triggerMarketEnrichment:', error);
