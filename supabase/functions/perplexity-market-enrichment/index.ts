@@ -161,7 +161,8 @@ Provide comprehensive market research about this company covering market size, c
             timestamp: new Date().toISOString()
           }
         },
-        processing_status: 'completed'
+        processing_status: 'completed',
+        processed_at: new Date().toISOString()
       });
 
     if (insertError) {
