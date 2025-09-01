@@ -3,7 +3,7 @@ import React from 'react';
 import { Deal } from '@/hooks/usePipelineDeals';
 import { ReubenAISummaryScoreV2 } from './ReubenAISummaryScoreV2';
 import { ReubenAISummaryScore } from './ReubenAISummaryScore';
-import { type AnyFundType } from '@/utils/fundTypeConversion';
+import { type AnyFundType, toDatabaseFundType } from '@/utils/fundTypeConversion';
 
 interface ReubenAISummaryScoreBridgeProps {
   deal: Deal;
@@ -29,7 +29,7 @@ export function ReubenAISummaryScoreBridge({ deal, fundType, onScoreCalculated }
     return (
       <ReubenAISummaryScoreV2 
         deal={deal} 
-        fundType={fundType} 
+        fundType={toDatabaseFundType(fundType)} 
         onScoreCalculated={onScoreCalculated}
       />
     );
@@ -39,7 +39,7 @@ export function ReubenAISummaryScoreBridge({ deal, fundType, onScoreCalculated }
   return (
     <ReubenAISummaryScore 
       deal={deal} 
-      fundType={fundType} 
+      fundType={toDatabaseFundType(fundType)} 
       onScoreCalculated={onScoreCalculated}
     />
   );
