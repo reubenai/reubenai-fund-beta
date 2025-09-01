@@ -353,13 +353,43 @@ CRITICAL: Return ONLY the JSON object above. No additional text, explanations, o
 
     console.log('✅ Raw market data stored successfully');
 
-    return new Response(JSON.stringify({
-      success: true,
-      snapshot_id: snapshotId,
-      message: 'Market research completed and raw data stored'
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // Process JSON response and populate structured fields
+    console.log('🔄 Processing JSON response and populating structured fields...');
+    try {
+      const processedData = await processMarketEnrichmentJSON(supabase, dealId, snapshotId, rawContent, companyName);
+      console.log('✅ JSON processing completed successfully');
+      
+      return new Response(JSON.stringify({
+        success: true,
+        snapshot_id: snapshotId,
+        message: 'Market research completed and structured data populated',
+        data_quality_score: processedData.dataQualityScore,
+        data_points_populated: processedData.dataPointsPopulated
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (processingError) {
+      console.error('❌ JSON processing failed:', processingError);
+      
+      // Update processing status to indicate partial failure
+      await supabase
+        .from('deal_enrichment_perplexity_market_export_vc')
+        .update({ 
+          processing_status: 'raw_only',
+          error_message: `JSON processing failed: ${processingError.message}`
+        })
+        .eq('deal_id', dealId)
+        .eq('snapshot_id', snapshotId);
+      
+      return new Response(JSON.stringify({
+        success: true,
+        snapshot_id: snapshotId,
+        message: 'Market research completed but JSON processing failed - raw data available',
+        warning: processingError.message
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
   } catch (error) {
     console.error('❌ Error in perplexity-market-enrichment function:', error);
@@ -372,3 +402,182 @@ CRITICAL: Return ONLY the JSON object above. No additional text, explanations, o
     });
   }
 });
+
+// Helper function to process JSON response and populate database fields
+async function processMarketEnrichmentJSON(supabase: any, dealId: string, snapshotId: string, rawContent: string, companyName: string) {
+  console.log('📊 Starting JSON parsing and data extraction...');
+  
+  // Parse JSON from Perplexity response
+  let parsedData: any;
+  try {
+    // Try direct JSON parse first
+    parsedData = JSON.parse(rawContent);
+  } catch (parseError) {
+    console.log('⚠️ Direct JSON parse failed, trying to extract from markdown...');
+    // Try to extract JSON from markdown code blocks
+    const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+    if (jsonMatch) {
+      try {
+        parsedData = JSON.parse(jsonMatch[1]);
+        console.log('✅ Successfully extracted JSON from markdown');
+      } catch (markdownParseError) {
+        throw new Error('Failed to parse JSON from markdown block');
+      }
+    } else {
+      throw new Error('No valid JSON found in response');
+    }
+  }
+
+  console.log('✅ JSON parsing successful');
+
+  // Define the 18 data points mapping
+  const dataPointsMapping = [
+    'founder_experience',
+    'team_composition', 
+    'vision_communication',
+    'market_size',
+    'market_timing',
+    'competitive_landscape',
+    'product_innovation',
+    'technology_advantage',
+    'product_market_fit',
+    'revenue_growth',
+    'customer_metrics',
+    'market_validation',
+    'financial_performance',
+    'capital_efficiency',
+    'financial_planning',
+    'portfolio_synergies',
+    'investment_thesis_alignment',
+    'value_creation_potential'
+  ];
+
+  // Extract and process each data point
+  const processedFields: any = {};
+  const structuredJSON: any = {};
+  let dataPointsPopulated = 0;
+  let totalConfidenceScore = 0;
+
+  console.log('🔍 Processing individual data points...');
+  
+  for (const dataPoint of dataPointsMapping) {
+    const dataPointData = parsedData[dataPoint];
+    
+    if (dataPointData && typeof dataPointData === 'object') {
+      // Build comprehensive text entry combining value + evidence + sources
+      const value = dataPointData.value || 'No data available';
+      const evidence = Array.isArray(dataPointData.evidence) ? dataPointData.evidence : [];
+      const sources = Array.isArray(dataPointData.sources) ? dataPointData.sources : [];
+      const confidence = dataPointData.confidence || 'low';
+      const sourceQuality = dataPointData.source_quality || 'tertiary';
+
+      // Create comprehensive text content
+      let textContent = value;
+      if (evidence.length > 0) {
+        textContent += `\n\nEvidence: ${evidence.join('; ')}`;
+      }
+      if (sources.length > 0) {
+        textContent += `\n\nSources: ${sources.join('; ')}`;
+      }
+      textContent += `\n\nConfidence: ${confidence} | Source Quality: ${sourceQuality}`;
+
+      // Store processed field for database update
+      processedFields[dataPoint] = textContent;
+      
+      // Store structured data for JSON column
+      structuredJSON[dataPoint] = {
+        value,
+        evidence,
+        sources,
+        source_quality: sourceQuality,
+        confidence
+      };
+
+      dataPointsPopulated++;
+      
+      // Calculate confidence score (high=3, medium=2, low=1)
+      const confidenceValue = confidence.toLowerCase() === 'high' ? 3 : 
+                             confidence.toLowerCase() === 'medium' ? 2 : 1;
+      totalConfidenceScore += confidenceValue;
+      
+      console.log(`✅ Processed ${dataPoint}: ${confidence} confidence`);
+    } else {
+      console.log(`⚠️ No data found for ${dataPoint}`);
+      processedFields[dataPoint] = 'No data available';
+      structuredJSON[dataPoint] = {
+        value: 'No data available',
+        evidence: [],
+        sources: [],
+        source_quality: 'tertiary',
+        confidence: 'low'
+      };
+    }
+  }
+
+  // Calculate data quality score
+  const dataQualityScore = Math.round((dataPointsPopulated / dataPointsMapping.length) * 100);
+  const avgConfidenceScore = totalConfidenceScore / dataPointsMapping.length;
+  
+  console.log(`📊 Data Quality: ${dataQualityScore}% (${dataPointsPopulated}/${dataPointsMapping.length} fields populated)`);
+
+  // Add metadata to structured JSON
+  structuredJSON.metadata = {
+    last_updated: new Date().toISOString(),
+    data_completeness_percentage: dataQualityScore,
+    average_confidence_score: avgConfidenceScore,
+    source: 'perplexity_api',
+    version: '1.0',
+    company_name: companyName,
+    snapshot_id: snapshotId
+  };
+
+  // Update database record with all processed data
+  console.log('💾 Updating database with processed data...');
+  
+  const { error: updateError } = await supabase
+    .from('deal_enrichment_perplexity_market_export_vc')
+    .update({
+      // Individual data point columns
+      founder_experience: processedFields.founder_experience,
+      team_composition: processedFields.team_composition,
+      vision_communication: processedFields.vision_communication,
+      market_size: processedFields.market_size,
+      market_timing: processedFields.market_timing,
+      competitive_landscape: processedFields.competitive_landscape,
+      product_innovation: processedFields.product_innovation,
+      technology_advantage: processedFields.technology_advantage,
+      product_market_fit: processedFields.product_market_fit,
+      revenue_growth: processedFields.revenue_growth,
+      customer_metrics: processedFields.customer_metrics,
+      market_validation: processedFields.market_validation,
+      financial_performance: processedFields.financial_performance,
+      capital_efficiency: processedFields.capital_efficiency,
+      financial_planning: processedFields.financial_planning,
+      portfolio_synergies: processedFields.portfolio_synergies,
+      investment_thesis_alignment: processedFields.investment_thesis_alignment,
+      value_creation_potential: processedFields.value_creation_potential,
+      
+      // JSON structured data column
+      deal_enrichment_perplexity_market_export_vc_json: structuredJSON,
+      
+      // Metadata fields
+      data_quality_score: dataQualityScore,
+      confidence_level: avgConfidenceScore > 2.5 ? 'high' : avgConfidenceScore > 1.5 ? 'medium' : 'low',
+      processing_status: 'processed'
+    })
+    .eq('deal_id', dealId)
+    .eq('snapshot_id', snapshotId);
+
+  if (updateError) {
+    throw new Error(`Database update failed: ${updateError.message}`);
+  }
+
+  console.log('✅ Database updated with structured data successfully');
+
+  return {
+    dataQualityScore,
+    dataPointsPopulated,
+    avgConfidenceScore,
+    structuredJSON
+  };
+}
