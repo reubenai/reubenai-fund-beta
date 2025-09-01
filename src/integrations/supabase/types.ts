@@ -2099,6 +2099,444 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_analysisresult_pe: {
+        Row: {
+          acquisition_opportunities_score: number | null
+          analysis_summary: string | null
+          analyzed_at: string | null
+          brand_strength_score: number | null
+          cash_flow_score: number | null
+          competitive_moat_score: number | null
+          confidence_score: number | null
+          corporate_governance_score: number | null
+          created_at: string
+          deal_id: string
+          ebitda_margins_score: number | null
+          error_message: string | null
+          esg_standards_score: number | null
+          execution_risk_score: number | null
+          exit_timing_potential_score: number | null
+          fund_id: string
+          id: string
+          industry_risk_score: number | null
+          key_concerns: string[] | null
+          key_strengths: string[] | null
+          management_quality_score: number | null
+          market_cycle_timing_score: number | null
+          market_expansion_score: number | null
+          market_share_score: number | null
+          model_executions: Json | null
+          operational_efficiency_score: number | null
+          organic_growth_score: number | null
+          organization_id: string
+          overall_score: number | null
+          processing_status: Database["public"]["Enums"]["processing_status"]
+          recommendations: string[] | null
+          regulatory_risk_score: number | null
+          revenue_growth_score: number | null
+          risk_factors: Json | null
+          stakeholder_trust_score: number | null
+          systems_processes_score: number | null
+          updated_at: string
+        }
+        Insert: {
+          acquisition_opportunities_score?: number | null
+          analysis_summary?: string | null
+          analyzed_at?: string | null
+          brand_strength_score?: number | null
+          cash_flow_score?: number | null
+          competitive_moat_score?: number | null
+          confidence_score?: number | null
+          corporate_governance_score?: number | null
+          created_at?: string
+          deal_id: string
+          ebitda_margins_score?: number | null
+          error_message?: string | null
+          esg_standards_score?: number | null
+          execution_risk_score?: number | null
+          exit_timing_potential_score?: number | null
+          fund_id: string
+          id?: string
+          industry_risk_score?: number | null
+          key_concerns?: string[] | null
+          key_strengths?: string[] | null
+          management_quality_score?: number | null
+          market_cycle_timing_score?: number | null
+          market_expansion_score?: number | null
+          market_share_score?: number | null
+          model_executions?: Json | null
+          operational_efficiency_score?: number | null
+          organic_growth_score?: number | null
+          organization_id: string
+          overall_score?: number | null
+          processing_status?: Database["public"]["Enums"]["processing_status"]
+          recommendations?: string[] | null
+          regulatory_risk_score?: number | null
+          revenue_growth_score?: number | null
+          risk_factors?: Json | null
+          stakeholder_trust_score?: number | null
+          systems_processes_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          acquisition_opportunities_score?: number | null
+          analysis_summary?: string | null
+          analyzed_at?: string | null
+          brand_strength_score?: number | null
+          cash_flow_score?: number | null
+          competitive_moat_score?: number | null
+          confidence_score?: number | null
+          corporate_governance_score?: number | null
+          created_at?: string
+          deal_id?: string
+          ebitda_margins_score?: number | null
+          error_message?: string | null
+          esg_standards_score?: number | null
+          execution_risk_score?: number | null
+          exit_timing_potential_score?: number | null
+          fund_id?: string
+          id?: string
+          industry_risk_score?: number | null
+          key_concerns?: string[] | null
+          key_strengths?: string[] | null
+          management_quality_score?: number | null
+          market_cycle_timing_score?: number | null
+          market_expansion_score?: number | null
+          market_share_score?: number | null
+          model_executions?: Json | null
+          operational_efficiency_score?: number | null
+          organic_growth_score?: number | null
+          organization_id?: string
+          overall_score?: number | null
+          processing_status?: Database["public"]["Enums"]["processing_status"]
+          recommendations?: string[] | null
+          regulatory_risk_score?: number | null
+          revenue_growth_score?: number | null
+          risk_factors?: Json | null
+          stakeholder_trust_score?: number | null
+          systems_processes_score?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      deal_analysisresult_vc: {
+        Row: {
+          analysis_summary: string | null
+          analyzed_at: string | null
+          capital_efficiency_score: number | null
+          competitive_landscape_score: number | null
+          confidence_score: number | null
+          created_at: string
+          customer_metrics_score: number | null
+          deal_id: string
+          error_message: string | null
+          financial_performance_score: number | null
+          financial_planning_score: number | null
+          founder_experience_score: number | null
+          fund_id: string
+          id: string
+          investment_thesis_alignment_score: number | null
+          key_concerns: string[] | null
+          key_strengths: string[] | null
+          market_size_score: number | null
+          market_timing_score: number | null
+          market_validation_score: number | null
+          model_executions: Json | null
+          organization_id: string
+          overall_score: number | null
+          portfolio_synergies_score: number | null
+          processing_status: Database["public"]["Enums"]["processing_status"]
+          product_innovation_score: number | null
+          product_market_fit_score: number | null
+          recommendations: string[] | null
+          revenue_growth_score: number | null
+          risk_factors: Json | null
+          team_composition_score: number | null
+          technology_advantage_score: number | null
+          updated_at: string
+          value_creation_potential_score: number | null
+          vision_communication_score: number | null
+        }
+        Insert: {
+          analysis_summary?: string | null
+          analyzed_at?: string | null
+          capital_efficiency_score?: number | null
+          competitive_landscape_score?: number | null
+          confidence_score?: number | null
+          created_at?: string
+          customer_metrics_score?: number | null
+          deal_id: string
+          error_message?: string | null
+          financial_performance_score?: number | null
+          financial_planning_score?: number | null
+          founder_experience_score?: number | null
+          fund_id: string
+          id?: string
+          investment_thesis_alignment_score?: number | null
+          key_concerns?: string[] | null
+          key_strengths?: string[] | null
+          market_size_score?: number | null
+          market_timing_score?: number | null
+          market_validation_score?: number | null
+          model_executions?: Json | null
+          organization_id: string
+          overall_score?: number | null
+          portfolio_synergies_score?: number | null
+          processing_status?: Database["public"]["Enums"]["processing_status"]
+          product_innovation_score?: number | null
+          product_market_fit_score?: number | null
+          recommendations?: string[] | null
+          revenue_growth_score?: number | null
+          risk_factors?: Json | null
+          team_composition_score?: number | null
+          technology_advantage_score?: number | null
+          updated_at?: string
+          value_creation_potential_score?: number | null
+          vision_communication_score?: number | null
+        }
+        Update: {
+          analysis_summary?: string | null
+          analyzed_at?: string | null
+          capital_efficiency_score?: number | null
+          competitive_landscape_score?: number | null
+          confidence_score?: number | null
+          created_at?: string
+          customer_metrics_score?: number | null
+          deal_id?: string
+          error_message?: string | null
+          financial_performance_score?: number | null
+          financial_planning_score?: number | null
+          founder_experience_score?: number | null
+          fund_id?: string
+          id?: string
+          investment_thesis_alignment_score?: number | null
+          key_concerns?: string[] | null
+          key_strengths?: string[] | null
+          market_size_score?: number | null
+          market_timing_score?: number | null
+          market_validation_score?: number | null
+          model_executions?: Json | null
+          organization_id?: string
+          overall_score?: number | null
+          portfolio_synergies_score?: number | null
+          processing_status?: Database["public"]["Enums"]["processing_status"]
+          product_innovation_score?: number | null
+          product_market_fit_score?: number | null
+          recommendations?: string[] | null
+          revenue_growth_score?: number | null
+          risk_factors?: Json | null
+          team_composition_score?: number | null
+          technology_advantage_score?: number | null
+          updated_at?: string
+          value_creation_potential_score?: number | null
+          vision_communication_score?: number | null
+        }
+        Relationships: []
+      }
+      deal_datapoints_pe: {
+        Row: {
+          acquisition_opportunities: Json | null
+          brand_strength: Json | null
+          cash_flow: Json | null
+          competitive_moat: Json | null
+          confidence_level: number | null
+          corporate_governance: Json | null
+          created_at: string
+          data_completeness_score: number | null
+          deal_id: string
+          ebitda_margins: Json | null
+          error_message: string | null
+          esg_standards: Json | null
+          execution_risk: Json | null
+          exit_timing_potential: Json | null
+          fund_id: string
+          id: string
+          industry_risk: Json | null
+          management_quality: Json | null
+          market_cycle_timing: Json | null
+          market_expansion: Json | null
+          market_share: Json | null
+          operational_efficiency: Json | null
+          organic_growth: Json | null
+          organization_id: string
+          processed_at: string | null
+          processing_status: Database["public"]["Enums"]["processing_status"]
+          regulatory_risk: Json | null
+          revenue_growth: Json | null
+          source_engines: string[] | null
+          stakeholder_trust: Json | null
+          systems_processes: Json | null
+          updated_at: string
+        }
+        Insert: {
+          acquisition_opportunities?: Json | null
+          brand_strength?: Json | null
+          cash_flow?: Json | null
+          competitive_moat?: Json | null
+          confidence_level?: number | null
+          corporate_governance?: Json | null
+          created_at?: string
+          data_completeness_score?: number | null
+          deal_id: string
+          ebitda_margins?: Json | null
+          error_message?: string | null
+          esg_standards?: Json | null
+          execution_risk?: Json | null
+          exit_timing_potential?: Json | null
+          fund_id: string
+          id?: string
+          industry_risk?: Json | null
+          management_quality?: Json | null
+          market_cycle_timing?: Json | null
+          market_expansion?: Json | null
+          market_share?: Json | null
+          operational_efficiency?: Json | null
+          organic_growth?: Json | null
+          organization_id: string
+          processed_at?: string | null
+          processing_status?: Database["public"]["Enums"]["processing_status"]
+          regulatory_risk?: Json | null
+          revenue_growth?: Json | null
+          source_engines?: string[] | null
+          stakeholder_trust?: Json | null
+          systems_processes?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          acquisition_opportunities?: Json | null
+          brand_strength?: Json | null
+          cash_flow?: Json | null
+          competitive_moat?: Json | null
+          confidence_level?: number | null
+          corporate_governance?: Json | null
+          created_at?: string
+          data_completeness_score?: number | null
+          deal_id?: string
+          ebitda_margins?: Json | null
+          error_message?: string | null
+          esg_standards?: Json | null
+          execution_risk?: Json | null
+          exit_timing_potential?: Json | null
+          fund_id?: string
+          id?: string
+          industry_risk?: Json | null
+          management_quality?: Json | null
+          market_cycle_timing?: Json | null
+          market_expansion?: Json | null
+          market_share?: Json | null
+          operational_efficiency?: Json | null
+          organic_growth?: Json | null
+          organization_id?: string
+          processed_at?: string | null
+          processing_status?: Database["public"]["Enums"]["processing_status"]
+          regulatory_risk?: Json | null
+          revenue_growth?: Json | null
+          source_engines?: string[] | null
+          stakeholder_trust?: Json | null
+          systems_processes?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      deal_datapoints_vc: {
+        Row: {
+          capital_efficiency: Json | null
+          competitive_landscape: Json | null
+          confidence_level: number | null
+          created_at: string
+          customer_metrics: Json | null
+          data_completeness_score: number | null
+          deal_id: string
+          error_message: string | null
+          financial_performance: Json | null
+          financial_planning: Json | null
+          founder_experience: Json | null
+          fund_id: string
+          id: string
+          investment_thesis_alignment: Json | null
+          market_size: Json | null
+          market_timing: Json | null
+          market_validation: Json | null
+          organization_id: string
+          portfolio_synergies: Json | null
+          processed_at: string | null
+          processing_status: Database["public"]["Enums"]["processing_status"]
+          product_innovation: Json | null
+          product_market_fit: Json | null
+          revenue_growth: Json | null
+          source_engines: string[] | null
+          team_composition: Json | null
+          technology_advantage: Json | null
+          updated_at: string
+          value_creation_potential: Json | null
+          vision_communication: Json | null
+        }
+        Insert: {
+          capital_efficiency?: Json | null
+          competitive_landscape?: Json | null
+          confidence_level?: number | null
+          created_at?: string
+          customer_metrics?: Json | null
+          data_completeness_score?: number | null
+          deal_id: string
+          error_message?: string | null
+          financial_performance?: Json | null
+          financial_planning?: Json | null
+          founder_experience?: Json | null
+          fund_id: string
+          id?: string
+          investment_thesis_alignment?: Json | null
+          market_size?: Json | null
+          market_timing?: Json | null
+          market_validation?: Json | null
+          organization_id: string
+          portfolio_synergies?: Json | null
+          processed_at?: string | null
+          processing_status?: Database["public"]["Enums"]["processing_status"]
+          product_innovation?: Json | null
+          product_market_fit?: Json | null
+          revenue_growth?: Json | null
+          source_engines?: string[] | null
+          team_composition?: Json | null
+          technology_advantage?: Json | null
+          updated_at?: string
+          value_creation_potential?: Json | null
+          vision_communication?: Json | null
+        }
+        Update: {
+          capital_efficiency?: Json | null
+          competitive_landscape?: Json | null
+          confidence_level?: number | null
+          created_at?: string
+          customer_metrics?: Json | null
+          data_completeness_score?: number | null
+          deal_id?: string
+          error_message?: string | null
+          financial_performance?: Json | null
+          financial_planning?: Json | null
+          founder_experience?: Json | null
+          fund_id?: string
+          id?: string
+          investment_thesis_alignment?: Json | null
+          market_size?: Json | null
+          market_timing?: Json | null
+          market_validation?: Json | null
+          organization_id?: string
+          portfolio_synergies?: Json | null
+          processed_at?: string | null
+          processing_status?: Database["public"]["Enums"]["processing_status"]
+          product_innovation?: Json | null
+          product_market_fit?: Json | null
+          revenue_growth?: Json | null
+          source_engines?: string[] | null
+          team_composition?: Json | null
+          technology_advantage?: Json | null
+          updated_at?: string
+          value_creation_potential?: Json | null
+          vision_communication?: Json | null
+        }
+        Relationships: []
+      }
       deal_decisions: {
         Row: {
           ai_recommendation_at_decision: string | null
@@ -6759,6 +7197,114 @@ export type Database = {
           },
         ]
       }
+      perplexity_datamining_pe: {
+        Row: {
+          category: string
+          company_name: string
+          created_at: string
+          data_sources: Json | null
+          deal_id: string
+          error_message: string | null
+          fund_id: string
+          id: string
+          organization_id: string
+          processed_at: string | null
+          processing_status: Database["public"]["Enums"]["processing_status"]
+          query_prompt: string | null
+          raw_perplexity_response: Json
+          response_confidence: number | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          company_name: string
+          created_at?: string
+          data_sources?: Json | null
+          deal_id: string
+          error_message?: string | null
+          fund_id: string
+          id?: string
+          organization_id: string
+          processed_at?: string | null
+          processing_status?: Database["public"]["Enums"]["processing_status"]
+          query_prompt?: string | null
+          raw_perplexity_response?: Json
+          response_confidence?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          company_name?: string
+          created_at?: string
+          data_sources?: Json | null
+          deal_id?: string
+          error_message?: string | null
+          fund_id?: string
+          id?: string
+          organization_id?: string
+          processed_at?: string | null
+          processing_status?: Database["public"]["Enums"]["processing_status"]
+          query_prompt?: string | null
+          raw_perplexity_response?: Json
+          response_confidence?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      perplexity_datamining_vc: {
+        Row: {
+          category: string
+          company_name: string
+          created_at: string
+          data_sources: Json | null
+          deal_id: string
+          error_message: string | null
+          fund_id: string
+          id: string
+          organization_id: string
+          processed_at: string | null
+          processing_status: Database["public"]["Enums"]["processing_status"]
+          query_prompt: string | null
+          raw_perplexity_response: Json
+          response_confidence: number | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          company_name: string
+          created_at?: string
+          data_sources?: Json | null
+          deal_id: string
+          error_message?: string | null
+          fund_id: string
+          id?: string
+          organization_id: string
+          processed_at?: string | null
+          processing_status?: Database["public"]["Enums"]["processing_status"]
+          query_prompt?: string | null
+          raw_perplexity_response?: Json
+          response_confidence?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          company_name?: string
+          created_at?: string
+          data_sources?: Json | null
+          deal_id?: string
+          error_message?: string | null
+          fund_id?: string
+          id?: string
+          organization_id?: string
+          processed_at?: string | null
+          processing_status?: Database["public"]["Enums"]["processing_status"]
+          query_prompt?: string | null
+          raw_perplexity_response?: Json
+          response_confidence?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pipeline_stages: {
         Row: {
           color: string
@@ -8362,6 +8908,12 @@ export type Database = {
         | "due_diligence"
         | "other"
       fund_type: "venture_capital" | "private_equity"
+      processing_status:
+        | "queued"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "cancelled"
       user_role: "admin" | "fund_manager" | "analyst" | "viewer" | "super_admin"
     }
     CompositeTypes: {
@@ -8569,6 +9121,13 @@ export const Constants = {
         "other",
       ],
       fund_type: ["venture_capital", "private_equity"],
+      processing_status: [
+        "queued",
+        "processing",
+        "completed",
+        "failed",
+        "cancelled",
+      ],
       user_role: ["admin", "fund_manager", "analyst", "viewer", "super_admin"],
     },
   },
