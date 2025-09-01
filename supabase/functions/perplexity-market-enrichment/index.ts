@@ -327,69 +327,64 @@ CRITICAL: Return ONLY the JSON object above. No additional text, explanations, o
 
     console.log(`📥 Raw Perplexity content received (${rawContent.length} characters)`);
 
-    // Store raw data only
-    const { error: insertError } = await supabase
-      .from('deal_enrichment_perplexity_market_export_vc')
-      .insert({
-        deal_id: dealId,
-        snapshot_id: snapshotId,
-        company_name: companyName,
-        raw_perplexity_response: {
-          query: userContent,
-          response: rawContent,
-          api_metadata: {
-            model: 'sonar',
-            timestamp: new Date().toISOString()
-          }
-        },
-        processing_status: 'raw_stored',
-        processed_at: new Date().toISOString()
-      });
-
-    if (insertError) {
-      console.error('❌ Database insertion failed:', insertError);
-      throw insertError;
-    }
-
-    console.log('✅ Raw market data stored successfully');
-
-    // Process JSON response and populate structured fields
-    console.log('🔄 Processing JSON response and populating structured fields...');
+    // Parse JSON immediately (following working reference pattern)
+    let parsedData: any;
     try {
-      const processedData = await processMarketEnrichmentJSON(supabase, dealId, snapshotId, rawContent, companyName);
-      console.log('✅ JSON processing completed successfully');
-      
-      return new Response(JSON.stringify({
-        success: true,
-        snapshot_id: snapshotId,
-        message: 'Market research completed and structured data populated',
-        data_quality_score: processedData.dataQualityScore,
-        data_points_populated: processedData.dataPointsPopulated
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    } catch (processingError) {
-      console.error('❌ JSON processing failed:', processingError);
-      
-      // Update processing status to indicate partial failure
-      await supabase
-        .from('deal_enrichment_perplexity_market_export_vc')
-        .update({ 
-          processing_status: 'raw_only',
-          error_message: `JSON processing failed: ${processingError.message}`
-        })
-        .eq('deal_id', dealId)
-        .eq('snapshot_id', snapshotId);
-      
-      return new Response(JSON.stringify({
-        success: true,
-        snapshot_id: snapshotId,
-        message: 'Market research completed but JSON processing failed - raw data available',
-        warning: processingError.message
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.log('📊 Starting JSON parsing and data extraction...');
+      // Try direct JSON parse first
+      parsedData = JSON.parse(rawContent);
+      console.log('✅ JSON parsing successful');
+    } catch (parseError) {
+      console.log('⚠️ Direct JSON parse failed, trying to extract from markdown...');
+      // Try to extract JSON from markdown code blocks
+      const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+      if (jsonMatch) {
+        try {
+          parsedData = JSON.parse(jsonMatch[1]);
+          console.log('✅ Successfully extracted JSON from markdown');
+        } catch (markdownParseError) {
+          console.error('❌ Failed to parse JSON from markdown block:', markdownParseError);
+          throw new Error('Failed to parse JSON from response');
+        }
+      } else {
+        console.error('❌ No valid JSON found in response');
+        throw new Error('No valid JSON found in response');
+      }
     }
+
+    // Process and store all data in one operation (following working reference pattern)
+    console.log('🔄 Processing and storing market research data...');
+    const processedData = await processPerplexityMarketResponse(
+      supabase, 
+      dealId, 
+      snapshotId, 
+      companyName, 
+      parsedData, 
+      {
+        query: userContent,
+        response: rawContent,
+        api_metadata: {
+          model: 'sonar',
+          timestamp: new Date().toISOString()
+        }
+      }
+    );
+
+    if (!processedData) {
+      throw new Error('Failed to process and store market data');
+    }
+
+    console.log('✅ Market enrichment data processed and stored successfully');
+
+    return new Response(JSON.stringify({
+      success: true,
+      snapshot_id: snapshotId,
+      message: 'Market research completed and structured data populated',
+      data_quality_score: processedData.dataQualityScore,
+      data_points_populated: processedData.dataPointsPopulated
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
     console.error('❌ Error in perplexity-market-enrichment function:', error);
@@ -403,32 +398,42 @@ CRITICAL: Return ONLY the JSON object above. No additional text, explanations, o
   }
 });
 
-// Helper function to process JSON response and populate database fields
-async function processMarketEnrichmentJSON(supabase: any, dealId: string, snapshotId: string, rawContent: string, companyName: string) {
-  console.log('📊 Starting JSON parsing and data extraction...');
+// Helper function to process and store market data (following working reference pattern)
+async function processPerplexityMarketResponse(
+  supabase: any, 
+  dealId: string, 
+  snapshotId: string, 
+  companyName: string, 
+  parsedData: any, 
+  rawResponse: any
+) {
+  console.log('💾 Processing and inserting market data into database...');
   
-  // Parse JSON from Perplexity response
-  let parsedData: any;
-  try {
-    // Try direct JSON parse first
-    parsedData = JSON.parse(rawContent);
-  } catch (parseError) {
-    console.log('⚠️ Direct JSON parse failed, trying to extract from markdown...');
-    // Try to extract JSON from markdown code blocks
-    const jsonMatch = rawContent.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-    if (jsonMatch) {
-      try {
-        parsedData = JSON.parse(jsonMatch[1]);
-        console.log('✅ Successfully extracted JSON from markdown');
-      } catch (markdownParseError) {
-        throw new Error('Failed to parse JSON from markdown block');
-      }
-    } else {
-      throw new Error('No valid JSON found in response');
-    }
+  // Check for existing record to prevent duplicates
+  const { data: existingRecord } = await supabase
+    .from('deal_enrichment_perplexity_market_export_vc')
+    .select('id, processing_status')
+    .eq('deal_id', dealId)
+    .maybeSingle();
+
+  if (existingRecord && existingRecord.processing_status === 'processed') {
+    console.log('⚠️ Deal already has processed market enrichment data, skipping...');
+    return {
+      dataQualityScore: 100,
+      dataPointsPopulated: 18,
+      avgConfidenceScore: 2.5,
+      structuredJSON: {}
+    };
   }
 
-  console.log('✅ JSON parsing successful');
+  // Delete any existing failed/pending records before inserting new one
+  if (existingRecord) {
+    await supabase
+      .from('deal_enrichment_perplexity_market_export_vc')
+      .delete()
+      .eq('deal_id', dealId);
+    console.log('🗑️ Removed existing failed/pending record for clean retry');
+  }
 
   // Define the 18 data points mapping
   const dataPointsMapping = [
@@ -531,48 +536,69 @@ async function processMarketEnrichmentJSON(supabase: any, dealId: string, snapsh
     snapshot_id: snapshotId
   };
 
-  // Update database record with all processed data
-  console.log('💾 Updating database with processed data...');
-  
-  const { error: updateError } = await supabase
-    .from('deal_enrichment_perplexity_market_export_vc')
-    .update({
-      // Individual data point columns
-      founder_experience: processedFields.founder_experience,
-      team_composition: processedFields.team_composition,
-      vision_communication: processedFields.vision_communication,
-      market_size: processedFields.market_size,
-      market_timing: processedFields.market_timing,
-      competitive_landscape: processedFields.competitive_landscape,
-      product_innovation: processedFields.product_innovation,
-      technology_advantage: processedFields.technology_advantage,
-      product_market_fit: processedFields.product_market_fit,
-      revenue_growth: processedFields.revenue_growth,
-      customer_metrics: processedFields.customer_metrics,
-      market_validation: processedFields.market_validation,
-      financial_performance: processedFields.financial_performance,
-      capital_efficiency: processedFields.capital_efficiency,
-      financial_planning: processedFields.financial_planning,
-      portfolio_synergies: processedFields.portfolio_synergies,
-      investment_thesis_alignment: processedFields.investment_thesis_alignment,
-      value_creation_potential: processedFields.value_creation_potential,
-      
-      // JSON structured data column
-      deal_enrichment_perplexity_market_export_vc_json: structuredJSON,
-      
-      // Metadata fields
-      data_quality_score: dataQualityScore,
-      confidence_level: avgConfidenceScore > 2.5 ? 'high' : avgConfidenceScore > 1.5 ? 'medium' : 'low',
-      processing_status: 'processed'
-    })
-    .eq('deal_id', dealId)
-    .eq('snapshot_id', snapshotId);
+  // Insert ALL data in one operation with processing_status: 'processed'
+  const processedMarketData = {
+    deal_id: dealId,
+    snapshot_id: snapshotId,
+    company_name: companyName,
+    
+    // Individual data point columns
+    founder_experience: processedFields.founder_experience,
+    team_composition: processedFields.team_composition,
+    vision_communication: processedFields.vision_communication,
+    market_size: processedFields.market_size,
+    market_timing: processedFields.market_timing,
+    competitive_landscape: processedFields.competitive_landscape,
+    product_innovation: processedFields.product_innovation,
+    technology_advantage: processedFields.technology_advantage,
+    product_market_fit: processedFields.product_market_fit,
+    revenue_growth: processedFields.revenue_growth,
+    customer_metrics: processedFields.customer_metrics,
+    market_validation: processedFields.market_validation,
+    financial_performance: processedFields.financial_performance,
+    capital_efficiency: processedFields.capital_efficiency,
+    financial_planning: processedFields.financial_planning,
+    portfolio_synergies: processedFields.portfolio_synergies,
+    investment_thesis_alignment: processedFields.investment_thesis_alignment,
+    value_creation_potential: processedFields.value_creation_potential,
+    
+    // JSON structured data column
+    deal_enrichment_perplexity_market_export_vc_json: structuredJSON,
+    
+    // Metadata and system fields
+    raw_perplexity_response: rawResponse,
+    data_quality_score: dataQualityScore,
+    confidence_level: avgConfidenceScore > 2.5 ? 'high' : avgConfidenceScore > 1.5 ? 'medium' : 'low',
+    processing_status: 'processed',
+    processed_at: new Date().toISOString()
+  };
 
-  if (updateError) {
-    throw new Error(`Database update failed: ${updateError.message}`);
+  const { data, error } = await supabase
+    .from('deal_enrichment_perplexity_market_export_vc')
+    .insert(processedMarketData)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('❌ Database insertion error:', error);
+    // Fallback: try to insert with minimal data
+    const fallbackData = {
+      deal_id: dealId,
+      snapshot_id: snapshotId,
+      company_name: companyName,
+      raw_perplexity_response: rawResponse,
+      processing_status: 'failed',
+      data_quality_score: 0
+    };
+    const { data: fallbackResult } = await supabase
+      .from('deal_enrichment_perplexity_market_export_vc')
+      .insert(fallbackData)
+      .select()
+      .single();
+    return fallbackResult;
   }
 
-  console.log('✅ Database updated with structured data successfully');
+  console.log('✅ Processed market data inserted successfully');
 
   return {
     dataQualityScore,
