@@ -126,7 +126,7 @@ Provide comprehensive market research about this company covering market size, c
         return_images: false,
         return_related_questions: false,
         search_recency_filter: 'month',
-        frequency_penalty: 1,
+        frequency_penalty: 0,
         presence_penalty: 0
       }),
     });
