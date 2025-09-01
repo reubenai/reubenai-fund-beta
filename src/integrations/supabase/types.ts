@@ -2990,8 +2990,10 @@ export type Database = {
           cagr: string | null
           channel_effectiveness: Json | null
           company_name: string
+          competitive_position_sources: string | null
           confidence_level: string | null
           created_at: string
+          customer_acquisition_sources: string | null
           data_quality_score: number | null
           data_sources: Json | null
           deal_id: string
@@ -3001,7 +3003,10 @@ export type Database = {
           key_market_players: string[] | null
           last_updated: string | null
           ltv_cac_ratio: string | null
+          market_growth_rate_sources: string | null
           market_share_distribution: Json | null
+          market_size_sources: string | null
+          network_advisors_sources: string | null
           partnership_ecosystem: Json | null
           processed_at: string | null
           processing_status: string
@@ -3023,8 +3028,10 @@ export type Database = {
           cagr?: string | null
           channel_effectiveness?: Json | null
           company_name: string
+          competitive_position_sources?: string | null
           confidence_level?: string | null
           created_at?: string
+          customer_acquisition_sources?: string | null
           data_quality_score?: number | null
           data_sources?: Json | null
           deal_id: string
@@ -3034,7 +3041,10 @@ export type Database = {
           key_market_players?: string[] | null
           last_updated?: string | null
           ltv_cac_ratio?: string | null
+          market_growth_rate_sources?: string | null
           market_share_distribution?: Json | null
+          market_size_sources?: string | null
+          network_advisors_sources?: string | null
           partnership_ecosystem?: Json | null
           processed_at?: string | null
           processing_status?: string
@@ -3056,8 +3066,10 @@ export type Database = {
           cagr?: string | null
           channel_effectiveness?: Json | null
           company_name?: string
+          competitive_position_sources?: string | null
           confidence_level?: string | null
           created_at?: string
+          customer_acquisition_sources?: string | null
           data_quality_score?: number | null
           data_sources?: Json | null
           deal_id?: string
@@ -3067,7 +3079,10 @@ export type Database = {
           key_market_players?: string[] | null
           last_updated?: string | null
           ltv_cac_ratio?: string | null
+          market_growth_rate_sources?: string | null
           market_share_distribution?: Json | null
+          market_size_sources?: string | null
+          network_advisors_sources?: string | null
           partnership_ecosystem?: Json | null
           processed_at?: string | null
           processing_status?: string
@@ -3335,7 +3350,9 @@ export type Database = {
           investment_climate: string | null
           last_updated: string | null
           location: string | null
+          market_barrier_sources: string | null
           market_cycle: string | null
+          market_timing_sources: string | null
           primary_industry: string | null
           processed_at: string | null
           processing_status: string
@@ -3362,7 +3379,9 @@ export type Database = {
           investment_climate?: string | null
           last_updated?: string | null
           location?: string | null
+          market_barrier_sources?: string | null
           market_cycle?: string | null
+          market_timing_sources?: string | null
           primary_industry?: string | null
           processed_at?: string | null
           processing_status?: string
@@ -3389,7 +3408,9 @@ export type Database = {
           investment_climate?: string | null
           last_updated?: string | null
           location?: string | null
+          market_barrier_sources?: string | null
           market_cycle?: string | null
+          market_timing_sources?: string | null
           primary_industry?: string | null
           processed_at?: string | null
           processing_status?: string
@@ -8054,6 +8075,10 @@ export type Database = {
       manual_trigger_vc_aggregation: {
         Args: { p_deal_id: string }
         Returns: Json
+      }
+      manually_trigger_linkedin_profile_queue: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       monitor_analysis_quality: {
         Args: { p_analysis_type: string; p_deal_id: string }
