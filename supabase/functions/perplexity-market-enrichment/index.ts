@@ -419,40 +419,16 @@ async function buildMarketAnalysisJSON(supabase: any, dealId: string, marketData
   try {
     console.log('🔧 Building market analysis JSON structure...');
     
-    // Synthesize Market Timing insights from all subcategory sources
+    // Collect all sources for embedding
     const allSources = [
       ...(subcategorySources.market_assessment || []),
       ...(subcategorySources.regulatory_competitive || []),
       ...(subcategorySources.capital_technology || []),
       ...(subcategorySources.operational_challenges || [])
     ];
-    
-    const marketTiming = {
-      timing_assessment: "Market timing analysis based on current market cycle, competitive window, and investment climate",
-      key_factors: [
-        marketData.market_cycle ? `Market Cycle: ${marketData.market_cycle.substring(0, 100)}...` : "Market cycle analysis pending",
-        marketData.competitive_window ? `Competitive Window: ${marketData.competitive_window.substring(0, 100)}...` : "Competitive analysis pending",
-        marketData.investment_climate ? `Investment Climate: ${marketData.investment_climate.substring(0, 100)}...` : "Investment climate assessment pending"
-      ],
-      sources: allSources.slice(0, 5), // Limit to top 5 sources
-      confidence: subcategoryConfidence.market_assessment || "Medium"
-    };
-    
-    // Synthesize Market Barriers & Regulation insights
-    const marketBarriersRegulation = {
-      regulatory_landscape: marketData.regulatory_requirements || "Regulatory requirements analysis pending",
-      market_barriers: [
-        marketData.distribution_challenges ? `Distribution: ${marketData.distribution_challenges.substring(0, 100)}...` : "Distribution analysis pending",
-        marketData.geographic_constraints ? `Geographic: ${marketData.geographic_constraints.substring(0, 100)}...` : "Geographic analysis pending",
-        marketData.capital_requirements ? `Capital: ${marketData.capital_requirements.substring(0, 100)}...` : "Capital analysis pending"
-      ],
-      regulatory_timeline: marketData.regulatory_timeline || "Timeline analysis pending",
-      sources: allSources.slice(0, 5),
-      confidence: subcategoryConfidence.regulatory_competitive || "Medium"
-    };
 
     return {
-      // Market Analysis Data Points (10 direct fields)
+      // Market Analysis Data Points with embedded sources (following company format)
       "Market Cycle": marketData.market_cycle || null,
       "Economic Sensitivity": marketData.economic_sensitivity || null,
       "Investment Climate": marketData.investment_climate || null,
@@ -464,15 +440,25 @@ async function buildMarketAnalysisJSON(supabase: any, dealId: string, marketData
       "Distribution Challenges": marketData.distribution_challenges || null,
       "Geographic Constraints": marketData.geographic_constraints || null,
       
-      // Subcategory Sources Data (4 categories)
-      "Market Assessment Sources": subcategorySources.market_assessment || [],
-      "Regulatory Competitive Sources": subcategorySources.regulatory_competitive || [],
-      "Capital Technology Sources": subcategorySources.capital_technology || [],
-      "Operational Challenges Sources": subcategorySources.operational_challenges || [],
+      // Flattened Market Timing insights (array format like company)
+      "Market Timing": marketData.market_cycle && marketData.competitive_window && marketData.investment_climate ? [
+        `Market in ${marketData.market_cycle}`,
+        `${marketData.competitive_window}`,
+        `${marketData.investment_climate}`
+      ] : ["Market timing analysis pending"],
       
-      // Synthesized Insights (2 aggregate fields)
-      "Market Timing": marketTiming,
-      "Market Barriers & Regulation": marketBarriersRegulation,
+      // Flattened Market Barriers (array format like company)
+      "Market Barriers": [
+        marketData.distribution_challenges || "Distribution challenges analysis pending",
+        marketData.geographic_constraints || "Geographic constraints analysis pending", 
+        marketData.regulatory_requirements || "Regulatory requirements analysis pending"
+      ],
+      
+      // Sources embedded in market assessment data
+      "Market Assessment": subcategorySources.market_assessment || [],
+      "Regulatory Analysis": subcategorySources.regulatory_competitive || [],
+      "Technology Analysis": subcategorySources.capital_technology || [],
+      "Operational Analysis": subcategorySources.operational_challenges || [],
       
       // Standard VC Metrics (set to null for market analysis)
       "Growth Drivers": null,
@@ -488,13 +474,13 @@ async function buildMarketAnalysisJSON(supabase: any, dealId: string, marketData
       "Competitive Moats": null,
       "Scalability Moats": null,
       
-      // Metadata
+      // Metadata (simplified)
       "metadata": {
-        "generated_at": new Date().toISOString(),
-        "data_sources_count": allSources.length,
-        "confidence_distribution": subcategoryConfidence,
-        "analysis_type": "market_intelligence",
-        "version": "1.0"
+        "source": "perplexity_api",
+        "version": "1.0", 
+        "last_updated": new Date().toISOString(),
+        "overall_confidence": subcategoryConfidence.market_assessment || "Medium",
+        "data_completeness_percentage": Math.min(95, allSources.length * 10 + 60)
       }
     };
 
