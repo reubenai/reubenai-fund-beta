@@ -100,7 +100,7 @@ serve(async (req) => {
 
     console.log(`✅ Deal ${dealId} confirmed as venture capital - proceeding with market research`);
 
-    // Simplified input data - Company Name, Location, and Founder Name only
+    // Simplified input data - Company Name, Location, Founder Name, and Primary Industry
     const location = dealData.location || dealData.headquarters || 
       (dealData.countries_of_operation && Array.isArray(dealData.countries_of_operation) 
         ? dealData.countries_of_operation.join(", ") 
@@ -121,6 +121,13 @@ serve(async (req) => {
     } else if (additionalContext?.founder) {
       founderName = additionalContext.founder;
     }
+    
+    // Handle primary industry
+    const primaryIndustry = dealData.primary_industry || 
+      (Array.isArray(additionalContext?.primaryIndustries) 
+        ? additionalContext.primaryIndustries[0] 
+        : additionalContext?.industry) || 
+      "Not specified";
 
     // Generate unique snapshot ID
     const snapshotId = `vc_research_${dealId}_${Date.now()}`;
@@ -133,12 +140,12 @@ VENTURE CAPITAL INVESTMENT ANALYSIS - JSON OUTPUT REQUIRED
 Company: ${companyName}
 Location: ${location}
 Founder(s): ${founderName}
+Primary Industry: ${primaryIndustry}
 
 INSTRUCTIONS:
 - Search using ALL available data sources
 - Prioritize PRIMARY SOURCES: SEC filings, regulatory data, official company releases, financial statements
 - Use SECONDARY SOURCES: reputable analysts, established financial media, verified industry reports
-- Cross-reference multiple sources for accuracy
 - Provide EVIDENCE and SOURCES for every data point
 
 OUTPUT FORMAT: Return ONLY valid JSON with this exact structure:
