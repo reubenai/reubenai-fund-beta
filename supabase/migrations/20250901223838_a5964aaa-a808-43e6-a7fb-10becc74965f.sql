@@ -1,0 +1,21 @@
+-- Change all jsonb columns to text in deal_datapoints_vc to match deal_enrichment_perplexity_market_export_vc
+ALTER TABLE public.deal_datapoints_vc 
+  ALTER COLUMN investment_thesis_alignment TYPE text,
+  ALTER COLUMN market_size TYPE text,
+  ALTER COLUMN customer_metrics TYPE text,
+  ALTER COLUMN product_innovation TYPE text,
+  ALTER COLUMN market_timing TYPE text,
+  ALTER COLUMN revenue_growth TYPE text,
+  ALTER COLUMN product_market_fit TYPE text,
+  ALTER COLUMN financial_performance TYPE text,
+  ALTER COLUMN technology_advantage TYPE text,
+  ALTER COLUMN value_creation_potential TYPE text,
+  ALTER COLUMN founder_experience TYPE text,
+  ALTER COLUMN team_composition TYPE text,
+  ALTER COLUMN competitive_landscape TYPE text,
+  ALTER COLUMN financial_planning TYPE text,
+  ALTER COLUMN market_validation TYPE text,
+  ALTER COLUMN vision_communication TYPE text,
+  ALTER COLUMN portfolio_synergies TYPE text,
+  ALTER COLUMN capital_efficiency TYPE text,
+  ALTER COLUMN confidence_level TYPE text;

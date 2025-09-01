@@ -2488,100 +2488,100 @@ export type Database = {
       }
       deal_datapoints_vc: {
         Row: {
-          capital_efficiency: Json | null
-          competitive_landscape: Json | null
-          confidence_level: number | null
+          capital_efficiency: string | null
+          competitive_landscape: string | null
+          confidence_level: string | null
           created_at: string
-          customer_metrics: Json | null
+          customer_metrics: string | null
           data_completeness_score: number | null
           deal_id: string
           error_message: string | null
-          financial_performance: Json | null
-          financial_planning: Json | null
-          founder_experience: Json | null
+          financial_performance: string | null
+          financial_planning: string | null
+          founder_experience: string | null
           fund_id: string
           id: string
-          investment_thesis_alignment: Json | null
-          market_size: Json | null
-          market_timing: Json | null
-          market_validation: Json | null
+          investment_thesis_alignment: string | null
+          market_size: string | null
+          market_timing: string | null
+          market_validation: string | null
           organization_id: string
-          portfolio_synergies: Json | null
+          portfolio_synergies: string | null
           processed_at: string | null
           processing_status: Database["public"]["Enums"]["processing_status"]
-          product_innovation: Json | null
-          product_market_fit: Json | null
-          revenue_growth: Json | null
+          product_innovation: string | null
+          product_market_fit: string | null
+          revenue_growth: string | null
           source_engines: string[] | null
-          team_composition: Json | null
-          technology_advantage: Json | null
+          team_composition: string | null
+          technology_advantage: string | null
           updated_at: string
-          value_creation_potential: Json | null
-          vision_communication: Json | null
+          value_creation_potential: string | null
+          vision_communication: string | null
         }
         Insert: {
-          capital_efficiency?: Json | null
-          competitive_landscape?: Json | null
-          confidence_level?: number | null
+          capital_efficiency?: string | null
+          competitive_landscape?: string | null
+          confidence_level?: string | null
           created_at?: string
-          customer_metrics?: Json | null
+          customer_metrics?: string | null
           data_completeness_score?: number | null
           deal_id: string
           error_message?: string | null
-          financial_performance?: Json | null
-          financial_planning?: Json | null
-          founder_experience?: Json | null
+          financial_performance?: string | null
+          financial_planning?: string | null
+          founder_experience?: string | null
           fund_id: string
           id?: string
-          investment_thesis_alignment?: Json | null
-          market_size?: Json | null
-          market_timing?: Json | null
-          market_validation?: Json | null
+          investment_thesis_alignment?: string | null
+          market_size?: string | null
+          market_timing?: string | null
+          market_validation?: string | null
           organization_id: string
-          portfolio_synergies?: Json | null
+          portfolio_synergies?: string | null
           processed_at?: string | null
           processing_status?: Database["public"]["Enums"]["processing_status"]
-          product_innovation?: Json | null
-          product_market_fit?: Json | null
-          revenue_growth?: Json | null
+          product_innovation?: string | null
+          product_market_fit?: string | null
+          revenue_growth?: string | null
           source_engines?: string[] | null
-          team_composition?: Json | null
-          technology_advantage?: Json | null
+          team_composition?: string | null
+          technology_advantage?: string | null
           updated_at?: string
-          value_creation_potential?: Json | null
-          vision_communication?: Json | null
+          value_creation_potential?: string | null
+          vision_communication?: string | null
         }
         Update: {
-          capital_efficiency?: Json | null
-          competitive_landscape?: Json | null
-          confidence_level?: number | null
+          capital_efficiency?: string | null
+          competitive_landscape?: string | null
+          confidence_level?: string | null
           created_at?: string
-          customer_metrics?: Json | null
+          customer_metrics?: string | null
           data_completeness_score?: number | null
           deal_id?: string
           error_message?: string | null
-          financial_performance?: Json | null
-          financial_planning?: Json | null
-          founder_experience?: Json | null
+          financial_performance?: string | null
+          financial_planning?: string | null
+          founder_experience?: string | null
           fund_id?: string
           id?: string
-          investment_thesis_alignment?: Json | null
-          market_size?: Json | null
-          market_timing?: Json | null
-          market_validation?: Json | null
+          investment_thesis_alignment?: string | null
+          market_size?: string | null
+          market_timing?: string | null
+          market_validation?: string | null
           organization_id?: string
-          portfolio_synergies?: Json | null
+          portfolio_synergies?: string | null
           processed_at?: string | null
           processing_status?: Database["public"]["Enums"]["processing_status"]
-          product_innovation?: Json | null
-          product_market_fit?: Json | null
-          revenue_growth?: Json | null
+          product_innovation?: string | null
+          product_market_fit?: string | null
+          revenue_growth?: string | null
           source_engines?: string[] | null
-          team_composition?: Json | null
-          technology_advantage?: Json | null
+          team_composition?: string | null
+          technology_advantage?: string | null
           updated_at?: string
-          value_creation_potential?: Json | null
-          vision_communication?: Json | null
+          value_creation_potential?: string | null
+          vision_communication?: string | null
         }
         Relationships: [
           {
