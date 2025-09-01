@@ -754,21 +754,14 @@ async function updateDealAnalysisDatapointsVC(supabase: any, dealId: string, com
     fund_id: dealData.fund_id,
     organization_id: dealData.funds.organization_id,
     
-    // Direct field mappings from company enrichment
-    tam: parseMonetaryValue(companyData.market_size?.data?.tam),
-    sam: parseMonetaryValue(companyData.market_size?.data?.sam),
-    som: parseMonetaryValue(companyData.market_size?.data?.som),
-    cagr: parsePercentage(companyData.market_growth_rate?.data?.cagr),
+    // Direct field mappings from company enrichment (REMOVED PROBLEMATIC NUMERIC FIELDS)
+    // Temporarily removed: tam, sam, som, cagr, addressable_customers, cac_trend, ltv_cac_ratio, retention_rate
     growth_drivers: companyData.market_growth_rate?.data?.growth_drivers || [],
     market_share_distribution: companyData.competitive_position?.data?.market_share_distribution || {},
     key_market_players: companyData.competitive_position?.data?.key_market_players || [],
     whitespace_opportunities: companyData.competitive_position?.data?.whitespace_opportunities || [],
     
-    // Customer & Business Metrics with parsing
-    addressable_customers: parseMonetaryValue(companyData.customer_acquisition?.data?.addressable_customers),
-    cac_trend: parseNumericValue(companyData.customer_acquisition?.data?.cac_trend),
-    ltv_cac_ratio: parseNumericValue(companyData.customer_acquisition?.data?.ltv_cac_ratio),
-    retention_rate: parsePercentage(companyData.customer_acquisition?.data?.retention_rate),
+    // Customer & Business Metrics (KEPT WORKING FIELDS)
     channel_effectiveness: companyData.customer_acquisition?.data?.channel_effectiveness || {},
     
     // Strategic Network
@@ -787,13 +780,11 @@ async function updateDealAnalysisDatapointsVC(supabase: any, dealId: string, com
     updated_at: new Date().toISOString()
   };
 
-  // Calculate data completeness score
+  // Calculate data completeness score (UPDATED TO EXCLUDE REMOVED FIELDS)
   let completenessScore = 0;
   const fields = [
-    'tam', 'sam', 'som', 'cagr', 'growth_drivers', 'market_share_distribution',
-    'key_market_players', 'whitespace_opportunities', 'addressable_customers', 
-    'cac_trend', 'ltv_cac_ratio', 'retention_rate', 'channel_effectiveness',
-    'strategic_advisors', 'investor_network', 'partnership_ecosystem'
+    'growth_drivers', 'market_share_distribution', 'key_market_players', 'whitespace_opportunities',
+    'channel_effectiveness', 'strategic_advisors', 'investor_network', 'partnership_ecosystem'
   ];
 
   fields.forEach(field => {

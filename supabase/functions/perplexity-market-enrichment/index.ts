@@ -579,7 +579,7 @@ async function updateDealAnalysisDatapointsVCWithMarketData(supabase: any, dealI
     updated_at: new Date().toISOString()
   };
 
-  // Calculate data completeness score for market data
+  // Calculate data completeness score for market data (CONFIRMED NO PROBLEMATIC NUMERIC FIELDS)
   let marketCompletenessScore = 0;
   const marketFields = [
     'market_conditions', 'regulatory_analysis', 'capital_requirements_analysis',

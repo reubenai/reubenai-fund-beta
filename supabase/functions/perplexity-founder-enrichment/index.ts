@@ -867,7 +867,7 @@ async function updateDealAnalysisDatapointsVCWithFounderData(supabase: any, deal
     updated_at: new Date().toISOString()
   };
 
-  // Calculate data completeness score for founder data
+  // Calculate data completeness score for founder data (CONFIRMED NO PROBLEMATIC NUMERIC FIELDS)
   let founderCompletenessScore = 0;
   const founderFields = [
     'leadership_experience', 'technology_stack', 'technology_moats', 
