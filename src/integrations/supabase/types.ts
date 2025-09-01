@@ -2583,7 +2583,15 @@ export type Database = {
           value_creation_potential?: Json | null
           vision_communication?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "deal_datapoints_vc_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deal_decisions: {
         Row: {
