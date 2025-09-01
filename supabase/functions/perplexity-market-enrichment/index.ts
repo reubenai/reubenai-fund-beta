@@ -100,138 +100,179 @@ serve(async (req) => {
 
     console.log(`✅ Deal ${dealId} confirmed as venture capital - proceeding with market research`);
 
-    // Build comprehensive context from deal data with fallbacks to additionalContext
-    const companyWebsite = dealData.website || additionalContext?.website || "Not Provided";
-    const companyLinkedIn = dealData.linkedin_url || additionalContext?.linkedin || "Not Provided";
-    const companyCrunchbase = dealData.crunchbase_url || additionalContext?.crunchbase || "Not Provided";
-    
-    // Handle industries - prioritize deal data, fallback to additionalContext
-    let industries = "Not Provided";
-    if (dealData.primary_industry) {
-      industries = dealData.primary_industry;
-      if (dealData.specialized_sectors && Array.isArray(dealData.specialized_sectors) && dealData.specialized_sectors.length > 0) {
-        industries += `, ${dealData.specialized_sectors.join(", ")}`;
-      }
-    } else if (Array.isArray(additionalContext?.primaryIndustries)) {
-      industries = additionalContext.primaryIndustries.join(", ");
-    } else if (additionalContext?.industry) {
-      industries = additionalContext.industry;
-    }
-    
-    // Handle location/country
-    const country = dealData.location || dealData.headquarters || 
+    // Simplified input data - Company Name, Location, and Founder Name only
+    const location = dealData.location || dealData.headquarters || 
       (dealData.countries_of_operation && Array.isArray(dealData.countries_of_operation) 
         ? dealData.countries_of_operation.join(", ") 
         : "") || 
-      additionalContext?.location || "Not Provided";
+      additionalContext?.location || "Not specified";
     
     // Handle founders - combine founder and co_founders from deal data
-    let founders = "Not Provided";
+    let founderName = "Not specified";
     const foundersArray = [];
     if (dealData.founder) foundersArray.push(dealData.founder);
     if (dealData.co_founders && Array.isArray(dealData.co_founders)) {
       foundersArray.push(...dealData.co_founders);
     }
     if (foundersArray.length > 0) {
-      founders = foundersArray.join(", ");
+      founderName = foundersArray.join(", ");
     } else if (Array.isArray(additionalContext?.founders)) {
-      founders = additionalContext.founders.join(", ");
+      founderName = additionalContext.founders.join(", ");
     } else if (additionalContext?.founder) {
-      founders = additionalContext.founder;
+      founderName = additionalContext.founder;
     }
-    
-    // Additional context from deal data
-    const businessModel = dealData.business_model || "Not Specified";
-    const fundingStage = dealData.funding_stage || dealData.company_stage || "Not Specified";
-    const competitors = dealData.competitors && Array.isArray(dealData.competitors) 
-      ? dealData.competitors.join(", ") : "Not Specified";
-    const keyCustomers = dealData.key_customers && Array.isArray(dealData.key_customers)
-      ? dealData.key_customers.join(", ") : "Not Specified";
-    const technologyStack = dealData.technology_stack && Array.isArray(dealData.technology_stack)
-      ? dealData.technology_stack.join(", ") : "Not Specified";
-    const targetMarket = dealData.target_market || "Not Specified";
-    
-    // Format financial data
-    const formatCurrency = (value: any) => {
-      if (!value) return "Not Disclosed";
-      if (typeof value === 'number') {
-        return value >= 1000000 ? `$${(value / 1000000).toFixed(1)}M` : `$${value.toLocaleString()}`;
-      }
-      return value.toString();
-    };
-    const dealSize = formatCurrency(dealData.deal_size);
-    const valuation = formatCurrency(dealData.valuation);
 
     // Generate unique snapshot ID
     const snapshotId = `vc_research_${dealId}_${Date.now()}`;
     console.log(`📝 Generated snapshot ID: ${snapshotId}`);
 
-    // Comprehensive VC investment analysis prompt using expanded deal attributes
+    // Comprehensive VC investment analysis prompt - JSON format with evidence
     const userContent = `
-COMPREHENSIVE VENTURE CAPITAL INVESTMENT ANALYSIS
+VENTURE CAPITAL INVESTMENT ANALYSIS - JSON OUTPUT REQUIRED
 
-Research: company=${companyName}, website=${companyWebsite}, linkedin=${companyLinkedIn}, crunchbase=${companyCrunchbase}, industries=${industries}, country=${country}, founders=${founders}.
+Company: ${companyName}
+Location: ${location}
+Founder(s): ${founderName}
 
-Business Context:
-- Business model: ${businessModel}
-- Funding stage: ${fundingStage}
-- Target market: ${targetMarket}
-- Known competitors: ${competitors}
-- Key customers: ${keyCustomers}
-- Technology stack: ${technologyStack}
-- Deal size: ${dealSize}
-- Valuation: ${valuation}
-- Founded: ${dealData.founding_year || "Not Specified"}
-- Employee count: ${dealData.employee_count || "Not Specified"}
-- Revenue model: ${dealData.revenue_model || "Not Specified"}
+INSTRUCTIONS:
+- Search using ALL available data sources
+- Prioritize PRIMARY SOURCES: SEC filings, regulatory data, official company releases, financial statements
+- Use SECONDARY SOURCES: reputable analysts, established financial media, verified industry reports
+- Cross-reference multiple sources for accuracy
+- Provide EVIDENCE and SOURCES for every data point
 
-REQUIRED ANALYSIS FRAMEWORK - Please provide specific data points for each category:
+OUTPUT FORMAT: Return ONLY valid JSON with this exact structure:
 
-TEAM & LEADERSHIP
-- FounderExp: prior startups/roles; outcomes (IPO/acq/shutdown); years of experience
-- Domain: evidence of expertise (education/roles/publications/patents)
-- Execution: shipped milestones; deployments/case studies; measurable results
-- Vision & Communication: leadership style, vision articulation, team building
+{
+  "founder_experience": {
+    "value": "detailed assessment of founder background, prior roles, outcomes",
+    "evidence": ["specific examples of experience, previous companies, roles"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "team_composition": {
+    "value": "team size, key roles, backgrounds, diversity",
+    "evidence": ["team member backgrounds, LinkedIn profiles, bios"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary", 
+    "confidence": "high|medium|low"
+  },
+  "vision_communication": {
+    "value": "leadership style, vision clarity, communication effectiveness",
+    "evidence": ["interviews, pitch decks, public statements"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "market_size": {
+    "value": "TAM/SAM/SOM figures with calculation methodology",
+    "evidence": ["market research reports, industry analysis, calculation methods"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "market_timing": {
+    "value": "why-now factors, market readiness, catalysts",
+    "evidence": ["market trends, adoption rates, regulatory changes"],
+    "sources": ["source 1", "source 2"], 
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "competitive_landscape": {
+    "value": "key competitors, market positioning, differentiation",
+    "evidence": ["competitor analysis, market share data, feature comparisons"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "product_innovation": {
+    "value": "product uniqueness, innovation level, IP position",
+    "evidence": ["patent filings, product demos, technical publications"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "technology_advantage": {
+    "value": "technical moats, scalability, architecture strengths",
+    "evidence": ["technical documentation, architecture reviews, performance metrics"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "product_market_fit": {
+    "value": "PMF evidence, retention rates, NPS scores, customer satisfaction",
+    "evidence": ["retention metrics, NPS data, customer testimonials"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "revenue_growth": {
+    "value": "ARR/MRR, growth rates, revenue trends",
+    "evidence": ["financial statements, SEC filings, revenue disclosures"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "customer_metrics": {
+    "value": "CAC, LTV, LTV/CAC ratio, churn rates, customer count",
+    "evidence": ["unit economics data, customer acquisition costs, lifetime value calculations"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "market_validation": {
+    "value": "customer adoption, market penetration, validation signals",
+    "evidence": ["adoption metrics, market share data, customer case studies"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "financial_performance": {
+    "value": "profitability, margins, financial health indicators",
+    "evidence": ["financial statements, margin analysis, profitability metrics"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "capital_efficiency": {
+    "value": "capital deployed vs results, burn rate, runway",
+    "evidence": ["funding amounts, burn rate data, milestone achievements"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "financial_planning": {
+    "value": "financial projections, planning quality, milestone tracking",
+    "evidence": ["financial models, projections accuracy, milestone delivery"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "portfolio_synergies": {
+    "value": "potential synergies with existing portfolio companies",
+    "evidence": ["partnership opportunities, technology synergies, market overlap"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "investment_thesis_alignment": {
+    "value": "alignment with typical VC investment thesis",
+    "evidence": ["sector fit, stage appropriateness, scalability potential"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  },
+  "value_creation_potential": {
+    "value": "specific value creation opportunities and upside potential",
+    "evidence": ["growth opportunities, market expansion potential, exit scenarios"],
+    "sources": ["source 1", "source 2"],
+    "source_quality": "primary|secondary|tertiary",
+    "confidence": "high|medium|low"
+  }
+}
 
-MARKET OPPORTUNITY  
-- Size: TAM/SAM/SOM + calculation method + year (verifiable sources)
-- Growth: CAGR + key growth drivers
-- Timing: why-now factors; adoption signals; regulatory/macro catalysts
-- Competitive: key competitors; differentiation; market share estimates
-
-PRODUCT & TECHNOLOGY
-- PMF: NPS/retention/expansion rates/waitlists/case studies
-- TechDiff: moats (IP/algorithms/data/integrations)
-- Scalability: bottlenecks; SLAs/volumes; architecture evidence
-- Innovation: product uniqueness, technology advantage
-
-BUSINESS TRACTION
-- Revenue: ARR/MRR; YoY growth rates
-- Customer: CAC; LTV; LTV/CAC ratio; churn; NDR; active customers
-- Validation: strategic partners; certifications/third-party validation
-- Market Validation: customer adoption metrics, market penetration
-
-FINANCIAL HEALTH
-- UnitEcon: gross/contribution margin; CAC; LTV; LTV/CAC ratios
-- Burn/Runway: monthly burn rate; runway in months
-- Funding: previous rounds; amounts; dates; notable investors
-- Capital Efficiency: capital deployed vs. results achieved
-
-STRATEGIC TIMING
-- Entry: investment triggers; strategic rationale
-- CompetitiveTiming: competitor moves; window of opportunity
-- Portfolio Synergies: potential synergies with existing investments
-- Value Creation Potential: specific value creation opportunities
-
-TRUST & TRANSPARENCY  
-- Governance: board composition; committees; auditor; key policies
-- Stakeholders: investor update cadence; customer/employee sentiment
-- ESG: environmental/social/governance policies; certifications; material risks
-
-OUTPUT REQUIREMENTS: Provide specific, quantifiable data points for:
-Founder Experience, Team Composition, Vision & Communication, Market Size, Market Timing, Competitive Landscape, Product Innovation, Technology Advantage, Product-Market Fit, Revenue Growth, Customer Metrics, Market Validation, Financial Performance, Capital Efficiency, Financial Planning, Portfolio Synergies, Investment Thesis Alignment, Value Creation Potential.
-
-Focus on verifiable metrics, recent developments, and actionable insights for VC investment decision-making.
+CRITICAL: Return ONLY the JSON object above. No additional text, explanations, or formatting.
 `.trim();
 
     console.log('🔍 Calling Perplexity API...');
