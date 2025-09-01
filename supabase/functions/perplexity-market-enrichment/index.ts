@@ -600,10 +600,129 @@ async function processPerplexityMarketResponse(
 
   console.log('✅ Processed market data inserted successfully');
 
+  // Update deal_analysis_datapoints_vc table with market data
+  console.log('🎯 Updating deal_analysis_datapoints_vc with market enrichment data...');
+  try {
+    await updateDealAnalysisDatapointsVCFromMarket(supabase, dealId, processedFields);
+    console.log('✅ Successfully updated deal_analysis_datapoints_vc');
+  } catch (datapointsError) {
+    console.error('❌ Failed to update deal_analysis_datapoints_vc:', datapointsError);
+    // Don't fail the entire process, just log the error
+  }
+
   return {
     dataQualityScore,
     dataPointsPopulated,
     avgConfidenceScore,
     structuredJSON
   };
+}
+
+// Helper function to update deal_analysis_datapoints_vc table with market data
+async function updateDealAnalysisDatapointsVCFromMarket(supabase: any, dealId: string, processedFields: any) {
+  console.log('📋 Mapping market enrichment data to deal_analysis_datapoints_vc...');
+
+  // Get deal and fund information
+  const { data: dealData, error: dealError } = await supabase
+    .from('deals')
+    .select(`
+      id,
+      fund_id,
+      funds!deals_fund_id_fkey(
+        id,
+        organization_id
+      )
+    `)
+    .eq('id', dealId)
+    .single();
+
+  if (dealError) {
+    throw new Error(`Failed to fetch deal data: ${dealError.message}`);
+  }
+
+  // Prepare the mapped data for deal_analysis_datapoints_vc (market data)
+  const mappedData = {
+    deal_id: dealId,
+    fund_id: dealData.fund_id,
+    organization_id: dealData.funds.organization_id,
+    
+    // Map the 7 new data points from market enrichment
+    vision_communication: processedFields.vision_communication,
+    product_market_fit: processedFields.product_market_fit,
+    market_validation: processedFields.market_validation,
+    financial_planning: processedFields.financial_planning,
+    portfolio_synergies: processedFields.portfolio_synergies,
+    investment_thesis_alignment: processedFields.investment_thesis_alignment,
+    value_creation_potential: processedFields.value_creation_potential,
+    
+    // Map other relevant market data points
+    market_timing: processedFields.market_timing,
+    
+    // Source tracking and metadata
+    source_engines: ['perplexity_market'],
+    updated_at: new Date().toISOString()
+  };
+
+  // Calculate data completeness score for the new fields
+  let completenessScore = 0;
+  const fields = [
+    'vision_communication',
+    'product_market_fit', 
+    'market_validation',
+    'financial_planning',
+    'portfolio_synergies',
+    'investment_thesis_alignment',
+    'value_creation_potential',
+    'market_timing'
+  ];
+
+  fields.forEach((field) => {
+    const value = mappedData[field];
+    if (value && value !== 'No data available' && value.trim().length > 0) {
+      completenessScore += 6;
+    }
+  });
+
+  mappedData['data_completeness_score'] = completenessScore;
+
+  // Perform UPSERT operation
+  console.log('🔄 Performing UPSERT on deal_analysis_datapoints_vc...');
+  
+  // Check if record exists
+  const { data: existingRecord } = await supabase
+    .from('deal_analysis_datapoints_vc')
+    .select('id, source_engines')
+    .eq('deal_id', dealId)
+    .maybeSingle();
+
+  if (existingRecord) {
+    // Update existing record, merge source_engines
+    const existingEngines = existingRecord.source_engines || [];
+    const updatedEngines = [...new Set([...existingEngines, 'perplexity_market'])];
+
+    const { error: updateError } = await supabase
+      .from('deal_analysis_datapoints_vc')
+      .update({
+        ...mappedData,
+        source_engines: updatedEngines
+      })
+      .eq('deal_id', dealId);
+
+    if (updateError) {
+      throw new Error(`Failed to update deal_analysis_datapoints_vc: ${updateError.message}`);
+    }
+    console.log('✅ Updated existing record in deal_analysis_datapoints_vc');
+  } else {
+    // Insert new record
+    const { error: insertError } = await supabase
+      .from('deal_analysis_datapoints_vc')
+      .insert(mappedData);
+
+    if (insertError) {
+      throw new Error(`Failed to insert into deal_analysis_datapoints_vc: ${insertError.message}`);
+    }
+    console.log('✅ Inserted new record into deal_analysis_datapoints_vc');
+  }
+
+  console.log(`📊 Mapped ${Object.keys(mappedData).length} fields with ${completenessScore}% data completeness`);
 }
