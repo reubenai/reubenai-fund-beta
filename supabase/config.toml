@@ -248,4 +248,7 @@ verify_jwt = false
 [functions.perplexity-vc-comprehensive-research-manual]
 verify_jwt = false
 
+[functions.perplexity-datamining-vc]
+verify_jwt = false
+
 
