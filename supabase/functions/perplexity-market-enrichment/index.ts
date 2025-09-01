@@ -376,12 +376,24 @@ CRITICAL: Return ONLY the JSON object above. No additional text, explanations, o
 
     console.log('✅ Market enrichment data processed and stored successfully');
 
+    // Insert into deal_datapoints_vc with transformed data
+    console.log('🎯 Inserting into deal_datapoints_vc...');
+    const datapointsResult = await insertIntoDealDatapointsVC(
+      supabase,
+      dealId,
+      dealData.fund_id,
+      processedData.structuredJSON
+    );
+
+    console.log('✅ Deal datapoints VC insertion completed');
+
     return new Response(JSON.stringify({
       success: true,
       snapshot_id: snapshotId,
       message: 'Market research completed and structured data populated',
       data_quality_score: processedData.dataQualityScore,
-      data_points_populated: processedData.dataPointsPopulated
+      data_points_populated: processedData.dataPointsPopulated,
+      deal_datapoints_vc_updated: datapointsResult.success
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -625,4 +637,133 @@ async function processPerplexityMarketResponse(
     avgConfidenceScore,
     structuredJSON
   };
+}
+
+// Helper function to insert/update deal_datapoints_vc with transformed data
+async function insertIntoDealDatapointsVC(
+  supabase: any,
+  dealId: string,
+  fundId: string,
+  structuredJSON: any
+) {
+  try {
+    console.log('📋 Transforming market data for deal_datapoints_vc insertion...');
+    
+    // Get organization_id from fund
+    const { data: fundData, error: fundError } = await supabase
+      .from('funds')
+      .select('organization_id')
+      .eq('id', fundId)
+      .single();
+
+    if (fundError || !fundData) {
+      console.error('❌ Failed to fetch fund data:', fundError);
+      return { success: false, error: 'Fund not found' };
+    }
+
+    const organizationId = fundData.organization_id;
+
+    // Define the 18 data points to transform
+    const dataPointFields = [
+      'founder_experience',
+      'team_composition', 
+      'vision_communication',
+      'market_size',
+      'market_timing',
+      'competitive_landscape',
+      'product_innovation',
+      'technology_advantage',
+      'product_market_fit',
+      'revenue_growth',
+      'customer_metrics',
+      'market_validation',
+      'financial_performance',
+      'capital_efficiency',
+      'financial_planning',
+      'portfolio_synergies',
+      'investment_thesis_alignment',
+      'value_creation_potential'
+    ];
+
+    // Transform each data point into jsonb format for deal_datapoints_vc
+    const transformedFields: any = {};
+    let completenessCount = 0;
+    let totalConfidence = 0;
+
+    dataPointFields.forEach(field => {
+      const fieldData = structuredJSON[field];
+      if (fieldData && fieldData.value && fieldData.value !== 'No data available') {
+        transformedFields[field] = {
+          value: fieldData.value,
+          confidence: fieldData.confidence || 'low',
+          source: 'perplexity_market',
+          evidence: fieldData.evidence || [],
+          sources: fieldData.sources || [],
+          source_quality: fieldData.source_quality || 'tertiary',
+          last_updated: new Date().toISOString()
+        };
+        completenessCount++;
+        
+        // Calculate confidence score (high=3, medium=2, low=1)
+        const confidenceValue = fieldData.confidence?.toLowerCase() === 'high' ? 3 : 
+                               fieldData.confidence?.toLowerCase() === 'medium' ? 2 : 1;
+        totalConfidence += confidenceValue;
+      } else {
+        transformedFields[field] = {
+          value: null,
+          confidence: 'low',
+          source: 'perplexity_market',
+          evidence: [],
+          sources: [],
+          source_quality: 'tertiary',
+          last_updated: new Date().toISOString()
+        };
+      }
+    });
+
+    // Calculate scores
+    const dataCompletenessScore = Math.round((completenessCount / dataPointFields.length) * 100);
+    const avgConfidenceScore = completenessCount > 0 ? totalConfidence / completenessCount : 1;
+
+    // Prepare upsert data
+    const upsertData = {
+      deal_id: dealId,
+      fund_id: fundId,
+      organization_id: organizationId,
+      ...transformedFields,
+      deal_enrichment_perplexity_market_export_vc_json: structuredJSON,
+      source_engines: ['perplexity_market'],
+      data_completeness_score: dataCompletenessScore,
+      confidence_level: avgConfidenceScore > 2.5 ? 'high' : avgConfidenceScore > 1.5 ? 'medium' : 'low',
+      last_updated: new Date().toISOString()
+    };
+
+    console.log(`📊 Prepared data: ${completenessCount}/${dataPointFields.length} fields populated, ${dataCompletenessScore}% completeness`);
+
+    // Upsert into deal_datapoints_vc
+    const { data, error } = await supabase
+      .from('deal_datapoints_vc')
+      .upsert(upsertData, { 
+        onConflict: 'deal_id',
+        ignoreDuplicates: false 
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Failed to insert into deal_datapoints_vc:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('✅ Successfully inserted/updated deal_datapoints_vc');
+    return { 
+      success: true, 
+      completeness: dataCompletenessScore,
+      fields_populated: completenessCount 
+    };
+
+  } catch (error) {
+    console.error('❌ Error in insertIntoDealDatapointsVC:', error);
+    return { success: false, error: error.message };
+  }
 }
