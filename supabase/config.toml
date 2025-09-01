@@ -251,4 +251,7 @@ verify_jwt = false
 [functions.perplexity-datamining-vc]
 verify_jwt = false
 
+[functions.updated-scoring-engine-vc]
+verify_jwt = false
+
 
