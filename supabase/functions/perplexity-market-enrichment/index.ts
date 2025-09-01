@@ -166,11 +166,13 @@ serve(async (req) => {
     const snapshotId = `vc_research_${dealId}_${Date.now()}`;
     console.log(`📝 Generated snapshot ID: ${snapshotId}`);
 
-    // Comprehensive research prompt using expanded deal attributes
+    // Comprehensive VC investment analysis prompt using expanded deal attributes
     const userContent = `
-Research company: ${companyName}, website: ${companyWebsite}, LinkedIn: ${companyLinkedIn}, crunchbase: ${companyCrunchbase}, industries: ${industries}, country: ${country}, founders: ${founders}.
+COMPREHENSIVE VENTURE CAPITAL INVESTMENT ANALYSIS
 
-Additional company context:
+Research: company=${companyName}, website=${companyWebsite}, linkedin=${companyLinkedIn}, crunchbase=${companyCrunchbase}, industries=${industries}, country=${country}, founders=${founders}.
+
+Business Context:
 - Business model: ${businessModel}
 - Funding stage: ${fundingStage}
 - Target market: ${targetMarket}
@@ -183,17 +185,53 @@ Additional company context:
 - Employee count: ${dealData.employee_count || "Not Specified"}
 - Revenue model: ${dealData.revenue_model || "Not Specified"}
 
-Provide comprehensive market research about this company covering:
-1. Market size and growth potential (TAM, SAM, SOM, CAGR)
-2. Competitive landscape and positioning
-3. Business model viability and scalability
-4. Funding environment and investor sentiment
-5. Key performance metrics and benchmarks
-6. Market timing and regulatory considerations
-7. Risk factors and challenges
-8. Growth opportunities and market trends
+REQUIRED ANALYSIS FRAMEWORK - Please provide specific data points for each category:
 
-Include specific sources and citations for all data points. Focus on quantitative data, recent developments, and actionable insights.
+TEAM & LEADERSHIP
+- FounderExp: prior startups/roles; outcomes (IPO/acq/shutdown); years of experience
+- Domain: evidence of expertise (education/roles/publications/patents)
+- Execution: shipped milestones; deployments/case studies; measurable results
+- Vision & Communication: leadership style, vision articulation, team building
+
+MARKET OPPORTUNITY  
+- Size: TAM/SAM/SOM + calculation method + year (verifiable sources)
+- Growth: CAGR + key growth drivers
+- Timing: why-now factors; adoption signals; regulatory/macro catalysts
+- Competitive: key competitors; differentiation; market share estimates
+
+PRODUCT & TECHNOLOGY
+- PMF: NPS/retention/expansion rates/waitlists/case studies
+- TechDiff: moats (IP/algorithms/data/integrations)
+- Scalability: bottlenecks; SLAs/volumes; architecture evidence
+- Innovation: product uniqueness, technology advantage
+
+BUSINESS TRACTION
+- Revenue: ARR/MRR; YoY growth rates
+- Customer: CAC; LTV; LTV/CAC ratio; churn; NDR; active customers
+- Validation: strategic partners; certifications/third-party validation
+- Market Validation: customer adoption metrics, market penetration
+
+FINANCIAL HEALTH
+- UnitEcon: gross/contribution margin; CAC; LTV; LTV/CAC ratios
+- Burn/Runway: monthly burn rate; runway in months
+- Funding: previous rounds; amounts; dates; notable investors
+- Capital Efficiency: capital deployed vs. results achieved
+
+STRATEGIC TIMING
+- Entry: investment triggers; strategic rationale
+- CompetitiveTiming: competitor moves; window of opportunity
+- Portfolio Synergies: potential synergies with existing investments
+- Value Creation Potential: specific value creation opportunities
+
+TRUST & TRANSPARENCY  
+- Governance: board composition; committees; auditor; key policies
+- Stakeholders: investor update cadence; customer/employee sentiment
+- ESG: environmental/social/governance policies; certifications; material risks
+
+OUTPUT REQUIREMENTS: Provide specific, quantifiable data points for:
+Founder Experience, Team Composition, Vision & Communication, Market Size, Market Timing, Competitive Landscape, Product Innovation, Technology Advantage, Product-Market Fit, Revenue Growth, Customer Metrics, Market Validation, Financial Performance, Capital Efficiency, Financial Planning, Portfolio Synergies, Investment Thesis Alignment, Value Creation Potential.
+
+Focus on verifiable metrics, recent developments, and actionable insights for VC investment decision-making.
 `.trim();
 
     console.log('🔍 Calling Perplexity API...');
