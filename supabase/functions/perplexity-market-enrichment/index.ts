@@ -40,25 +40,35 @@ serve(async (req) => {
 
     console.log(`🔍 Processing market research for: ${companyName}`);
 
-    // Basic context extraction
-    const companyWebsite = additionalContext?.website ?? "Not Provided";
-    const companyLinkedIn = additionalContext?.linkedin ?? "Not Provided";
-    const industries = 
-      Array.isArray(additionalContext?.primaryIndustries)
-        ? additionalContext.primaryIndustries.join(", ")
-        : (additionalContext?.industry ?? "Not Provided");
-    const country = additionalContext?.location ?? "Not Provided";
-    const founders = 
-      Array.isArray(additionalContext?.founders)
-        ? additionalContext.founders.join(", ")
-        : (additionalContext?.founder ?? "Not Provided");
-
-    // Verify this is a venture capital deal
+    // Fetch comprehensive deal data for enhanced market research
     const { data: dealData, error: dealError } = await supabase
       .from('deals')
       .select(`
         id,
         fund_id,
+        company_name,
+        website,
+        linkedin_url,
+        crunchbase_url,
+        primary_industry,
+        specialized_sectors,
+        location,
+        headquarters,
+        countries_of_operation,
+        founder,
+        co_founders,
+        founding_year,
+        business_model,
+        revenue_model,
+        target_market,
+        technology_stack,
+        competitors,
+        key_customers,
+        employee_count,
+        company_stage,
+        funding_stage,
+        deal_size,
+        valuation,
         funds!deals_fund_id_fkey(fund_type)
       `)
       .eq('id', dealId)
@@ -90,15 +100,100 @@ serve(async (req) => {
 
     console.log(`✅ Deal ${dealId} confirmed as venture capital - proceeding with market research`);
 
+    // Build comprehensive context from deal data with fallbacks to additionalContext
+    const companyWebsite = dealData.website || additionalContext?.website || "Not Provided";
+    const companyLinkedIn = dealData.linkedin_url || additionalContext?.linkedin || "Not Provided";
+    const companyCrunchbase = dealData.crunchbase_url || additionalContext?.crunchbase || "Not Provided";
+    
+    // Handle industries - prioritize deal data, fallback to additionalContext
+    let industries = "Not Provided";
+    if (dealData.primary_industry) {
+      industries = dealData.primary_industry;
+      if (dealData.specialized_sectors && Array.isArray(dealData.specialized_sectors) && dealData.specialized_sectors.length > 0) {
+        industries += `, ${dealData.specialized_sectors.join(", ")}`;
+      }
+    } else if (Array.isArray(additionalContext?.primaryIndustries)) {
+      industries = additionalContext.primaryIndustries.join(", ");
+    } else if (additionalContext?.industry) {
+      industries = additionalContext.industry;
+    }
+    
+    // Handle location/country
+    const country = dealData.location || dealData.headquarters || 
+      (dealData.countries_of_operation && Array.isArray(dealData.countries_of_operation) 
+        ? dealData.countries_of_operation.join(", ") 
+        : "") || 
+      additionalContext?.location || "Not Provided";
+    
+    // Handle founders - combine founder and co_founders from deal data
+    let founders = "Not Provided";
+    const foundersArray = [];
+    if (dealData.founder) foundersArray.push(dealData.founder);
+    if (dealData.co_founders && Array.isArray(dealData.co_founders)) {
+      foundersArray.push(...dealData.co_founders);
+    }
+    if (foundersArray.length > 0) {
+      founders = foundersArray.join(", ");
+    } else if (Array.isArray(additionalContext?.founders)) {
+      founders = additionalContext.founders.join(", ");
+    } else if (additionalContext?.founder) {
+      founders = additionalContext.founder;
+    }
+    
+    // Additional context from deal data
+    const businessModel = dealData.business_model || "Not Specified";
+    const fundingStage = dealData.funding_stage || dealData.company_stage || "Not Specified";
+    const competitors = dealData.competitors && Array.isArray(dealData.competitors) 
+      ? dealData.competitors.join(", ") : "Not Specified";
+    const keyCustomers = dealData.key_customers && Array.isArray(dealData.key_customers)
+      ? dealData.key_customers.join(", ") : "Not Specified";
+    const technologyStack = dealData.technology_stack && Array.isArray(dealData.technology_stack)
+      ? dealData.technology_stack.join(", ") : "Not Specified";
+    const targetMarket = dealData.target_market || "Not Specified";
+    
+    // Format financial data
+    const formatCurrency = (value: any) => {
+      if (!value) return "Not Disclosed";
+      if (typeof value === 'number') {
+        return value >= 1000000 ? `$${(value / 1000000).toFixed(1)}M` : `$${value.toLocaleString()}`;
+      }
+      return value.toString();
+    };
+    const dealSize = formatCurrency(dealData.deal_size);
+    const valuation = formatCurrency(dealData.valuation);
+
     // Generate unique snapshot ID
     const snapshotId = `vc_research_${dealId}_${Date.now()}`;
     console.log(`📝 Generated snapshot ID: ${snapshotId}`);
 
-    // Simple research prompt
+    // Comprehensive research prompt using expanded deal attributes
     const userContent = `
-Research company: ${companyName} (website: ${companyWebsite}, LinkedIn: ${companyLinkedIn}, industry: ${industries}, location: ${country}, founders: ${founders}).
+Research company: ${companyName}, website: ${companyWebsite}, LinkedIn: ${companyLinkedIn}, crunchbase: ${companyCrunchbase}, industries: ${industries}, country: ${country}, founders: ${founders}.
 
-Provide comprehensive market research about this company covering market size, competition, business model, funding, and key metrics. Include sources for all data points.
+Additional company context:
+- Business model: ${businessModel}
+- Funding stage: ${fundingStage}
+- Target market: ${targetMarket}
+- Known competitors: ${competitors}
+- Key customers: ${keyCustomers}
+- Technology stack: ${technologyStack}
+- Deal size: ${dealSize}
+- Valuation: ${valuation}
+- Founded: ${dealData.founding_year || "Not Specified"}
+- Employee count: ${dealData.employee_count || "Not Specified"}
+- Revenue model: ${dealData.revenue_model || "Not Specified"}
+
+Provide comprehensive market research about this company covering:
+1. Market size and growth potential (TAM, SAM, SOM, CAGR)
+2. Competitive landscape and positioning
+3. Business model viability and scalability
+4. Funding environment and investor sentiment
+5. Key performance metrics and benchmarks
+6. Market timing and regulatory considerations
+7. Risk factors and challenges
+8. Growth opportunities and market trends
+
+Include specific sources and citations for all data points. Focus on quantitative data, recent developments, and actionable insights.
 `.trim();
 
     console.log('🔍 Calling Perplexity API...');
