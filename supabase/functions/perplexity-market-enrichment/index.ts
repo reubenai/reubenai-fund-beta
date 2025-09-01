@@ -685,39 +685,40 @@ async function insertIntoDealDatapointsVC(
       'value_creation_potential'
     ];
 
-    // Transform each data point into jsonb format for deal_datapoints_vc
+    // Transform each data point into text summaries for deal_datapoints_vc
     const transformedFields: any = {};
     let completenessCount = 0;
     let totalConfidence = 0;
 
+    console.log('🔍 Processing individual data points...');
     dataPointFields.forEach(field => {
       const fieldData = structuredJSON[field];
       if (fieldData && fieldData.value && fieldData.value !== 'No data available') {
-        transformedFields[field] = {
-          value: fieldData.value,
-          confidence: fieldData.confidence || 'low',
-          source: 'perplexity_market',
-          evidence: fieldData.evidence || [],
-          sources: fieldData.sources || [],
-          source_quality: fieldData.source_quality || 'tertiary',
-          last_updated: new Date().toISOString()
-        };
+        // Create rich text summary combining value, evidence, and sources
+        let textSummary = fieldData.value;
+        
+        if (fieldData.evidence && Array.isArray(fieldData.evidence) && fieldData.evidence.length > 0) {
+          textSummary += ` Evidence: ${fieldData.evidence.join(', ')}.`;
+        }
+        
+        if (fieldData.sources && Array.isArray(fieldData.sources) && fieldData.sources.length > 0) {
+          textSummary += ` Sources: ${fieldData.sources.join(', ')}.`;
+        }
+        
+        const confidence = fieldData.confidence || 'low';
+        textSummary += ` Confidence: ${confidence}`;
+        
+        transformedFields[field] = textSummary;
         completenessCount++;
         
+        console.log(`✅ Processed ${field}: ${confidence} confidence`);
+        
         // Calculate confidence score (high=3, medium=2, low=1)
-        const confidenceValue = fieldData.confidence?.toLowerCase() === 'high' ? 3 : 
-                               fieldData.confidence?.toLowerCase() === 'medium' ? 2 : 1;
+        const confidenceValue = confidence.toLowerCase() === 'high' ? 3 : 
+                               confidence.toLowerCase() === 'medium' ? 2 : 1;
         totalConfidence += confidenceValue;
       } else {
-        transformedFields[field] = {
-          value: null,
-          confidence: 'low',
-          source: 'perplexity_market',
-          evidence: [],
-          sources: [],
-          source_quality: 'tertiary',
-          last_updated: new Date().toISOString()
-        };
+        transformedFields[field] = null; // Set to null for empty fields
       }
     });
 
@@ -725,13 +726,12 @@ async function insertIntoDealDatapointsVC(
     const dataCompletenessScore = Math.round((completenessCount / dataPointFields.length) * 100);
     const avgConfidenceScore = completenessCount > 0 ? totalConfidence / completenessCount : 1;
 
-    // Prepare upsert data
+    // Prepare upsert data (removed non-existent column reference)
     const upsertData = {
       deal_id: dealId,
       fund_id: fundId,
       organization_id: organizationId,
       ...transformedFields,
-      deal_enrichment_perplexity_market_export_vc_json: structuredJSON,
       source_engines: ['perplexity_market'],
       data_completeness_score: dataCompletenessScore,
       confidence_level: avgConfidenceScore > 2.5 ? 'high' : avgConfidenceScore > 1.5 ? 'medium' : 'low',
