@@ -531,6 +531,24 @@ async function processPerplexityCompanyResponse(
   }
 
   console.log('✅ Processed company data inserted successfully');
+  
+  // NEW: Populate the JSON column with structured VC analysis data
+  console.log('📊 Populating structured JSON column...');
+  const jsonData = await buildVCAnalysisJSON(supabase, dealId, companyData);
+  
+  if (jsonData) {
+    const { error: jsonUpdateError } = await supabase
+      .from('deal_enrichment_perplexity_company_export_vc')
+      .update({ deal_enrichment_perplexity_company_export_vc_json: jsonData })
+      .eq('deal_id', dealId);
+      
+    if (jsonUpdateError) {
+      console.error('❌ Failed to update JSON column:', jsonUpdateError);
+    } else {
+      console.log('✅ JSON column updated successfully');
+    }
+  }
+  
   return data;
 }
 
@@ -566,4 +584,75 @@ function calculateCompanyDataQuality(companyData: any): number {
   if (companyData.customer_acquisition?.data?.channel_effectiveness && Object.keys(companyData.customer_acquisition.data.channel_effectiveness).length > 0) score += 1;
 
   return Math.round((score / maxScore) * 100);
+}
+
+// Helper function to build structured VC analysis JSON
+async function buildVCAnalysisJSON(supabase: any, dealId: string, companyData: any) {
+  try {
+    // Fetch existing data from database to get subcategory_sources
+    const { data: existingData } = await supabase
+      .from('deal_enrichment_perplexity_company_export_vc')
+      .select('subcategory_sources')
+      .eq('deal_id', dealId)
+      .single();
+
+    const subcategorySources = existingData?.subcategory_sources || {};
+
+    // Build structured JSON matching the requested format
+    const structuredData = {
+      // Core Market Metrics
+      "TAM": companyData.market_size?.data?.tam || null,
+      "SAM": companyData.market_size?.data?.sam || null,
+      "SOM": companyData.market_size?.data?.som || null,
+      "CAGR": companyData.market_growth_rate?.data?.cagr || null,
+      
+      // Market Analysis
+      "Growth Drivers": companyData.market_growth_rate?.data?.growth_drivers || [],
+      "Market Share Distribution": companyData.competitive_position?.data?.market_share_distribution || {},
+      "Key Market Players": companyData.competitive_position?.data?.key_market_players || [],
+      "Whitespace Opportunities": companyData.competitive_position?.data?.whitespace_opportunities || [],
+      
+      // Customer & Business Metrics
+      "Addressable Customers": companyData.customer_acquisition?.data?.addressable_customers || null,
+      "CAC Trend": companyData.customer_acquisition?.data?.cac_trend || null,
+      "LTV:CAC Ratio": companyData.customer_acquisition?.data?.ltv_cac_ratio || null,
+      "Retention Rate": companyData.customer_acquisition?.data?.retention_rate || null,
+      "Channel Effectiveness": companyData.customer_acquisition?.data?.channel_effectiveness || {},
+      
+      // Strategic Network
+      "Strategic Advisors": companyData.network_advisors?.data?.strategic_advisors || [],
+      "Investor Network": companyData.network_advisors?.data?.investor_network || [],
+      "Partnership Ecosystem": companyData.network_advisors?.data?.partnership_ecosystem || {},
+      
+      // Missing Fields (to be populated by future enhancements)
+      "Intellectual Property Portfolio": null,
+      "Technology Differentiation": null,
+      "Competitive Barriers": null,
+      "Innovation Pipeline": null,
+      "Market Position": null,
+      "Scalability Moats": null,
+      
+      // Subcategory Sources Data
+      "Market Size (from subcategory_sources)": subcategorySources.market_size || [],
+      "Market Growth Rate (from subcategory_sources)": subcategorySources.market_growth_rate || [],
+      "Customer Acquisition (from subcategory_sources)": subcategorySources.customer_acquisition || [],
+      "Network & Advisors (from subcategory_sources)": subcategorySources.network_advisors || [],
+      
+      // Metadata
+      "metadata": {
+        "last_updated": new Date().toISOString(),
+        "data_completeness_percentage": calculateCompanyDataQuality(companyData),
+        "overall_confidence": companyData.metadata?.overall_confidence || "Medium",
+        "source": "perplexity_api",
+        "version": "1.0"
+      }
+    };
+
+    console.log('✅ Successfully built VC analysis JSON structure');
+    return structuredData;
+    
+  } catch (error) {
+    console.error('❌ Error building VC analysis JSON:', error);
+    return null;
+  }
 }
