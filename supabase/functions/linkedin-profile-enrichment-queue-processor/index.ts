@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
           })
           .eq('id', record.id);
 
-        // Call the LinkedIn profile enrichment function
+        // Call the LinkedIn profile enrichment V2 function (now handles complete workflow)
         const { data: enrichmentResult, error: enrichmentError } = await supabase.functions.invoke(
           'brightdata-linkedin-profile-enrichment-v2',
           {
@@ -86,31 +86,7 @@ Deno.serve(async (req) => {
           throw new Error(enrichmentResult?.error || 'Enrichment failed without specific error');
         }
 
-        console.log(`✅ [LinkedIn Profile Queue Processor] V2 function succeeded, now calling post-processor...`);
-        
-        // After successful V2 call, invoke the post-processor to complete the pipeline
-        const { data: postProcessResult, error: postProcessError } = await supabase.functions.invoke(
-          'deal2-linkedin-profile-export-post-processor',
-          {
-            body: {
-              dealId: record.deal_id,
-              linkedinProfileExportId: record.id,
-            },
-            headers: {
-              'Authorization': `Bearer ${supabaseServiceKey}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-
-        if (postProcessError) {
-          console.warn(`⚠️ [LinkedIn Profile Queue Processor] Post-processor failed for record ${record.id}:`, postProcessError);
-          // Don't fail the whole process, just log the warning - the triggered record can be processed later by cron
-        } else {
-          console.log(`✅ [LinkedIn Profile Queue Processor] Post-processor succeeded for record ${record.id}`);
-        }
-
-        console.log(`✅ [LinkedIn Profile Queue Processor] Successfully processed record ${record.id}`);
+        console.log(`✅ [LinkedIn Profile Queue Processor] Complete enrichment workflow succeeded for record ${record.id}`);
         processedCount++;
 
       } catch (error) {

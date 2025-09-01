@@ -242,6 +242,3 @@ verify_jwt = false
 [functions.manual-process-founder-enrichments]
 verify_jwt = false
 
-[functions.linkedin-profile-post-processor-cron]
-verify_jwt = false
-
