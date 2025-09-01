@@ -409,30 +409,39 @@ async function processPerplexityMarketResponse(
 ) {
   console.log('💾 Processing and inserting market data into database...');
   
-  // Check for existing record to prevent duplicates
+  // Check for existing record and assess data completeness
   const { data: existingRecord } = await supabase
     .from('deal_enrichment_perplexity_market_export_vc')
-    .select('id, processing_status')
+    .select('*')
     .eq('deal_id', dealId)
     .maybeSingle();
 
-  if (existingRecord && existingRecord.processing_status === 'processed') {
-    console.log('⚠️ Deal already has processed market enrichment data, skipping...');
-    return {
-      dataQualityScore: 100,
-      dataPointsPopulated: 18,
-      avgConfidenceScore: 2.5,
-      structuredJSON: {}
-    };
-  }
-
-  // Delete any existing failed/pending records before inserting new one
+  // Check if 18 key data points are already populated (not just processing status)
   if (existingRecord) {
-    await supabase
-      .from('deal_enrichment_perplexity_market_export_vc')
-      .delete()
-      .eq('deal_id', dealId);
-    console.log('🗑️ Removed existing failed/pending record for clean retry');
+    const keyDataPoints = [
+      'founder_experience', 'team_composition', 'vision_communication',
+      'market_size', 'market_timing', 'competitive_landscape',
+      'product_innovation', 'technology_advantage', 'product_market_fit',
+      'revenue_growth', 'customer_metrics', 'market_validation',
+      'financial_performance', 'capital_efficiency', 'financial_planning',
+      'portfolio_synergies', 'investment_thesis_alignment', 'value_creation_potential'
+    ];
+    
+    const populatedCount = keyDataPoints.filter(field => 
+      existingRecord[field] && existingRecord[field].trim() !== ''
+    ).length;
+    
+    if (populatedCount >= 15) { // 15 out of 18 fields populated = sufficient data
+      console.log(`⚠️ Deal already has ${populatedCount}/18 market enrichment data points, skipping...`);
+      return {
+        dataQualityScore: Math.round((populatedCount / 18) * 100),
+        dataPointsPopulated: populatedCount,
+        avgConfidenceScore: existingRecord.data_quality_score || 2.5,
+        structuredJSON: existingRecord.deal_enrichment_perplexity_market_export_vc_json || {}
+      };
+    }
+    
+    console.log(`🔄 Existing record has only ${populatedCount}/18 data points, enriching missing fields...`);
   }
 
   // Define the 18 data points mapping
@@ -536,31 +545,11 @@ async function processPerplexityMarketResponse(
     snapshot_id: snapshotId
   };
 
-  // Insert ALL data in one operation with processing_status: 'processed'
-  const processedMarketData = {
+  // Prepare UPSERT data (only populate missing fields for existing records)
+  const upsertData: any = {
     deal_id: dealId,
     snapshot_id: snapshotId,
     company_name: companyName,
-    
-    // Individual data point columns
-    founder_experience: processedFields.founder_experience,
-    team_composition: processedFields.team_composition,
-    vision_communication: processedFields.vision_communication,
-    market_size: processedFields.market_size,
-    market_timing: processedFields.market_timing,
-    competitive_landscape: processedFields.competitive_landscape,
-    product_innovation: processedFields.product_innovation,
-    technology_advantage: processedFields.technology_advantage,
-    product_market_fit: processedFields.product_market_fit,
-    revenue_growth: processedFields.revenue_growth,
-    customer_metrics: processedFields.customer_metrics,
-    market_validation: processedFields.market_validation,
-    financial_performance: processedFields.financial_performance,
-    capital_efficiency: processedFields.capital_efficiency,
-    financial_planning: processedFields.financial_planning,
-    portfolio_synergies: processedFields.portfolio_synergies,
-    investment_thesis_alignment: processedFields.investment_thesis_alignment,
-    value_creation_potential: processedFields.value_creation_potential,
     
     // JSON structured data column
     deal_enrichment_perplexity_market_export_vc_json: structuredJSON,
@@ -569,13 +558,42 @@ async function processPerplexityMarketResponse(
     raw_perplexity_response: rawResponse,
     data_quality_score: dataQualityScore,
     confidence_level: avgConfidenceScore > 2.5 ? 'high' : avgConfidenceScore > 1.5 ? 'medium' : 'low',
-    processing_status: 'processed',
     processed_at: new Date().toISOString()
   };
 
+  // For new records, set processing_status to 'processed'
+  // For existing records, preserve the existing processing_status
+  if (!existingRecord) {
+    upsertData.processing_status = 'processed';
+  }
+
+  // Only add data points that are missing or empty in existing record
+  const dataPointFields = [
+    'founder_experience', 'team_composition', 'vision_communication',
+    'market_size', 'market_timing', 'competitive_landscape',
+    'product_innovation', 'technology_advantage', 'product_market_fit',
+    'revenue_growth', 'customer_metrics', 'market_validation',
+    'financial_performance', 'capital_efficiency', 'financial_planning',
+    'portfolio_synergies', 'investment_thesis_alignment', 'value_creation_potential'
+  ];
+
+  dataPointFields.forEach(field => {
+    const shouldUpdate = !existingRecord || 
+                        !existingRecord[field] || 
+                        existingRecord[field].trim() === '' ||
+                        existingRecord[field] === 'No data available';
+    
+    if (shouldUpdate && processedFields[field]) {
+      upsertData[field] = processedFields[field];
+    }
+  });
+
   const { data, error } = await supabase
     .from('deal_enrichment_perplexity_market_export_vc')
-    .insert(processedMarketData)
+    .upsert(upsertData, { 
+      onConflict: 'deal_id',
+      ignoreDuplicates: false 
+    })
     .select()
     .single();
 
