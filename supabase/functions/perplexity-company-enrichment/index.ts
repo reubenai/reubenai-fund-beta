@@ -633,10 +633,10 @@ async function buildVCAnalysisJSON(supabase: any, dealId: string, companyData: a
       "Scalability Moats": null,
       
       // Subcategory Sources Data
-      "Market Size (from subcategory_sources)": subcategorySources.market_size || [],
-      "Market Growth Rate (from subcategory_sources)": subcategorySources.market_growth_rate || [],
-      "Customer Acquisition (from subcategory_sources)": subcategorySources.customer_acquisition || [],
-      "Network & Advisors (from subcategory_sources)": subcategorySources.network_advisors || [],
+      "Market Size": subcategorySources.market_size || [],
+      "Market Growth Rate": subcategorySources.market_growth_rate || [],
+      "Customer Acquisition": subcategorySources.customer_acquisition || [],
+      "Network & Advisors": subcategorySources.network_advisors || [],
       
       // Metadata
       "metadata": {
