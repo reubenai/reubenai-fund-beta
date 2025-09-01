@@ -640,40 +640,58 @@ async function updateDealAnalysisDatapointsVCFromMarket(supabase: any, dealId: s
     throw new Error(`Failed to fetch deal data: ${dealError.message}`);
   }
 
-  // Prepare the mapped data for deal_analysis_datapoints_vc (market data)
+  // Prepare the mapped data for deal_analysis_datapoints_vc (all 18 market data points)
   const mappedData = {
     deal_id: dealId,
     fund_id: dealData.fund_id,
     organization_id: dealData.funds.organization_id,
     
-    // Map the 7 new data points from market enrichment
+    // Map all 18 data points from market enrichment
+    founder_experience: processedFields.founder_experience,
+    team_composition: processedFields.team_composition,
     vision_communication: processedFields.vision_communication,
+    market_size: processedFields.market_size,
+    market_timing: processedFields.market_timing,
+    competitive_landscape: processedFields.competitive_landscape,
+    product_innovation: processedFields.product_innovation,
+    technology_advantage: processedFields.technology_advantage,
     product_market_fit: processedFields.product_market_fit,
+    revenue_growth: processedFields.revenue_growth,
+    customer_metrics: processedFields.customer_metrics,
     market_validation: processedFields.market_validation,
+    financial_performance: processedFields.financial_performance,
+    capital_efficiency: processedFields.capital_efficiency,
     financial_planning: processedFields.financial_planning,
     portfolio_synergies: processedFields.portfolio_synergies,
     investment_thesis_alignment: processedFields.investment_thesis_alignment,
     value_creation_potential: processedFields.value_creation_potential,
-    
-    // Map other relevant market data points
-    market_timing: processedFields.market_timing,
     
     // Source tracking and metadata
     source_engines: ['perplexity_market'],
     updated_at: new Date().toISOString()
   };
 
-  // Calculate data completeness score for the new fields
+  // Calculate data completeness score for all 18 fields
   let completenessScore = 0;
   const fields = [
+    'founder_experience',
+    'team_composition',
     'vision_communication',
-    'product_market_fit', 
+    'market_size',
+    'market_timing',
+    'competitive_landscape',
+    'product_innovation',
+    'technology_advantage',
+    'product_market_fit',
+    'revenue_growth',
+    'customer_metrics',
     'market_validation',
+    'financial_performance',
+    'capital_efficiency',
     'financial_planning',
     'portfolio_synergies',
     'investment_thesis_alignment',
-    'value_creation_potential',
-    'market_timing'
+    'value_creation_potential'
   ];
 
   fields.forEach((field) => {
