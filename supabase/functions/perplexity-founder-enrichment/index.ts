@@ -824,62 +824,72 @@ async function updateDealAnalysisDatapointsVCWithFounderData(supabase: any, deal
   const marketData = founderData.market_knowledge?.data || {};
   const trackData = founderData.track_record?.data || {};
 
-  // Prepare the mapped data for deal_analysis_datapoints_vc (founder-specific fields)
+  // Helper function to ensure array format for ARRAY columns
+  const ensureArray = (value: any): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'object') {
+      // Extract meaningful values from objects
+      return Object.values(value).filter(v => typeof v === 'string' && v.trim().length > 0);
+    }
+    if (typeof value === 'string') return [value];
+    return [];
+  };
+
+  // Helper function to ensure proper JSONB format
+  const ensureJSONB = (value: any): any => {
+    if (!value) return {};
+    if (typeof value === 'object' && !Array.isArray(value)) return value;
+    return {};
+  };
+
+  // Map to the 11 actual founder columns in deal_analysis_datapoints_vc
   const founderMappedData = {
     deal_id: dealId,
     fund_id: dealData.fund_id,
     organization_id: dealData.funds.organization_id,
     
-    // Leadership & Team data
-    leadership_experience: teamData.previous_roles || [],
-    key_customers: teamData.team_building?.notable_hires || [], // Map notable hires to key customers (network)
+    // JSONB fields (2 fields)
+    previous_roles: ensureJSONB(teamData.previous_roles), // JSONB - list of previous roles
+    exit_history: ensureJSONB(trackData.exit_history), // JSONB - exit history with details
     
-    // Technology & Innovation data
-    technology_stack: innovationData.technical_skills || [],
-    technology_moats: innovationData.innovation_record?.patents || 
-                      innovationData.innovation_record?.innovations ||
-                      innovationData.innovation_record?.breakthrough_work || [],
-    
-    // Professional background
-    professional_networks: marketData.market_knowledge?.industries || [],
-    industry_expertise: marketData.thought_leadership?.publications ||
-                       marketData.thought_leadership?.speaking_engagements ||
-                       marketData.thought_leadership?.media_appearances || [],
-    
-    // Track record & exits
-    exit_portfolio_companies: trackData.exit_history || [],
-    previous_investment_returns: trackData.value_creation?.financial_achievements ||
-                                trackData.value_creation?.growth_metrics || [],
-    
-    // Custom founder-specific mappings
-    founder_background: {
-      leadership_style: teamData.leadership_experience?.leadership_style,
-      years_experience: teamData.leadership_experience?.years_experience,
-      team_sizes_managed: teamData.leadership_experience?.team_sizes_managed,
-      key_achievements: teamData.leadership_experience?.key_achievements,
-      academic_credentials: innovationData.academic_background?.degrees,
-      certifications: innovationData.certifications,
-      market_expertise: marketData.market_knowledge?.expertise_areas,
-      thought_leadership_score: marketData.thought_leadership ? Object.keys(marketData.thought_leadership).length : 0
-    },
+    // ARRAY fields (9 fields)
+    leadership_experience: ensureArray(teamData.leadership_experience?.key_achievements || 
+                          teamData.leadership_experience?.summary || []), // ARRAY - leadership achievements
+    technical_skills: ensureArray(innovationData.technical_skills), // ARRAY - technical skills list
+    market_knowledge: ensureArray(marketData.market_knowledge?.industries || 
+                     marketData.market_knowledge?.expertise_areas || []), // ARRAY - market knowledge areas
+    innovation_record: ensureArray(innovationData.innovation_record?.patents || 
+                      innovationData.innovation_record?.innovations || 
+                      innovationData.innovation_record?.breakthrough_work || []), // ARRAY - innovation achievements
+    academic_background: ensureArray(innovationData.academic_background?.institutions || 
+                        innovationData.academic_background?.degrees?.map((d: any) => d.institution || d.degree) || []), // ARRAY - academic credentials
+    certifications: ensureArray(innovationData.certifications?.map((c: any) => c.name || c) || []), // ARRAY - certifications
+    thought_leadership: ensureArray(marketData.thought_leadership?.publications || 
+                       marketData.thought_leadership?.speaking_engagements || 
+                       marketData.thought_leadership?.media_appearances || []), // ARRAY - thought leadership activities
+    value_creation: ensureArray(trackData.value_creation?.financial_achievements || 
+                   trackData.value_creation?.growth_metrics || []), // ARRAY - value creation achievements
+    team_building: ensureArray(teamData.team_building?.notable_hires || 
+                  teamData.team_building?.hiring_record || []), // ARRAY - team building achievements
     
     // Source tracking and metadata
     updated_at: new Date().toISOString()
   };
 
-  // Calculate data completeness score for founder data (CONFIRMED NO PROBLEMATIC NUMERIC FIELDS)
+  // Calculate data completeness score for the 11 actual founder fields
   let founderCompletenessScore = 0;
   const founderFields = [
-    'leadership_experience', 'technology_stack', 'technology_moats', 
-    'professional_networks', 'industry_expertise', 'exit_portfolio_companies', 
-    'previous_investment_returns'
+    'previous_roles', 'leadership_experience', 'technical_skills', 'market_knowledge',
+    'innovation_record', 'academic_background', 'certifications', 'thought_leadership',
+    'exit_history', 'value_creation', 'team_building'
   ];
 
   founderFields.forEach(field => {
     const value = founderMappedData[field as keyof typeof founderMappedData];
     if (value !== null && value !== undefined) {
-      if (Array.isArray(value) && value.length > 0) founderCompletenessScore += 14;
-      else if (typeof value === 'object' && Object.keys(value).length > 0) founderCompletenessScore += 14;
+      if (Array.isArray(value) && value.length > 0) founderCompletenessScore += 9; // 11 fields * 9 = 99 max
+      else if (typeof value === 'object' && Object.keys(value).length > 0) founderCompletenessScore += 9;
     }
   });
 
@@ -899,16 +909,19 @@ async function updateDealAnalysisDatapointsVCWithFounderData(supabase: any, deal
     const updatedEngines = [...new Set([...existingEngines, 'perplexity_founder'])];
     const updatedCompletenessScore = (existingRecord.data_completeness_score || 0) + founderCompletenessScore;
     
-    // Prepare update data (only include founder-relevant fields)
+    // Prepare update data (only include the 11 founder-specific fields)
     const updateData = {
+      previous_roles: founderMappedData.previous_roles,
       leadership_experience: founderMappedData.leadership_experience,
-      technology_stack: founderMappedData.technology_stack,
-      technology_moats: founderMappedData.technology_moats,
-      professional_networks: founderMappedData.professional_networks,
-      industry_expertise: founderMappedData.industry_expertise,
-      exit_portfolio_companies: founderMappedData.exit_portfolio_companies,
-      previous_investment_returns: founderMappedData.previous_investment_returns,
-      founder_background: founderMappedData.founder_background,
+      technical_skills: founderMappedData.technical_skills,
+      market_knowledge: founderMappedData.market_knowledge,
+      innovation_record: founderMappedData.innovation_record,
+      academic_background: founderMappedData.academic_background,
+      certifications: founderMappedData.certifications,
+      thought_leadership: founderMappedData.thought_leadership,
+      exit_history: founderMappedData.exit_history,
+      value_creation: founderMappedData.value_creation,
+      team_building: founderMappedData.team_building,
       source_engines: updatedEngines,
       data_completeness_score: Math.min(updatedCompletenessScore, 100),
       updated_at: founderMappedData.updated_at
