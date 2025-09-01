@@ -2271,13 +2271,16 @@ export type Database = {
         Row: {
           analysis_summary: string | null
           analyzed_at: string | null
+          business_traction_summary: string | null
           capital_efficiency_score: number | null
           competitive_landscape_score: number | null
           confidence_score: number | null
           created_at: string
           customer_metrics_score: number | null
+          deal_executive_summary: string | null
           deal_id: string
           error_message: string | null
+          financial_health_summary: string | null
           financial_performance_score: number | null
           financial_planning_score: number | null
           founder_experience_score: number | null
@@ -2286,6 +2289,7 @@ export type Database = {
           investment_thesis_alignment_score: number | null
           key_concerns: string[] | null
           key_strengths: string[] | null
+          market_opportunity_summary: string | null
           market_size_score: number | null
           market_timing_score: number | null
           market_validation_score: number | null
@@ -2296,10 +2300,13 @@ export type Database = {
           processing_status: Database["public"]["Enums"]["processing_status"]
           product_innovation_score: number | null
           product_market_fit_score: number | null
+          product_technology_summary: string | null
           recommendations: string[] | null
           revenue_growth_score: number | null
           risk_factors: Json | null
+          strategic_fit_summary: string | null
           team_composition_score: number | null
+          team_leadership_summary: string | null
           technology_advantage_score: number | null
           updated_at: string
           value_creation_potential_score: number | null
@@ -2308,13 +2315,16 @@ export type Database = {
         Insert: {
           analysis_summary?: string | null
           analyzed_at?: string | null
+          business_traction_summary?: string | null
           capital_efficiency_score?: number | null
           competitive_landscape_score?: number | null
           confidence_score?: number | null
           created_at?: string
           customer_metrics_score?: number | null
+          deal_executive_summary?: string | null
           deal_id: string
           error_message?: string | null
+          financial_health_summary?: string | null
           financial_performance_score?: number | null
           financial_planning_score?: number | null
           founder_experience_score?: number | null
@@ -2323,6 +2333,7 @@ export type Database = {
           investment_thesis_alignment_score?: number | null
           key_concerns?: string[] | null
           key_strengths?: string[] | null
+          market_opportunity_summary?: string | null
           market_size_score?: number | null
           market_timing_score?: number | null
           market_validation_score?: number | null
@@ -2333,10 +2344,13 @@ export type Database = {
           processing_status?: Database["public"]["Enums"]["processing_status"]
           product_innovation_score?: number | null
           product_market_fit_score?: number | null
+          product_technology_summary?: string | null
           recommendations?: string[] | null
           revenue_growth_score?: number | null
           risk_factors?: Json | null
+          strategic_fit_summary?: string | null
           team_composition_score?: number | null
+          team_leadership_summary?: string | null
           technology_advantage_score?: number | null
           updated_at?: string
           value_creation_potential_score?: number | null
@@ -2345,13 +2359,16 @@ export type Database = {
         Update: {
           analysis_summary?: string | null
           analyzed_at?: string | null
+          business_traction_summary?: string | null
           capital_efficiency_score?: number | null
           competitive_landscape_score?: number | null
           confidence_score?: number | null
           created_at?: string
           customer_metrics_score?: number | null
+          deal_executive_summary?: string | null
           deal_id?: string
           error_message?: string | null
+          financial_health_summary?: string | null
           financial_performance_score?: number | null
           financial_planning_score?: number | null
           founder_experience_score?: number | null
@@ -2360,6 +2377,7 @@ export type Database = {
           investment_thesis_alignment_score?: number | null
           key_concerns?: string[] | null
           key_strengths?: string[] | null
+          market_opportunity_summary?: string | null
           market_size_score?: number | null
           market_timing_score?: number | null
           market_validation_score?: number | null
@@ -2370,10 +2388,13 @@ export type Database = {
           processing_status?: Database["public"]["Enums"]["processing_status"]
           product_innovation_score?: number | null
           product_market_fit_score?: number | null
+          product_technology_summary?: string | null
           recommendations?: string[] | null
           revenue_growth_score?: number | null
           risk_factors?: Json | null
+          strategic_fit_summary?: string | null
           team_composition_score?: number | null
+          team_leadership_summary?: string | null
           technology_advantage_score?: number | null
           updated_at?: string
           value_creation_potential_score?: number | null
