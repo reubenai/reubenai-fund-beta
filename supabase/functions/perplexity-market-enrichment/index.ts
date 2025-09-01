@@ -531,59 +531,54 @@ async function updateDealAnalysisDatapointsVCWithMarketData(supabase: any, dealI
   const capitalTechnology = parsedResponse.capital_technology?.data || {};
   const operationalChallenges = parsedResponse.operational_challenges?.data || {};
 
-  // Prepare the mapped data for deal_analysis_datapoints_vc (market-specific fields)
+  // Prepare the mapped data for deal_analysis_datapoints_vc (INDIVIDUAL FIELD MAPPING)
   const marketMappedData = {
     deal_id: dealId,
     fund_id: dealData.fund_id,
     organization_id: dealData.funds.organization_id,
     
-    // Market conditions and timing
-    market_conditions: {
-      market_cycle: marketAssessment.market_cycle,
-      economic_sensitivity: marketAssessment.economic_sensitivity,
-      investment_climate: marketAssessment.investment_climate
-    },
+    // INDIVIDUAL MARKET FIELDS (TEXT columns)
+    market_cycle: marketAssessment.market_cycle || null,
+    economic_sensitivity: marketAssessment.economic_sensitivity || null,
+    investment_climate: marketAssessment.investment_climate || null,
     
-    // Regulatory and competitive landscape
-    regulatory_analysis: {
-      regulatory_timeline: regulatoryCompetitive.regulatory_timeline,
-      competitive_window: regulatoryCompetitive.competitive_window,
-      regulatory_requirements: regulatoryCompetitive.regulatory_requirements
-    },
+    // INDIVIDUAL REGULATORY FIELDS (TEXT columns)
+    regulatory_timeline: regulatoryCompetitive.regulatory_timeline || null,
+    competitive_window: regulatoryCompetitive.competitive_window || null,
     
-    // Capital and technology factors
-    capital_requirements_analysis: capitalTechnology.capital_requirements,
+    // ARRAY FIELDS (convert single text to array format)
+    regulatory_requirements: regulatoryCompetitive.regulatory_requirements ? 
+      [regulatoryCompetitive.regulatory_requirements] : [],
+    distribution_challenges: operationalChallenges.distribution_challenges ? 
+      [operationalChallenges.distribution_challenges] : [],
+    geographic_constraints: operationalChallenges.geographic_constraints ? 
+      [operationalChallenges.geographic_constraints] : [],
+    
+    // CORRECTED COLUMN NAMES
+    capital_requirements: capitalTechnology.capital_requirements || null, // Fixed: was capital_requirements_analysis
     technology_moats: capitalTechnology.technology_moats ? [capitalTechnology.technology_moats] : [],
     
-    // Operational challenges and constraints
-    operational_challenges: {
-      distribution_challenges: operationalChallenges.distribution_challenges,
-      geographic_constraints: operationalChallenges.geographic_constraints
-    },
-    
-    // Market barriers (combining regulatory and operational challenges)
-    market_barriers: [
+    // MARKET BARRIER (TEXT field, not array) - Fixed: was market_barriers
+    market_barrier: [
       regulatoryCompetitive.regulatory_requirements,
       operationalChallenges.distribution_challenges,
       operationalChallenges.geographic_constraints
-    ].filter(Boolean),
+    ].filter(Boolean).join('; ') || null, // Convert array to text
     
-    // Market timing insights
-    market_timing_analysis: {
-      market_cycle_stage: marketAssessment.market_cycle,
-      competitive_timing: regulatoryCompetitive.competitive_window,
-      investment_readiness: marketAssessment.investment_climate
-    },
+    // MARKET TIMING (TEXT field) - New field mapping
+    market_timing: `Market Cycle: ${marketAssessment.market_cycle || 'N/A'}; Competitive Window: ${regulatoryCompetitive.competitive_window || 'N/A'}; Investment Climate: ${marketAssessment.investment_climate || 'N/A'}`,
     
     // Source tracking and metadata
     updated_at: new Date().toISOString()
   };
 
-  // Calculate data completeness score for market data (CONFIRMED NO PROBLEMATIC NUMERIC FIELDS)
+  // Calculate data completeness score for market data (INDIVIDUAL FIELDS)
   let marketCompletenessScore = 0;
   const marketFields = [
-    'market_conditions', 'regulatory_analysis', 'capital_requirements_analysis',
-    'technology_moats', 'operational_challenges', 'market_barriers', 'market_timing_analysis'
+    'market_cycle', 'economic_sensitivity', 'investment_climate', 
+    'regulatory_timeline', 'competitive_window', 'regulatory_requirements',
+    'distribution_challenges', 'geographic_constraints', 'capital_requirements',
+    'technology_moats', 'market_barrier', 'market_timing'
   ];
 
   marketFields.forEach(field => {
@@ -611,15 +606,20 @@ async function updateDealAnalysisDatapointsVCWithMarketData(supabase: any, dealI
     const updatedEngines = [...new Set([...existingEngines, 'perplexity_market'])];
     const updatedCompletenessScore = (existingRecord.data_completeness_score || 0) + marketCompletenessScore;
     
-    // Prepare update data (only include market-relevant fields)
+    // Prepare update data (INDIVIDUAL FIELD MAPPING)
     const updateData = {
-      market_conditions: marketMappedData.market_conditions,
-      regulatory_analysis: marketMappedData.regulatory_analysis,
-      capital_requirements_analysis: marketMappedData.capital_requirements_analysis,
+      market_cycle: marketMappedData.market_cycle,
+      economic_sensitivity: marketMappedData.economic_sensitivity,
+      investment_climate: marketMappedData.investment_climate,
+      regulatory_timeline: marketMappedData.regulatory_timeline,
+      competitive_window: marketMappedData.competitive_window,
+      regulatory_requirements: marketMappedData.regulatory_requirements,
+      distribution_challenges: marketMappedData.distribution_challenges,
+      geographic_constraints: marketMappedData.geographic_constraints,
+      capital_requirements: marketMappedData.capital_requirements,
       technology_moats: marketMappedData.technology_moats,
-      operational_challenges: marketMappedData.operational_challenges,
-      market_barriers: marketMappedData.market_barriers,
-      market_timing_analysis: marketMappedData.market_timing_analysis,
+      market_barrier: marketMappedData.market_barrier,
+      market_timing: marketMappedData.market_timing,
       source_engines: updatedEngines,
       data_completeness_score: Math.min(updatedCompletenessScore, 100),
       updated_at: marketMappedData.updated_at
