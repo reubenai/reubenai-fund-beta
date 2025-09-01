@@ -342,7 +342,7 @@ CRITICAL: Return ONLY the JSON object above. No additional text, explanations, o
             timestamp: new Date().toISOString()
           }
         },
-        processing_status: 'completed',
+        processing_status: 'raw_stored',
         processed_at: new Date().toISOString()
       });
 
