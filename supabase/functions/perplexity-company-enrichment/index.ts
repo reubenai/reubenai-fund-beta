@@ -549,6 +549,16 @@ async function processPerplexityCompanyResponse(
     }
   }
   
+  // NEW: Update deal_analysis_datapoints_vc table with mapped data
+  console.log('🎯 Updating deal_analysis_datapoints_vc with company enrichment data...');
+  try {
+    await updateDealAnalysisDatapointsVC(supabase, dealId, companyData);
+    console.log('✅ Successfully updated deal_analysis_datapoints_vc');
+  } catch (datapointsError) {
+    console.error('❌ Failed to update deal_analysis_datapoints_vc:', datapointsError);
+    // Don't fail the entire process, just log the error
+  }
+  
   return data;
 }
 
@@ -655,4 +665,188 @@ async function buildVCAnalysisJSON(supabase: any, dealId: string, companyData: a
     console.error('❌ Error building VC analysis JSON:', error);
     return null;
   }
+}
+
+// Helper function to update deal_analysis_datapoints_vc table
+async function updateDealAnalysisDatapointsVC(supabase: any, dealId: string, companyData: any) {
+  console.log('📋 Mapping company enrichment data to deal_analysis_datapoints_vc...');
+
+  // Helper function to parse monetary values
+  function parseMonetaryValue(value: string | null): bigint | null {
+    if (!value || typeof value !== 'string') return null;
+    
+    // Remove common currency symbols and spaces
+    const cleanValue = value.replace(/[\$,\s]/g, '');
+    
+    // Check for suffixes (B for billion, M for million, K for thousand)
+    const match = cleanValue.match(/^([0-9.]+)\s*([BMK])/i);
+    if (match) {
+      const number = parseFloat(match[1]);
+      const suffix = match[2].toUpperCase();
+      
+      switch (suffix) {
+        case 'B': return BigInt(Math.round(number * 1_000_000_000));
+        case 'M': return BigInt(Math.round(number * 1_000_000));
+        case 'K': return BigInt(Math.round(number * 1_000));
+        default: return null;
+      }
+    }
+    
+    // Try to parse as a plain number
+    const numericValue = parseFloat(cleanValue);
+    return !isNaN(numericValue) ? BigInt(Math.round(numericValue)) : null;
+  }
+
+  // Helper function to parse percentage values
+  function parsePercentage(value: string | null): number | null {
+    if (!value || typeof value !== 'string') return null;
+    
+    const match = value.match(/([0-9.]+)%/);
+    if (match) {
+      const percentage = parseFloat(match[1]);
+      return !isNaN(percentage) ? percentage : null;
+    }
+    
+    // Try to parse as decimal (e.g., "0.15" -> 15%)
+    const decimal = parseFloat(value);
+    if (!isNaN(decimal) && decimal <= 1) {
+      return decimal * 100;
+    }
+    
+    return null;
+  }
+
+  // Helper function to parse numeric values from text
+  function parseNumericValue(value: string | null): number | null {
+    if (!value || typeof value !== 'string') return null;
+    
+    // Extract first number found in the text
+    const match = value.match(/([0-9.]+)/);
+    if (match) {
+      const number = parseFloat(match[1]);
+      return !isNaN(number) ? number : null;
+    }
+    
+    return null;
+  }
+
+  // First, get deal and fund information
+  const { data: dealData, error: dealError } = await supabase
+    .from('deals')
+    .select(`
+      id,
+      fund_id,
+      funds!deals_fund_id_fkey(
+        id,
+        organization_id
+      )
+    `)
+    .eq('id', dealId)
+    .single();
+
+  if (dealError) {
+    throw new Error(`Failed to fetch deal data: ${dealError.message}`);
+  }
+
+  // Prepare the mapped data for deal_analysis_datapoints_vc
+  const mappedData = {
+    deal_id: dealId,
+    fund_id: dealData.fund_id,
+    organization_id: dealData.funds.organization_id,
+    
+    // Direct field mappings from company enrichment
+    tam: parseMonetaryValue(companyData.market_size?.data?.tam),
+    sam: parseMonetaryValue(companyData.market_size?.data?.sam),
+    som: parseMonetaryValue(companyData.market_size?.data?.som),
+    cagr: parsePercentage(companyData.market_growth_rate?.data?.cagr),
+    growth_drivers: companyData.market_growth_rate?.data?.growth_drivers || [],
+    market_share_distribution: companyData.competitive_position?.data?.market_share_distribution || {},
+    key_market_players: companyData.competitive_position?.data?.key_market_players || [],
+    whitespace_opportunities: companyData.competitive_position?.data?.whitespace_opportunities || [],
+    
+    // Customer & Business Metrics with parsing
+    addressable_customers: parseMonetaryValue(companyData.customer_acquisition?.data?.addressable_customers),
+    cac_trend: parseNumericValue(companyData.customer_acquisition?.data?.cac_trend),
+    ltv_cac_ratio: parseNumericValue(companyData.customer_acquisition?.data?.ltv_cac_ratio),
+    retention_rate: parsePercentage(companyData.customer_acquisition?.data?.retention_rate),
+    channel_effectiveness: companyData.customer_acquisition?.data?.channel_effectiveness || {},
+    
+    // Strategic Network
+    strategic_advisors: companyData.network_advisors?.data?.strategic_advisors || [],
+    investor_network: companyData.network_advisors?.data?.investor_network || [],
+    partnership_ecosystem: companyData.network_advisors?.data?.partnership_ecosystem?.technology_partners || 
+                           companyData.network_advisors?.data?.partnership_ecosystem?.distribution_partners || 
+                           companyData.network_advisors?.data?.partnership_ecosystem?.strategic_alliances || [],
+    
+    // Additional mappings - extract from competitive position data
+    competitive_positioning_studies: companyData.competitive_position?.data?.market_share_distribution || {},
+    technology_moats: companyData.competitive_position?.data?.whitespace_opportunities || [],
+    
+    // Source tracking and metadata
+    source_engines: ['perplexity_company'],
+    updated_at: new Date().toISOString()
+  };
+
+  // Calculate data completeness score
+  let completenessScore = 0;
+  const fields = [
+    'tam', 'sam', 'som', 'cagr', 'growth_drivers', 'market_share_distribution',
+    'key_market_players', 'whitespace_opportunities', 'addressable_customers', 
+    'cac_trend', 'ltv_cac_ratio', 'retention_rate', 'channel_effectiveness',
+    'strategic_advisors', 'investor_network', 'partnership_ecosystem'
+  ];
+
+  fields.forEach(field => {
+    const value = mappedData[field as keyof typeof mappedData];
+    if (value !== null && value !== undefined) {
+      if (Array.isArray(value) && value.length > 0) completenessScore += 6;
+      else if (typeof value === 'object' && Object.keys(value).length > 0) completenessScore += 6;
+      else if (typeof value === 'bigint' || typeof value === 'number') completenessScore += 6;
+    }
+  });
+
+  mappedData['data_completeness_score' as keyof typeof mappedData] = completenessScore as any;
+
+  // Perform UPSERT operation
+  console.log('🔄 Performing UPSERT on deal_analysis_datapoints_vc...');
+
+  // Check if record exists
+  const { data: existingRecord } = await supabase
+    .from('deal_analysis_datapoints_vc')
+    .select('id, source_engines')
+    .eq('deal_id', dealId)
+    .maybeSingle();
+
+  if (existingRecord) {
+    // Update existing record, merge source_engines
+    const existingEngines = existingRecord.source_engines || [];
+    const updatedEngines = [...new Set([...existingEngines, 'perplexity_company'])];
+    
+    const { error: updateError } = await supabase
+      .from('deal_analysis_datapoints_vc')
+      .update({
+        ...mappedData,
+        source_engines: updatedEngines
+      })
+      .eq('deal_id', dealId);
+
+    if (updateError) {
+      throw new Error(`Failed to update deal_analysis_datapoints_vc: ${updateError.message}`);
+    }
+
+    console.log('✅ Updated existing record in deal_analysis_datapoints_vc');
+  } else {
+    // Insert new record
+    const { error: insertError } = await supabase
+      .from('deal_analysis_datapoints_vc')
+      .insert(mappedData);
+
+    if (insertError) {
+      throw new Error(`Failed to insert into deal_analysis_datapoints_vc: ${insertError.message}`);
+    }
+
+    console.log('✅ Inserted new record into deal_analysis_datapoints_vc');
+  }
+
+  console.log(`📊 Mapped ${Object.keys(mappedData).length} fields with ${completenessScore}% data completeness`);
 }
