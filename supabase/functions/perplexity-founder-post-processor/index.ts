@@ -72,6 +72,23 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Extract the actual content from Perplexity response structure
+        let founderData;
+        try {
+          // Handle Perplexity API response structure: choices[0].message.content
+          if (rawData.choices && rawData.choices[0] && rawData.choices[0].message && rawData.choices[0].message.content) {
+            const contentString = rawData.choices[0].message.content;
+            founderData = JSON.parse(contentString);
+            console.log(`📊 [Founder Post-Processor] Successfully parsed founder data for ${record.founder_name}`);
+          } else {
+            console.log(`⚠️ [Founder Post-Processor] Invalid response structure for record ${record.id}`);
+            continue;
+          }
+        } catch (parseError) {
+          console.error(`❌ [Founder Post-Processor] Error parsing founder data for ${record.id}:`, parseError);
+          continue;
+        }
+
         // Helper function to ensure array format
         const ensureArray = (value: any): string[] => {
           if (!value) return [];
@@ -114,22 +131,22 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Extract and map founder data with proper type conversions
+        // Extract and map founder data with proper type conversions from nested structure
         const founderUpdateData = {
-          // JSONB fields
-          previous_roles: ensureJSONB(rawData.previous_roles),
-          exit_history: ensureJSONB(rawData.exit_history),
+          // JSONB fields - map from nested structure
+          previous_roles: ensureJSONB(founderData.team_leadership?.data?.previous_roles),
+          exit_history: ensureJSONB(founderData.track_record?.data?.exit_history),
           
-          // ARRAY fields
-          leadership_experience: ensureArray(rawData.leadership_experience),
-          technical_skills: ensureArray(rawData.technical_skills),
-          market_knowledge: ensureArray(rawData.market_knowledge),
-          innovation_record: ensureArray(rawData.innovation_record),
-          academic_background: ensureArray(rawData.academic_background),
-          certifications: ensureArray(rawData.certifications),
-          thought_leadership: ensureArray(rawData.thought_leadership),
-          value_creation: ensureArray(rawData.value_creation),
-          team_building: ensureArray(rawData.team_building),
+          // ARRAY fields - map from nested structure  
+          leadership_experience: ensureArray(founderData.team_leadership?.data?.leadership_experience),
+          technical_skills: ensureArray(founderData.innovation_expertise?.data?.technical_skills),
+          market_knowledge: ensureArray(founderData.market_knowledge?.data?.market_knowledge),
+          innovation_record: ensureArray(founderData.innovation_expertise?.data?.innovation_record),
+          academic_background: ensureArray(founderData.innovation_expertise?.data?.academic_background),
+          certifications: ensureArray(founderData.innovation_expertise?.data?.certifications),
+          thought_leadership: ensureArray(founderData.market_knowledge?.data?.thought_leadership),
+          value_creation: ensureArray(founderData.track_record?.data?.value_creation),
+          team_building: ensureArray(founderData.team_leadership?.data?.team_building),
           
           // Update source engines and completeness
           source_engines: existingDatapoints?.source_engines ? 
