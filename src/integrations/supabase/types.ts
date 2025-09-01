@@ -7316,6 +7316,85 @@ export type Database = {
           },
         ]
       }
+      perplexity2_datamining_vc: {
+        Row: {
+          category: string
+          company_name: string
+          confidence_score: number | null
+          created_at: string
+          data_quality_score: number | null
+          deal_id: string
+          fund_id: string
+          id: string
+          organization_id: string
+          processed_at: string | null
+          processing_status: string
+          raw_perplexity_response: Json | null
+          snapshot_id: string | null
+          subcategory_confidence: Json | null
+          subcategory_sources: Json | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          company_name: string
+          confidence_score?: number | null
+          created_at?: string
+          data_quality_score?: number | null
+          deal_id: string
+          fund_id: string
+          id?: string
+          organization_id: string
+          processed_at?: string | null
+          processing_status?: string
+          raw_perplexity_response?: Json | null
+          snapshot_id?: string | null
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          company_name?: string
+          confidence_score?: number | null
+          created_at?: string
+          data_quality_score?: number | null
+          deal_id?: string
+          fund_id?: string
+          id?: string
+          organization_id?: string
+          processed_at?: string | null
+          processing_status?: string
+          raw_perplexity_response?: Json | null
+          snapshot_id?: string | null
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "perplexity2_datamining_vc_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "perplexity2_datamining_vc_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "perplexity2_datamining_vc_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pipeline_stages: {
         Row: {
           color: string
