@@ -475,10 +475,6 @@ async function buildMarketAnalysisJSON(supabase: any, dealId: string, marketData
       "Market Barriers & Regulation": marketBarriersRegulation,
       
       // Standard VC Metrics (set to null for market analysis)
-      "TAM": null,
-      "SAM": null,
-      "SOM": null,
-      "CAGR": null,
       "Growth Drivers": null,
       "Key Market Players": null,
       "Competitive Position": null,
