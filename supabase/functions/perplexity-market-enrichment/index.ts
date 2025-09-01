@@ -116,19 +116,18 @@ Provide comprehensive market research about this company covering market size, c
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-large-128k-online',
+        model: 'sonar',
         messages: [
           { role: 'system', content: 'You are a market research analyst. Provide comprehensive and accurate research with sources.' },
           { role: 'user', content: userContent }
         ],
-        max_tokens: 6000,
-        temperature: 0.1,
+        max_tokens: 4000,
         top_p: 0.9,
-        frequency_penalty: 1,
-        presence_penalty: 0,
         return_images: false,
         return_related_questions: false,
-        search_recency_filter: 'month'
+        search_recency_filter: 'month',
+        frequency_penalty: 1,
+        presence_penalty: 0
       }),
     });
 
@@ -158,7 +157,7 @@ Provide comprehensive market research about this company covering market size, c
           query: userContent,
           response: rawContent,
           api_metadata: {
-            model: 'llama-3.1-sonar-large-128k-online',
+            model: 'sonar',
             timestamp: new Date().toISOString()
           }
         },
