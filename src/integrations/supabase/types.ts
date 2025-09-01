@@ -7262,6 +7262,7 @@ export type Database = {
           fund_id: string
           id: string
           organization_id: string
+          perplexity_datamining_vc_json: Json | null
           processed_at: string | null
           processing_status: Database["public"]["Enums"]["processing_status"]
           query_prompt: string | null
@@ -7279,6 +7280,7 @@ export type Database = {
           fund_id: string
           id?: string
           organization_id: string
+          perplexity_datamining_vc_json?: Json | null
           processed_at?: string | null
           processing_status?: Database["public"]["Enums"]["processing_status"]
           query_prompt?: string | null
@@ -7296,6 +7298,7 @@ export type Database = {
           fund_id?: string
           id?: string
           organization_id?: string
+          perplexity_datamining_vc_json?: Json | null
           processed_at?: string | null
           processing_status?: Database["public"]["Enums"]["processing_status"]
           query_prompt?: string | null
@@ -7303,7 +7306,15 @@ export type Database = {
           response_confidence?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "perplexity_datamining_vc_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pipeline_stages: {
         Row: {
