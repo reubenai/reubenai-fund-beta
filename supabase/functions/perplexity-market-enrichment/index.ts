@@ -383,6 +383,16 @@ Focus on venture capital investment perspectives and recent market data.`;
       console.log('✅ JSON column updated successfully');
     }
 
+    // NEW: Update deal_analysis_datapoints_vc table with mapped market data
+    console.log('🎯 Updating deal_analysis_datapoints_vc with market enrichment data...');
+    try {
+      await updateDealAnalysisDatapointsVCWithMarketData(supabase, dealId, marketData, parsedResponse);
+      console.log('✅ Successfully updated deal_analysis_datapoints_vc with market data');
+    } catch (datapointsError) {
+      console.error('❌ Failed to update deal_analysis_datapoints_vc with market data:', datapointsError);
+      // Don't fail the entire process, just log the error
+    }
+
     const result = {
       success: true,
       data: {
@@ -491,4 +501,158 @@ async function buildMarketAnalysisJSON(supabase: any, dealId: string, marketData
       timestamp: new Date().toISOString()
     };
   }
+}
+
+// Helper function to update deal_analysis_datapoints_vc table with market data
+async function updateDealAnalysisDatapointsVCWithMarketData(supabase: any, dealId: string, marketData: any, parsedResponse: any) {
+  console.log('📋 Mapping market enrichment data to deal_analysis_datapoints_vc...');
+
+  // First, get deal and fund information
+  const { data: dealData, error: dealError } = await supabase
+    .from('deals')
+    .select(`
+      id,
+      fund_id,
+      funds!deals_fund_id_fkey(
+        id,
+        organization_id
+      )
+    `)
+    .eq('id', dealId)
+    .single();
+
+  if (dealError) {
+    throw new Error(`Failed to fetch deal data: ${dealError.message}`);
+  }
+
+  // Extract data from market enrichment response
+  const marketAssessment = parsedResponse.market_assessment?.data || {};
+  const regulatoryCompetitive = parsedResponse.regulatory_competitive?.data || {};
+  const capitalTechnology = parsedResponse.capital_technology?.data || {};
+  const operationalChallenges = parsedResponse.operational_challenges?.data || {};
+
+  // Prepare the mapped data for deal_analysis_datapoints_vc (market-specific fields)
+  const marketMappedData = {
+    deal_id: dealId,
+    fund_id: dealData.fund_id,
+    organization_id: dealData.funds.organization_id,
+    
+    // Market conditions and timing
+    market_conditions: {
+      market_cycle: marketAssessment.market_cycle,
+      economic_sensitivity: marketAssessment.economic_sensitivity,
+      investment_climate: marketAssessment.investment_climate
+    },
+    
+    // Regulatory and competitive landscape
+    regulatory_analysis: {
+      regulatory_timeline: regulatoryCompetitive.regulatory_timeline,
+      competitive_window: regulatoryCompetitive.competitive_window,
+      regulatory_requirements: regulatoryCompetitive.regulatory_requirements
+    },
+    
+    // Capital and technology factors
+    capital_requirements_analysis: capitalTechnology.capital_requirements,
+    technology_moats: capitalTechnology.technology_moats ? [capitalTechnology.technology_moats] : [],
+    
+    // Operational challenges and constraints
+    operational_challenges: {
+      distribution_challenges: operationalChallenges.distribution_challenges,
+      geographic_constraints: operationalChallenges.geographic_constraints
+    },
+    
+    // Market barriers (combining regulatory and operational challenges)
+    market_barriers: [
+      regulatoryCompetitive.regulatory_requirements,
+      operationalChallenges.distribution_challenges,
+      operationalChallenges.geographic_constraints
+    ].filter(Boolean),
+    
+    // Market timing insights
+    market_timing_analysis: {
+      market_cycle_stage: marketAssessment.market_cycle,
+      competitive_timing: regulatoryCompetitive.competitive_window,
+      investment_readiness: marketAssessment.investment_climate
+    },
+    
+    // Source tracking and metadata
+    updated_at: new Date().toISOString()
+  };
+
+  // Calculate data completeness score for market data
+  let marketCompletenessScore = 0;
+  const marketFields = [
+    'market_conditions', 'regulatory_analysis', 'capital_requirements_analysis',
+    'technology_moats', 'operational_challenges', 'market_barriers', 'market_timing_analysis'
+  ];
+
+  marketFields.forEach(field => {
+    const value = marketMappedData[field as keyof typeof marketMappedData];
+    if (value !== null && value !== undefined) {
+      if (Array.isArray(value) && value.length > 0) marketCompletenessScore += 14;
+      else if (typeof value === 'object' && Object.keys(value).length > 0) marketCompletenessScore += 14;
+      else if (typeof value === 'string' && value.length > 0) marketCompletenessScore += 14;
+    }
+  });
+
+  // Perform UPSERT operation
+  console.log('🔄 Performing UPSERT on deal_analysis_datapoints_vc with market data...');
+
+  // Check if record exists
+  const { data: existingRecord } = await supabase
+    .from('deal_analysis_datapoints_vc')
+    .select('id, source_engines, data_completeness_score')
+    .eq('deal_id', dealId)
+    .maybeSingle();
+
+  if (existingRecord) {
+    // Update existing record, merge source_engines and add to completeness score
+    const existingEngines = existingRecord.source_engines || [];
+    const updatedEngines = [...new Set([...existingEngines, 'perplexity_market'])];
+    const updatedCompletenessScore = (existingRecord.data_completeness_score || 0) + marketCompletenessScore;
+    
+    // Prepare update data (only include market-relevant fields)
+    const updateData = {
+      market_conditions: marketMappedData.market_conditions,
+      regulatory_analysis: marketMappedData.regulatory_analysis,
+      capital_requirements_analysis: marketMappedData.capital_requirements_analysis,
+      technology_moats: marketMappedData.technology_moats,
+      operational_challenges: marketMappedData.operational_challenges,
+      market_barriers: marketMappedData.market_barriers,
+      market_timing_analysis: marketMappedData.market_timing_analysis,
+      source_engines: updatedEngines,
+      data_completeness_score: Math.min(updatedCompletenessScore, 100),
+      updated_at: marketMappedData.updated_at
+    };
+
+    const { error: updateError } = await supabase
+      .from('deal_analysis_datapoints_vc')
+      .update(updateData)
+      .eq('deal_id', dealId);
+
+    if (updateError) {
+      throw new Error(`Failed to update deal_analysis_datapoints_vc with market data: ${updateError.message}`);
+    }
+
+    console.log('✅ Updated existing record in deal_analysis_datapoints_vc with market data');
+  } else {
+    // Insert new record with market data and default values for other fields
+    const insertData = {
+      ...marketMappedData,
+      source_engines: ['perplexity_market'],
+      data_completeness_score: marketCompletenessScore
+    };
+
+    const { error: insertError } = await supabase
+      .from('deal_analysis_datapoints_vc')
+      .insert(insertData);
+
+    if (insertError) {
+      throw new Error(`Failed to insert market data into deal_analysis_datapoints_vc: ${insertError.message}`);
+    }
+
+    console.log('✅ Inserted new record into deal_analysis_datapoints_vc with market data');
+  }
+
+  console.log(`📊 Mapped ${marketFields.length} market fields with ${marketCompletenessScore}% data completeness contribution`);
 }
