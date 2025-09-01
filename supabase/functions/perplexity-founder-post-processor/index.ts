@@ -142,6 +142,9 @@ serve(async (req) => {
           // Extract structured data from the parsed JSON
           const processedData = await processPerplexityFounderResponse(jsonContent, record.deal_id, record.snapshot_id)
 
+          // Generate JSON analysis format
+          const founderAnalysisJSON = buildFounderAnalysisJSON(jsonContent);
+
           // Update the record with processed data
           const updateData = {
             // Track record data
@@ -161,6 +164,9 @@ serve(async (req) => {
             technical_skills: processedData.technical_skills || null,
             academic_background: processedData.academic_background || null,
             certifications: processedData.certifications || null,
+            
+            // JSON analysis format
+            deal_enrichment_perplexity_founder_export_vc_json: founderAnalysisJSON,
             
             // Quality metrics
             data_quality_score: processedData.data_quality_score || 0,
@@ -413,4 +419,44 @@ function mapConfidenceToNumber(confidence: string): number {
   if (lowerConf.includes('medium')) return 65
   if (lowerConf.includes('low')) return 35
   return 50 // Default
+}
+
+// Helper function to build founder analysis JSON in flat format
+function buildFounderAnalysisJSON(founderData: any): any {
+  const analysisJSON: any = {};
+  
+  // Extract data from subcategories
+  const teamData = founderData.team_leadership?.data || {};
+  const innovationData = founderData.innovation_expertise?.data || {};
+  const marketData = founderData.market_knowledge?.data || {};
+  const trackData = founderData.track_record?.data || {};
+  
+  // Map to flat structure similar to company enrichment
+  analysisJSON["Previous Roles"] = teamData.previous_roles || "No previous role data available";
+  analysisJSON["Leadership Experience"] = teamData.leadership_experience?.summary || "No leadership experience data available";
+  analysisJSON["Technical Skills"] = innovationData.technical_skills || "No technical skills data available";
+  analysisJSON["Market Knowledge"] = marketData.market_knowledge?.industries || "No market knowledge data available";
+  analysisJSON["Innovation Record"] = innovationData.innovation_record?.patents || innovationData.innovation_record?.innovations || "No innovation record data available";
+  analysisJSON["Academic Background"] = innovationData.academic_background?.degrees || "No academic background data available";
+  analysisJSON["Certifications"] = innovationData.certifications || "No certifications data available";
+  analysisJSON["Thought Leadership"] = marketData.thought_leadership?.publications || marketData.thought_leadership?.speaking_engagements || "No thought leadership data available";
+  analysisJSON["Exit History"] = trackData.exit_history || "No exit history data available";
+  analysisJSON["Value Creation"] = trackData.value_creation?.summary || "No value creation data available";
+  analysisJSON["Team Building"] = teamData.team_building?.summary || "No team building data available";
+  
+  // Additional relevant fields
+  analysisJSON["Industry Recognition"] = marketData.thought_leadership?.media_appearances || "No industry recognition data available";
+  analysisJSON["Investment Track Record"] = trackData.value_creation?.financial_achievements || "No investment track record data available";  
+  analysisJSON["Network Strength"] = teamData.team_building?.notable_hires || "No network strength data available";
+  
+  // Add metadata
+  analysisJSON["metadata"] = {
+    "source": "perplexity_api",
+    "version": "1.0",
+    "last_updated": new Date().toISOString(),
+    "overall_confidence": founderData.metadata?.overall_confidence || "Medium",
+    "data_completeness_percentage": Math.round(calculateFounderDataQualityWithSubcategories(founderData))
+  };
+  
+  return analysisJSON;
 }
