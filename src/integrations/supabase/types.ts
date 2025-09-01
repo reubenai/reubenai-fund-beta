@@ -1750,11 +1750,13 @@ export type Database = {
           business_model: string | null
           cac_trend: number | null
           cagr: number | null
+          capital_efficiency: string | null
           capital_efficiency_ratios: Json | null
           capital_requirements: string | null
           cash_flow_analysis: Json | null
           certifications: string[] | null
           channel_effectiveness: Json | null
+          competitive_landscape: string | null
           competitive_moat_assessment: Json | null
           competitive_position: string | null
           competitive_positioning_studies: Json | null
@@ -1763,6 +1765,7 @@ export type Database = {
           countries_of_operation: string[] | null
           created_at: string
           customer_acquisition_metrics: Json | null
+          customer_metrics: string | null
           data_completeness_score: number | null
           deal_card_enrichment: Json | null
           deal_enrichment_crunchbase_export: Json | null
@@ -1779,6 +1782,9 @@ export type Database = {
           employee_count: string | null
           engine_integration: Json | null
           exit_history: Json | null
+          financial_performance: string | null
+          financial_planning: string | null
+          founder_experience: string | null
           founding_year: number | null
           fund_id: string
           funding_stage: string | null
@@ -1791,6 +1797,7 @@ export type Database = {
           innovation_record: string[] | null
           investment_climate: string | null
           investment_size: number | null
+          investment_thesis_alignment: string | null
           investor_network: string[] | null
           ip_landscape_mapping: Json | null
           ip_strength_scoring: number | null
@@ -1811,17 +1818,22 @@ export type Database = {
           market_timing: string | null
           market_timing_analysis: string | null
           market_traction_indicators: Json | null
+          market_validation: string | null
           operational_challenges: string | null
           organization_id: string
           partnership_ecosystem: string[] | null
           patent_portfolio_analysis: Json | null
+          portfolio_synergies: string | null
           previous_roles: Json | null
+          product_innovation: string | null
+          product_market_fit: string | null
           profitability_metrics: Json | null
           quality_score: number | null
           regulatory_analysis: string | null
           regulatory_requirements: string[] | null
           regulatory_timeline: string | null
           retention_rate: number | null
+          revenue_growth: string | null
           revenue_statements: Json | null
           s_deal_enrichment_perplexity_company_export_vc_json: Json | null
           sam: number | null
@@ -1833,7 +1845,9 @@ export type Database = {
           tam: number | null
           target_market: string | null
           team_building: string[] | null
+          team_composition: string | null
           technical_skills: string[] | null
+          technology_advantage: string | null
           technology_moats: string[] | null
           technology_readiness_level: number | null
           technology_stack: string[] | null
@@ -1842,6 +1856,8 @@ export type Database = {
           unit_economics_breakdown: Json | null
           updated_at: string
           value_creation: string[] | null
+          value_creation_potential: string | null
+          vision_communication: string | null
           whitespace_opportunities: string[] | null
         }
         Insert: {
@@ -1850,11 +1866,13 @@ export type Database = {
           business_model?: string | null
           cac_trend?: number | null
           cagr?: number | null
+          capital_efficiency?: string | null
           capital_efficiency_ratios?: Json | null
           capital_requirements?: string | null
           cash_flow_analysis?: Json | null
           certifications?: string[] | null
           channel_effectiveness?: Json | null
+          competitive_landscape?: string | null
           competitive_moat_assessment?: Json | null
           competitive_position?: string | null
           competitive_positioning_studies?: Json | null
@@ -1863,6 +1881,7 @@ export type Database = {
           countries_of_operation?: string[] | null
           created_at?: string
           customer_acquisition_metrics?: Json | null
+          customer_metrics?: string | null
           data_completeness_score?: number | null
           deal_card_enrichment?: Json | null
           deal_enrichment_crunchbase_export?: Json | null
@@ -1879,6 +1898,9 @@ export type Database = {
           employee_count?: string | null
           engine_integration?: Json | null
           exit_history?: Json | null
+          financial_performance?: string | null
+          financial_planning?: string | null
+          founder_experience?: string | null
           founding_year?: number | null
           fund_id: string
           funding_stage?: string | null
@@ -1891,6 +1913,7 @@ export type Database = {
           innovation_record?: string[] | null
           investment_climate?: string | null
           investment_size?: number | null
+          investment_thesis_alignment?: string | null
           investor_network?: string[] | null
           ip_landscape_mapping?: Json | null
           ip_strength_scoring?: number | null
@@ -1911,17 +1934,22 @@ export type Database = {
           market_timing?: string | null
           market_timing_analysis?: string | null
           market_traction_indicators?: Json | null
+          market_validation?: string | null
           operational_challenges?: string | null
           organization_id: string
           partnership_ecosystem?: string[] | null
           patent_portfolio_analysis?: Json | null
+          portfolio_synergies?: string | null
           previous_roles?: Json | null
+          product_innovation?: string | null
+          product_market_fit?: string | null
           profitability_metrics?: Json | null
           quality_score?: number | null
           regulatory_analysis?: string | null
           regulatory_requirements?: string[] | null
           regulatory_timeline?: string | null
           retention_rate?: number | null
+          revenue_growth?: string | null
           revenue_statements?: Json | null
           s_deal_enrichment_perplexity_company_export_vc_json?: Json | null
           sam?: number | null
@@ -1933,7 +1961,9 @@ export type Database = {
           tam?: number | null
           target_market?: string | null
           team_building?: string[] | null
+          team_composition?: string | null
           technical_skills?: string[] | null
+          technology_advantage?: string | null
           technology_moats?: string[] | null
           technology_readiness_level?: number | null
           technology_stack?: string[] | null
@@ -1942,6 +1972,8 @@ export type Database = {
           unit_economics_breakdown?: Json | null
           updated_at?: string
           value_creation?: string[] | null
+          value_creation_potential?: string | null
+          vision_communication?: string | null
           whitespace_opportunities?: string[] | null
         }
         Update: {
@@ -1950,11 +1982,13 @@ export type Database = {
           business_model?: string | null
           cac_trend?: number | null
           cagr?: number | null
+          capital_efficiency?: string | null
           capital_efficiency_ratios?: Json | null
           capital_requirements?: string | null
           cash_flow_analysis?: Json | null
           certifications?: string[] | null
           channel_effectiveness?: Json | null
+          competitive_landscape?: string | null
           competitive_moat_assessment?: Json | null
           competitive_position?: string | null
           competitive_positioning_studies?: Json | null
@@ -1963,6 +1997,7 @@ export type Database = {
           countries_of_operation?: string[] | null
           created_at?: string
           customer_acquisition_metrics?: Json | null
+          customer_metrics?: string | null
           data_completeness_score?: number | null
           deal_card_enrichment?: Json | null
           deal_enrichment_crunchbase_export?: Json | null
@@ -1979,6 +2014,9 @@ export type Database = {
           employee_count?: string | null
           engine_integration?: Json | null
           exit_history?: Json | null
+          financial_performance?: string | null
+          financial_planning?: string | null
+          founder_experience?: string | null
           founding_year?: number | null
           fund_id?: string
           funding_stage?: string | null
@@ -1991,6 +2029,7 @@ export type Database = {
           innovation_record?: string[] | null
           investment_climate?: string | null
           investment_size?: number | null
+          investment_thesis_alignment?: string | null
           investor_network?: string[] | null
           ip_landscape_mapping?: Json | null
           ip_strength_scoring?: number | null
@@ -2011,17 +2050,22 @@ export type Database = {
           market_timing?: string | null
           market_timing_analysis?: string | null
           market_traction_indicators?: Json | null
+          market_validation?: string | null
           operational_challenges?: string | null
           organization_id?: string
           partnership_ecosystem?: string[] | null
           patent_portfolio_analysis?: Json | null
+          portfolio_synergies?: string | null
           previous_roles?: Json | null
+          product_innovation?: string | null
+          product_market_fit?: string | null
           profitability_metrics?: Json | null
           quality_score?: number | null
           regulatory_analysis?: string | null
           regulatory_requirements?: string[] | null
           regulatory_timeline?: string | null
           retention_rate?: number | null
+          revenue_growth?: string | null
           revenue_statements?: Json | null
           s_deal_enrichment_perplexity_company_export_vc_json?: Json | null
           sam?: number | null
@@ -2033,7 +2077,9 @@ export type Database = {
           tam?: number | null
           target_market?: string | null
           team_building?: string[] | null
+          team_composition?: string | null
           technical_skills?: string[] | null
+          technology_advantage?: string | null
           technology_moats?: string[] | null
           technology_readiness_level?: number | null
           technology_stack?: string[] | null
@@ -2042,6 +2088,8 @@ export type Database = {
           unit_economics_breakdown?: Json | null
           updated_at?: string
           value_creation?: string[] | null
+          value_creation_potential?: string | null
+          vision_communication?: string | null
           whitespace_opportunities?: string[] | null
         }
         Relationships: [
@@ -3796,88 +3844,142 @@ export type Database = {
       }
       deal_enrichment_perplexity_market_export_vc: {
         Row: {
+          capital_efficiency: string | null
           capital_requirements: string | null
+          competitive_landscape: string | null
           competitive_window: string | null
           confidence_level: string | null
           created_at: string
+          customer_metrics: string | null
           data_quality_score: number | null
           deal_enrichment_perplexity_market_export_vc_json: Json | null
           deal_id: string
           distribution_challenges: string | null
           economic_sensitivity: string | null
+          financial_performance: string | null
+          financial_planning: string | null
+          founder_experience: string | null
           geographic_constraints: string | null
           id: string
           investment_climate: string | null
+          investment_thesis_alignment: string | null
           last_updated: string | null
           location: string | null
           market_cycle: string | null
+          market_size: string | null
+          market_timing: string | null
+          market_validation: string | null
+          portfolio_synergies: string | null
           primary_industry: string | null
           processed_at: string | null
           processing_status: string
+          product_innovation: string | null
+          product_market_fit: string | null
           raw_perplexity_response: Json
           regulatory_requirements: string | null
           regulatory_timeline: string | null
+          revenue_growth: string | null
           snapshot_id: string
           subcategory_confidence: Json | null
           subcategory_sources: Json | null
+          team_composition: string | null
+          technology_advantage: string | null
           technology_moats: string | null
           updated_at: string
+          value_creation_potential: string | null
+          vision_communication: string | null
         }
         Insert: {
+          capital_efficiency?: string | null
           capital_requirements?: string | null
+          competitive_landscape?: string | null
           competitive_window?: string | null
           confidence_level?: string | null
           created_at?: string
+          customer_metrics?: string | null
           data_quality_score?: number | null
           deal_enrichment_perplexity_market_export_vc_json?: Json | null
           deal_id: string
           distribution_challenges?: string | null
           economic_sensitivity?: string | null
+          financial_performance?: string | null
+          financial_planning?: string | null
+          founder_experience?: string | null
           geographic_constraints?: string | null
           id?: string
           investment_climate?: string | null
+          investment_thesis_alignment?: string | null
           last_updated?: string | null
           location?: string | null
           market_cycle?: string | null
+          market_size?: string | null
+          market_timing?: string | null
+          market_validation?: string | null
+          portfolio_synergies?: string | null
           primary_industry?: string | null
           processed_at?: string | null
           processing_status?: string
+          product_innovation?: string | null
+          product_market_fit?: string | null
           raw_perplexity_response?: Json
           regulatory_requirements?: string | null
           regulatory_timeline?: string | null
+          revenue_growth?: string | null
           snapshot_id: string
           subcategory_confidence?: Json | null
           subcategory_sources?: Json | null
+          team_composition?: string | null
+          technology_advantage?: string | null
           technology_moats?: string | null
           updated_at?: string
+          value_creation_potential?: string | null
+          vision_communication?: string | null
         }
         Update: {
+          capital_efficiency?: string | null
           capital_requirements?: string | null
+          competitive_landscape?: string | null
           competitive_window?: string | null
           confidence_level?: string | null
           created_at?: string
+          customer_metrics?: string | null
           data_quality_score?: number | null
           deal_enrichment_perplexity_market_export_vc_json?: Json | null
           deal_id?: string
           distribution_challenges?: string | null
           economic_sensitivity?: string | null
+          financial_performance?: string | null
+          financial_planning?: string | null
+          founder_experience?: string | null
           geographic_constraints?: string | null
           id?: string
           investment_climate?: string | null
+          investment_thesis_alignment?: string | null
           last_updated?: string | null
           location?: string | null
           market_cycle?: string | null
+          market_size?: string | null
+          market_timing?: string | null
+          market_validation?: string | null
+          portfolio_synergies?: string | null
           primary_industry?: string | null
           processed_at?: string | null
           processing_status?: string
+          product_innovation?: string | null
+          product_market_fit?: string | null
           raw_perplexity_response?: Json
           regulatory_requirements?: string | null
           regulatory_timeline?: string | null
+          revenue_growth?: string | null
           snapshot_id?: string
           subcategory_confidence?: Json | null
           subcategory_sources?: Json | null
+          team_composition?: string | null
+          technology_advantage?: string | null
           technology_moats?: string | null
           updated_at?: string
+          value_creation_potential?: string | null
+          vision_communication?: string | null
         }
         Relationships: [
           {
