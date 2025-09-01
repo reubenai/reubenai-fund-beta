@@ -7395,6 +7395,50 @@ export type Database = {
           },
         ]
       }
+      perplexity2_vc_processing_log: {
+        Row: {
+          created_at: string
+          deal_id: string
+          error_message: string | null
+          http_response: Json | null
+          http_status: number | null
+          id: string
+          metadata: Json | null
+          processing_duration_ms: number | null
+          trigger_source: string
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          error_message?: string | null
+          http_response?: Json | null
+          http_status?: number | null
+          id?: string
+          metadata?: Json | null
+          processing_duration_ms?: number | null
+          trigger_source?: string
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          error_message?: string | null
+          http_response?: Json | null
+          http_status?: number | null
+          id?: string
+          metadata?: Json | null
+          processing_duration_ms?: number | null
+          trigger_source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "perplexity2_vc_processing_log_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pipeline_stages: {
         Row: {
           color: string
