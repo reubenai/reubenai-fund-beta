@@ -283,55 +283,37 @@ Return only valid JSON. Use null for missing data.
       }
     }
 
-    // Extract VC research data from simplified flat response
+    // Extract VC research data - only the 18 core fields that exist in database
     const vcResearchData = {
-      // Team & Leadership 
+      // Team & Leadership (3 fields)
       founder_experience: parsedResponse.leadership_experience || null,
-      team_composition: null, 
+      team_composition: parsedResponse.employee_count || null, 
       vision_communication: null,
       
-      // Market Opportunity
+      // Market Opportunity (4 fields)
       competitive_landscape: parsedResponse.competitors || null,
       market_size: parsedResponse.tam || null,
-      market_timing: null,
-      market_validation: null,
+      market_timing: parsedResponse.cagr || null,
+      market_validation: parsedResponse.key_customers || null,
       
-      // Product & Technology
-      product_innovation: null,
+      // Product & Technology (3 fields)
+      product_innovation: parsedResponse.business_model || null,
       technology_advantage: parsedResponse.technology_moats || null,
-      product_market_fit: null,
+      product_market_fit: parsedResponse.retention_rate || null,
       
-      // Business Traction
-      revenue_growth: null,
+      // Business Traction (2 fields)
+      revenue_growth: parsedResponse.growth_drivers || null,
       customer_metrics: parsedResponse.ltv_cac_ratio || null,
       
-      // Financial Health
+      // Financial Health (3 fields)
       financial_performance: parsedResponse.unit_economics || null,
-      capital_efficiency: null,
+      capital_efficiency: parsedResponse.ltv_cac_ratio || null,
       financial_planning: parsedResponse.funding_stage || null,
       
-      // Strategic Timing
+      // Strategic Timing (3 fields)
       portfolio_synergies: parsedResponse.partnerships || null,
       investment_thesis_alignment: null,
-      value_creation_potential: null,
-
-      // Legacy fields for backward compatibility (directly from simplified response)
-      tam: parsedResponse.tam || null,
-      sam: parsedResponse.sam || null,
-      som: parsedResponse.som || null,
-      cagr: parsedResponse.cagr || null,
-      growth_drivers: parsedResponse.growth_drivers ? [parsedResponse.growth_drivers] : [],
-      key_market_players: parsedResponse.competitors ? parsedResponse.competitors.split(',').map(c => c.trim()) : [],
-      addressable_customers: parsedResponse.key_customers || null,
-      whitespace_opportunities: [],
-      ltv_cac_ratio: parsedResponse.ltv_cac_ratio || null,
-      cac_trend: null,
-      retention_rate: parsedResponse.retention_rate || null,
-      strategic_advisors: [],
-      investor_network: parsedResponse.funding_stage ? [parsedResponse.funding_stage] : [],
-      market_share_distribution: {},
-      channel_effectiveness: {},
-      partnership_ecosystem: {}
+      value_creation_potential: parsedResponse.technology_stack || null
     };
 
     // Since we simplified the schema, we'll create a simple sources structure

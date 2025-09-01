@@ -3846,6 +3846,158 @@ export type Database = {
         Row: {
           capital_efficiency: string | null
           capital_requirements: string | null
+          company_name: string | null
+          competitive_landscape: string | null
+          competitive_window: string | null
+          confidence_level: string | null
+          created_at: string
+          customer_metrics: string | null
+          data_quality_score: number | null
+          deal_enrichment_perplexity_market_export_vc_json: Json | null
+          deal_id: string
+          distribution_challenges: string | null
+          economic_sensitivity: string | null
+          financial_performance: string | null
+          financial_planning: string | null
+          founder_experience: string | null
+          geographic_constraints: string | null
+          id: string
+          investment_climate: string | null
+          investment_thesis_alignment: string | null
+          last_updated: string | null
+          location: string | null
+          market_cycle: string | null
+          market_size: string | null
+          market_timing: string | null
+          market_validation: string | null
+          portfolio_synergies: string | null
+          primary_industry: string | null
+          processed_at: string | null
+          processing_status: string
+          product_innovation: string | null
+          product_market_fit: string | null
+          raw_perplexity_response: Json
+          regulatory_requirements: string | null
+          regulatory_timeline: string | null
+          revenue_growth: string | null
+          snapshot_id: string
+          subcategory_confidence: Json | null
+          subcategory_sources: Json | null
+          team_composition: string | null
+          technology_advantage: string | null
+          technology_moats: string | null
+          updated_at: string
+          value_creation_potential: string | null
+          vision_communication: string | null
+        }
+        Insert: {
+          capital_efficiency?: string | null
+          capital_requirements?: string | null
+          company_name?: string | null
+          competitive_landscape?: string | null
+          competitive_window?: string | null
+          confidence_level?: string | null
+          created_at?: string
+          customer_metrics?: string | null
+          data_quality_score?: number | null
+          deal_enrichment_perplexity_market_export_vc_json?: Json | null
+          deal_id: string
+          distribution_challenges?: string | null
+          economic_sensitivity?: string | null
+          financial_performance?: string | null
+          financial_planning?: string | null
+          founder_experience?: string | null
+          geographic_constraints?: string | null
+          id?: string
+          investment_climate?: string | null
+          investment_thesis_alignment?: string | null
+          last_updated?: string | null
+          location?: string | null
+          market_cycle?: string | null
+          market_size?: string | null
+          market_timing?: string | null
+          market_validation?: string | null
+          portfolio_synergies?: string | null
+          primary_industry?: string | null
+          processed_at?: string | null
+          processing_status?: string
+          product_innovation?: string | null
+          product_market_fit?: string | null
+          raw_perplexity_response?: Json
+          regulatory_requirements?: string | null
+          regulatory_timeline?: string | null
+          revenue_growth?: string | null
+          snapshot_id: string
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
+          team_composition?: string | null
+          technology_advantage?: string | null
+          technology_moats?: string | null
+          updated_at?: string
+          value_creation_potential?: string | null
+          vision_communication?: string | null
+        }
+        Update: {
+          capital_efficiency?: string | null
+          capital_requirements?: string | null
+          company_name?: string | null
+          competitive_landscape?: string | null
+          competitive_window?: string | null
+          confidence_level?: string | null
+          created_at?: string
+          customer_metrics?: string | null
+          data_quality_score?: number | null
+          deal_enrichment_perplexity_market_export_vc_json?: Json | null
+          deal_id?: string
+          distribution_challenges?: string | null
+          economic_sensitivity?: string | null
+          financial_performance?: string | null
+          financial_planning?: string | null
+          founder_experience?: string | null
+          geographic_constraints?: string | null
+          id?: string
+          investment_climate?: string | null
+          investment_thesis_alignment?: string | null
+          last_updated?: string | null
+          location?: string | null
+          market_cycle?: string | null
+          market_size?: string | null
+          market_timing?: string | null
+          market_validation?: string | null
+          portfolio_synergies?: string | null
+          primary_industry?: string | null
+          processed_at?: string | null
+          processing_status?: string
+          product_innovation?: string | null
+          product_market_fit?: string | null
+          raw_perplexity_response?: Json
+          regulatory_requirements?: string | null
+          regulatory_timeline?: string | null
+          revenue_growth?: string | null
+          snapshot_id?: string
+          subcategory_confidence?: Json | null
+          subcategory_sources?: Json | null
+          team_composition?: string | null
+          technology_advantage?: string | null
+          technology_moats?: string | null
+          updated_at?: string
+          value_creation_potential?: string | null
+          vision_communication?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_enrichment_perplexity_market_export_vc_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_enrichment_perplexity_market_export_vc_duplicate: {
+        Row: {
+          capital_efficiency: string | null
+          capital_requirements: string | null
           competitive_landscape: string | null
           competitive_window: string | null
           confidence_level: string | null
@@ -3983,7 +4135,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "deal_enrichment_perplexity_market_export_vc_deal_id_fkey"
+            foreignKeyName: "deal_enrichment_perplexity_market_export_vc_duplic_deal_id_fkey"
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
