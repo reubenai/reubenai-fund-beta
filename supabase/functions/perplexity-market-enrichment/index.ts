@@ -735,7 +735,7 @@ async function insertIntoDealDatapointsVC(
       source_engines: ['perplexity_market'],
       data_completeness_score: dataCompletenessScore,
       confidence_level: avgConfidenceScore > 2.5 ? 'high' : avgConfidenceScore > 1.5 ? 'medium' : 'low',
-      last_updated: new Date().toISOString()
+      updated_at: new Date().toISOString()
     };
 
     console.log(`📊 Prepared data: ${completenessCount}/${dataPointFields.length} fields populated, ${dataCompletenessScore}% completeness`);
