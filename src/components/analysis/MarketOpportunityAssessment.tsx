@@ -25,6 +25,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ScatterChart, Scatter
 import { EnhancedCompetitivePosition } from './deep-dive/EnhancedCompetitivePosition';
 import { CompetitorAnalysis } from '@/types/enhanced-deal-analysis';
 import { useEnhancedCompetitiveAnalysis } from '@/hooks/useEnhancedCompetitiveAnalysis';
+import { useVCMarketData } from '@/hooks/useVCMarketData';
 
 interface MarketOpportunityAssessmentProps {
   deal: Deal;
@@ -171,6 +172,9 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
   const [assessment, setAssessment] = useState<MarketAssessment | null>(null);
   const [expandedCriteria, setExpandedCriteria] = useState<string[]>([]);
   
+  // VC Market Data hook - get real data instead of hardcoded values
+  const { data: vcMarketData, isLoading: vcDataLoading } = useVCMarketData(deal.id);
+  
   // Enhanced competitive analysis hook
   const { 
     isAnalyzing, 
@@ -184,17 +188,8 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     try {
       setLoading(true);
 
-      // Fetch the latest vc_market_opportunity data from deal_analysis_sources
-      const { data: marketData } = await supabase
-        .from('deal_analysis_sources')
-        .select('*')
-        .eq('deal_id', deal.id)
-        .eq('engine_name', 'vc_market_opportunity')
-        .order('retrieved_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const assessmentResult = assessMarketOpportunity(deal, marketData);
+      // Use real VC market data instead of hardcoded fallbacks
+      const assessmentResult = assessMarketOpportunity(deal, vcMarketData);
       setAssessment(assessmentResult);
     } catch (error) {
       console.error('Error in market assessment:', error);
@@ -202,11 +197,13 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     } finally {
       setLoading(false);
     }
-  }, [deal.id]);
+  }, [deal.id, vcMarketData]);
 
   useEffect(() => {
-    // Initial load
-    fetchMarketDataAndAssess();
+    // Update assessment when VC data changes or when not loading
+    if (!vcDataLoading) {
+      fetchMarketDataAndAssess();
+    }
 
     // Listen for enrichment completion events
     const handleEnrichmentComplete = (event: CustomEvent) => {
@@ -222,10 +219,16 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
     return () => {
       window.removeEventListener('dealEnrichmentComplete', handleEnrichmentComplete as EventListener);
     };
-  }, [deal.id, fetchMarketDataAndAssess]);
+  }, [deal.id, fetchMarketDataAndAssess, vcDataLoading]);
 
-  // Helper functions for growth analysis
+  // Helper functions for growth analysis - now uses real VC data
   const getCAGRForIndustry = (industry: string): number => {
+    // Use real CAGR from VC market data if available
+    if (vcMarketData?.cagr) {
+      return vcMarketData.cagr;
+    }
+    
+    // Fallback to industry defaults only if no real data
     const cagrDefaults: Record<string, number> = {
       'Financial Services': 8.5,
       'Technology': 12.3,
@@ -362,6 +365,12 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
   };
 
   const getGrowthDriversForIndustry = (industry: string): string[] => {
+    // Use real growth drivers from VC market data if available
+    if (vcMarketData?.growth_drivers && vcMarketData.growth_drivers.length > 0) {
+      return vcMarketData.growth_drivers;
+    }
+    
+    // Fallback to industry defaults only if no real data
     const driverDefaults: Record<string, string[]> = {
       'Financial Services': ['Digital transformation', 'Regulatory changes', 'Consumer demand'],
       'Technology': ['AI adoption', 'Cloud migration', 'Digital infrastructure'],
@@ -1120,6 +1129,31 @@ export function MarketOpportunityAssessment({ deal }: MarketOpportunityAssessmen
   };
 
   const getDefaultCitation = (industry: string) => {
+    // Use real source engines from VC market data if available
+    if (vcMarketData?.source_engines && vcMarketData.source_engines.length > 0) {
+      // Map source engines to user-friendly names
+      const sourceNames = vcMarketData.source_engines.map((engine: string) => {
+        switch (engine) {
+          case 'perplexity_market':
+            return 'Perplexity Market Research';
+          case 'company_analysis':
+            return 'Company Analysis';
+          case 'market_research':
+            return 'Market Research';
+          default:
+            return engine.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+      });
+      
+      return {
+        report: `Market Analysis ${new Date().getFullYear()}`,
+        publisher: sourceNames[0] || 'AI Research',
+        year: new Date().getFullYear().toString(),
+        source: sourceNames.join(', ')
+      };
+    }
+    
+    // Fallback to industry defaults
     const citations: Record<string, any> = {
       'Financial Services': {
         report: 'Global Financial Services Market Report 2024',
