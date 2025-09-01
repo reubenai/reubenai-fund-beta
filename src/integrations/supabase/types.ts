@@ -1751,11 +1751,12 @@ export type Database = {
           cac_trend: number | null
           cagr: number | null
           capital_efficiency_ratios: Json | null
-          capital_requirements: number | null
+          capital_requirements: string | null
           cash_flow_analysis: Json | null
           certifications: string[] | null
           channel_effectiveness: Json | null
           competitive_moat_assessment: Json | null
+          competitive_position: string | null
           competitive_positioning_studies: Json | null
           competitive_window: string | null
           competitors: string[] | null
@@ -1799,21 +1800,30 @@ export type Database = {
           last_updated_by: string | null
           leadership_experience: string[] | null
           ltv_cac_ratio: number | null
+          market_barrier: string | null
+          market_conditions: string | null
           market_cycle: string | null
           market_differentiation_analysis: Json | null
+          market_growth_rate: string | null
           market_knowledge: string[] | null
           market_share_distribution: Json | null
+          market_size: string | null
+          market_timing: string | null
+          market_timing_analysis: string | null
           market_traction_indicators: Json | null
+          operational_challenges: string | null
           organization_id: string
           partnership_ecosystem: string[] | null
           patent_portfolio_analysis: Json | null
           previous_roles: Json | null
           profitability_metrics: Json | null
           quality_score: number | null
+          regulatory_analysis: string | null
           regulatory_requirements: string[] | null
           regulatory_timeline: string | null
           retention_rate: number | null
           revenue_statements: Json | null
+          s_deal_enrichment_perplexity_company_export_vc_json: Json | null
           sam: number | null
           scalability_readiness: string | null
           skill_coverage: Json | null
@@ -1841,11 +1851,12 @@ export type Database = {
           cac_trend?: number | null
           cagr?: number | null
           capital_efficiency_ratios?: Json | null
-          capital_requirements?: number | null
+          capital_requirements?: string | null
           cash_flow_analysis?: Json | null
           certifications?: string[] | null
           channel_effectiveness?: Json | null
           competitive_moat_assessment?: Json | null
+          competitive_position?: string | null
           competitive_positioning_studies?: Json | null
           competitive_window?: string | null
           competitors?: string[] | null
@@ -1889,21 +1900,30 @@ export type Database = {
           last_updated_by?: string | null
           leadership_experience?: string[] | null
           ltv_cac_ratio?: number | null
+          market_barrier?: string | null
+          market_conditions?: string | null
           market_cycle?: string | null
           market_differentiation_analysis?: Json | null
+          market_growth_rate?: string | null
           market_knowledge?: string[] | null
           market_share_distribution?: Json | null
+          market_size?: string | null
+          market_timing?: string | null
+          market_timing_analysis?: string | null
           market_traction_indicators?: Json | null
+          operational_challenges?: string | null
           organization_id: string
           partnership_ecosystem?: string[] | null
           patent_portfolio_analysis?: Json | null
           previous_roles?: Json | null
           profitability_metrics?: Json | null
           quality_score?: number | null
+          regulatory_analysis?: string | null
           regulatory_requirements?: string[] | null
           regulatory_timeline?: string | null
           retention_rate?: number | null
           revenue_statements?: Json | null
+          s_deal_enrichment_perplexity_company_export_vc_json?: Json | null
           sam?: number | null
           scalability_readiness?: string | null
           skill_coverage?: Json | null
@@ -1931,11 +1951,12 @@ export type Database = {
           cac_trend?: number | null
           cagr?: number | null
           capital_efficiency_ratios?: Json | null
-          capital_requirements?: number | null
+          capital_requirements?: string | null
           cash_flow_analysis?: Json | null
           certifications?: string[] | null
           channel_effectiveness?: Json | null
           competitive_moat_assessment?: Json | null
+          competitive_position?: string | null
           competitive_positioning_studies?: Json | null
           competitive_window?: string | null
           competitors?: string[] | null
@@ -1979,21 +2000,30 @@ export type Database = {
           last_updated_by?: string | null
           leadership_experience?: string[] | null
           ltv_cac_ratio?: number | null
+          market_barrier?: string | null
+          market_conditions?: string | null
           market_cycle?: string | null
           market_differentiation_analysis?: Json | null
+          market_growth_rate?: string | null
           market_knowledge?: string[] | null
           market_share_distribution?: Json | null
+          market_size?: string | null
+          market_timing?: string | null
+          market_timing_analysis?: string | null
           market_traction_indicators?: Json | null
+          operational_challenges?: string | null
           organization_id?: string
           partnership_ecosystem?: string[] | null
           patent_portfolio_analysis?: Json | null
           previous_roles?: Json | null
           profitability_metrics?: Json | null
           quality_score?: number | null
+          regulatory_analysis?: string | null
           regulatory_requirements?: string[] | null
           regulatory_timeline?: string | null
           retention_rate?: number | null
           revenue_statements?: Json | null
+          s_deal_enrichment_perplexity_company_export_vc_json?: Json | null
           sam?: number | null
           scalability_readiness?: string | null
           skill_coverage?: Json | null
@@ -2018,7 +2048,7 @@ export type Database = {
           {
             foreignKeyName: "deal_analysis_datapoints_vc_deal_id_fkey"
             columns: ["deal_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "deals"
             referencedColumns: ["id"]
           },
@@ -2990,12 +3020,11 @@ export type Database = {
           cagr: string | null
           channel_effectiveness: Json | null
           company_name: string
-          competitive_position_sources: string | null
           confidence_level: string | null
           created_at: string
-          customer_acquisition_sources: string | null
           data_quality_score: number | null
           data_sources: Json | null
+          deal_enrichment_perplexity_company_export_vc_json: Json | null
           deal_id: string
           growth_drivers: string[] | null
           id: string
@@ -3003,10 +3032,7 @@ export type Database = {
           key_market_players: string[] | null
           last_updated: string | null
           ltv_cac_ratio: string | null
-          market_growth_rate_sources: string | null
           market_share_distribution: Json | null
-          market_size_sources: string | null
-          network_advisors_sources: string | null
           partnership_ecosystem: Json | null
           processed_at: string | null
           processing_status: string
@@ -3028,12 +3054,11 @@ export type Database = {
           cagr?: string | null
           channel_effectiveness?: Json | null
           company_name: string
-          competitive_position_sources?: string | null
           confidence_level?: string | null
           created_at?: string
-          customer_acquisition_sources?: string | null
           data_quality_score?: number | null
           data_sources?: Json | null
+          deal_enrichment_perplexity_company_export_vc_json?: Json | null
           deal_id: string
           growth_drivers?: string[] | null
           id?: string
@@ -3041,10 +3066,7 @@ export type Database = {
           key_market_players?: string[] | null
           last_updated?: string | null
           ltv_cac_ratio?: string | null
-          market_growth_rate_sources?: string | null
           market_share_distribution?: Json | null
-          market_size_sources?: string | null
-          network_advisors_sources?: string | null
           partnership_ecosystem?: Json | null
           processed_at?: string | null
           processing_status?: string
@@ -3066,12 +3088,11 @@ export type Database = {
           cagr?: string | null
           channel_effectiveness?: Json | null
           company_name?: string
-          competitive_position_sources?: string | null
           confidence_level?: string | null
           created_at?: string
-          customer_acquisition_sources?: string | null
           data_quality_score?: number | null
           data_sources?: Json | null
+          deal_enrichment_perplexity_company_export_vc_json?: Json | null
           deal_id?: string
           growth_drivers?: string[] | null
           id?: string
@@ -3079,10 +3100,7 @@ export type Database = {
           key_market_players?: string[] | null
           last_updated?: string | null
           ltv_cac_ratio?: string | null
-          market_growth_rate_sources?: string | null
           market_share_distribution?: Json | null
-          market_size_sources?: string | null
-          network_advisors_sources?: string | null
           partnership_ecosystem?: Json | null
           processed_at?: string | null
           processing_status?: string
@@ -3182,6 +3200,7 @@ export type Database = {
           confidence_score: number | null
           created_at: string
           data_quality_score: number | null
+          deal_enrichment_perplexity_founder_export_vc_json: Json | null
           deal_id: string
           exit_history: Json | null
           founder_name: string
@@ -3209,6 +3228,7 @@ export type Database = {
           confidence_score?: number | null
           created_at?: string
           data_quality_score?: number | null
+          deal_enrichment_perplexity_founder_export_vc_json?: Json | null
           deal_id: string
           exit_history?: Json | null
           founder_name: string
@@ -3236,6 +3256,7 @@ export type Database = {
           confidence_score?: number | null
           created_at?: string
           data_quality_score?: number | null
+          deal_enrichment_perplexity_founder_export_vc_json?: Json | null
           deal_id?: string
           exit_history?: Json | null
           founder_name?: string
@@ -3342,6 +3363,7 @@ export type Database = {
           confidence_level: string | null
           created_at: string
           data_quality_score: number | null
+          deal_enrichment_perplexity_market_export_vc_json: Json | null
           deal_id: string
           distribution_challenges: string | null
           economic_sensitivity: string | null
@@ -3350,9 +3372,7 @@ export type Database = {
           investment_climate: string | null
           last_updated: string | null
           location: string | null
-          market_barrier_sources: string | null
           market_cycle: string | null
-          market_timing_sources: string | null
           primary_industry: string | null
           processed_at: string | null
           processing_status: string
@@ -3371,6 +3391,7 @@ export type Database = {
           confidence_level?: string | null
           created_at?: string
           data_quality_score?: number | null
+          deal_enrichment_perplexity_market_export_vc_json?: Json | null
           deal_id: string
           distribution_challenges?: string | null
           economic_sensitivity?: string | null
@@ -3379,9 +3400,7 @@ export type Database = {
           investment_climate?: string | null
           last_updated?: string | null
           location?: string | null
-          market_barrier_sources?: string | null
           market_cycle?: string | null
-          market_timing_sources?: string | null
           primary_industry?: string | null
           processed_at?: string | null
           processing_status?: string
@@ -3400,6 +3419,7 @@ export type Database = {
           confidence_level?: string | null
           created_at?: string
           data_quality_score?: number | null
+          deal_enrichment_perplexity_market_export_vc_json?: Json | null
           deal_id?: string
           distribution_challenges?: string | null
           economic_sensitivity?: string | null
@@ -3408,9 +3428,7 @@ export type Database = {
           investment_climate?: string | null
           last_updated?: string | null
           location?: string | null
-          market_barrier_sources?: string | null
           market_cycle?: string | null
-          market_timing_sources?: string | null
           primary_industry?: string | null
           processed_at?: string | null
           processing_status?: string
