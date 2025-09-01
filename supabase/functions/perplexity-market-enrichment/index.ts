@@ -591,7 +591,7 @@ async function processPerplexityMarketResponse(
   const { data, error } = await supabase
     .from('deal_enrichment_perplexity_market_export_vc')
     .upsert(upsertData, { 
-      onConflict: 'deal_id',
+      onConflict: 'deal_id,snapshot_id',
       ignoreDuplicates: false 
     })
     .select()
