@@ -242,10 +242,10 @@ verify_jwt = false
 [functions.manual-process-founder-enrichments]
 verify_jwt = false
 
-[functions.perplexity-comprehensive-research-processor]
+[functions.perplexity-vc-comprehensive-research-processor]
 verify_jwt = false
 
-[functions.perplexity-comprehensive-research-manual]
+[functions.perplexity-vc-comprehensive-research-manual]
 verify_jwt = false
 
 
