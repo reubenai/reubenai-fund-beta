@@ -22,32 +22,6 @@ interface MarketEnrichmentRequest {
   };
 }
 
-// Simplified VC Research Response (maps directly to database columns)
-interface SimplifiedVCResponse {
-  // Market data (18 database fields)
-  tam?: string | null;
-  sam?: string | null;
-  som?: string | null;
-  cagr?: string | null;
-  growth_drivers?: string | null;
-  competitors?: string | null;
-  key_customers?: string | null;
-  partnerships?: string | null;
-  technology_stack?: string | null;
-  technology_moats?: string | null;
-  business_model?: string | null;
-  unit_economics?: string | null;
-  ltv_cac_ratio?: string | null;
-  retention_rate?: string | null;
-  leadership_experience?: string | null;
-  funding_stage?: string | null;
-  employee_count?: string | null;
-  geographic_presence?: string | null;
-  
-  // Combined sources for all data points
-  sources?: string | null;
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -64,12 +38,11 @@ serve(async (req) => {
 
     const { dealId, companyName, additionalContext }: MarketEnrichmentRequest = await req.json();
 
-    console.log(`🔍 Processing comprehensive VC research for: ${companyName}`);
+    console.log(`🔍 Processing market research for: ${companyName}`);
 
-    // Pull richer context from `additionalContext`
+    // Basic context extraction
     const companyWebsite = additionalContext?.website ?? "Not Provided";
     const companyLinkedIn = additionalContext?.linkedin ?? "Not Provided";
-    const companyCrunchbase = additionalContext?.crunchbase ?? "Not Provided";
     const industries = 
       Array.isArray(additionalContext?.primaryIndustries)
         ? additionalContext.primaryIndustries.join(", ")
@@ -104,7 +77,7 @@ serve(async (req) => {
 
     // Check if fund is venture capital
     if (dealData.funds.fund_type !== 'venture_capital') {
-      console.log(`🚫 Skipping comprehensive VC research for ${companyName} - Fund type is ${dealData.funds.fund_type}, not venture_capital`);
+      console.log(`🚫 Skipping VC research for ${companyName} - Fund type is ${dealData.funds.fund_type}, not venture_capital`);
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'VC research only available for venture capital deals',
@@ -115,56 +88,27 @@ serve(async (req) => {
       });
     }
 
-    console.log(`✅ Deal ${dealId} confirmed as venture capital - proceeding with comprehensive VC research`);
+    console.log(`✅ Deal ${dealId} confirmed as venture capital - proceeding with market research`);
 
     // Generate unique snapshot ID
     const snapshotId = `vc_research_${dealId}_${Date.now()}`;
     console.log(`📝 Generated snapshot ID: ${snapshotId}`);
 
-    // Build the simplified prompt
-    const systemContent = `
-You are Perplexity, a market research analyst. Return only verifiable facts with sources. Never fabricate data. If data cannot be verified, return null. Respond in pure JSON that matches the provided schema.
-`.trim();
-
+    // Simple research prompt
     const userContent = `
 Research company: ${companyName} (website: ${companyWebsite}, LinkedIn: ${companyLinkedIn}, industry: ${industries}, location: ${country}, founders: ${founders}).
 
-Provide 1-2 sentence answers for each field. Only use verifiable data from credible sources. If no data found, return null.
-
-Fields to research:
-- tam: Total addressable market size in USD
-- sam: Serviceable addressable market size in USD  
-- som: Serviceable obtainable market size in USD
-- cagr: Market growth rate percentage with time period
-- growth_drivers: Key factors driving market growth
-- competitors: Main competitors in the space
-- key_customers: Notable customers or user base
-- partnerships: Strategic partnerships or integrations
-- technology_stack: Core technologies used
-- technology_moats: Technological competitive advantages
-- business_model: How the company makes money
-- unit_economics: Key financial metrics (CAC, LTV, margins)
-- ltv_cac_ratio: Customer lifetime value to acquisition cost ratio
-- retention_rate: Customer or revenue retention percentage
-- leadership_experience: Founder/leadership background and experience
-- funding_stage: Current funding stage and amounts raised
-- employee_count: Number of employees
-- geographic_presence: Geographic markets served
-
-Also provide:
-- sources: List all sources used (title and URL) as a single text field
-
-Return only valid JSON. Use null for missing data.
+Provide comprehensive market research about this company covering market size, competition, business model, funding, and key metrics. Include sources for all data points.
 `.trim();
 
-    console.log('🔍 Calling Perplexity API with structured query...');
+    console.log('🔍 Calling Perplexity API...');
 
     const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
     if (!perplexityApiKey) {
       throw new Error('Perplexity API key not found');
     }
 
-    // Call Perplexity API with simplified schema
+    // Call Perplexity API
     const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -174,7 +118,7 @@ Return only valid JSON. Use null for missing data.
       body: JSON.stringify({
         model: 'llama-3.1-sonar-large-128k-online',
         messages: [
-          { role: 'system', content: systemContent },
+          { role: 'system', content: 'You are a market research analyst. Provide comprehensive and accurate research with sources.' },
           { role: 'user', content: userContent }
         ],
         max_tokens: 6000,
@@ -184,38 +128,7 @@ Return only valid JSON. Use null for missing data.
         presence_penalty: 0,
         return_images: false,
         return_related_questions: false,
-        search_recency_filter: 'month',
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'SimplifiedVCResearch',
-            schema: {
-              type: "object",
-              properties: {
-                tam: { type: ["string", "null"] },
-                sam: { type: ["string", "null"] },
-                som: { type: ["string", "null"] },
-                cagr: { type: ["string", "null"] },
-                growth_drivers: { type: ["string", "null"] },
-                competitors: { type: ["string", "null"] },
-                key_customers: { type: ["string", "null"] },
-                partnerships: { type: ["string", "null"] },
-                technology_stack: { type: ["string", "null"] },
-                technology_moats: { type: ["string", "null"] },
-                business_model: { type: ["string", "null"] },
-                unit_economics: { type: ["string", "null"] },
-                ltv_cac_ratio: { type: ["string", "null"] },
-                retention_rate: { type: ["string", "null"] },
-                leadership_experience: { type: ["string", "null"] },
-                funding_stage: { type: ["string", "null"] },
-                employee_count: { type: ["string", "null"] },
-                geographic_presence: { type: ["string", "null"] },
-                sources: { type: ["string", "null"] }
-              },
-              additionalProperties: true
-            }
-          }
-        }
+        search_recency_filter: 'month'
       }),
     });
 
@@ -232,148 +145,25 @@ Return only valid JSON. Use null for missing data.
       throw new Error('No content received from Perplexity API');
     }
 
-    console.log('🔄 Processing Perplexity VC research response...');
-    console.log(`📥 Raw Perplexity content: ${rawContent.slice(0, 500)}...`);
+    console.log(`📥 Raw Perplexity content received (${rawContent.length} characters)`);
 
-    let parsedResponse: SimplifiedVCResponse;
-
-    try {
-      parsedResponse = JSON.parse(rawContent);
-      console.log('✅ Successfully parsed JSON response');
-    } catch (parseError) {
-      console.error('❌ Failed to parse JSON response:', parseError);
-      console.log(`Raw content length: ${rawContent.length}`);
-      console.log(`Content preview: ${rawContent.slice(0, 500)}`);
-      
-      // Try to clean and parse again
-      console.log('❌ First parse attempt failed, trying to clean JSON...');
-      try {
-        const cleanedContent = rawContent
-          .replace(/\r?\n\s*/g, ' ')  // Remove newlines and extra whitespace
-          .replace(/,\s*}/g, '}')     // Remove trailing commas
-          .replace(/,\s*]/g, ']')     // Remove trailing commas in arrays
-          .trim();
-        
-        parsedResponse = JSON.parse(cleanedContent);
-        console.log('✅ Successfully parsed cleaned JSON response');
-      } catch (cleanError) {
-        console.error('❌ Failed to parse cleaned JSON:', cleanError);
-        // Return a minimal response with error info
-        parsedResponse = {
-          tam: null,
-          sam: null,
-          som: null,
-          cagr: null,
-          growth_drivers: null,
-          competitors: null,
-          key_customers: null,
-          partnerships: null,
-          technology_stack: null,
-          technology_moats: null,
-          business_model: null,
-          unit_economics: null,
-          ltv_cac_ratio: null,
-          retention_rate: null,
-          leadership_experience: null,
-          funding_stage: null,
-          employee_count: null,
-          geographic_presence: null,
-          sources: `Error parsing Perplexity response: ${cleanError.message}`
-        };
-      }
-    }
-
-    // Extract VC research data - only the 18 core fields that exist in database
-    const vcResearchData = {
-      // Team & Leadership (3 fields)
-      founder_experience: parsedResponse.leadership_experience || null,
-      team_composition: parsedResponse.employee_count || null, 
-      vision_communication: null,
-      
-      // Market Opportunity (4 fields)
-      competitive_landscape: parsedResponse.competitors || null,
-      market_size: parsedResponse.tam || null,
-      market_timing: parsedResponse.cagr || null,
-      market_validation: parsedResponse.key_customers || null,
-      
-      // Product & Technology (3 fields)
-      product_innovation: parsedResponse.business_model || null,
-      technology_advantage: parsedResponse.technology_moats || null,
-      product_market_fit: parsedResponse.retention_rate || null,
-      
-      // Business Traction (2 fields)
-      revenue_growth: parsedResponse.growth_drivers || null,
-      customer_metrics: parsedResponse.ltv_cac_ratio || null,
-      
-      // Financial Health (3 fields)
-      financial_performance: parsedResponse.unit_economics || null,
-      capital_efficiency: parsedResponse.ltv_cac_ratio || null,
-      financial_planning: parsedResponse.funding_stage || null,
-      
-      // Strategic Timing (3 fields)
-      portfolio_synergies: parsedResponse.partnerships || null,
-      investment_thesis_alignment: null,
-      value_creation_potential: parsedResponse.technology_stack || null
-    };
-
-    // Since we simplified the schema, we'll create a simple sources structure
-    const allSources = parsedResponse.sources || '';
-    const sourcesArray = allSources ? allSources.split('\n').filter(s => s.trim()).map(s => ({ title: s.trim(), url: '' })) : [];
-    
-    const subcategorySources = {
-      team_leadership: sourcesArray,
-      market_opportunity: sourcesArray,
-      product_technology: sourcesArray,
-      business_traction: sourcesArray,
-      financial_health: sourcesArray,
-      strategic_timing: sourcesArray,
-      trust_transparency: sourcesArray
-    };
-
-    const subcategoryConfidence = {
-      team_leadership: parsedResponse.leadership_experience ? 'Medium' : 'Low',
-      market_opportunity: parsedResponse.tam ? 'Medium' : 'Low',
-      product_technology: parsedResponse.technology_stack ? 'Medium' : 'Low',
-      business_traction: parsedResponse.ltv_cac_ratio ? 'Medium' : 'Low',
-      financial_health: parsedResponse.unit_economics ? 'Medium' : 'Low',
-      strategic_timing: parsedResponse.partnerships ? 'Medium' : 'Low',
-      trust_transparency: 'Low'
-    };
-
-    // Calculate overall data quality score based on populated fields
-    const totalSources = sourcesArray.length;
-    const populatedFields = Object.values(parsedResponse).filter(v => v !== null && v !== undefined && v !== '').length;
-    const highConfidenceCount = Object.values(subcategoryConfidence).filter(c => c === 'Medium' || c === 'High').length;
-    const dataQualityScore = Math.min(100, (populatedFields * 5) + (totalSources * 2) + (highConfidenceCount * 10));
-
-    console.log('💾 Inserting comprehensive VC research data into database...');
-
-    // Insert into database with comprehensive data
+    // Store raw data only
     const { error: insertError } = await supabase
       .from('deal_enrichment_perplexity_market_export_vc')
       .insert({
         deal_id: dealId,
         snapshot_id: snapshotId,
         company_name: companyName,
-        primary_industry: industries,
-        location: country,
-        ...vcResearchData,
-        subcategory_sources: subcategorySources,
-        subcategory_confidence: subcategoryConfidence,
         raw_perplexity_response: {
           query: userContent,
           response: rawContent,
-          parsed_data: parsedResponse,
           api_metadata: {
             model: 'llama-3.1-sonar-large-128k-online',
-            timestamp: new Date().toISOString(),
-            sources_count: sourcesArray.length
+            timestamp: new Date().toISOString()
           }
         },
         processing_status: 'completed',
-        data_quality_score: dataQualityScore,
-        confidence_level: highConfidenceCount >= 3 ? 'High' : highConfidenceCount >= 2 ? 'Medium' : 'Low',
-        processed_at: new Date().toISOString()
+        timestamp: new Date().toISOString()
       });
 
     if (insertError) {
@@ -381,24 +171,13 @@ Return only valid JSON. Use null for missing data.
       throw insertError;
     }
 
-    console.log('✅ Processed market data inserted successfully');
+    console.log('✅ Raw market data stored successfully');
 
-    const result = {
+    return new Response(JSON.stringify({
       success: true,
-      data: {
-        ...vcResearchData,
-        subcategory_sources: subcategorySources,
-        subcategory_confidence: subcategoryConfidence,
-        data_quality_score: dataQualityScore,
-        confidence_level: highConfidenceCount >= 3 ? 'High' : highConfidenceCount >= 2 ? 'Medium' : 'Low'
-      },
       snapshot_id: snapshotId,
-      data_quality_score: dataQualityScore
-    };
-
-    console.log('✅ Comprehensive VC research enrichment completed successfully');
-
-    return new Response(JSON.stringify(result), {
+      message: 'Market research completed and raw data stored'
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
