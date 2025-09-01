@@ -40,6 +40,7 @@ import { AnalysisQueueStatus } from './AnalysisQueueStatus';
 import { EnhancedAnalysisIndicators } from './EnhancedAnalysisIndicators';
 import { RubricScoreRadar } from './RubricScoreRadar';
 import { FundTypeAnalysisPanel } from './FundTypeAnalysisPanel';
+import { MarketGrowthSection } from './MarketGrowthSection';
 
 import { QueuePositionIndicator } from './QueuePositionIndicator';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -255,6 +256,14 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Market Growth Rate - Only for VC funds */}
+            {selectedFund?.fund_type === 'venture_capital' && (
+              <MarketGrowthSection 
+                dealId={deal.id}
+                viewDensity={viewDensity}
+              />
+            )}
 
             {/* Enhanced Analysis Indicators for detailed view */}
             {viewDensity === 'detailed' && deal.enhanced_analysis && (
