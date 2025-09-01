@@ -1,5 +1,4 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.53.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,456 +6,252 @@ const corsHeaders = {
 }
 
 interface PostProcessRequest {
-  dealId?: string
-  recordId?: string
-  forceReprocess?: boolean
+  dealId?: string;
+  founderEnrichmentId?: string;
+  forceReprocess?: boolean;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    // Parse request body
-    let requestBody: PostProcessRequest = {}
-    
-    if (req.method === 'POST') {
-      try {
-        const body = await req.text()
-        if (body) {
-          requestBody = JSON.parse(body)
-        }
-      } catch (e) {
-        console.log('No valid JSON body provided, processing all pending records')
-      }
-    }
+    const { dealId, founderEnrichmentId, forceReprocess = false }: PostProcessRequest = await req.json();
 
-    const { dealId, recordId, forceReprocess } = requestBody
+    console.log(`🔄 [Founder Post-Processor] Starting post-processing...`);
+    console.log(`📊 [Founder Post-Processor] Deal ID: ${dealId}, Enrichment ID: ${founderEnrichmentId}, Force: ${forceReprocess}`);
 
-    console.log('🚀 Starting Perplexity founder enrichment post-processing...')
-    console.log('Request params:', { dealId, recordId, forceReprocess })
-
-    // Build query conditions
+    // Build query to find records to process
     let query = supabase
       .from('deal_enrichment_perplexity_founder_export_vc')
       .select('*')
+      .in('processing_status', ['raw', 'pending']);
 
-    if (recordId) {
-      query = query.eq('id', recordId)
-    } else if (dealId) {
-      query = query.eq('deal_id', dealId)
+    if (dealId) {
+      query = query.eq('deal_id', dealId);
+    }
+    if (founderEnrichmentId) {
+      query = query.eq('id', founderEnrichmentId);
     }
 
-    if (!forceReprocess) {
-      query = query.in('processing_status', ['raw', 'pending'])
-    }
-
-    // Add a reasonable limit to prevent overwhelming the system
-    query = query.limit(50)
-
-    const { data: records, error: fetchError } = await query
+    const { data: rawRecords, error: fetchError } = await query;
 
     if (fetchError) {
-      console.error('❌ Error fetching records:', fetchError)
+      console.error(`❌ [Founder Post-Processor] Error fetching raw records:`, fetchError);
       return new Response(
-        JSON.stringify({ success: false, error: `Failed to fetch records: ${fetchError.message}` }),
+        JSON.stringify({ success: false, error: fetchError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
 
-    if (!records || records.length === 0) {
-      console.log('ℹ️ No records found to process')
-      return new Response(
-        JSON.stringify({ success: true, message: 'No records found to process', processedCount: 0 }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    console.log(`📊 [Founder Post-Processor] Found ${rawRecords?.length || 0} raw records to process`);
 
-    console.log(`📋 Found ${records.length} records to process`)
+    const results = [];
 
-    let processedCount = 0
-    let errorCount = 0
-    const errors: string[] = []
-
-    // Process each record
-    for (const record of records) {
+    for (const record of rawRecords || []) {
       try {
-        console.log(`🔄 Processing record ${record.id} for deal ${record.deal_id}`)
+        console.log(`🔄 [Founder Post-Processor] Processing record ${record.id} for ${record.founder_name} at ${record.company_name}`);
 
-        // Update status to processing
+        // Update processing status
         await supabase
           .from('deal_enrichment_perplexity_founder_export_vc')
           .update({ processing_status: 'processing' })
-          .eq('id', record.id)
+          .eq('id', record.id);
 
-        // Extract and process the raw response
-        if (!record.raw_perplexity_response) {
-          console.error(`❌ No raw response found for record ${record.id}`)
-          await supabase
-            .from('deal_enrichment_perplexity_founder_export_vc')
-            .update({ processing_status: 'failed' })
-            .eq('id', record.id)
-          errorCount++
-          errors.push(`Record ${record.id}: No raw response data`)
-          continue
+        // Extract data from raw_perplexity_response
+        const rawData = record.raw_perplexity_response;
+        if (!rawData) {
+          console.log(`⚠️ [Founder Post-Processor] No raw data found for record ${record.id}`);
+          continue;
         }
 
-        // Parse the Perplexity response
-        let parsedData: any
-        try {
-          // Handle different response formats
-          if (typeof record.raw_perplexity_response === 'string') {
-            parsedData = JSON.parse(record.raw_perplexity_response)
-          } else {
-            parsedData = record.raw_perplexity_response
+        // Helper function to ensure array format
+        const ensureArray = (value: any): string[] => {
+          if (!value) return [];
+          if (Array.isArray(value)) return value;
+          if (typeof value === 'string') {
+            // Try to parse as JSON array first
+            try {
+              const parsed = JSON.parse(value);
+              return Array.isArray(parsed) ? parsed : [value];
+            } catch {
+              return [value];
+            }
           }
+          return [String(value)];
+        };
 
-          // Extract the actual JSON content from choices
-          let jsonContent: any
-          if (parsedData.choices && parsedData.choices[0] && parsedData.choices[0].message) {
-            const messageContent = parsedData.choices[0].message.content
-            if (typeof messageContent === 'string') {
-              // Try to parse JSON from the message content
-              const jsonMatch = messageContent.match(/\{[\s\S]*\}/)
-              if (jsonMatch) {
-                jsonContent = JSON.parse(jsonMatch[0])
-              } else {
-                jsonContent = JSON.parse(messageContent)
-              }
-            } else {
-              jsonContent = messageContent
+        // Helper function to ensure JSONB format
+        const ensureJSONB = (value: any): object => {
+          if (!value) return {};
+          if (typeof value === 'object' && !Array.isArray(value)) return value;
+          if (typeof value === 'string') {
+            try {
+              return JSON.parse(value);
+            } catch {
+              return { value };
+            }
+          }
+          return { value };
+        };
+
+        // Get existing datapoints record or create new one
+        const { data: existingDatapoints, error: datapointsError } = await supabase
+          .from('deal_analysis_datapoints_vc')
+          .select('*')
+          .eq('deal_id', record.deal_id)
+          .single();
+
+        if (datapointsError && datapointsError.code !== 'PGRST116') {
+          console.error(`❌ [Founder Post-Processor] Error fetching datapoints:`, datapointsError);
+          continue;
+        }
+
+        // Extract and map founder data with proper type conversions
+        const founderUpdateData = {
+          // JSONB fields
+          previous_roles: ensureJSONB(rawData.previous_roles),
+          exit_history: ensureJSONB(rawData.exit_history),
+          
+          // ARRAY fields
+          leadership_experience: ensureArray(rawData.leadership_experience),
+          technical_skills: ensureArray(rawData.technical_skills),
+          market_knowledge: ensureArray(rawData.market_knowledge),
+          innovation_record: ensureArray(rawData.innovation_record),
+          academic_background: ensureArray(rawData.academic_background),
+          certifications: ensureArray(rawData.certifications),
+          thought_leadership: ensureArray(rawData.thought_leadership),
+          value_creation: ensureArray(rawData.value_creation),
+          team_building: ensureArray(rawData.team_building),
+          
+          // Update source engines and completeness
+          source_engines: existingDatapoints?.source_engines ? 
+            [...new Set([...existingDatapoints.source_engines, 'perplexity_founder'])] : 
+            ['perplexity_founder'],
+          updated_at: new Date().toISOString()
+        };
+
+        // Calculate data completeness score for founder fields
+        const founderFields = [
+          'previous_roles', 'leadership_experience', 'technical_skills', 'market_knowledge',
+          'innovation_record', 'academic_background', 'certifications', 'thought_leadership',
+          'exit_history', 'value_creation', 'team_building'
+        ];
+
+        let founderCompleteness = 0;
+        founderFields.forEach(field => {
+          const value = founderUpdateData[field];
+          if (field === 'previous_roles' || field === 'exit_history') {
+            // JSONB fields
+            if (value && typeof value === 'object' && Object.keys(value).length > 0) {
+              founderCompleteness += Math.floor(100 / founderFields.length);
             }
           } else {
-            jsonContent = parsedData
+            // ARRAY fields
+            if (Array.isArray(value) && value.length > 0) {
+              founderCompleteness += Math.floor(100 / founderFields.length);
+            }
           }
+        });
 
-          console.log(`✅ Successfully parsed JSON for record ${record.id}`)
+        // Update existing completeness score
+        if (existingDatapoints) {
+          founderUpdateData.data_completeness_score = Math.min(100, 
+            (existingDatapoints.data_completeness_score || 0) + founderCompleteness
+          );
+        } else {
+          founderUpdateData.data_completeness_score = founderCompleteness;
+        }
 
-          // Extract structured data from the parsed JSON
-          const processedData = await processPerplexityFounderResponse(jsonContent, record.deal_id, record.snapshot_id)
+        console.log(`📊 [Founder Post-Processor] Updating datapoints with founder data:`, founderUpdateData);
 
-          // Generate JSON analysis format
-          const founderAnalysisJSON = buildFounderAnalysisJSON(jsonContent);
+        // Upsert the datapoints record
+        const { error: upsertError } = await supabase
+          .from('deal_analysis_datapoints_vc')
+          .upsert({
+            deal_id: record.deal_id,
+            ...founderUpdateData
+          }, {
+            onConflict: 'deal_id'
+          });
 
-          // Update the record with processed data
-          const updateData = {
-            // Track record data
-            track_record: processedData.track_record || null,
-            
-            // Team leadership data  
-            team_leadership: processedData.team_leadership || null,
-            previous_roles: processedData.previous_roles || null,
-            leadership_experience: processedData.leadership_experience || null,
-            
-            // Market knowledge data
-            market_knowledge: processedData.market_knowledge || null,
-            thought_leadership: processedData.thought_leadership || null,
-            
-            // Innovation expertise data
-            innovation_expertise: processedData.innovation_expertise || null,
-            technical_skills: processedData.technical_skills || null,
-            academic_background: processedData.academic_background || null,
-            certifications: processedData.certifications || null,
-            
-            // JSON analysis format
-            deal_enrichment_perplexity_founder_export_vc_json: founderAnalysisJSON,
-            
-            // Quality metrics
-            data_quality_score: processedData.data_quality_score || 0,
-            confidence_score: processedData.confidence_score || 50,
-            subcategory_confidence: processedData.subcategory_confidence || {},
-            subcategory_sources: processedData.subcategory_sources || {},
-            
-            // Status and metadata
-            processing_status: 'processed',
-            processed_at: new Date().toISOString()
-          }
-
-          const { error: updateError } = await supabase
-            .from('deal_enrichment_perplexity_founder_export_vc')
-            .update(updateData)
-            .eq('id', record.id)
-
-          if (updateError) {
-            console.error(`❌ Error updating record ${record.id}:`, updateError)
-            await supabase
-              .from('deal_enrichment_perplexity_founder_export_vc')
-              .update({ processing_status: 'failed' })
-              .eq('id', record.id)
-            errorCount++
-            errors.push(`Record ${record.id}: Update failed - ${updateError.message}`)
-          } else {
-            console.log(`✅ Successfully processed record ${record.id}`)
-            processedCount++
-          }
-
-        } catch (parseError) {
-          console.error(`❌ Error parsing JSON for record ${record.id}:`, parseError)
+        if (upsertError) {
+          console.error(`❌ [Founder Post-Processor] Error upserting datapoints for ${record.id}:`, upsertError);
+          
+          // Mark as failed
           await supabase
             .from('deal_enrichment_perplexity_founder_export_vc')
             .update({ processing_status: 'failed' })
-            .eq('id', record.id)
-          errorCount++
-          errors.push(`Record ${record.id}: JSON parsing failed - ${parseError.message}`)
+            .eq('id', record.id);
+
+          results.push({
+            id: record.id,
+            founder_name: record.founder_name,
+            company_name: record.company_name,
+            success: false,
+            error: upsertError.message
+          });
+        } else {
+          // Mark as processed
+          await supabase
+            .from('deal_enrichment_perplexity_founder_export_vc')
+            .update({ 
+              processing_status: 'processed',
+              processed_at: new Date().toISOString()
+            })
+            .eq('id', record.id);
+
+          console.log(`✅ [Founder Post-Processor] Successfully processed ${record.founder_name} at ${record.company_name}`);
+          results.push({
+            id: record.id,
+            founder_name: record.founder_name,
+            company_name: record.company_name,
+            success: true
+          });
         }
 
       } catch (recordError) {
-        console.error(`❌ Error processing record ${record.id}:`, recordError)
+        console.error(`❌ [Founder Post-Processor] Error processing record ${record.id}:`, recordError);
+        
+        // Mark as failed
         await supabase
           .from('deal_enrichment_perplexity_founder_export_vc')
           .update({ processing_status: 'failed' })
-          .eq('id', record.id)
-        errorCount++
-        errors.push(`Record ${record.id}: Processing failed - ${recordError.message}`)
+          .eq('id', record.id);
+
+        results.push({
+          id: record.id,
+          founder_name: record.founder_name,
+          company_name: record.company_name,
+          success: false,
+          error: recordError.message
+        });
       }
     }
 
-    console.log(`🏁 Post-processing completed. Processed: ${processedCount}, Errors: ${errorCount}`)
+    console.log(`✅ [Founder Post-Processor] Completed processing ${results.length} records`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Post-processing completed`,
-        processedCount,
-        errorCount,
-        totalRecords: records.length,
-        errors: errors.length > 0 ? errors : undefined
+        processed_count: results.length,
+        results: results
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
-    console.error('❌ Post-processor error:', error)
+    console.error(`❌ [Founder Post-Processor] Fatal error:`, error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   }
-})
-
-// Helper function to process Perplexity founder response
-async function processPerplexityFounderResponse(jsonData: any, dealId: string, snapshotId?: string) {
-  console.log('🔄 Processing Perplexity founder response for deal:', dealId)
-
-  // Extract and structure the data based on the JSON format
-  const processedData: any = {
-    deal_id: dealId,
-    snapshot_id: snapshotId
-  }
-
-  try {
-    // Extract track record information
-    if (jsonData.track_record) {
-      processedData.track_record = jsonData.track_record
-    }
-
-    // Extract team leadership information
-    if (jsonData.team_leadership) {
-      processedData.team_leadership = jsonData.team_leadership
-      
-      // Also extract specific arrays for compatibility
-      if (jsonData.team_leadership.data?.previous_roles) {
-        processedData.previous_roles = jsonData.team_leadership.data.previous_roles
-      }
-      if (jsonData.team_leadership.data?.leadership_experience) {
-        processedData.leadership_experience = jsonData.team_leadership.data.leadership_experience
-      }
-    }
-
-    // Extract market knowledge information
-    if (jsonData.market_knowledge) {
-      processedData.market_knowledge = jsonData.market_knowledge
-      
-      // Extract thought leadership specifically
-      if (jsonData.market_knowledge.data?.thought_leadership) {
-        processedData.thought_leadership = jsonData.market_knowledge.data.thought_leadership
-      }
-    }
-
-    // Extract innovation expertise information
-    if (jsonData.innovation_expertise) {
-      processedData.innovation_expertise = jsonData.innovation_expertise
-      
-      // Extract specific arrays for compatibility
-      if (jsonData.innovation_expertise.data?.technical_skills) {
-        processedData.technical_skills = jsonData.innovation_expertise.data.technical_skills
-      }
-      if (jsonData.innovation_expertise.data?.academic_background) {
-        processedData.academic_background = jsonData.innovation_expertise.data.academic_background
-      }
-      if (jsonData.innovation_expertise.data?.certifications) {
-        processedData.certifications = jsonData.innovation_expertise.data.certifications
-      }
-    }
-
-    // Calculate data quality and confidence scores
-    processedData.data_quality_score = calculateFounderDataQualityWithSubcategories(jsonData)
-    processedData.confidence_score = calculateFounderConfidenceScore(jsonData)
-    
-    // Extract subcategory confidence and sources
-    processedData.subcategory_confidence = extractSubcategoryConfidence(jsonData)
-    processedData.subcategory_sources = extractSubcategorySources(jsonData)
-
-    console.log('✅ Successfully processed Perplexity founder data')
-    
-  } catch (error) {
-    console.error('❌ Error processing founder data:', error)
-    throw error
-  }
-
-  return processedData
-}
-
-// Helper function to calculate data quality score
-function calculateFounderDataQualityWithSubcategories(data: any): number {
-  let score = 0
-  const maxScore = 100
-
-  // Track Record (25 points)
-  if (data.track_record?.data) {
-    if (data.track_record.data.exit_history?.length > 0) score += 10
-    if (data.track_record.data.value_creation) score += 15
-  }
-
-  // Team Leadership (25 points)  
-  if (data.team_leadership?.data) {
-    if (data.team_leadership.data.team_building) score += 10
-    if (data.team_leadership.data.previous_roles?.length > 0) score += 8
-    if (data.team_leadership.data.leadership_experience) score += 7
-  }
-
-  // Market Knowledge (25 points)
-  if (data.market_knowledge?.data) {
-    if (data.market_knowledge.data.market_knowledge) score += 15
-    if (data.market_knowledge.data.thought_leadership) score += 10
-  }
-
-  // Innovation Expertise (25 points)
-  if (data.innovation_expertise?.data) {
-    if (data.innovation_expertise.data.technical_skills?.length > 0) score += 8
-    if (data.innovation_expertise.data.innovation_record) score += 10
-    if (data.innovation_expertise.data.academic_background) score += 7
-  }
-
-  return Math.min(score, maxScore)
-}
-
-// Helper function to calculate confidence score
-function calculateFounderConfidenceScore(data: any): number {
-  const confidenceLevels = []
-
-  // Extract confidence from each subcategory
-  if (data.track_record?.confidence) {
-    confidenceLevels.push(mapConfidenceToNumber(data.track_record.confidence))
-  }
-  if (data.team_leadership?.confidence) {
-    confidenceLevels.push(mapConfidenceToNumber(data.team_leadership.confidence))
-  }
-  if (data.market_knowledge?.confidence) {
-    confidenceLevels.push(mapConfidenceToNumber(data.market_knowledge.confidence))
-  }
-  if (data.innovation_expertise?.confidence) {
-    confidenceLevels.push(mapConfidenceToNumber(data.innovation_expertise.confidence))
-  }
-
-  if (confidenceLevels.length === 0) return 50 // Default confidence
-
-  // Return average confidence
-  return Math.round(confidenceLevels.reduce((a, b) => a + b, 0) / confidenceLevels.length)
-}
-
-// Helper function to extract subcategory confidence
-function extractSubcategoryConfidence(data: any): any {
-  const confidence: any = {}
-
-  if (data.track_record?.confidence) {
-    confidence.track_record = data.track_record.confidence
-  }
-  if (data.team_leadership?.confidence) {
-    confidence.team_leadership = data.team_leadership.confidence
-  }
-  if (data.market_knowledge?.confidence) {
-    confidence.market_knowledge = data.market_knowledge.confidence
-  }
-  if (data.innovation_expertise?.confidence) {
-    confidence.innovation_expertise = data.innovation_expertise.confidence
-  }
-
-  return confidence
-}
-
-// Helper function to extract subcategory sources
-function extractSubcategorySources(data: any): any {
-  const sources: any = {}
-
-  if (data.track_record?.sources) {
-    sources.track_record = data.track_record.sources
-  }
-  if (data.team_leadership?.sources) {
-    sources.team_leadership = data.team_leadership.sources
-  }
-  if (data.market_knowledge?.sources) {
-    sources.market_knowledge = data.market_knowledge.sources
-  }
-  if (data.innovation_expertise?.sources) {
-    sources.innovation_expertise = data.innovation_expertise.sources
-  }
-
-  return sources
-}
-
-// Helper function to map confidence strings to numbers
-function mapConfidenceToNumber(confidence: string): number {
-  const lowerConf = confidence.toLowerCase()
-  if (lowerConf.includes('high')) return 85
-  if (lowerConf.includes('medium')) return 65
-  if (lowerConf.includes('low')) return 35
-  return 50 // Default
-}
-
-// Helper function to build founder analysis JSON in flat format
-function buildFounderAnalysisJSON(founderData: any): any {
-  const analysisJSON: any = {};
-  
-  // Extract data from subcategories
-  const teamData = founderData.team_leadership?.data || {};
-  const innovationData = founderData.innovation_expertise?.data || {};
-  const marketData = founderData.market_knowledge?.data || {};
-  const trackData = founderData.track_record?.data || {};
-  
-  // Map to flat structure similar to company enrichment
-  analysisJSON["Previous Roles"] = teamData.previous_roles || "No previous role data available";
-  analysisJSON["Leadership Experience"] = teamData.leadership_experience?.summary || "No leadership experience data available";
-  analysisJSON["Technical Skills"] = innovationData.technical_skills || "No technical skills data available";
-  analysisJSON["Market Knowledge"] = marketData.market_knowledge?.industries || "No market knowledge data available";
-  analysisJSON["Innovation Record"] = innovationData.innovation_record?.patents || innovationData.innovation_record?.innovations || "No innovation record data available";
-  analysisJSON["Academic Background"] = innovationData.academic_background?.degrees || "No academic background data available";
-  analysisJSON["Certifications"] = innovationData.certifications || "No certifications data available";
-  analysisJSON["Thought Leadership"] = marketData.thought_leadership?.publications || marketData.thought_leadership?.speaking_engagements || "No thought leadership data available";
-  analysisJSON["Exit History"] = trackData.exit_history || "No exit history data available";
-  analysisJSON["Value Creation"] = trackData.value_creation?.summary || "No value creation data available";
-  analysisJSON["Team Building"] = teamData.team_building?.summary || "No team building data available";
-  
-  // Additional relevant fields
-  analysisJSON["Industry Recognition"] = marketData.thought_leadership?.media_appearances || "No industry recognition data available";
-  analysisJSON["Investment Track Record"] = trackData.value_creation?.financial_achievements || "No investment track record data available";  
-  analysisJSON["Network Strength"] = teamData.team_building?.notable_hires || "No network strength data available";
-  
-  // Add metadata
-  analysisJSON["metadata"] = {
-    "source": "perplexity_api",
-    "version": "1.0",
-    "last_updated": new Date().toISOString(),
-    "overall_confidence": founderData.metadata?.overall_confidence || "Medium",
-    "data_completeness_percentage": Math.round(calculateFounderDataQualityWithSubcategories(founderData))
-  };
-  
-  return analysisJSON;
-}
+});
