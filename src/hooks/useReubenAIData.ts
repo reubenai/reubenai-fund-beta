@@ -4,23 +4,35 @@ import { Deal } from '@/hooks/usePipelineDeals';
 import { toTemplateFundType, type AnyFundType } from '@/utils/fundTypeConversion';
 
 interface VCDataPoints {
-  tam?: number;
-  sam?: number;
-  som?: number;
-  cagr?: number;
-  competitors?: string[];
-  key_customers?: string[];
-  growth_drivers?: string[];
-  funding_stage?: string;
-  employee_count?: number;
-  business_model?: string;
-  retention_rate?: number;
-  ltv_cac_ratio?: number;
-  technology_stack?: string[];
-  technology_readiness_level?: number;
-  technology_moats?: string[];
-  data_completeness_score?: number;
-  source_engines?: string[];
+  // Team & Leadership
+  founder_experience?: string;
+  team_composition?: string;
+  vision_communication?: string;
+  
+  // Market Opportunity
+  market_size?: string;
+  market_timing?: string;
+  competitive_landscape?: string;
+  
+  // Product & Technology
+  product_innovation?: string;
+  technology_advantage?: string;
+  product_market_fit?: string;
+  
+  // Business Traction
+  revenue_growth?: string;
+  customer_metrics?: string;
+  market_validation?: string;
+  
+  // Financial Health
+  financial_performance?: string;
+  capital_efficiency?: string;
+  financial_planning?: string;
+  
+  // Strategic Fit
+  portfolio_synergies?: string;
+  investment_thesis_alignment?: string;
+  value_creation_potential?: string;
 }
 
 interface PEDataPoints {
@@ -38,32 +50,36 @@ interface PEDataPoints {
 
 interface ScoringResults {
   overall_score?: number;
-  analysis_summary?: string;
-  founder_experience_score?: number;
-  founder_experience_summary?: string;
-  team_composition_score?: number;
+  deal_executive_summary?: string;
+  
+  // Category summaries
   team_leadership_summary?: string;
+  market_opportunity_summary?: string;
+  product_technology_summary?: string;
+  business_traction_summary?: string;
+  financial_planning_summary?: string;
+  investment_strategy_summary?: string;
+  
+  // Individual scores (for display purposes)
+  founder_experience_score?: number;
+  team_composition_score?: number;
   vision_communication_score?: number;
   market_size_score?: number;
-  market_opportunity_summary?: string;
   market_timing_score?: number;
   competitive_landscape_score?: number;
   product_innovation_score?: number;
-  product_technology_summary?: string;
   technology_advantage_score?: number;
   product_market_fit_score?: number;
   revenue_growth_score?: number;
-  business_traction_summary?: string;
   customer_metrics_score?: number;
   market_validation_score?: number;
   financial_performance_score?: number;
-  financial_planning_summary?: string;
   capital_efficiency_score?: number;
   financial_planning_score?: number;
   portfolio_synergies_score?: number;
   investment_thesis_alignment_score?: number;
-  investment_strategy_summary?: string;
   value_creation_potential_score?: number;
+  
   processing_status?: string;
   analyzed_at?: string;
   confidence_score?: number;
@@ -117,7 +133,7 @@ export function useReubenAIData(deal: Deal, fundType: AnyFundType): UseReubenAID
       let dataPointsResult = null;
       if (templateFundType === 'vc') {
         const { data: vcData, error: vcError } = await supabase
-          .from('deal_analysis_datapoints_vc')
+          .from('deal_datapoints_vc')
           .select('*')
           .eq('deal_id', deal.id)
           .maybeSingle();
@@ -128,7 +144,7 @@ export function useReubenAIData(deal: Deal, fundType: AnyFundType): UseReubenAID
         dataPointsResult = vcData;
       } else {
         const { data: peData, error: peError } = await supabase
-          .from('deal_analysis_datapoints_pe')
+          .from('deal_datapoints_pe')
           .select('*')
           .eq('deal_id', deal.id)
           .maybeSingle();
