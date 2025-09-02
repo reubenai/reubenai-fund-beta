@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Bot, TrendingUp, Clock, CheckCircle, AlertCircle, Database, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Bot, TrendingUp, Clock, CheckCircle, AlertCircle, Database, FileText, Download } from 'lucide-react';
 import { Deal } from '@/hooks/usePipelineDeals';
 import { useReubenAIData } from '@/hooks/useReubenAIData';
 import { toTemplateFundType, type AnyFundType } from '@/utils/fundTypeConversion';
+import { exportReubenAnalysisToPDF, type ReubenAnalysisData } from '@/utils/pdfClient';
+import { toast } from 'sonner';
 
 interface ReubenAISummaryScoreEnhancedProps {
   deal: Deal;
@@ -75,6 +78,99 @@ const CategorySection = ({
 
 export function ReubenAISummaryScoreEnhanced({ deal, fundType, onScoreCalculated }: ReubenAISummaryScoreEnhancedProps) {
   const { data, isLoading, error } = useReubenAIData(deal, fundType);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Define category configurations
+  const categories = [
+    {
+      title: "Team & Leadership",
+      summary: data?.scoringResults?.team_leadership_summary,
+      dataPoints: [
+        { key: "founder_experience", label: "Founder Experience" },
+        { key: "team_composition", label: "Team Composition" },
+        { key: "vision_communication", label: "Vision & Communication" }
+      ]
+    },
+    {
+      title: "Market Opportunity", 
+      summary: data?.scoringResults?.market_opportunity_summary,
+      dataPoints: [
+        { key: "market_size", label: "Market Size" },
+        { key: "market_timing", label: "Market Timing" },
+        { key: "competitive_landscape", label: "Competitive Landscape" }
+      ]
+    },
+    {
+      title: "Product & Technology",
+      summary: data?.scoringResults?.product_technology_summary,
+      dataPoints: [
+        { key: "product_innovation", label: "Product Innovation" },
+        { key: "technology_advantage", label: "Technology Advantage" },
+        { key: "product_market_fit", label: "Product-Market Fit" }
+      ]
+    },
+    {
+      title: "Business Traction",
+      summary: data?.scoringResults?.business_traction_summary,
+      dataPoints: [
+        { key: "revenue_growth", label: "Revenue Growth" },
+        { key: "customer_metrics", label: "Customer Metrics" },
+        { key: "market_validation", label: "Market Validation" }
+      ]
+    },
+    {
+      title: "Financial Health",
+      summary: data?.scoringResults?.financial_planning_summary,
+      dataPoints: [
+        { key: "financial_performance", label: "Financial Performance" },
+        { key: "capital_efficiency", label: "Capital Efficiency" },
+        { key: "financial_planning", label: "Financial Planning" }
+      ]
+    },
+    {
+      title: "Strategic Fit",
+      summary: data?.scoringResults?.investment_strategy_summary,
+      dataPoints: [
+        { key: "portfolio_synergies", label: "Portfolio Synergies" },
+        { key: "investment_thesis_alignment", label: "Investment Thesis Alignment" },
+        { key: "value_creation_potential", label: "Value Creation Potential" }
+      ]
+    }
+  ];
+
+  const handleExportPDF = async () => {
+    if (!data?.scoringResults || !data?.dataPoints) {
+      toast.error('No analysis data available to export');
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const reubenData: ReubenAnalysisData = {
+        companyName: deal.company_name,
+        overallScore: data.scoringResults.overall_score,
+        executiveSummary: data.scoringResults.deal_executive_summary || 'No executive summary available.',
+        confidenceScore: data.scoringResults.confidence_score,
+        analysisDate: new Date().toLocaleDateString(),
+        categories: categories.map(category => ({
+          title: category.title,
+          summary: category.summary,
+          subcriteria: category.dataPoints.map(({ key, label }) => ({
+            label,
+            content: data.dataPoints[key] || 'No analysis available for this criterion.'
+          }))
+        }))
+      };
+
+      await exportReubenAnalysisToPDF(reubenData);
+      toast.success('PDF exported successfully');
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      toast.error('Failed to export PDF. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   React.useEffect(() => {
     if (data.scoringResults?.overall_score) {
@@ -170,75 +266,35 @@ export function ReubenAISummaryScoreEnhanced({ deal, fundType, onScoreCalculated
   const executiveSummary = data.scoringResults?.deal_executive_summary;
   const scoringResults = data.scoringResults;
 
-  // Define category configurations
-  const categories = [
-    {
-      title: "Team & Leadership",
-      summary: scoringResults?.team_leadership_summary,
-      dataPoints: [
-        { key: "founder_experience", label: "Founder Experience" },
-        { key: "team_composition", label: "Team Composition" },
-        { key: "vision_communication", label: "Vision & Communication" }
-      ]
-    },
-    {
-      title: "Market Opportunity", 
-      summary: scoringResults?.market_opportunity_summary,
-      dataPoints: [
-        { key: "market_size", label: "Market Size" },
-        { key: "market_timing", label: "Market Timing" },
-        { key: "competitive_landscape", label: "Competitive Landscape" }
-      ]
-    },
-    {
-      title: "Product & Technology",
-      summary: scoringResults?.product_technology_summary,
-      dataPoints: [
-        { key: "product_innovation", label: "Product Innovation" },
-        { key: "technology_advantage", label: "Technology Advantage" },
-        { key: "product_market_fit", label: "Product-Market Fit" }
-      ]
-    },
-    {
-      title: "Business Traction",
-      summary: scoringResults?.business_traction_summary,
-      dataPoints: [
-        { key: "revenue_growth", label: "Revenue Growth" },
-        { key: "customer_metrics", label: "Customer Metrics" },
-        { key: "market_validation", label: "Market Validation" }
-      ]
-    },
-    {
-      title: "Financial Health",
-      summary: scoringResults?.financial_planning_summary,
-      dataPoints: [
-        { key: "financial_performance", label: "Financial Performance" },
-        { key: "capital_efficiency", label: "Capital Efficiency" },
-        { key: "financial_planning", label: "Financial Planning" }
-      ]
-    },
-    {
-      title: "Strategic Fit",
-      summary: scoringResults?.investment_strategy_summary,
-      dataPoints: [
-        { key: "portfolio_synergies", label: "Portfolio Synergies" },
-        { key: "investment_thesis_alignment", label: "Investment Thesis Alignment" },
-        { key: "value_creation_potential", label: "Value Creation Potential" }
-      ]
-    }
-  ];
-
   return (
     <div className="space-y-6">
       {/* Top Section - Key Insights */}
-      <Card className="border-2 border-primary/20 bg-gradient-to-r from-background to-primary/5">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <Bot className="h-6 w-6 text-primary" />
-            Reuben Analysis
-            <CheckCircle className="h-5 w-5 text-emerald-500" />
-          </CardTitle>
-        </CardHeader>
+        <Card className="w-full border-l-4 border-l-primary">
+          <CardHeader className="pb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Bot className="h-8 w-8 text-primary" />
+                <div>
+                  <CardTitle className="text-2xl font-bold text-foreground">
+                    Reuben AI Analysis
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Comprehensive Investment Assessment
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={handleExportPDF}
+                disabled={isExporting || !data?.scoringResults}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                {isExporting ? 'Exporting...' : 'Export PDF'}
+              </Button>
+            </div>
+          </CardHeader>
         
         <CardContent>
           <div className="flex items-start justify-between gap-6">
