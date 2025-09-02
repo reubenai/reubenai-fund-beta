@@ -62,7 +62,7 @@ import { GrowthPotentialAssessment } from '@/components/analysis/GrowthPotential
 import { RiskAssessmentSection } from '@/components/analysis/RiskAssessmentSection';
 import { StrategicTimingAssessment } from '@/components/analysis/StrategicTimingAssessment';
 import { TrustTransparencyAssessment } from '@/components/analysis/TrustTransparencyAssessment';
-import { ReubenAISummaryScoreBridge } from '@/components/analysis/ReubenAISummaryScoreBridge';
+import { ReubenAIDualInterface } from '@/components/analysis/ReubenAIDualInterface';
 import { BlueprintVCMarketOpportunity } from '@/components/analysis/blueprint/BlueprintVCMarketOpportunity';
 import { BlueprintVCTeamLeadership } from '@/components/analysis/blueprint/BlueprintVCTeamLeadership';
 import { BlueprintVCProductTechnology } from '@/components/analysis/blueprint/BlueprintVCProductTechnology';
@@ -417,12 +417,10 @@ export function EnhancedDealDetailsModal({
               </Card>
               
               {/* ReubenAI Summary Score */}
-              <ReubenAISummaryScoreBridge
-                deal={deal}
-                fundType={fundType}
-                onScoreCalculated={(score) => {
-                  console.log('Overall score calculated in modal:', score);
-                }}
+              <ReubenAIDualInterface 
+                deal={deal} 
+                fundType={dealFund?.fund_type || 'vc'} 
+                onScoreCalculated={(score) => console.log('AI Score calculated:', score)}
               />
             </TabsContent>
           )}
