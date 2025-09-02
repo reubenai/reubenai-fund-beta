@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Download, ExternalLink, FileText, AlertCircle } from 'lucide-react';
+import { Download, ExternalLink, FileText, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -146,7 +147,7 @@ export function DocumentViewer({ document, onClose, dealId }: DocumentViewerProp
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2">
@@ -166,14 +167,12 @@ export function DocumentViewer({ document, onClose, dealId }: DocumentViewerProp
                   </Button>
                 </>
               )}
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <ScrollArea className="max-h-[calc(90vh-8rem)]">
+          <div className="space-y-4 pr-4">
           {/* Document Info */}
           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
             <span>{formatFileSize(document.file_size)}</span>
@@ -350,7 +349,8 @@ export function DocumentViewer({ document, onClose, dealId }: DocumentViewerProp
               )}
             </div>
           )}
-        </div>
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
