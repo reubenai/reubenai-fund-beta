@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Deal } from '@/hooks/usePipelineDeals';
+import { ReubenAISummaryScoreEnhanced } from './ReubenAISummaryScoreEnhanced';
 import { ReubenAISummaryScoreV2 } from './ReubenAISummaryScoreV2';
 import { ReubenAISummaryScore } from './ReubenAISummaryScore';
 import { type AnyFundType, toDatabaseFundType } from '@/utils/fundTypeConversion';
@@ -16,6 +17,19 @@ interface ReubenAISummaryScoreBridgeProps {
  * Based on feature flags, deal characteristics, or gradual rollout strategy
  */
 export function ReubenAISummaryScoreBridge({ deal, fundType, onScoreCalculated }: ReubenAISummaryScoreBridgeProps) {
+  // Use the new enhanced component that shows real data
+  const useEnhancedVersion = true; // Feature flag for enhanced ReubenAI with real data
+  
+  if (useEnhancedVersion) {
+    return (
+      <ReubenAISummaryScoreEnhanced 
+        deal={deal} 
+        fundType={fundType} 
+        onScoreCalculated={onScoreCalculated}
+      />
+    );
+  }
+
   // Feature flag or condition to determine which version to use
   const useBlueprintV2 = true; // TODO: Replace with actual feature flag or condition
 
