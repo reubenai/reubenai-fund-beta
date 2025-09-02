@@ -453,6 +453,14 @@ Generate summaries with specific sentence requirements:
 
 7. Strategic Fit Summary: Write exactly 1-2 sentences covering Portfolio Synergies, Investment Thesis Alignment, and Value Creation Potential
 
+8. Key Strengths: List 3-5 bullet points highlighting the strongest aspects of this company/deal
+
+9. Key Concerns: List 3-5 bullet points identifying the main weaknesses or concerns about this company/deal
+
+10. Recommendations: Provide 2-4 actionable recommendations for the investment decision
+
+11. Risk Factors: Identify and categorize key risks (market_risk, execution_risk, competitive_risk, financial_risk)
+
 OUTPUT FORMAT (JSON only):
 {
   "deal_executive_summary": "...",
@@ -461,7 +469,16 @@ OUTPUT FORMAT (JSON only):
   "product_technology_summary": "...",
   "business_traction_summary": "...",
   "financial_health_summary": "...",
-  "strategic_fit_summary": "..."
+  "strategic_fit_summary": "...",
+  "key_strengths": ["strength 1", "strength 2", "strength 3"],
+  "key_concerns": ["concern 1", "concern 2", "concern 3"],
+  "recommendations": ["recommendation 1", "recommendation 2"],
+  "risk_factors": {
+    "market_risk": "description",
+    "execution_risk": "description",
+    "competitive_risk": "description",
+    "financial_risk": "description"
+  }
 }`;
 
     let summaries = {};
@@ -494,7 +511,16 @@ OUTPUT FORMAT (JSON only):
         product_technology_summary: "Product analysis conducted.",
         business_traction_summary: "Traction analysis conducted.",
         financial_health_summary: "Financial analysis conducted.",
-        strategic_fit_summary: "Strategic analysis conducted."
+        strategic_fit_summary: "Strategic analysis conducted.",
+        key_strengths: ["Analysis pending"],
+        key_concerns: ["Analysis pending"],
+        recommendations: ["Further analysis required"],
+        risk_factors: {
+          market_risk: "Assessment pending",
+          execution_risk: "Assessment pending",
+          competitive_risk: "Assessment pending",
+          financial_risk: "Assessment pending"
+        }
       };
     }
 
