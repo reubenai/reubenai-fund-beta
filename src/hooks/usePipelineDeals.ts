@@ -9,10 +9,6 @@ import { stageNameToStatus, statusToDisplayName, createStageKey, stageKeyToStatu
 
 export type Deal = Database['public']['Tables']['deals']['Row'] & {
   notes_count?: number;
-  // Analysis results from VC or PE analysis tables
-  analysis_overall_score?: number;
-  analysis_confidence_score?: number;
-  analysis_processing_status?: string;
 };
 
 export interface PipelineStage {
@@ -45,14 +41,12 @@ export const usePipelineDeals = (fundId?: string) => {
         console.log('🔄 Force refreshing deals, bypassing cache');
       }
       
-      // Get deals with notes count and analysis results from both VC and PE tables
+      // First get deals with notes count
       const { data: dealsWithNotes, error: dealsError } = await supabase
         .from('deals')
         .select(`
           *,
-          deal_notes(count),
-          deal_analysisresult_vc(overall_score, confidence_score, processing_status),
-          deal_analysisresult_pe(overall_score, confidence_score, processing_status)
+          deal_notes(count)
         `)
         .eq('fund_id', fundId)
         .order('updated_at', { ascending: false });
@@ -83,23 +77,11 @@ export const usePipelineDeals = (fundId?: string) => {
           groupedDeals[stageName] = [];
         }
         
-        // Get analysis results from either VC or PE table (whichever has data)
-        const vcAnalysis = dealData.deal_analysisresult_vc?.[0];
-        const peAnalysis = dealData.deal_analysisresult_pe?.[0];
-        const analysis = vcAnalysis || peAnalysis;
-        
-        // Add notes count and analysis results
+        // Add notes count
         const deal: Deal = {
           ...dealData,
-          notes_count: Array.isArray(dealData.deal_notes) ? dealData.deal_notes.length : 0,
-          analysis_overall_score: analysis?.overall_score || null,
-          analysis_confidence_score: analysis?.confidence_score || null,
-          analysis_processing_status: analysis?.processing_status || null,
-          // Override overall_score with analysis result if available
-          overall_score: analysis?.overall_score || dealData.overall_score
+          notes_count: Array.isArray(dealData.deal_notes) ? dealData.deal_notes.length : 0
         };
-        
-        console.log(`🎯 [${dealData.company_name}] Scores - Original: ${dealData.overall_score}, Analysis: ${analysis?.overall_score}, Final: ${deal.overall_score}`);
         
         groupedDeals[stageName].push(deal);
       });
