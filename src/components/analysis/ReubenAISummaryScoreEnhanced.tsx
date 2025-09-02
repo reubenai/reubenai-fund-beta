@@ -46,13 +46,13 @@ const CategorySection = ({
   return (
     <Card className="w-full border-l-4 border-l-primary/30">
       <CardHeader className="pb-6">
-        <CardTitle className="text-2xl font-bold text-foreground flex items-center gap-3">
+        <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-3">
           <FileText className="h-6 w-6 text-primary" />
           {title}
         </CardTitle>
         {summary && (
           <div className="mt-4 p-4 bg-muted/50 rounded-lg border-l-4 border-l-primary/50">
-            <p className="text-base text-foreground leading-relaxed font-medium">{summary}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">{summary}</p>
           </div>
         )}
       </CardHeader>
@@ -62,9 +62,9 @@ const CategorySection = ({
           
           return (
             <div key={key} className="space-y-3 pb-6 border-b border-border/50 last:border-b-0 last:pb-0">
-              <h4 className="text-xl font-semibold text-foreground">{label}</h4>
+              <h4 className="text-sm font-medium text-foreground">{label}</h4>
               <div className="bg-background/80 p-6 rounded-lg border">
-                <p className="text-base text-muted-foreground leading-relaxed whitespace-pre-line">
+                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                   {analysisText || 'No analysis available for this criterion.'}
                 </p>
               </div>
@@ -317,7 +317,7 @@ export function ReubenAISummaryScoreEnhanced({ deal, fundType, onScoreCalculated
               
               {executiveSummary && (
                 <div className="p-4 rounded-lg bg-background border">
-                  <h4 className="font-semibold text-sm mb-2">Executive Summary</h4>
+                  <h4 className="text-sm font-medium mb-2">Executive Summary</h4>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     {executiveSummary}
                   </p>
@@ -330,9 +330,6 @@ export function ReubenAISummaryScoreEnhanced({ deal, fundType, onScoreCalculated
                 value={Math.min((overallScore / 150) * 100, 100)} 
                 className="w-32 h-3" 
               />
-              <span className="text-sm text-muted-foreground">
-                {Math.round((overallScore / 150) * 100)}% of max
-              </span>
               {scoringResults?.confidence_score && (
                 <span className="text-xs text-muted-foreground">
                   {scoringResults.confidence_score}% confidence
