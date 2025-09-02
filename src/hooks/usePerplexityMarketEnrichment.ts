@@ -122,7 +122,7 @@ export const usePerplexityMarketEnrichment = () => {
       }
 
       console.log('✅ Market enrichment completed successfully');
-      toast.success(`Market intelligence enriched for ${dealData.company_name}`);
+      toast.success(`Data enrichment complete for ${dealData.company_name}`);
       
       const result: MarketEnrichmentResult = {
         success: true,
