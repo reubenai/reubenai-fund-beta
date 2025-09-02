@@ -225,32 +225,34 @@ serve(async (req) => {
 
     console.log(`🚀 Updated Scoring Engine VC - Starting analysis for deal: ${deal_id}`);
 
-    // 1. Gather all required data
+    // 1. Get deal data first to avoid relationship ambiguity
     console.log('📊 Gathering deal data from multiple sources...');
     
-    const [dealDataResult, fundDataResult, datapointsResult, documentsResult, strategyResult, perplexityMarketResult] = await Promise.all([
+    // First, get the deal data which includes fund_id
+    const dealDataResult = await supabaseClient
+      .from('deals')
+      .select('*')
+      .eq('id', deal_id)
+      .single();
+
+    if (dealDataResult.error) {
+      throw new Error(`Failed to fetch deal data: ${dealDataResult.error.message}`);
+    }
+
+    const dealData = dealDataResult.data;
+    const fundId = dealData.fund_id;
+
+    if (!fundId) {
+      throw new Error('Deal does not have a fund_id');
+    }
+
+    // Now use the fund_id to get all other data in parallel
+    const [fundDataResult, datapointsResult, documentsResult, strategyResult, perplexityMarketResult] = await Promise.all([
       supabaseClient
-        .from('deals')
-        .select('*')
-        .eq('id', deal_id)
+        .from('funds')
+        .select('fund_type, organization_id')
+        .eq('id', fundId)
         .single(),
-      
-      // Get fund data separately to avoid relationship ambiguity
-      supabaseClient
-        .from('deals')
-        .select('fund_id')
-        .eq('id', deal_id)
-        .single()
-        .then(async (dealResult) => {
-          if (dealResult.error || !dealResult.data?.fund_id) {
-            throw new Error('Could not get fund_id from deal');
-          }
-          return supabaseClient
-            .from('funds')
-            .select('fund_type, organization_id')
-            .eq('id', dealResult.data.fund_id)
-            .single();
-        }),
       
       supabaseClient
         .from('deal_analysis_datapoints_vc')
@@ -266,22 +268,11 @@ serve(async (req) => {
         .eq('deal_id', deal_id)
         .limit(10),
       
-      // Get investment strategy using fund_id from deal
       supabaseClient
-        .from('deals')
-        .select('fund_id')
-        .eq('id', deal_id)
-        .single()
-        .then(async (dealResult) => {
-          if (dealResult.error || !dealResult.data?.fund_id) {
-            return { data: null, error: null };
-          }
-          return supabaseClient
-            .from('investment_strategies')
-            .select('*')
-            .eq('fund_id', dealResult.data.fund_id)
-            .maybeSingle();
-        }),
+        .from('investment_strategies')
+        .select('*')
+        .eq('fund_id', fundId)
+        .maybeSingle(),
       
       supabaseClient
         .from('deal_enrichment_perplexity_market_export_vc')
@@ -292,15 +283,10 @@ serve(async (req) => {
         .maybeSingle()
     ]);
 
-    if (dealDataResult.error) {
-      throw new Error(`Failed to fetch deal data: ${dealDataResult.error.message}`);
-    }
-
     if (fundDataResult.error) {
       throw new Error(`Failed to fetch fund data: ${fundDataResult.error.message}`);
     }
 
-    const dealData = dealDataResult.data;
     const fundData = fundDataResult.data;
     const datapointsData = datapointsResult.data;
     const documentsData = documentsResult.data || [];
