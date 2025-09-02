@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Bot, TrendingUp, Clock, CheckCircle, AlertCircle, Database } from 'lucide-react';
+import { Bot, TrendingUp, Clock, CheckCircle, AlertCircle, Database, FileText } from 'lucide-react';
 import { Deal } from '@/hooks/usePipelineDeals';
 import { useReubenAIData } from '@/hooks/useReubenAIData';
 import { toTemplateFundType, type AnyFundType } from '@/utils/fundTypeConversion';
@@ -41,22 +41,27 @@ const CategorySection = ({
   vcDataPoints?: any;
 }) => {
   return (
-    <Card className="w-full">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-xl text-primary font-bold">{title}</CardTitle>
+    <Card className="w-full border-l-4 border-l-primary/30">
+      <CardHeader className="pb-6">
+        <CardTitle className="text-2xl font-bold text-foreground flex items-center gap-3">
+          <FileText className="h-6 w-6 text-primary" />
+          {title}
+        </CardTitle>
         {summary && (
-          <p className="text-base text-muted-foreground leading-relaxed mt-2">{summary}</p>
+          <div className="mt-4 p-4 bg-muted/50 rounded-lg border-l-4 border-l-primary/50">
+            <p className="text-base text-foreground leading-relaxed font-medium">{summary}</p>
+          </div>
         )}
       </CardHeader>
-      <CardContent className="pt-0 space-y-6">
+      <CardContent className="pt-0 space-y-8">
         {dataPoints.map(({ key, label }) => {
           const analysisText = vcDataPoints?.[key];
           
           return (
-            <div key={key} className="space-y-2">
-              <h4 className="text-lg font-semibold text-foreground">{label}</h4>
-              <div className="pl-4 border-l-2 border-muted">
-                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+            <div key={key} className="space-y-3 pb-6 border-b border-border/50 last:border-b-0 last:pb-0">
+              <h4 className="text-xl font-semibold text-foreground">{label}</h4>
+              <div className="bg-background/80 p-6 rounded-lg border">
+                <p className="text-base text-muted-foreground leading-relaxed whitespace-pre-line">
                   {analysisText || 'No analysis available for this criterion.'}
                 </p>
               </div>
