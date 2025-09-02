@@ -63,6 +63,8 @@ import { RiskAssessmentSection } from '@/components/analysis/RiskAssessmentSecti
 import { StrategicTimingAssessment } from '@/components/analysis/StrategicTimingAssessment';
 import { TrustTransparencyAssessment } from '@/components/analysis/TrustTransparencyAssessment';
 import { ReubenAIDualInterface } from '@/components/analysis/ReubenAIDualInterface';
+import { ReubenAISummaryScoreEnhanced } from '@/components/analysis/ReubenAISummaryScoreEnhanced';
+import { toTemplateFundType } from '@/utils/fundTypeConversion';
 import { BlueprintVCMarketOpportunity } from '@/components/analysis/blueprint/BlueprintVCMarketOpportunity';
 import { BlueprintVCTeamLeadership } from '@/components/analysis/blueprint/BlueprintVCTeamLeadership';
 import { BlueprintVCProductTechnology } from '@/components/analysis/blueprint/BlueprintVCProductTechnology';
@@ -416,12 +418,22 @@ export function EnhancedDealDetailsModal({
                 </CardContent>
               </Card>
               
-              {/* ReubenAI Summary Score */}
-              <ReubenAIDualInterface 
-                deal={deal} 
-                fundType={dealFund?.fund_type || 'vc'} 
-                onScoreCalculated={(score) => console.log('AI Score calculated:', score)}
-              />
+              {/* ReubenAI Summary Score - Conditional rendering based on fund type */}
+              {toTemplateFundType(dealFund?.fund_type || 'vc') === 'vc' ? (
+                // For VC deals: Show enhanced Reuben directly without tabs
+                <ReubenAISummaryScoreEnhanced 
+                  deal={deal} 
+                  fundType={dealFund?.fund_type || 'vc'} 
+                  onScoreCalculated={(score) => console.log('AI Score calculated:', score)}
+                />
+              ) : (
+                // For PE deals: Keep dual interface with tabs
+                <ReubenAIDualInterface 
+                  deal={deal} 
+                  fundType={dealFund?.fund_type || 'vc'} 
+                  onScoreCalculated={(score) => console.log('AI Score calculated:', score)}
+                />
+              )}
             </TabsContent>
           )}
 
