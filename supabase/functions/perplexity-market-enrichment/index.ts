@@ -30,10 +30,13 @@ serve(async (req) => {
   try {
     console.log('🚀 Perplexity Market Enrichment - Starting request processing');
 
-    // Initialize Supabase client
+    // Initialize Supabase client and URLs
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      supabaseUrl,
+      supabaseServiceKey,
     );
 
     const { dealId, companyName, additionalContext }: MarketEnrichmentRequest = await req.json();
@@ -387,21 +390,30 @@ CRITICAL: Return ONLY the JSON object above. No additional text, explanations, o
 
     console.log('✅ Deal datapoints VC insertion completed');
 
-    // Call updated-scoring-engine-vc after successful data processing
+    // Call updated-scoring-engine-vc immediately after successful data processing
     console.log('🎯 Triggering updated scoring engine for VC analysis...');
     let scoringCompleted = false;
     let scoringError = null;
     
     try {
-      const { data: scoringResult, error: scoringErr } = await supabase.functions.invoke('updated-scoring-engine-vc', {
-        body: { deal_id: dealId }
+      // Use direct fetch call for immediate execution
+      const scoringResponse = await fetch(`${supabaseUrl}/functions/v1/updated-scoring-engine-vc`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ deal_id: dealId }),
+        signal: AbortSignal.timeout(120000) // 2 minute timeout
       });
       
-      if (scoringErr) {
-        console.error('❌ Scoring engine error:', scoringErr);
-        scoringError = scoringErr.message || 'Unknown scoring error';
+      if (!scoringResponse.ok) {
+        const errorText = await scoringResponse.text();
+        console.error('❌ Scoring engine HTTP error:', scoringResponse.status, errorText);
+        scoringError = `Scoring engine failed with status ${scoringResponse.status}: ${errorText}`;
       } else {
-        console.log('✅ Scoring engine completed successfully');
+        const scoringResult = await scoringResponse.json();
+        console.log('✅ Scoring engine completed successfully:', scoringResult);
         scoringCompleted = true;
       }
     } catch (error) {
