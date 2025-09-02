@@ -37,6 +37,7 @@ serve(async (req) => {
     const request: ICMemoRequest = await req.json();
     
     console.log(`📝 [IC Memo Drafter] Starting memo generation for deal: ${request.deal_id}`);
+    console.log(`🔄 [DEBUG] Force refresh timestamp: ${new Date().toISOString()}`); // Force function refresh
 
     // Step 1: Determine template variant based on fund type
     const template_variant = await determineFundType(request.fund_id);
@@ -66,6 +67,12 @@ serve(async (req) => {
     const provenance_trace = generateProvenanceTrace(features, scores, request.context_chunks || []);
 
     console.log(`✅ [IC Memo Drafter] Memo generated successfully for: ${deal_data.company_name}`);
+    console.log(`📤 [IC Memo] Final memo structure:`, {
+      title: final_memo.title,
+      sections_count: final_memo.sections.length,
+      section_titles: final_memo.sections.map(s => s.title),
+      has_content: !!final_memo.content
+    });
 
     return new Response(JSON.stringify({
       success: true,
@@ -312,6 +319,8 @@ async function generateMemoSections(
 ): Promise<ICMemoSection[]> {
   
   console.log(`📑 [IC Memo] Generating sections for ${template_variant.toUpperCase()} template...`);
+  console.log(`🔍 [IC Memo] Debug data - Features count: ${features.length}, Scores count: ${scores.length}, Context chunks: ${context_chunks.length}`);
+  console.log(`🏢 [IC Memo] Deal data:`, { company_name: deal_data.company_name, industry: deal_data.industry, deal_size: deal_data.deal_size });
   
   const sections: ICMemoSection[] = [];
   
@@ -352,6 +361,12 @@ async function generateMemoSections(
   
   // Investment Recommendation
   sections.push(await generateInvestmentRecommendation(deal_data, features, scores, context_chunks));
+  
+  // Debug logging for generated sections
+  console.log(`📋 [IC Memo] Generated ${sections.length} sections:`);
+  sections.forEach((section, index) => {
+    console.log(`   ${index + 1}. "${section.title}" - Content length: ${section.content.length} chars`);
+  });
   
   return sections;
 }

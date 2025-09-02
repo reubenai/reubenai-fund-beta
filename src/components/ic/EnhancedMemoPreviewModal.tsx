@@ -318,24 +318,51 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
       setIsCapturingData(true);
       
       console.log('🎬 Starting memo data capture for deal:', deal.id);
+      console.log('🔍 Current fund type:', fundType);
       
       const result = await icMemoService.generateMemo(deal.id);
       
+      console.log('📨 Raw API response success:', result.success);
+      console.log('📨 Raw API result structure:', {
+        has_memo: !!result.memo,
+        memo_keys: result.memo ? Object.keys(result.memo) : [],
+        error: result.error
+      });
+      
       if (result.success && result.memo) {
-        console.log('📥 Raw memo result:', result.memo);
+        console.log('📥 Raw memo result full structure:', result.memo);
         
         // Access the sections array from the memo (ic-memo-drafter returns different structure than ICMemo interface)
         const memoData = result.memo as any;
         const sections = memoData.sections;
+        
+        console.log('🔍 Memo data structure analysis:', {
+          memo_type: typeof memoData,
+          has_sections: !!sections,
+          sections_is_array: Array.isArray(sections),
+          sections_length: Array.isArray(sections) ? sections.length : 'N/A',
+          sections_preview: Array.isArray(sections) ? sections.slice(0, 3).map(s => ({ title: s.title, content_length: s.content?.length })) : 'N/A'
+        });
+        
         if (sections && Array.isArray(sections)) {
+          console.log('📋 All section titles received:', sections.map(s => s.title));
+          
           // Transform sections array to flat key-value structure
           const transformedContent = transformSectionsToContent(sections, fundType);
+          
+          console.log('🔄 Transformation result:', {
+            transformed_keys: Object.keys(transformedContent),
+            content_lengths: Object.entries(transformedContent).map(([key, content]) => 
+              ({ key, length: typeof content === 'string' ? content.length : 0 }))
+          });
           
           // Update each section with the captured content
           Object.entries(transformedContent).forEach(([key, content]) => {
             if (content && typeof content === 'string') {
               console.log(`🔄 Updating section "${key}" with content length: ${content.length}`);
               updateContent(key, content);
+            } else {
+              console.warn(`⚠️ Skipping section "${key}" - invalid content type:`, typeof content);
             }
           });
           
