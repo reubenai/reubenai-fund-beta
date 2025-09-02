@@ -57,8 +57,8 @@ interface ScoringResults {
   market_opportunity_summary?: string;
   product_technology_summary?: string;
   business_traction_summary?: string;
-  financial_planning_summary?: string;
-  investment_strategy_summary?: string;
+  financial_health_summary?: string;
+  strategic_fit_summary?: string;
   
   // Individual scores (for display purposes)
   founder_experience_score?: number;

@@ -120,7 +120,7 @@ export function ReubenAISummaryScoreEnhanced({ deal, fundType, onScoreCalculated
     },
     {
       title: "Financial Health",
-      summary: data?.scoringResults?.financial_planning_summary,
+      summary: data?.scoringResults?.financial_health_summary,
       dataPoints: [
         { key: "financial_performance", label: "Financial Performance" },
         { key: "capital_efficiency", label: "Capital Efficiency" },
@@ -129,7 +129,7 @@ export function ReubenAISummaryScoreEnhanced({ deal, fundType, onScoreCalculated
     },
     {
       title: "Strategic Fit",
-      summary: data?.scoringResults?.investment_strategy_summary,
+      summary: data?.scoringResults?.strategic_fit_summary,
       dataPoints: [
         { key: "portfolio_synergies", label: "Portfolio Synergies" },
         { key: "investment_thesis_alignment", label: "Investment Thesis Alignment" },
@@ -268,38 +268,38 @@ export function ReubenAISummaryScoreEnhanced({ deal, fundType, onScoreCalculated
 
   return (
     <div className="space-y-6">
-      {/* Top Section - Key Insights */}
-        <Card className="w-full border-l-4 border-l-primary">
-          <CardHeader className="pb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Bot className="h-8 w-8 text-primary" />
-                <div>
-                  <CardTitle className="text-2xl font-bold text-foreground">
-                    Reuben AI Analysis
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Comprehensive Investment Assessment
-                  </p>
-                </div>
+      {/* Top Section - Overall Score */}
+      <Card className="w-full border-l-4 border-l-primary">
+        <CardHeader className="pb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Bot className="h-8 w-8 text-primary" />
+              <div>
+                <CardTitle className="text-2xl font-bold text-foreground">
+                  Reuben AI Analysis
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Comprehensive Investment Assessment
+                </p>
               </div>
-              <Button
-                onClick={handleExportPDF}
-                disabled={isExporting || !data?.scoringResults}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <Download className="h-4 w-4" />
-                {isExporting ? 'Exporting...' : 'Export PDF'}
-              </Button>
             </div>
-          </CardHeader>
-        
+            <Button
+              onClick={handleExportPDF}
+              disabled={isExporting || !data?.scoringResults}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              {isExporting ? 'Exporting...' : 'Export PDF'}
+            </Button>
+          </div>
+        </CardHeader>
+      
         <CardContent>
           <div className="flex items-start justify-between gap-6">
             <div className="flex-1">
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center gap-4">
                 <div className="p-3 rounded-full bg-primary/10">
                   <TrendingUp className="h-8 w-8 text-primary" />
                 </div>
@@ -314,15 +314,6 @@ export function ReubenAISummaryScoreEnhanced({ deal, fundType, onScoreCalculated
                   {getOverallStatusLabel(overallScore)}
                 </Badge>
               </div>
-              
-              {executiveSummary && (
-                <div className="p-4 rounded-lg bg-background border">
-                  <h4 className="text-sm font-medium mb-2">Executive Summary</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {executiveSummary}
-                  </p>
-                </div>
-              )}
             </div>
 
             <div className="flex flex-col items-end gap-2">
@@ -339,6 +330,16 @@ export function ReubenAISummaryScoreEnhanced({ deal, fundType, onScoreCalculated
           </div>
         </CardContent>
       </Card>
+
+      {/* Executive Summary as separate CategorySection */}
+      {executiveSummary && (
+        <CategorySection
+          title="Executive Summary"
+          summary={executiveSummary}
+          dataPoints={[]}
+          vcDataPoints={data.dataPoints}
+        />
+      )}
 
       {/* Main Content - Detailed Category Sections */}
       <div className="space-y-6">
