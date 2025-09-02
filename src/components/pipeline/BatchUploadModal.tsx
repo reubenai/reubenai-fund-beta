@@ -73,10 +73,10 @@ const LegacyBatchUploadModal: React.FC<BatchUploadModalProps> = ({
   const { toast } = useToast();
 
   const downloadTemplate = () => {
-    const csvContent = `Company,Founder,Founder Email,Sector,Stage,Amount,Valuation,Location,Description,Website,LinkedIn URL,Crunchbase URL,Employee Count
-TechFlow AI,John Smith,john@techflow.ai,AI/ML,Series A,$5M,$25M,San Francisco,AI platform for data analysis,https://techflow.ai,https://linkedin.com/company/techflow,https://crunchbase.com/organization/techflow-ai,25
-DataCorp,Sarah Johnson,sarah@datacorp.com,Analytics,Seed,$2M,$8M,New York,Business intelligence platform,https://datacorp.com,https://linkedin.com/company/datacorp,https://crunchbase.com/organization/datacorp,15
-CleanTech Solutions,Michael Brown,michael@cleantech.io,CleanTech,Pre-Seed,$500K,$2M,Austin,Solar energy optimization platform,https://cleantech.io,https://linkedin.com/company/cleantech-solutions,https://crunchbase.com/organization/cleantech-solutions,8`;
+    const csvContent = `Company Name (Required),Description,Primary Industries (Required),Specialized Sectors (Required),Location (Required),Founder Name (Required),Founder Email (Required),Company Website (Required),Company LinkedIn Profile,Crunchbase URL,Current Round Size,Currency,Valuation
+TechFlow AI,AI platform for data analysis,Technology;Artificial Intelligence,AI/ML;SaaS;Enterprise Software,United States;San Francisco Bay Area,John Smith,john@techflow.ai,https://techflow.ai,https://linkedin.com/company/techflow,https://crunchbase.com/organization/techflow-ai,$5000000,USD,$25000000
+DataCorp,Business intelligence platform,Technology;Data & Analytics,Business Intelligence;SaaS;Enterprise Software,United States;New York,Sarah Johnson,sarah@datacorp.com,https://datacorp.com,https://linkedin.com/company/datacorp,https://crunchbase.com/organization/datacorp,$2000000,USD,$8000000
+CleanTech Solutions,Solar energy optimization platform,Clean Technology;Energy,Solar Energy;CleanTech;Energy Storage,United States;Austin,Michael Brown,michael@cleantech.io,https://cleantech.io,https://linkedin.com/company/cleantech-solutions,https://crunchbase.com/organization/cleantech-solutions,$500000,USD,$2000000`;
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
