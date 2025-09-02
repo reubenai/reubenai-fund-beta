@@ -70,8 +70,7 @@ serve(async (req) => {
     // Step 7: Generate provenance trace
     const provenance_trace = generateProvenanceTrace(features, scores, request.context_chunks || []);
     
-    // Step 8: Persist as artifact
-    await persistMemoArtifact(request, final_memo, provenance_trace, fact_check_results);
+    // Step 8: Skip artifact persistence (removed per user request)
 
     console.log(`✅ [IC Memo Drafter] Memo generated successfully for: ${deal_data.company_name}`);
 
@@ -130,25 +129,84 @@ async function loadDealData(deal_id: string): Promise<any> {
 }
 
 async function loadDealFeatures(org_id: string, fund_id: string, deal_id: string): Promise<any[]> {
-  const { data: features } = await supabase
-    .from('deal_features')
+  // Load from deal_analysis_datapoints_vc and deal_documents
+  const { data: datapoints } = await supabase
+    .from('deal_analysis_datapoints_vc')
     .select('*')
-    .eq('org_id', org_id)
-    .eq('fund_id', fund_id)
+    .eq('deal_id', deal_id)
+    .single();
+    
+  const { data: documents } = await supabase
+    .from('deal_documents')
+    .select('name, document_type, data_points_vc, data_points_pe')
     .eq('deal_id', deal_id);
     
-  return features || [];
+  const features = [];
+  
+  if (datapoints) {
+    // Convert datapoints to feature format
+    Object.entries(datapoints).forEach(([key, value]) => {
+      if (value !== null && key !== 'id' && key !== 'deal_id' && key !== 'created_at' && key !== 'updated_at') {
+        features.push({
+          feature_name: key,
+          feature_value: { value },
+          feature_type: 'datapoint',
+          extraction_method: 'vc_aggregator'
+        });
+      }
+    });
+  }
+  
+  // Add document data points
+  if (documents) {
+    documents.forEach(doc => {
+      if (doc.data_points_vc) {
+        features.push({
+          feature_name: `document_${doc.name}`,
+          feature_value: doc.data_points_vc,
+          feature_type: 'document',
+          extraction_method: 'document_processor'
+        });
+      }
+    });
+  }
+    
+  return features;
 }
 
 async function loadDealScores(org_id: string, fund_id: string, deal_id: string): Promise<any[]> {
-  const { data: scores } = await supabase
-    .from('deal_scores')
+  // Load from deal_analysisresult_vc 
+  const { data: result } = await supabase
+    .from('deal_analysisresult_vc')
     .select('*')
-    .eq('org_id', org_id)
-    .eq('fund_id', fund_id)
-    .eq('deal_id', deal_id);
+    .eq('deal_id', deal_id)
+    .single();
     
-  return scores || [];
+  const scores = [];
+  
+  if (result) {
+    // Convert analysis result to score format
+    if (result.overall_score) {
+      scores.push({
+        category: 'overall',
+        raw_score: result.overall_score,
+        weighted_score: result.overall_score
+      });
+    }
+    
+    // Add individual category scores if available
+    ['leadership_score', 'market_score', 'product_score', 'financial_score', 'traction_score', 'thesis_alignment_score'].forEach(field => {
+      if (result[field]) {
+        scores.push({
+          category: field.replace('_score', '').replace('_', ' '),
+          raw_score: result[field],
+          weighted_score: result[field]
+        });
+      }
+    });
+  }
+    
+  return scores;
 }
 
 async function generateMemoSections(
@@ -224,7 +282,7 @@ async function generateExecutiveSummary(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -252,7 +310,7 @@ ${supporting_context || 'No additional context available'}
 Write executive summary:`
           }
         ],
-        max_completion_tokens: 2000,
+        max_tokens: 2000,
         temperature: 0.2
       }),
     });
@@ -311,7 +369,7 @@ async function generateInvestmentThesis(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -339,7 +397,7 @@ ${supporting_context || 'No additional context available'}
 Write investment thesis:`
           }
         ],
-        max_completion_tokens: 2500,
+        max_tokens: 2500,
         temperature: 0.2
       }),
     });
@@ -495,7 +553,7 @@ function generateProvenanceTrace(features: any[], scores: any[], context_chunks:
     extraction_methods: [...new Set(features.map(f => f.extraction_method))],
     scoring_method: 'feature_first_v2',
     model_executions: [
-      { model: 'gpt-5-2025-08-07', purpose: 'memo_generation', timestamp: new Date().toISOString() }
+      { model: 'gpt-4o-mini', purpose: 'memo_generation', timestamp: new Date().toISOString() }
     ],
     citations_count: features.reduce((sum, f) => sum + (f.source_references?.length || 0), 0)
   };

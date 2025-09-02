@@ -56,8 +56,34 @@ class ICMemoService {
   // Memo Management
   async generateMemo(dealId: string, templateId?: string): Promise<{ success: boolean; memo?: ICMemo; error?: string }> {
     try {
-      const { data, error } = await supabase.functions.invoke('ai-memo-generator', {
-        body: { dealId, templateId }
+      // Get deal and fund info separately to avoid TypeScript issues
+      const { data: deal, error: dealError } = await supabase
+        .from('deals')
+        .select('fund_id')
+        .eq('id', dealId)
+        .single();
+
+      if (dealError || !deal) {
+        throw new Error('Deal not found');
+      }
+
+      const { data: fund, error: fundError } = await supabase
+        .from('funds')
+        .select('organization_id')
+        .eq('id', deal.fund_id)
+        .single();
+
+      if (fundError || !fund) {
+        throw new Error('Fund not found');
+      }
+
+      const { data, error } = await supabase.functions.invoke('ic-memo-drafter', {
+        body: { 
+          deal_id: dealId,
+          fund_id: deal.fund_id,
+          org_id: fund.organization_id,
+          template_variant: templateId
+        }
       });
 
       if (error) throw error;
