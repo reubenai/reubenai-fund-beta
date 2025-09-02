@@ -6,15 +6,8 @@ import {
   Search, 
   Plus, 
   Upload,
-  Filter,
-  ChevronDown
+  Filter
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 interface EnhancedPipelineHeaderProps {
   searchQuery: string;
@@ -65,41 +58,10 @@ export function EnhancedPipelineHeader({
             </Button>
           )}
           
-           <DropdownMenu>
-             <DropdownMenuTrigger asChild>
-               <Button variant="outline" className="gap-2">
-                 <Search className="h-4 w-4" />
-                 Integrate CRM
-                 <ChevronDown className="h-4 w-4" />
-               </Button>
-             </DropdownMenuTrigger>
-             <DropdownMenuContent align="end">
-               <DropdownMenuItem onClick={onIntegrateCRM}>
-                 <div className="flex items-center gap-2">
-                   <div className="w-4 h-4 bg-orange-500 rounded"></div>
-                   HubSpot
-                 </div>
-               </DropdownMenuItem>
-               <DropdownMenuItem onClick={onIntegrateCRM}>
-                 <div className="flex items-center gap-2">
-                   <div className="w-4 h-4 bg-blue-600 rounded"></div>
-                   Salesforce
-                 </div>
-               </DropdownMenuItem>
-               <DropdownMenuItem onClick={onIntegrateCRM}>
-                 <div className="flex items-center gap-2">
-                   <div className="w-4 h-4 bg-purple-600 rounded"></div>
-                   Affinity
-                 </div>
-               </DropdownMenuItem>
-               <DropdownMenuItem onClick={onIntegrateCRM}>
-                 <div className="flex items-center gap-2">
-                   <div className="w-4 h-4 bg-green-600 rounded"></div>
-                   PipeDrive
-                 </div>
-               </DropdownMenuItem>
-             </DropdownMenuContent>
-           </DropdownMenu>
+           <Button variant="outline" disabled className="gap-2 text-muted-foreground">
+             <Search className="h-4 w-4" />
+             Coming Soon
+           </Button>
         </div>
       </div>
 
