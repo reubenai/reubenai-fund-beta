@@ -516,8 +516,7 @@ OUTPUT FORMAT (JSON only):
     
     const { data: upsertResult, error: upsertError } = await supabaseClient
       .from('deal_analysisresult_vc')
-      .upsert({
-        deal_id: deal_id,
+      .update({
         fund_id: fundId,
         organization_id: fundData.organization_id,
         overall_score: overallScore,
@@ -527,7 +526,8 @@ OUTPUT FORMAT (JSON only):
         processing_status: 'completed',
         analyzed_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      });
+      })
+      .eq('deal_id', deal_id);
 
     if (upsertError) {
       throw new Error(`Failed to save results: ${upsertError.message}`);
