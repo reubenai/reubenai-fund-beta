@@ -269,23 +269,6 @@ export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTri
                           {document.document_category.replace('_', ' ')}
                         </Badge>
                       )}
-                      {/* Document Analysis Status */}
-                      {document.document_analysis_status && (
-                        <Badge 
-                          variant={document.document_analysis_status === 'completed' ? 'default' : 
-                                 document.document_analysis_status === 'processing' ? 'secondary' : 'outline'}
-                          className={`text-xs ${
-                            document.document_analysis_status === 'completed' ? 'bg-green-100 text-green-800' :
-                            document.document_analysis_status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                            document.document_analysis_status === 'failed' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {document.document_analysis_status === 'completed' ? 'Analyzed' :
-                           document.document_analysis_status === 'processing' ? 'Processing' :
-                           document.document_analysis_status === 'failed' ? 'Failed' : 'Pending'}
-                        </Badge>
-                      )}
                     </div>
                     
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -313,12 +296,13 @@ export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTri
 
                   <div className="flex items-center gap-1">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={() => onDocumentSelect?.(document)}
-                      title="View Summary"
+                      className="gap-2"
                     >
                       <FileText className="h-4 w-4" />
+                      View Summary
                     </Button>
                     
                     {canDownloadDocuments && (
@@ -338,10 +322,6 @@ export function DocumentList({ dealId, companyName, onDocumentSelect, refreshTri
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onDocumentSelect?.(document)}>
-                          <FileText className="h-4 w-4 mr-2" />
-                          View Summary
-                        </DropdownMenuItem>
                         {canDownloadDocuments && (
                           <DropdownMenuItem onClick={() => handleDownload(document)}>
                             <Download className="h-4 w-4 mr-2" />
