@@ -84,7 +84,7 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
       file,
       id: Math.random().toString(36).substring(7),
       documentType: '',
-      documentCategory: 'other' as Database['public']['Enums']['document_category'],
+      documentCategory: 'pitch_deck' as Database['public']['Enums']['document_category'],
       tags: ''
     }));
 
