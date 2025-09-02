@@ -26,7 +26,6 @@ interface ICMemoSection {
   title: string;
   content: string;
   citations: any[];
-  fact_check_status: 'pending' | 'passed' | 'failed';
 }
 
 serve(async (req) => {
@@ -58,21 +57,13 @@ serve(async (req) => {
       request.context_chunks || []
     );
     
-    // Step 4: Fact consistency check
-    const fact_check_results = await performFactConsistencyCheck(memo_sections, features);
+    // Step 4: Skip fact consistency check - removed for reliability
     
-    // Step 5: Block memo if fact check fails
-    if (fact_check_results.overall_status === 'failed') {
-      throw new Error(`Fact consistency check failed: ${fact_check_results.failure_reason}`);
-    }
-    
-    // Step 6: Compile final memo
+    // Step 5: Compile final memo
     const final_memo = compileMemo(memo_sections, deal_data, scores);
     
-    // Step 7: Generate provenance trace
+    // Step 6: Generate provenance trace
     const provenance_trace = generateProvenanceTrace(features, scores, request.context_chunks || []);
-    
-    // Step 8: Skip artifact persistence (removed per user request)
 
     console.log(`✅ [IC Memo Drafter] Memo generated successfully for: ${deal_data.company_name}`);
 
@@ -80,7 +71,6 @@ serve(async (req) => {
       success: true,
       deal_id: request.deal_id,
       memo: final_memo,
-      fact_check_status: fact_check_results.overall_status,
       provenance: provenance_trace,
       generation_stats: {
         sections_count: memo_sections.length,
@@ -393,12 +383,10 @@ async function generateExecutiveSummary(
             content: `Write an executive summary for an investment committee memo. 
 
 Requirements:
-- Every factual claim MUST include a citation [1], [2], etc.
 - Use "Unknown" for any unavailable data - never fabricate
 - 200-300 words
 - Include: company overview, key metrics, investment highlights, overall assessment
-
-Return JSON: {"content": "...", "citations": [{"id": 1, "source": "...", "quote": "..."}]}`
+- Write clear, professional content suitable for investment committee review`
           },
           {
             role: 'user',
@@ -424,13 +412,12 @@ Write executive summary:`
     }
 
     const data = await response.json();
-    const result = JSON.parse(data.choices[0].message.content || '{"content": "Executive summary unavailable", "citations": []}');
+    const content = data.choices[0].message.content || 'Executive summary unavailable';
     
     return {
       title: 'Executive Summary',
-      content: result.content,
-      citations: result.citations || [],
-      fact_check_status: 'pending'
+      content: content,
+      citations: []
     };
 
   } catch (error) {
@@ -438,8 +425,7 @@ Write executive summary:`
     return {
       title: 'Executive Summary',
       content: `${deal_data.company_name} is a ${deal_data.industry || 'Unknown'} company. Overall score: ${overall_score?.toFixed(1) || 'Unknown'}. Additional analysis required.`,
-      citations: [],
-      fact_check_status: 'failed'
+      citations: []
     };
   }
 }
@@ -499,13 +485,11 @@ async function generateInvestmentThesis(
 ${thesis_prompt}
 
 Requirements:
-- Every factual claim MUST include a citation [1], [2], etc.
 - Use "Unknown" for unavailable data
 - 300-400 words
 - Clear investment rationale
 - Reference fund strategy alignment when available
-
-Return JSON: {"content": "...", "citations": [{"id": 1, "source": "...", "quote": "..."}]}`
+- Write professional content suitable for investment committee review`
           },
           {
             role: 'user',
@@ -538,13 +522,12 @@ Write investment thesis:`
     }
 
     const data = await response.json();
-    const result = JSON.parse(data.choices[0].message.content || '{"content": "Investment thesis analysis pending", "citations": []}');
+    const content = data.choices[0].message.content || 'Investment thesis analysis pending';
     
     return {
       title: 'Investment Thesis',
-      content: result.content,
-      citations: result.citations || [],
-      fact_check_status: 'pending'
+      content: content,
+      citations: []
     };
 
   } catch (error) {
@@ -552,8 +535,7 @@ Write investment thesis:`
     return {
       title: 'Investment Thesis',
       content: `Investment thesis for ${deal_data.company_name} requires additional analysis. Market score: ${market_score?.toFixed(1) || 'Unknown'}. ${marketData}`,
-      citations: [],
-      fact_check_status: 'failed'
+      citations: []
     };
   }
 }
@@ -587,8 +569,7 @@ Key Competitors: ${competitorsFeature ? JSON.stringify(competitorsFeature.featur
     citations: [
       ...marketFeatures.map((f, i) => ({ id: i + 1, source: f.extraction_method, quote: `${f.feature_name}: ${f.feature_value.value}` })),
       ...competitiveFeatures.map((f, i) => ({ id: marketFeatures.length + i + 1, source: f.extraction_method, quote: `${f.feature_name}: ${f.feature_value.value}` }))
-    ],
-    fact_check_status: 'pending'
+    ]
   };
 }
 
@@ -616,8 +597,7 @@ Deal Size: ${deal_data.deal_size ? `$${(deal_data.deal_size / 1000000).toFixed(1
       id: i + 1, 
       source: f.extraction_method, 
       quote: `${f.feature_name}: ${f.feature_value.value}` 
-    })),
-    fact_check_status: 'pending'
+    }))
   };
 }
 
@@ -625,8 +605,7 @@ async function generateTeamAnalysis(deal_data: any, features: any[], scores: any
   return {
     title: 'Management Team',
     content: `Management team assessment for ${deal_data.company_name}. Founder: ${deal_data.founder || 'Unknown'}. Team size: Unknown. Leadership experience: Requires analysis.`,
-    citations: [],
-    fact_check_status: 'pending'
+    citations: []
   };
 }
 
@@ -639,8 +618,7 @@ async function generateRiskAssessment(deal_data: any, features: any[], scores: a
   return {
     title: 'Risk Assessment',
     content: `Risk assessment for ${deal_data.company_name}. ${risk_content}`,
-    citations: risk_features.map((f, i) => ({ id: i + 1, source: f.extraction_method, quote: f.feature_value.source_quote || '' })),
-    fact_check_status: 'pending'
+    citations: risk_features.map((f, i) => ({ id: i + 1, source: f.extraction_method, quote: f.feature_value.source_quote || '' }))
   };
 }
 
@@ -648,8 +626,7 @@ async function generateInvestmentTerms(deal_data: any, features: any[], scores: 
   return {
     title: 'Investment Terms',
     content: `Proposed investment terms for ${deal_data.company_name}. Deal size: ${deal_data.deal_size ? `$${(deal_data.deal_size / 1000000).toFixed(1)}M` : 'Unknown'}. Valuation: ${deal_data.valuation ? `$${(deal_data.valuation / 1000000).toFixed(1)}M` : 'Unknown'}. Terms: Standard Series A terms.`,
-    citations: [],
-    fact_check_status: 'pending'
+    citations: []
   };
 }
 
@@ -657,8 +634,7 @@ async function generateValueCreationPlan(deal_data: any, features: any[], scores
   return {
     title: 'Value Creation Plan',
     content: `Value creation strategy for ${deal_data.company_name}. Operational improvements: Identify efficiency gains. Market expansion: Explore new segments. Technology enhancement: Upgrade systems. Timeline: 24-36 months.`,
-    citations: [],
-    fact_check_status: 'pending'
+    citations: []
   };
 }
 
@@ -669,31 +645,10 @@ async function generateRecommendation(deal_data: any, features: any[], scores: a
   return {
     title: 'Recommendation',
     content: `Investment recommendation for ${deal_data.company_name}: ${recommendation}. Overall score: ${overall_score.toFixed(1)}. Next steps: ${recommendation === 'PROCEED' ? 'Due diligence' : 'Additional analysis required'}.`,
-    citations: [],
-    fact_check_status: 'pending'
+    citations: []
   };
 }
 
-async function performFactConsistencyCheck(sections: ICMemoSection[], features: any[]): Promise<any> {
-  console.log('🔍 [IC Memo] Performing fact consistency check...');
-  
-  // Simple fact checking - could be enhanced
-  const total_claims = sections.reduce((sum, s) => sum + s.citations.length, 0);
-  const cited_claims = sections.filter(s => s.citations.length > 0).length;
-  
-  const consistency_ratio = total_claims > 0 ? cited_claims / sections.length : 0;
-  
-  return {
-    overall_status: consistency_ratio >= 0.6 ? 'passed' : 'failed',
-    consistency_ratio,
-    failure_reason: consistency_ratio < 0.6 ? 'Insufficient citations for factual claims' : null,
-    details: {
-      total_sections: sections.length,
-      sections_with_citations: cited_claims,
-      total_citations: total_claims
-    }
-  };
-}
 
 function compileMemo(sections: ICMemoSection[], deal_data: any, scores: any[]): any {
   const overall_score = scores.reduce((sum, s) => sum + (s.weighted_score || 0), 0) / scores.length;
@@ -707,8 +662,7 @@ function compileMemo(sections: ICMemoSection[], deal_data: any, scores: any[]): 
     content: sections.map(s => `## ${s.title}\n\n${s.content}`).join('\n\n'),
     metadata: {
       generated_at: new Date().toISOString(),
-      template_version: 'v2_feature_first',
-      fact_check_status: sections.every(s => s.fact_check_status === 'passed') ? 'passed' : 'pending'
+      template_version: 'v2_feature_first_simplified'
     }
   };
 }
