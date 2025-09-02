@@ -498,10 +498,10 @@ OUTPUT FORMAT (JSON only):
       };
     }
 
-    // 5. Calculate overall score
+    // 5. Calculate overall score (sum of all individual scores)
     const validScores = scoringResults.filter(r => typeof r.score === 'number');
     const totalScore = validScores.reduce((sum, r) => sum + r.score, 0);
-    const overallScore = validScores.length > 0 ? Math.round((totalScore / validScores.length) * 10) / 10 : 0;
+    const overallScore = validScores.length > 0 ? Math.round(totalScore * 10) / 10 : 0;
 
     console.log(`📊 Overall Score Calculated: ${overallScore} (from ${validScores.length} criteria)`);
 
