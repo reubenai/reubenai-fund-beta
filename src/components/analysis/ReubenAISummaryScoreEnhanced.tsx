@@ -29,44 +29,37 @@ const getOverallStatusLabel = (score: number): string => {
   return 'Needs Work';
 };
 
-const CategoryBox = ({ 
+const CategorySection = ({ 
   title, 
   summary, 
   dataPoints, 
-  scoringResults 
+  vcDataPoints 
 }: { 
   title: string;
   summary?: string;
   dataPoints: { key: string; label: string }[];
-  scoringResults?: any;
+  vcDataPoints?: any;
 }) => {
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg text-primary">{title}</CardTitle>
+    <Card className="w-full">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-xl text-primary font-bold">{title}</CardTitle>
         {summary && (
-          <p className="text-sm text-muted-foreground leading-relaxed">{summary}</p>
+          <p className="text-base text-muted-foreground leading-relaxed mt-2">{summary}</p>
         )}
       </CardHeader>
-      <CardContent className="pt-0 space-y-3">
+      <CardContent className="pt-0 space-y-6">
         {dataPoints.map(({ key, label }) => {
-          const scoreKey = `${key}_score`;
-          const score = scoringResults?.[scoreKey];
+          const analysisText = vcDataPoints?.[key];
           
           return (
-            <div key={key} className="p-3 rounded-lg bg-muted/30 border">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium">{label}</span>
-                {typeof score === 'number' && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium">{score.toFixed(1)}</span>
-                    <Progress value={Math.min((score / 10) * 100, 100)} className="w-16 h-1.5" />
-                  </div>
-                )}
+            <div key={key} className="space-y-2">
+              <h4 className="text-lg font-semibold text-foreground">{label}</h4>
+              <div className="pl-4 border-l-2 border-muted">
+                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+                  {analysisText || 'No analysis available for this criterion.'}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {typeof score === 'number' ? `Score: ${score.toFixed(1)}/10` : 'Analysis pending...'}
-              </p>
             </div>
           );
         })}
@@ -289,15 +282,15 @@ export function ReubenAISummaryScoreEnhanced({ deal, fundType, onScoreCalculated
         </CardContent>
       </Card>
 
-      {/* Bottom Section - Category Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Main Content - Detailed Category Sections */}
+      <div className="space-y-6">
         {categories.map((category, index) => (
-          <CategoryBox
+          <CategorySection
             key={index}
             title={category.title}
             summary={category.summary}
             dataPoints={category.dataPoints}
-            scoringResults={scoringResults}
+            vcDataPoints={data.dataPoints}
           />
         ))}
       </div>
