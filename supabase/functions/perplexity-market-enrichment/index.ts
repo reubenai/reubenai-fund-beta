@@ -387,13 +387,37 @@ CRITICAL: Return ONLY the JSON object above. No additional text, explanations, o
 
     console.log('✅ Deal datapoints VC insertion completed');
 
+    // Call updated-scoring-engine-vc after successful data processing
+    console.log('🎯 Triggering updated scoring engine for VC analysis...');
+    let scoringCompleted = false;
+    let scoringError = null;
+    
+    try {
+      const { data: scoringResult, error: scoringErr } = await supabase.functions.invoke('updated-scoring-engine-vc', {
+        body: { deal_id: dealId }
+      });
+      
+      if (scoringErr) {
+        console.error('❌ Scoring engine error:', scoringErr);
+        scoringError = scoringErr.message || 'Unknown scoring error';
+      } else {
+        console.log('✅ Scoring engine completed successfully');
+        scoringCompleted = true;
+      }
+    } catch (error) {
+      console.error('❌ Failed to invoke scoring engine:', error);
+      scoringError = error.message || 'Failed to invoke scoring engine';
+    }
+
     return new Response(JSON.stringify({
       success: true,
       snapshot_id: snapshotId,
       message: 'Market research completed and structured data populated',
       data_quality_score: processedData.dataQualityScore,
       data_points_populated: processedData.dataPointsPopulated,
-      deal_datapoints_vc_updated: datapointsResult.success
+      deal_datapoints_vc_updated: datapointsResult.success,
+      scoring_completed: scoringCompleted,
+      scoring_error: scoringError
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
