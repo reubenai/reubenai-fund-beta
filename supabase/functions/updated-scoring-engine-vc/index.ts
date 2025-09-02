@@ -231,7 +231,7 @@ serve(async (req) => {
     const [dealDataResult, datapointsResult, documentsResult, strategyResult, perplexityMarketResult] = await Promise.all([
       supabaseClient
         .from('deals')
-        .select('*, funds(fund_type, organization_id)')
+        .select('*, fund_id!inner(fund_type, organization_id)')
         .eq('id', deal_id)
         .single(),
       
@@ -285,7 +285,7 @@ serve(async (req) => {
       datapoints: datapointsData,
       documents: documentsData,
       fund_strategy: strategyData?.enhanced_criteria || {},
-      fund_type: dealData.funds?.fund_type,
+      fund_type: dealData.fund_id?.fund_type,
       perplexity_market: perplexityMarketData,
       data_quality_score: perplexityMarketData?.data_quality_score || 0,
       confidence_level: perplexityMarketData?.confidence_level || 'medium'
