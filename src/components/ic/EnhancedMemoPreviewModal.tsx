@@ -256,33 +256,100 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     return;
   };
 
-  // Temporary function to test ic-memo-drafter
+  // Create mapping from section titles to database keys
+  const createSectionMapping = (fundType: string) => {
+    const vcMapping: Record<string, string> = {
+      'Executive Summary': 'executive_summary',
+      'Company Overview': 'company_overview', 
+      'Market Opportunity': 'market_opportunity',
+      'Product & Service': 'product_service',
+      'Business Model': 'business_model',
+      'Competitive Landscape': 'competitive_landscape',
+      'Management Team': 'management_team',
+      'Financial Analysis': 'financial_analysis',
+      'Investment Terms': 'investment_terms',
+      'Risks & Mitigants': 'risks_mitigants',
+      'Exit Strategy': 'exit_strategy',
+      'Investment Recommendation': 'investment_recommendation'
+    };
+
+    const peMapping: Record<string, string> = {
+      'Executive Summary': 'executive_summary',
+      'Company Overview': 'company_overview',
+      'Financial Performance Assessment': 'financial_performance',
+      'Market Position Analysis': 'market_position',
+      'Operational Excellence Review': 'operational_excellence',
+      'Management & Leadership Evaluation': 'management_leadership',
+      'Growth & Value Creation Strategy': 'growth_value_creation',
+      'Risk Assessment & Mitigation': 'risk_assessment',
+      'Strategic Timing Analysis': 'strategic_timing',
+      'Investment Terms & Structure': 'investment_terms',
+      'Exit Strategy & Value Realization': 'exit_value_realization',
+      'Investment Recommendation': 'investment_recommendation'
+    };
+
+    return fundType === 'private_equity' ? peMapping : vcMapping;
+  };
+
+  // Transform sections array to flat key-value structure
+  const transformSectionsToContent = (sections: any[], fundType: string) => {
+    const mapping = createSectionMapping(fundType);
+    const content: Record<string, string> = {};
+    
+    console.log('🔄 Transforming sections:', { sections, mapping });
+    
+    sections.forEach(section => {
+      const key = mapping[section.title];
+      if (key && section.content) {
+        content[key] = section.content;
+        console.log(`✅ Mapped "${section.title}" -> "${key}"`);
+      } else {
+        console.warn(`⚠️ No mapping found for section: "${section.title}"`);
+      }
+    });
+    
+    console.log('🎯 Final transformed content:', content);
+    return content;
+  };
+
+  // Function to capture data from ic-memo-drafter
   const handleCaptureData = async () => {
     try {
       setIsCapturingData(true);
       
+      console.log('🎬 Starting memo data capture for deal:', deal.id);
+      
       const result = await icMemoService.generateMemo(deal.id);
       
       if (result.success && result.memo) {
-        // Update memo content with captured data
-        const memoContent = result.memo.memo_content;
-        if (memoContent) {
+        console.log('📥 Raw memo result:', result.memo);
+        
+        // Access the sections array from the memo (ic-memo-drafter returns different structure than ICMemo interface)
+        const memoData = result.memo as any;
+        const sections = memoData.sections;
+        if (sections && Array.isArray(sections)) {
+          // Transform sections array to flat key-value structure
+          const transformedContent = transformSectionsToContent(sections, fundType);
+          
           // Update each section with the captured content
-          Object.entries(memoContent).forEach(([key, content]) => {
+          Object.entries(transformedContent).forEach(([key, content]) => {
             if (content && typeof content === 'string') {
+              console.log(`🔄 Updating section "${key}" with content length: ${content.length}`);
               updateContent(key, content);
             }
           });
+          
+          showToast({
+            title: "Data Captured Successfully", 
+            description: `Investment memo data captured for ${deal.company_name} (${Object.keys(transformedContent).length} sections)`,
+            variant: "default"
+          });
+          
+          // Refresh the memo to show updated content
+          await loadMemo(false);
+        } else {
+          throw new Error('No sections found in memo data');
         }
-        
-        showToast({
-          title: "Data Captured Successfully",
-          description: `Investment memo data captured for ${deal.company_name}`,
-          variant: "default"
-        });
-        
-        // Refresh the memo to show updated content
-        await loadMemo(false);
       } else {
         showMemoErrorToast(
           result.error || 'Failed to capture memo data',
@@ -290,6 +357,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
         );
       }
     } catch (error) {
+      console.error('💥 Error in handleCaptureData:', error);
       showMemoErrorToast(
         `Error capturing data: ${error instanceof Error ? error.message : 'Unknown error'}`,
         () => handleCaptureData()
