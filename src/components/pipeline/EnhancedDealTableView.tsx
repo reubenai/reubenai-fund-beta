@@ -610,9 +610,25 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                 
                 <td className="p-4 align-middle text-center">
                   <div className="flex items-center justify-center space-x-2">
-                    <Badge variant="outline" className="text-muted-foreground">
-                      Coming Soon
-                    </Badge>
+                    {deal.overall_score ? (
+                      <Badge 
+                        variant={
+                          deal.overall_score >= 75 ? 'default' :
+                          deal.overall_score >= 50 ? 'secondary' : 'outline'
+                        }
+                        className={
+                          deal.overall_score >= 75 ? 'bg-green-100 text-green-800 border-green-200' :
+                          deal.overall_score >= 50 ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                          'bg-red-100 text-red-800 border-red-200'
+                        }
+                      >
+                        {formatScore(deal.overall_score)}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground">
+                        —
+                      </Badge>
+                    )}
                   </div>
                 </td>
                 
