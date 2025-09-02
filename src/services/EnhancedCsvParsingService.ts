@@ -76,6 +76,12 @@ export class EnhancedCsvParsingService {
       throw new Error('CSV file must have at least a header and one data row');
     }
 
+    // Demo limitation: Check for 5-deal limit
+    const dataRows = lines.length - 1; // Exclude header
+    if (dataRows > 5) {
+      throw new Error(`For the demo, batch uploads are limited to a maximum of 5 deals. Your file contains ${dataRows} deals. Please reduce the number of deals and try again.`);
+    }
+
     const headers = this.parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
     const results: ParseResult[] = [];
 

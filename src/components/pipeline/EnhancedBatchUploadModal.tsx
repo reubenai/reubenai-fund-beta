@@ -200,8 +200,8 @@ CleanTech Solutions,Solar energy optimization platform,Clean Technology;Energy,S
       const estimatedMinutes = Math.ceil(validDeals.length * 3.5); // 3.5 minutes average per deal
       setUploadProgress({ 
         step: 'analyzing', 
-        progress: 60, 
-        message: `Starting comprehensive analysis (estimated ${estimatedMinutes} minutes total - ${validDeals.length} deals)...` 
+        progress: 100, 
+        message: 'Your deals are being processed. We will notify you once it is complete.' 
       });
       setCurrentStep('analysis');
 
@@ -388,7 +388,7 @@ CleanTech Solutions,Solar energy optimization platform,Clean Technology;Energy,S
               <div className={`w-6 h-6 rounded-full flex items-center justify-center ${currentStep === 'analysis' ? 'bg-primary text-white' : currentStep === 'complete' ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground'}`}>
                 5
               </div>
-              ReubenAI Analysis
+              Processing Complete
             </div>
           </div>
 
@@ -401,9 +401,14 @@ CleanTech Solutions,Solar energy optimization platform,Clean Technology;Energy,S
                   <FileSpreadsheet className="w-5 h-5 text-blue-600 mt-0.5" />
                   <div className="flex-1">
                     <h3 className="font-medium text-blue-900">Download Template</h3>
-                    <p className="text-sm text-blue-700 mb-3">
+                    <p className="text-sm text-blue-700 mb-2">
                       Start with our CSV template to ensure proper formatting. You'll be able to add pitch decks for each deal in the next step.
                     </p>
+                    <div className="bg-blue-100 p-3 rounded border-l-4 border-blue-400 mb-3">
+                      <p className="text-sm font-medium text-blue-800">
+                        ⚠️ For the demo, batch uploads are limited to a maximum of 5 deals.
+                      </p>
+                    </div>
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -518,7 +523,15 @@ CleanTech Solutions,Solar energy optimization platform,Clean Technology;Energy,S
 
               {/* Analysis Progress */}
               {currentStep === 'analysis' && (
-                <BatchAnalysisProgress results={analysisResults} />
+                <div className="bg-green-50 p-6 rounded-lg text-center">
+                  <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-green-900 mb-2">
+                    Your deals are being processed. We will notify you once it is complete.
+                  </h3>
+                  <p className="text-green-700">
+                    You may now close this window.
+                  </p>
+                </div>
               )}
             </>
           )}
