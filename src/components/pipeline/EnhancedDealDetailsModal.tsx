@@ -42,7 +42,6 @@ import { DealNotesManager } from '@/components/notes/DealNotesManager';
 import { EnhancedDealAnalysisTab } from './EnhancedDealAnalysisTab';
 import { Deal as BaseDeal } from '@/hooks/usePipelineDeals';
 import { EnhancedDealAnalysis } from '@/types/enhanced-deal-analysis';
-import { useToast } from '@/hooks/use-toast';
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
 import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
@@ -80,6 +79,9 @@ import { BlueprintPEStrategicFit } from '@/components/analysis/blueprint/Bluepri
 // Removed DealAnalysisTrigger - reverting to background processing
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useFund } from '@/contexts/FundContext';
+import { useUserRole } from '@/hooks/useUserRole';
+import { useToast } from '@/hooks/use-toast';
+import { triggerVCScoring, validateVCDeal } from '@/services/vcScoringService';
 
 // Extend the Deal type to include enhanced_analysis
 type Deal = BaseDeal & {
@@ -128,10 +130,12 @@ export function EnhancedDealDetailsModal({
   const [hasTriggeredEnrichment, setHasTriggeredEnrichment] = useState(false);
   const [dealFund, setDealFund] = useState<any>(null);
   const [fundTypeLoading, setFundTypeLoading] = useState(true);
+  const [isVCScoring, setIsVCScoring] = useState(false);
   const { toast } = useToast();
   const { getRAGCategory } = useStrategyThresholds();
   const { canViewActivities, canViewAnalysis, role, loading } = usePermissions();
   const { selectedFund } = useFund();
+  const { isSuperAdmin } = useUserRole();
   
   // Get fund type from deal's specific fund, not selected fund
   const fundType = dealFund?.fund_type || 'venture_capital';
@@ -259,6 +263,47 @@ export function EnhancedDealDetailsModal({
     }
   };
 
+  const handleVCScoring = async () => {
+    if (!deal) return;
+    
+    if (!validateVCDeal(deal, dealFund?.fund_type)) {
+      toast({
+        title: "Invalid Deal Type",
+        description: "VC scoring is only available for Venture Capital deals",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsVCScoring(true);
+    try {
+      const result = await triggerVCScoring(deal.id);
+      
+      toast({
+        title: "VC Analysis Completed",
+        description: `Analysis completed for ${deal.company_name} with score ${result.overall_score}/100. ${result.memo_generation.success ? 'IC memo generated successfully.' : 'Memo generation failed.'}`,
+        variant: "default"
+      });
+      
+      // Refresh the modal data
+      loadEnhancedData();
+      
+      // Notify parent component
+      if (onDealUpdated) {
+        onDealUpdated();
+      }
+    } catch (error) {
+      console.error('VC Scoring failed:', error);
+      toast({
+        title: "Analysis Failed",
+        description: error instanceof Error ? error.message : "Failed to analyze deal",
+        variant: "destructive"
+      });
+    } finally {
+      setIsVCScoring(false);
+    }
+  };
+
 
   if (!deal) return null;
 
@@ -303,6 +348,18 @@ export function EnhancedDealDetailsModal({
               {deal.company_name}
             </div>
             <div className="flex items-center gap-2">
+              {isSuperAdmin && (
+                <Button
+                  onClick={handleVCScoring}
+                  disabled={isVCScoring}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                >
+                  <Zap className="h-4 w-4 mr-1" />
+                  {isVCScoring ? 'Analyzing...' : 'Run VC Analysis'}
+                </Button>
+              )}
               <DealActionGuard dealId={deal.id} action="manage">
                 {(canManage) => canManage && (
                   <ShareDealModal dealId={deal.id} dealName={deal.company_name} />

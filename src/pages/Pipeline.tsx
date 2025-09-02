@@ -9,6 +9,10 @@ import { useSearchParams } from 'react-router-dom';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { triggerVCScoring, validateVCDeal } from '@/services/vcScoringService';
+import { usePipelineDeals } from '@/hooks/usePipelineDeals';
 
 export default function Pipeline() {
   const { selectedFund, funds, setSelectedFund } = useFund();
@@ -16,6 +20,14 @@ export default function Pipeline() {
   const { isBackfilling, backfillAllRawRecords } = useCrunchbasePostProcessor();
   const [searchParams] = useSearchParams();
   const fundIdParam = searchParams.get('fund');
+  const { toast } = useToast();
+  
+  // VC Scoring state
+  const [selectedDealId, setSelectedDealId] = React.useState<string>('');
+  const [isScoring, setIsScoring] = React.useState(false);
+  
+  // Get all deals for the selected fund
+  const { deals: allDeals } = usePipelineDeals(selectedFund?.id);
 
   // If there's a fund ID in the URL, select that fund
   React.useEffect(() => {
@@ -28,7 +40,63 @@ export default function Pipeline() {
   }, [fundIdParam, funds, selectedFund, setSelectedFund]);
 
   const handleBackfill = async () => {
-    await backfillAllRawRecords();
+    try {
+      await backfillAllRawRecords();
+    } catch (error) {
+      console.error('Backfill failed:', error);
+    }
+  };
+
+  const handleVCScoring = async () => {
+    if (!selectedDealId) {
+      toast({
+        title: "No Deal Selected",
+        description: "Please select a deal to analyze",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const selectedDeal = Object.values(allDeals).flat().find(deal => deal.id === selectedDealId);
+    if (!selectedDeal) {
+      toast({
+        title: "Deal Not Found",
+        description: "Selected deal could not be found",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!validateVCDeal(selectedDeal, selectedFund?.fund_type)) {
+      toast({
+        title: "Invalid Deal Type",
+        description: "VC scoring is only available for Venture Capital deals",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsScoring(true);
+    try {
+      const result = await triggerVCScoring(selectedDealId);
+      
+      toast({
+        title: "VC Analysis Completed",
+        description: `Analysis completed with score ${result.overall_score}/100. ${result.memo_generation.success ? 'IC memo generated successfully.' : 'Memo generation failed.'}`,
+        variant: "default"
+      });
+      
+      setSelectedDealId('');
+    } catch (error) {
+      console.error('VC Scoring failed:', error);
+      toast({
+        title: "Analysis Failed",
+        description: error instanceof Error ? error.message : "Failed to analyze deal",
+        variant: "destructive"
+      });
+    } finally {
+      setIsScoring(false);
+    }
   };
 
   if (!selectedFund) {
@@ -67,7 +135,7 @@ export default function Pipeline() {
             🔧 Admin Tools
             <Badge variant="secondary" className="text-xs">Super Admin Only</Badge>
           </h3>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <Button 
               onClick={handleBackfill} 
               disabled={isBackfilling}
@@ -77,6 +145,31 @@ export default function Pipeline() {
             >
               {isBackfilling ? 'Processing...' : 'Backfill Crunchbase Records'}
             </Button>
+            
+            <div className="flex gap-2 items-center">
+              <Select value={selectedDealId} onValueChange={setSelectedDealId}>
+                <SelectTrigger className="w-48 h-8 text-xs">
+                  <SelectValue placeholder="Select deal to analyze" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(allDeals).flat().map((deal) => (
+                    <SelectItem key={deal.id} value={deal.id}>
+                      {deal.company_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Button 
+                onClick={handleVCScoring} 
+                disabled={isScoring || !selectedDealId}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                {isScoring ? 'Analyzing...' : 'Trigger VC Scoring'}
+              </Button>
+            </div>
           </div>
           <p className="text-xs text-orange-700 dark:text-orange-300 mt-2">
             Process all raw Crunchbase data that's stuck in the queue

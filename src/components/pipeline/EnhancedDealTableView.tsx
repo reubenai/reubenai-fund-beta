@@ -56,6 +56,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { useUserRole } from '@/hooks/useUserRole';
+import { useToast } from '@/hooks/use-toast';
+import { triggerVCScoring, validateVCDeal } from '@/services/vcScoringService';
 
 interface EnhancedDealTableViewProps {
   deals: Record<string, Deal[]>;
@@ -171,9 +174,12 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
   const [triggeringAnalysis, setTriggeringAnalysis] = useState<Set<string>>(new Set());
   const [togglingAnalysis, setTogglingAnalysis] = useState<Set<string>>(new Set());
   const [optimisticToggles, setOptimisticToggles] = useState<Map<string, boolean>>(new Map());
+  const [vcScoringDeal, setVcScoringDeal] = useState<string | null>(null);
   
   const { triggerAnalysis } = useControlledAnalysis();
   const { toggleAutoAnalysis } = useAnalysisQueue();
+  const { isSuperAdmin } = useUserRole();
+  const { toast } = useToast();
 
   // Flatten deals from all stages
   const allDeals = useMemo(() => {
@@ -319,6 +325,42 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
         updated.delete(dealId);
         return updated;
       });
+    }
+  };
+
+  const handleVCScoring = async (deal: Deal & { stage: string }) => {
+    if (!validateVCDeal(deal, 'venture_capital')) {
+      toast({
+        title: "Invalid Deal Type",
+        description: "VC scoring is only available for Venture Capital deals",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setVcScoringDeal(deal.id);
+    try {
+      const result = await triggerVCScoring(deal.id);
+      
+      toast({
+        title: "VC Analysis Completed",
+        description: `Analysis completed for ${deal.company_name} with score ${result.overall_score}/100. ${result.memo_generation.success ? 'IC memo generated successfully.' : 'Memo generation failed.'}`,
+        variant: "default"
+      });
+      
+      // Refresh deals to show updated scores
+      if (onRefreshDeals) {
+        onRefreshDeals();
+      }
+    } catch (error) {
+      console.error('VC Scoring failed:', error);
+      toast({
+        title: "Analysis Failed",
+        description: error instanceof Error ? error.message : "Failed to analyze deal",
+        variant: "destructive"
+      });
+    } finally {
+      setVcScoringDeal(null);
     }
   };
 
@@ -697,6 +739,15 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                         <DropdownMenuItem onClick={() => onDealEdit(deal)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit Deal
+                        </DropdownMenuItem>
+                      )}
+                      {isSuperAdmin && (
+                        <DropdownMenuItem 
+                          onClick={() => handleVCScoring(deal)}
+                          disabled={vcScoringDeal === deal.id}
+                        >
+                          <Zap className="mr-2 h-4 w-4" />
+                          {vcScoringDeal === deal.id ? 'Analyzing...' : 'Trigger VC Scoring'}
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
