@@ -53,6 +53,7 @@ import { exportMemoToPDF, openMemoPrintPreview } from '@/utils/pdfClient';
 import { usePermissions } from '@/hooks/usePermissions';
 import { MemoPreviewRenderer } from './MemoPreviewRenderer';
 import { ICReviewWorkflow } from './ICReviewWorkflow';
+import { icMemoService } from '@/services/ICMemoService';
 
 interface Deal {
   id: string;
@@ -147,6 +148,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   const [showDataQuality, setShowDataQuality] = useState(false);
   const [serverPdfHealthy, setServerPdfHealthy] = useState<'unknown' | 'ok' | 'down'>('unknown');
   const [customSections, setCustomSections] = useState<Array<{key: string, title: string, content?: string}>>([]);
+  const [isCapturingData, setIsCapturingData] = useState(false);
   
   const { memoState, loadMemo, generateMemo, cancelGeneration, updateContent } = useMemoCache(deal.id, fundId);
   const { versionState, loadVersions, saveVersion, restoreVersion } = useMemoVersions(deal.id, fundId);
@@ -252,6 +254,49 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   const handleGenerateMemo = async () => {
     // AI generation disabled - users should manually create memos
     return;
+  };
+
+  // Temporary function to test ic-memo-drafter
+  const handleCaptureData = async () => {
+    try {
+      setIsCapturingData(true);
+      
+      const result = await icMemoService.generateMemo(deal.id);
+      
+      if (result.success && result.memo) {
+        // Update memo content with captured data
+        const memoContent = result.memo.memo_content;
+        if (memoContent) {
+          // Update each section with the captured content
+          Object.entries(memoContent).forEach(([key, content]) => {
+            if (content && typeof content === 'string') {
+              updateContent(key, content);
+            }
+          });
+        }
+        
+        showToast({
+          title: "Data Captured Successfully",
+          description: `Investment memo data captured for ${deal.company_name}`,
+          variant: "default"
+        });
+        
+        // Refresh the memo to show updated content
+        await loadMemo(false);
+      } else {
+        showMemoErrorToast(
+          result.error || 'Failed to capture memo data',
+          () => handleCaptureData()
+        );
+      }
+    } catch (error) {
+      showMemoErrorToast(
+        `Error capturing data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        () => handleCaptureData()
+      );
+    } finally {
+      setIsCapturingData(false);
+    }
   };
 
   const handleSaveMemo = async () => {
@@ -627,6 +672,20 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                   >
                     <Eye className="w-4 h-4 mr-2" />
                     Preview
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCaptureData}
+                    disabled={isCapturingData || memoState.isGenerating}
+                  >
+                    {isCapturingData ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Brain className="w-4 h-4 mr-2" />
+                    )}
+                    Capture Data
                   </Button>
                   
                   <Button
