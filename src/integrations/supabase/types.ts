@@ -2400,7 +2400,15 @@ export type Database = {
           value_creation_potential_score?: number | null
           vision_communication_score?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "deal_analysisresult_vc_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deal_datapoints_pe: {
         Row: {
