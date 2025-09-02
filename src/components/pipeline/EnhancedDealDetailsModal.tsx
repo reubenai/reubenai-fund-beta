@@ -438,10 +438,11 @@ export function EnhancedDealDetailsModal({
 
           <TabsContent value="notes" className="space-y-6">
             <DealPermissionGuard dealId={deal.id} requiredAction="view">
-              <DealNotesManager
-                dealId={deal.id}
-                companyName={deal.company_name}
-              />
+                <DealNotesManager 
+                  dealId={deal.id} 
+                  companyName={deal.company_name}
+                  fundType={fundType === 'venture_capital' ? 'vc' : 'pe'}
+                />
             </DealPermissionGuard>
           </TabsContent>
 

@@ -31,7 +31,16 @@ import {
   Edit,
   Trash2,
   Save,
-  X
+  X,
+  Building2,
+  Target,
+  Lightbulb,
+  BarChart3,
+  DollarSign,
+  Shield,
+  Route,
+  Zap,
+  Briefcase
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -59,9 +68,11 @@ interface DealNote {
 interface DealNotesManagerProps {
   dealId: string;
   companyName: string;
+  fundType?: 'vc' | 'pe';
 }
 
-const NOTE_CATEGORIES = [
+// Legacy categories for backward compatibility
+const LEGACY_NOTE_CATEGORIES = [
   { value: 'founder_meeting', label: 'Founder Meeting', icon: Users },
   { value: 'market_insights', label: 'Market Insights', icon: TrendingUp },
   { value: 'team_assessment', label: 'Team Assessment', icon: User },
@@ -72,13 +83,51 @@ const NOTE_CATEGORIES = [
   { value: 'other', label: 'General Notes', icon: StickyNote }
 ];
 
+// VC Investment Thesis Categories
+const VC_NOTE_CATEGORIES = [
+  { value: 'team_leadership', label: 'Team & Leadership', icon: Users },
+  { value: 'market_opportunity', label: 'Market Opportunity', icon: TrendingUp },
+  { value: 'product_technology', label: 'Product & Technology', icon: Lightbulb },
+  { value: 'business_traction', label: 'Business Traction', icon: BarChart3 },
+  { value: 'financial_health', label: 'Financial Health', icon: DollarSign },
+  { value: 'strategic_fit', label: 'Strategic Fit', icon: Target },
+  { value: 'other', label: 'General Notes', icon: StickyNote }
+];
+
+// PE Investment Thesis Categories  
+const PE_NOTE_CATEGORIES = [
+  { value: 'financial_performance', label: 'Financial Performance', icon: BarChart3 },
+  { value: 'market_dynamics', label: 'Market Dynamics', icon: TrendingUp },
+  { value: 'competitive_positioning', label: 'Competitive Positioning', icon: Shield },
+  { value: 'management_succession', label: 'Management & Succession', icon: Users },
+  { value: 'operational_levers', label: 'Operational Levers', icon: Zap },
+  { value: 'deal_structure', label: 'Deal Structure', icon: Building2 },
+  { value: 'exit_path_timing', label: 'Exit Path & Timing', icon: Route },
+  { value: 'strategic_fit', label: 'Strategic Fit', icon: Target },
+  { value: 'risk_profile', label: 'Risk Profile', icon: AlertTriangle },
+  { value: 'data_availability', label: 'Data Availability', icon: Briefcase },
+  { value: 'other', label: 'General Notes', icon: StickyNote }
+];
+
+// Dynamic function to get categories based on fund type
+const getNoteCategories = (fundType?: 'vc' | 'pe') => {
+  switch (fundType) {
+    case 'vc':
+      return VC_NOTE_CATEGORIES;
+    case 'pe':
+      return PE_NOTE_CATEGORIES;
+    default:
+      return LEGACY_NOTE_CATEGORIES;
+  }
+};
+
 const SENTIMENT_OPTIONS = [
   { value: 'positive', label: 'Positive', className: 'bg-green-100 text-green-800', icon: CheckCircle },
   { value: 'negative', label: 'Negative', className: 'bg-red-100 text-red-800', icon: AlertTriangle },
   { value: 'neutral', label: 'Neutral', className: 'bg-gray-100 text-gray-800', icon: null }
 ];
 
-export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps) {
+export function DealNotesManager({ dealId, companyName, fundType }: DealNotesManagerProps) {
   const [notes, setNotes] = useState<DealNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -100,6 +149,9 @@ export function DealNotesManager({ dealId, companyName }: DealNotesManagerProps)
   const { toast } = useToast();
   const permissions = usePermissions();
   const { canPerformAction } = useDealPermissions(dealId);
+
+  // Get categories based on fund type
+  const NOTE_CATEGORIES = getNoteCategories(fundType);
 
   useEffect(() => {
     loadNotes();
