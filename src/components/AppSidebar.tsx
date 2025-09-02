@@ -28,7 +28,6 @@ import { supabase } from '@/integrations/supabase/client';
 const coreFunctions = [
   { title: "Investment Strategy", url: "/strategy", icon: Target, description: "Define criteria & focus", beta: true },
   { title: "Deal Pipeline", url: "/deals", icon: TrendingUp, description: "Manage opportunities", beta: true },
-  { title: "ReubenAI Analysis", url: "/reuben-analysis", icon: Brain, description: "AI deal insights", beta: true },
   { title: "Investment Committee", url: "/ic", icon: Users, description: "Run IC sessions", beta: true },
 ];
 
