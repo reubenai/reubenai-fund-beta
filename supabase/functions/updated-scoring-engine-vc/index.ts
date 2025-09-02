@@ -535,7 +535,25 @@ OUTPUT FORMAT (JSON only):
 
     console.log('✅ Results saved successfully to deal_analysisresult_vc');
 
-    // 8. Return success response
+    // 8. Update deals table with the overall score
+    console.log('💾 Updating deals table with overall score...');
+
+    const { error: dealsUpdateError } = await supabaseClient
+      .from('deals')
+      .update({
+        overall_score: overallScore,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', deal_id);
+
+    if (dealsUpdateError) {
+      console.error('❌ Failed to update deals table:', dealsUpdateError.message);
+      // Note: We don't throw here as the main analysis was successful
+    } else {
+      console.log('✅ Deals table updated successfully with overall score');
+    }
+
+    // 9. Return success response
     return new Response(JSON.stringify({
       success: true,
       deal_id: deal_id,
