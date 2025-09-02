@@ -111,10 +111,13 @@ export const PipelineHeader: React.FC<PipelineHeaderProps> = ({
                 <span className="ml-auto text-xs text-gray-500">Coming soon</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onIntegrateCRM}>
+              <DropdownMenuItem 
+                disabled={true}
+                className="opacity-50"
+              >
                 <Database className="w-4 h-4 mr-2" />
                 Integrate CRM
-                <span className="ml-auto text-xs text-gray-500">Connect your CRM</span>
+                <span className="ml-auto text-xs text-gray-500">Coming soon</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
