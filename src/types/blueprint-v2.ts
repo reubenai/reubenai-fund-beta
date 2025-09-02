@@ -13,7 +13,12 @@ export type AnalysisEngine =
   | 'operations-analysis-engine'
   | 'value-creation-engine'
   | 'risk-analysis-engine'
-  | 'exit-strategy-engine';
+  | 'exit-strategy-engine'
+  | 'deal-structure-engine'
+  | 'data-availability-engine'
+  | 'market-dynamics-engine'
+  | 'competitive-positioning-engine'
+  | 'succession-planning-engine';
 
 export interface DataSource {
   source_type: 'company_data' | 'market_research' | 'financial_data' | 'team_research' | 'product_data' | 'competitive_intel' | 'external_api' | 'document_parsing';
@@ -151,7 +156,7 @@ export const VC_CATEGORIES = {
   },
   BUSINESS_TRACTION: {
     category_id: 'business-traction',
-    category_name: 'Business Model & Traction',
+    category_name: 'Business Traction',
     weight: 15,
     subcategories: [
       'revenue-model',
@@ -190,7 +195,7 @@ export const PE_CATEGORIES = {
   FINANCIAL_PERFORMANCE: {
     category_id: 'financial-performance',
     category_name: 'Financial Performance',
-    weight: 25,
+    weight: 15,
     subcategories: [
       'revenue-quality',
       'profitability-analysis', 
@@ -199,64 +204,112 @@ export const PE_CATEGORIES = {
       'financial-stability'
     ]
   },
-  OPERATIONAL_EXCELLENCE: {
-    category_id: 'operational-excellence', 
-    category_name: 'Operational Excellence',
-    weight: 20,
-    subcategories: [
-      'management-team-strength',
-      'operational-efficiency',
-      'technology-systems',
-      'process-optimization',
-      'cost-management'
-    ]
-  },
-  MARKET_POSITION: {
-    category_id: 'market-position',
-    category_name: 'Market Position',
-    weight: 20,
-    subcategories: [
-      'market-share',
-      'competitive-advantage', 
-      'brand-strength',
-      'customer-relationships',
-      'pricing-power'
-    ]
-  },
-  MANAGEMENT_QUALITY: {
-    category_id: 'management-quality',
-    category_name: 'Management Quality', 
-    weight: 15,
-    subcategories: [
-      'leadership-capability',
-      'track-record',
-      'strategic-vision',
-      'execution-ability',
-      'cultural-fit'
-    ]
-  },
-  GROWTH_POTENTIAL: {
-    category_id: 'growth-potential',
-    category_name: 'Growth Potential',
+  MARKET_DYNAMICS: {
+    category_id: 'market-dynamics',
+    category_name: 'Market Dynamics',
     weight: 10,
     subcategories: [
-      'organic-growth',
-      'acquisition-opportunities',
-      'new-market-expansion',
-      'product-extension',
-      'operational-leverage'
+      'market-trends',
+      'industry-cycles',
+      'regulatory-environment',
+      'economic-factors',
+      'disruption-risks'
+    ]
+  },
+  COMPETITIVE_POSITIONING: {
+    category_id: 'competitive-positioning',
+    category_name: 'Competitive Positioning',
+    weight: 12,
+    subcategories: [
+      'competitive-moats',
+      'market-differentiation',
+      'switching-costs',
+      'network-effects',
+      'scale-advantages'
+    ]
+  },
+  MANAGEMENT_SUCCESSION: {
+    category_id: 'management-succession',
+    category_name: 'Management & Succession',
+    weight: 12,
+    subcategories: [
+      'leadership-bench',
+      'key-person-risk',
+      'management-transition',
+      'knowledge-transfer',
+      'retention-strategies'
+    ]
+  },
+  OPERATIONAL_LEVERS: {
+    category_id: 'operational-levers',
+    category_name: 'Operational Levers',
+    weight: 10,
+    subcategories: [
+      'process-optimization',
+      'cost-management',
+      'technology-systems',
+      'operational-efficiency',
+      'productivity-improvements'
+    ]
+  },
+  DEAL_STRUCTURE: {
+    category_id: 'deal-structure',
+    category_name: 'Deal Structure',
+    weight: 8,
+    subcategories: [
+      'transaction-structure',
+      'governance-terms',
+      'liquidation-preferences',
+      'board-composition',
+      'investor-rights'
+    ]
+  },
+  EXIT_PATH_TIMING: {
+    category_id: 'exit-path-timing',
+    category_name: 'Exit Path & Timing',
+    weight: 10,
+    subcategories: [
+      'exit-timeline',
+      'valuation-multiples',
+      'strategic-buyers',
+      'ipo-readiness',
+      'market-conditions'
     ]
   },
   STRATEGIC_FIT: {
     category_id: 'strategic-fit',
     category_name: 'Strategic Fit',
-    weight: 10,
+    weight: 8,
     subcategories: [
       'fund-strategy-alignment',
-      'portfolio-synergies', 
-      'risk-return-profile',
-      'exit-readiness',
-      'value-creation-plan'
+      'portfolio-synergies',
+      'investment-size-fit',
+      'value-creation-plan',
+      'thesis-alignment'
+    ]
+  },
+  RISK_PROFILE: {
+    category_id: 'risk-profile',
+    category_name: 'Risk Profile',
+    weight: 10,
+    subcategories: [
+      'risk-assessment',
+      'mitigation-strategies',
+      'scenario-analysis',
+      'regulatory-risks',
+      'market-risks'
+    ]
+  },
+  DATA_AVAILABILITY: {
+    category_id: 'data-availability',
+    category_name: 'Data Availability',
+    weight: 5,
+    subcategories: [
+      'data-completeness',
+      'information-quality',
+      'due-diligence-gaps',
+      'management-reporting',
+      'financial-transparency'
     ]
   }
 } as const;
@@ -392,47 +445,91 @@ export const PE_DEAL_ANALYSIS_WORKFLOW: WorkflowDefinition = {
       is_critical: true
     },
     {
-      step_id: 'operational-excellence-analysis',
-      step_name: 'Operational Excellence Analysis',
-      engine_name: 'operations-analysis-engine',
-      input_requirements: ['canonical_entities', 'operational_data'],
-      output_schema: { operational_analysis: 'object' },
+      step_id: 'market-dynamics-analysis',
+      step_name: 'Market Dynamics Analysis',
+      engine_name: 'market-dynamics-engine',
+      input_requirements: ['canonical_entities', 'market_data'],
+      output_schema: { market_dynamics: 'object' },
       execution_timeout: 50000,
       retry_policy: { max_attempts: 2, backoff_strategy: 'linear' },
       depends_on: ['entity-canonicalisation'],
       is_critical: false
     },
     {
-      step_id: 'market-position-analysis',
-      step_name: 'Market Position Analysis',
-      engine_name: 'market-research-engine',
+      step_id: 'competitive-positioning-analysis',
+      step_name: 'Competitive Positioning Analysis',
+      engine_name: 'competitive-positioning-engine',
       input_requirements: ['canonical_entities', 'competitive_landscape'],
-      output_schema: { market_position: 'object' },
+      output_schema: { competitive_positioning: 'object' },
       execution_timeout: 55000,
       retry_policy: { max_attempts: 3, backoff_strategy: 'exponential' },
       depends_on: ['entity-canonicalisation'],
       is_critical: false
     },
     {
-      step_id: 'management-quality-analysis',
-      step_name: 'Management Quality Analysis',
-      engine_name: 'team-research-engine',
+      step_id: 'management-succession-analysis',
+      step_name: 'Management & Succession Analysis',
+      engine_name: 'succession-planning-engine',
       input_requirements: ['canonical_entities', 'management_team'],
-      output_schema: { management_analysis: 'object' },
+      output_schema: { management_succession: 'object' },
       execution_timeout: 45000,
       retry_policy: { max_attempts: 3, backoff_strategy: 'exponential' },
       depends_on: ['entity-canonicalisation'],
       is_critical: false
     },
     {
-      step_id: 'growth-potential-analysis',
-      step_name: 'Growth Potential Analysis',
-      engine_name: 'value-creation-engine',
-      input_requirements: ['financial_performance', 'operational_analysis'],
-      output_schema: { growth_analysis: 'object' },
+      step_id: 'operational-levers-analysis',
+      step_name: 'Operational Levers Analysis',
+      engine_name: 'operations-analysis-engine',
+      input_requirements: ['financial_performance', 'operational_data'],
+      output_schema: { operational_levers: 'object' },
       execution_timeout: 60000,
       retry_policy: { max_attempts: 2, backoff_strategy: 'linear' },
-      depends_on: ['financial-performance-analysis', 'operational-excellence-analysis'],
+      depends_on: ['financial-performance-analysis'],
+      is_critical: false
+    },
+    {
+      step_id: 'deal-structure-analysis',
+      step_name: 'Deal Structure Analysis',
+      engine_name: 'deal-structure-engine',
+      input_requirements: ['canonical_entities', 'transaction_terms'],
+      output_schema: { deal_structure: 'object' },
+      execution_timeout: 40000,
+      retry_policy: { max_attempts: 2, backoff_strategy: 'linear' },
+      depends_on: ['entity-canonicalisation'],
+      is_critical: false
+    },
+    {
+      step_id: 'exit-path-timing-analysis',
+      step_name: 'Exit Path & Timing Analysis',
+      engine_name: 'exit-strategy-engine',
+      input_requirements: ['financial_performance', 'market_dynamics'],
+      output_schema: { exit_analysis: 'object' },
+      execution_timeout: 50000,
+      retry_policy: { max_attempts: 2, backoff_strategy: 'linear' },
+      depends_on: ['financial-performance-analysis', 'market-dynamics-analysis'],
+      is_critical: false
+    },
+    {
+      step_id: 'risk-profile-analysis',
+      step_name: 'Risk Profile Analysis',
+      engine_name: 'risk-analysis-engine',
+      input_requirements: ['all_previous_outputs'],
+      output_schema: { risk_profile: 'object' },
+      execution_timeout: 45000,
+      retry_policy: { max_attempts: 3, backoff_strategy: 'exponential' },
+      depends_on: ['financial-performance-analysis', 'market-dynamics-analysis', 'competitive-positioning-analysis'],
+      is_critical: false
+    },
+    {
+      step_id: 'data-availability-analysis',
+      step_name: 'Data Availability Analysis',
+      engine_name: 'data-availability-engine',
+      input_requirements: ['all_previous_outputs'],
+      output_schema: { data_availability: 'object' },
+      execution_timeout: 30000,
+      retry_policy: { max_attempts: 2, backoff_strategy: 'linear' },
+      depends_on: ['entity-canonicalisation'],
       is_critical: false
     },
     {
@@ -443,26 +540,36 @@ export const PE_DEAL_ANALYSIS_WORKFLOW: WorkflowDefinition = {
       output_schema: { strategic_analysis: 'object' },
       execution_timeout: 35000,
       retry_policy: { max_attempts: 3, backoff_strategy: 'exponential' },
-      depends_on: ['financial-performance-analysis', 'operational-excellence-analysis', 'market-position-analysis', 'management-quality-analysis', 'growth-potential-analysis'],
+      depends_on: ['financial-performance-analysis', 'market-dynamics-analysis', 'competitive-positioning-analysis', 'management-succession-analysis', 'operational-levers-analysis', 'deal-structure-analysis', 'exit-path-timing-analysis', 'risk-profile-analysis', 'data-availability-analysis'],
       is_critical: true
     }
   ],
   execution_order: [
     'entity-canonicalisation',
     'financial-performance-analysis',
-    'operational-excellence-analysis',
-    'market-position-analysis',
-    'management-quality-analysis',
-    'growth-potential-analysis',
+    'market-dynamics-analysis',
+    'competitive-positioning-analysis',
+    'management-succession-analysis',
+    'operational-levers-analysis',
+    'deal-structure-analysis',
+    'exit-path-timing-analysis',
+    'risk-profile-analysis',
+    'data-availability-analysis',
     'strategic-fit-analysis'
   ],
   parallel_execution_groups: [
-    ['operational-excellence-analysis', 'market-position-analysis', 'management-quality-analysis']
+    ['market-dynamics-analysis', 'competitive-positioning-analysis', 'management-succession-analysis', 'deal-structure-analysis', 'data-availability-analysis'],
+    ['operational-levers-analysis', 'exit-path-timing-analysis', 'risk-profile-analysis']
   ],
   fallback_strategies: {
+    'market-dynamics-engine': 'basic-market-analysis',
+    'competitive-positioning-engine': 'simplified-competitive-analysis',
+    'succession-planning-engine': 'basic-management-assessment',
     'operations-analysis-engine': 'basic-operational-metrics',
-    'team-research-engine': 'use-cached-data',
-    'value-creation-engine': 'simplified-growth-model'
+    'deal-structure-engine': 'standard-structure-analysis',
+    'exit-strategy-engine': 'basic-exit-assessment',
+    'risk-analysis-engine': 'simplified-risk-model',
+    'data-availability-engine': 'basic-data-assessment'
   }
 };
 
@@ -512,5 +619,25 @@ export const BLUEPRINT_ENGINE_MAPPING: Record<AnalysisEngine, string[]> = {
   ],
   'exit-strategy-engine': [
     'exit-timeline', 'valuation-multiples', 'strategic-buyers'
+  ],
+  'deal-structure-engine': [
+    'transaction-structure', 'governance-terms', 'liquidation-preferences',
+    'board-composition', 'investor-rights'
+  ],
+  'data-availability-engine': [
+    'data-completeness', 'information-quality', 'due-diligence-gaps',
+    'management-reporting', 'financial-transparency'
+  ],
+  'market-dynamics-engine': [
+    'market-trends', 'industry-cycles', 'regulatory-environment',
+    'economic-factors', 'disruption-risks'
+  ],
+  'competitive-positioning-engine': [
+    'competitive-moats', 'market-differentiation', 'switching-costs',
+    'network-effects', 'scale-advantages'
+  ],
+  'succession-planning-engine': [
+    'leadership-bench', 'key-person-risk', 'management-transition',
+    'knowledge-transfer', 'retention-strategies'
   ]
 };
