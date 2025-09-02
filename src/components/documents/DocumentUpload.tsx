@@ -460,11 +460,8 @@ export function DocumentUpload({ dealId, companyName, onUploadComplete, onUpload
                     {upload.progress.status === 'complete' && (
                       <div className="flex items-center gap-2 mt-2">
                         <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
-                          ✓ Ready for AI Analysis
+                          ✓ Document uploaded - check the summary in document tab
                         </Badge>
-                        <span className="text-xs text-green-600">
-                          Document will be included in next deal analysis
-                        </span>
                       </div>
                     )}
                   </div>
