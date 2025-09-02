@@ -44,6 +44,7 @@ serve(async (req) => {
     
     // Step 2: Load deal data and analysis results
     const deal_data = await loadDealData(request.deal_id);
+    const investment_strategy = await loadInvestmentStrategy(request.fund_id);
     const features = await loadDealFeatures(request.org_id, request.fund_id, request.deal_id);
     const scores = await loadDealScores(request.org_id, request.fund_id, request.deal_id);
     
@@ -51,6 +52,7 @@ serve(async (req) => {
     const memo_sections = await generateMemoSections(
       template_variant, 
       deal_data, 
+      investment_strategy,
       features, 
       scores, 
       request.context_chunks || []
@@ -117,61 +119,162 @@ async function determineFundType(fund_id: string): Promise<'vc' | 'pe'> {
 async function loadDealData(deal_id: string): Promise<any> {
   const { data: deal, error } = await supabase
     .from('deals')
-    .select('*')
+    .select('company_name, industry, deal_size, valuation, fund_id')
     .eq('id', deal_id)
     .single();
     
   if (error || !deal) {
-    throw new Error('Deal not found');
+    throw new Error(`Deal not found: ${deal_id}`);
+  }
+  
+  // Validate required fields
+  if (!deal.company_name) {
+    throw new Error('Company name is required for memo generation');
   }
   
   return deal;
 }
 
 async function loadDealFeatures(org_id: string, fund_id: string, deal_id: string): Promise<any[]> {
-  // Load from deal_analysis_datapoints_vc and deal_documents
+  const features = [];
+  
+  // Load specific VC data points
   const { data: datapoints } = await supabase
     .from('deal_analysis_datapoints_vc')
-    .select('*')
+    .select(`
+      tam, sam, som, cagr, growth_drivers, employee_count, 
+      funding_stage, business_model, ltv_cac_ratio, retention_rate, 
+      technology_stack, key_customers, competitors, market_timing
+    `)
     .eq('deal_id', deal_id)
     .single();
     
+  // Load documents (limit to 10 most recent with extracted content)
   const { data: documents } = await supabase
     .from('deal_documents')
-    .select('name, document_type, data_points_vc, data_points_pe')
-    .eq('deal_id', deal_id);
+    .select('name, document_type, extracted_text, document_summary, data_points_vc')
+    .eq('deal_id', deal_id)
+    .order('created_at', { ascending: false })
+    .limit(10);
     
-  const features = [];
-  
   if (datapoints) {
-    // Convert datapoints to feature format
-    Object.entries(datapoints).forEach(([key, value]) => {
-      if (value !== null && key !== 'id' && key !== 'deal_id' && key !== 'created_at' && key !== 'updated_at') {
+    // Process specific VC data points with structured handling
+    const vcDataPoints = {
+      tam: datapoints.tam,
+      sam: datapoints.sam, 
+      som: datapoints.som,
+      cagr: datapoints.cagr,
+      growth_drivers: datapoints.growth_drivers,
+      employee_count: datapoints.employee_count,
+      funding_stage: datapoints.funding_stage,
+      business_model: datapoints.business_model,
+      ltv_cac_ratio: datapoints.ltv_cac_ratio,
+      retention_rate: datapoints.retention_rate,
+      technology_stack: datapoints.technology_stack,
+      key_customers: datapoints.key_customers,
+      competitors: datapoints.competitors,
+      market_timing: datapoints.market_timing
+    };
+    
+    // Convert to feature format with proper categorization
+    Object.entries(vcDataPoints).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
         features.push({
           feature_name: key,
-          feature_value: { value },
-          feature_type: 'datapoint',
-          extraction_method: 'vc_aggregator'
+          feature_value: { 
+            value,
+            category: getCategoryForDataPoint(key)
+          },
+          feature_type: 'vc_datapoint',
+          extraction_method: 'vc_data_aggregator'
         });
       }
     });
   }
   
-  // Add document data points
-  if (documents) {
-    documents.forEach(doc => {
+  // Process documents with extracted text and summaries
+  if (documents && documents.length > 0) {
+    documents.forEach((doc, index) => {
+      // Add document summary as feature
+      if (doc.document_summary) {
+        features.push({
+          feature_name: `document_summary_${index + 1}`,
+          feature_value: { 
+            summary: doc.document_summary,
+            document_name: doc.name,
+            document_type: doc.document_type
+          },
+          feature_type: 'document_summary',
+          extraction_method: 'document_processor'
+        });
+      }
+      
+      // Add extracted structured data
       if (doc.data_points_vc) {
         features.push({
-          feature_name: `document_${doc.name}`,
+          feature_name: `document_data_${index + 1}`,
           feature_value: doc.data_points_vc,
-          feature_type: 'document',
+          feature_type: 'document_data',
+          extraction_method: 'document_processor'
+        });
+      }
+      
+      // Add extracted text (truncated for context)
+      if (doc.extracted_text) {
+        features.push({
+          feature_name: `document_text_${index + 1}`,
+          feature_value: { 
+            text: doc.extracted_text.substring(0, 2000), // Limit for performance
+            full_length: doc.extracted_text.length,
+            document_name: doc.name
+          },
+          feature_type: 'document_text',
           extraction_method: 'document_processor'
         });
       }
     });
   }
     
+  console.log(`📊 [IC Memo] Loaded ${features.length} features from ${documents?.length || 0} documents`);
   return features;
+}
+
+function getCategoryForDataPoint(key: string): string {
+  const categoryMap: Record<string, string> = {
+    'tam': 'market',
+    'sam': 'market', 
+    'som': 'market',
+    'cagr': 'market',
+    'growth_drivers': 'market',
+    'market_timing': 'market',
+    'competitors': 'competitive',
+    'key_customers': 'traction',
+    'employee_count': 'operations',
+    'funding_stage': 'financial',
+    'business_model': 'business',
+    'ltv_cac_ratio': 'financial',
+    'retention_rate': 'financial',
+    'technology_stack': 'product'
+  };
+  return categoryMap[key] || 'general';
+}
+
+async function loadInvestmentStrategy(fund_id: string): Promise<any> {
+  const { data: strategy, error } = await supabase
+    .from('investment_strategies')
+    .select(`
+      fund_type, enhanced_criteria, exciting_threshold, 
+      promising_threshold, needs_development_threshold
+    `)
+    .eq('fund_id', fund_id)
+    .single();
+    
+  if (error) {
+    console.warn(`⚠️ [IC Memo] Investment strategy not found for fund: ${fund_id}`);
+    return null;
+  }
+  
+  return strategy;
 }
 
 async function loadDealScores(org_id: string, fund_id: string, deal_id: string): Promise<any[]> {
@@ -212,6 +315,7 @@ async function loadDealScores(org_id: string, fund_id: string, deal_id: string):
 async function generateMemoSections(
   template_variant: 'vc' | 'pe',
   deal_data: any,
+  investment_strategy: any,
   features: any[],
   scores: any[],
   context_chunks: any[]
@@ -224,10 +328,10 @@ async function generateMemoSections(
   // Executive Summary
   sections.push(await generateExecutiveSummary(deal_data, features, scores, context_chunks));
   
-  // Investment Thesis
-  sections.push(await generateInvestmentThesis(template_variant, deal_data, features, scores, context_chunks));
+  // Investment Thesis - now includes investment strategy
+  sections.push(await generateInvestmentThesis(template_variant, deal_data, investment_strategy, features, scores, context_chunks));
   
-  // Market Analysis
+  // Market Analysis - enhanced with specific VC data points
   sections.push(await generateMarketAnalysis(deal_data, features, scores, context_chunks));
   
   // Financial Analysis
@@ -343,6 +447,7 @@ Write executive summary:`
 async function generateInvestmentThesis(
   template_variant: 'vc' | 'pe',
   deal_data: any,
+  investment_strategy: any,
   features: any[],
   scores: any[],
   context_chunks: any[]
@@ -351,14 +456,30 @@ async function generateInvestmentThesis(
   const market_score = scores.find(s => s.category === 'Market Opportunity')?.raw_score;
   const product_score = scores.find(s => s.category.includes('Product') || s.category.includes('Technology'))?.raw_score;
   
+  // Extract relevant VC data points for thesis
+  const marketFeatures = features.filter(f => f.feature_value?.category === 'market');
+  const financialFeatures = features.filter(f => f.feature_value?.category === 'financial');
+  
+  const marketData = marketFeatures.length > 0 ? 
+    marketFeatures.map(f => `${f.feature_name}: ${f.feature_value.value}`).join('; ') : 
+    'Market data not available';
+    
+  const financialData = financialFeatures.length > 0 ?
+    financialFeatures.map(f => `${f.feature_name}: ${f.feature_value.value}`).join('; ') :
+    'Financial metrics not available';
+  
   const supporting_context = context_chunks
     .slice(0, 4)
     .map(chunk => chunk.content)
     .join('\n\n')
     .slice(0, 3000);
 
+  const strategy_context = investment_strategy ? 
+    `Fund Strategy: ${JSON.stringify(investment_strategy.enhanced_criteria || {})}` :
+    'Fund investment strategy not available';
+
   const thesis_prompt = template_variant === 'vc' 
-    ? 'Focus on growth potential, market opportunity, scalability, and team execution capability.'
+    ? 'Focus on growth potential, market opportunity, scalability, and team execution capability. Use specific TAM/SAM/SOM data and financial metrics.'
     : 'Focus on operational improvements, market position, cash flow generation, and exit strategy.';
 
   try {
@@ -382,14 +503,24 @@ Requirements:
 - Use "Unknown" for unavailable data
 - 300-400 words
 - Clear investment rationale
+- Reference fund strategy alignment when available
 
 Return JSON: {"content": "...", "citations": [{"id": 1, "source": "...", "quote": "..."}]}`
           },
           {
             role: 'user',
             content: `Company: ${deal_data.company_name}
+Industry: ${deal_data.industry || 'Unknown'}
+Deal Size: ${deal_data.deal_size ? `$${(deal_data.deal_size / 1000000).toFixed(1)}M` : 'Unknown'}
+Valuation: ${deal_data.valuation ? `$${(deal_data.valuation / 1000000).toFixed(1)}M` : 'Unknown'}
+
 Market Score: ${market_score?.toFixed(1) || 'Unknown'}
 Product Score: ${product_score?.toFixed(1) || 'Unknown'}
+
+Market Data: ${marketData}
+Financial Data: ${financialData}
+
+${strategy_context}
 
 Supporting Context:
 ${supporting_context || 'No additional context available'}
@@ -420,33 +551,72 @@ Write investment thesis:`
     console.error('Investment thesis generation failed:', error);
     return {
       title: 'Investment Thesis',
-      content: `Investment thesis for ${deal_data.company_name} requires additional analysis. Market score: ${market_score?.toFixed(1) || 'Unknown'}.`,
+      content: `Investment thesis for ${deal_data.company_name} requires additional analysis. Market score: ${market_score?.toFixed(1) || 'Unknown'}. ${marketData}`,
       citations: [],
       fact_check_status: 'failed'
     };
   }
 }
 
-// Implement remaining section generators with similar pattern...
+// Enhanced market analysis with specific VC data points
 async function generateMarketAnalysis(deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> {
+  // Extract market-specific features
+  const marketFeatures = features.filter(f => f.feature_value?.category === 'market');
+  const competitiveFeatures = features.filter(f => f.feature_value?.category === 'competitive');
+  
+  // Build market data context
+  const tamFeature = marketFeatures.find(f => f.feature_name === 'tam');
+  const samFeature = marketFeatures.find(f => f.feature_name === 'sam');
+  const somFeature = marketFeatures.find(f => f.feature_name === 'som');
+  const cagrFeature = marketFeatures.find(f => f.feature_name === 'cagr');
+  const growthDriversFeature = marketFeatures.find(f => f.feature_name === 'growth_drivers');
+  const competitorsFeature = competitiveFeatures.find(f => f.feature_name === 'competitors');
+  
+  const marketContext = `
+TAM: ${tamFeature ? tamFeature.feature_value.value : 'Unknown'}
+SAM: ${samFeature ? samFeature.feature_value.value : 'Unknown'}  
+SOM: ${somFeature ? somFeature.feature_value.value : 'Unknown'}
+CAGR: ${cagrFeature ? cagrFeature.feature_value.value : 'Unknown'}
+Growth Drivers: ${growthDriversFeature ? JSON.stringify(growthDriversFeature.feature_value.value) : 'Unknown'}
+Key Competitors: ${competitorsFeature ? JSON.stringify(competitorsFeature.feature_value.value) : 'Unknown'}
+  `.trim();
+  
   return {
     title: 'Market Analysis',
-    content: `Market analysis for ${deal_data.company_name} in the ${deal_data.industry || 'Unknown'} sector. TAM: Unknown. Growth rate: Unknown. Competitive landscape: Requires analysis.`,
-    citations: [],
+    content: `Market analysis for ${deal_data.company_name} in the ${deal_data.industry || 'Unknown'} sector. ${marketContext}. Competitive landscape analysis pending.`,
+    citations: [
+      ...marketFeatures.map((f, i) => ({ id: i + 1, source: f.extraction_method, quote: `${f.feature_name}: ${f.feature_value.value}` })),
+      ...competitiveFeatures.map((f, i) => ({ id: marketFeatures.length + i + 1, source: f.extraction_method, quote: `${f.feature_name}: ${f.feature_value.value}` }))
+    ],
     fact_check_status: 'pending'
   };
 }
 
+// Enhanced financial analysis with specific VC metrics
 async function generateFinancialAnalysis(template_variant: 'vc' | 'pe', deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> {
-  const revenue_features = features.filter(f => f.feature_name.toLowerCase().includes('revenue'));
-  const revenue_info = revenue_features.length > 0 ? 
-    `Revenue: ${revenue_features[0].feature_value.value || 'Unknown'}` : 
-    'Revenue: Unknown';
+  const financialFeatures = features.filter(f => f.feature_value?.category === 'financial');
+  
+  // Extract specific financial metrics
+  const ltvCacFeature = financialFeatures.find(f => f.feature_name === 'ltv_cac_ratio');
+  const retentionFeature = financialFeatures.find(f => f.feature_name === 'retention_rate');
+  const fundingStageFeature = financialFeatures.find(f => f.feature_name === 'funding_stage');
+  
+  const financialMetrics = `
+LTV/CAC Ratio: ${ltvCacFeature ? ltvCacFeature.feature_value.value : 'Unknown'}
+Customer Retention: ${retentionFeature ? retentionFeature.feature_value.value : 'Unknown'}%
+Funding Stage: ${fundingStageFeature ? fundingStageFeature.feature_value.value : 'Unknown'}
+Valuation: ${deal_data.valuation ? `$${(deal_data.valuation / 1000000).toFixed(1)}M` : 'Unknown'}
+Deal Size: ${deal_data.deal_size ? `$${(deal_data.deal_size / 1000000).toFixed(1)}M` : 'Unknown'}
+  `.trim();
     
   return {
     title: 'Financial Analysis',
-    content: `Financial analysis for ${deal_data.company_name}. ${revenue_info}. Valuation: ${deal_data.valuation ? `$${(deal_data.valuation / 1000000).toFixed(1)}M` : 'Unknown'}. Deal size: ${deal_data.deal_size ? `$${(deal_data.deal_size / 1000000).toFixed(1)}M` : 'Unknown'}.`,
-    citations: revenue_features.map((f, i) => ({ id: i + 1, source: f.extraction_method, quote: f.feature_value.source_quote || '' })),
+    content: `Financial analysis for ${deal_data.company_name}. ${financialMetrics}. Unit economics and growth metrics require further validation.`,
+    citations: financialFeatures.map((f, i) => ({ 
+      id: i + 1, 
+      source: f.extraction_method, 
+      quote: `${f.feature_name}: ${f.feature_value.value}` 
+    })),
     fact_check_status: 'pending'
   };
 }
