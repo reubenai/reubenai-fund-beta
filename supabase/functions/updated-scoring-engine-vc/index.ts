@@ -579,14 +579,55 @@ OUTPUT FORMAT (JSON only):
       console.log('✅ Deals table updated successfully with overall score');
     }
 
-    // 9. Return success response
+    // 9. Generate IC Memo after successful analysis
+    console.log('📝 Initiating IC memo generation...');
+    let memoGenerationStatus = {
+      success: false,
+      sections_generated: 0,
+      word_count: 0,
+      error: null
+    };
+    
+    try {
+      const memoResponse = await supabaseClient.functions.invoke('ic-memo-drafter', {
+        body: {
+          deal_id: deal_id,
+          fund_id: fundId,
+          organization_id: fundData.organization_id
+        }
+      });
+      
+      if (memoResponse.error) {
+        throw new Error(`Memo generation failed: ${memoResponse.error.message}`);
+      }
+      
+      const memoData = memoResponse.data;
+      if (memoData?.success) {
+        memoGenerationStatus = {
+          success: true,
+          sections_generated: memoData.sections_generated || 0,
+          word_count: memoData.word_count || 0,
+          error: null
+        };
+        console.log(`✅ IC memo generated successfully: ${memoGenerationStatus.sections_generated} sections, ${memoGenerationStatus.word_count} words`);
+      } else {
+        throw new Error(memoData?.error || 'Unknown memo generation error');
+      }
+    } catch (memoError) {
+      console.error('❌ IC memo generation failed:', memoError);
+      memoGenerationStatus.error = memoError.message;
+      // Continue with analysis response even if memo generation fails
+    }
+
+    // 10. Return success response with memo status
     return new Response(JSON.stringify({
       success: true,
       deal_id: deal_id,
       overall_score: overallScore,
       scores_analyzed: validScores.length,
       total_criteria: VC_SCORING_CRITERIA.length,
-      message: 'VC deal analysis completed successfully'
+      memo_generation: memoGenerationStatus,
+      message: `VC deal analysis completed successfully${memoGenerationStatus.success ? ' with IC memo generated' : ' (memo generation failed)'}`
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200
