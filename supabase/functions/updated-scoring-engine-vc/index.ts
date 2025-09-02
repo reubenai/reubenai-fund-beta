@@ -228,12 +228,29 @@ serve(async (req) => {
     // 1. Gather all required data
     console.log('📊 Gathering deal data from multiple sources...');
     
-    const [dealDataResult, datapointsResult, documentsResult, strategyResult, perplexityMarketResult] = await Promise.all([
+    const [dealDataResult, fundDataResult, datapointsResult, documentsResult, strategyResult, perplexityMarketResult] = await Promise.all([
       supabaseClient
         .from('deals')
-        .select('*, fund_id!inner(fund_type, organization_id)')
+        .select('*')
         .eq('id', deal_id)
         .single(),
+      
+      // Get fund data separately to avoid relationship ambiguity
+      supabaseClient
+        .from('deals')
+        .select('fund_id')
+        .eq('id', deal_id)
+        .single()
+        .then(async (dealResult) => {
+          if (dealResult.error || !dealResult.data?.fund_id) {
+            throw new Error('Could not get fund_id from deal');
+          }
+          return supabaseClient
+            .from('funds')
+            .select('fund_type, organization_id')
+            .eq('id', dealResult.data.fund_id)
+            .single();
+        }),
       
       supabaseClient
         .from('deal_analysis_datapoints_vc')
@@ -249,11 +266,22 @@ serve(async (req) => {
         .eq('deal_id', deal_id)
         .limit(10),
       
+      // Get investment strategy using fund_id from deal
       supabaseClient
-        .from('investment_strategies')
-        .select('*')
-        .eq('fund_id', (await supabaseClient.from('deals').select('fund_id').eq('id', deal_id).single()).data?.fund_id)
-        .maybeSingle(),
+        .from('deals')
+        .select('fund_id')
+        .eq('id', deal_id)
+        .single()
+        .then(async (dealResult) => {
+          if (dealResult.error || !dealResult.data?.fund_id) {
+            return { data: null, error: null };
+          }
+          return supabaseClient
+            .from('investment_strategies')
+            .select('*')
+            .eq('fund_id', dealResult.data.fund_id)
+            .maybeSingle();
+        }),
       
       supabaseClient
         .from('deal_enrichment_perplexity_market_export_vc')
@@ -268,7 +296,12 @@ serve(async (req) => {
       throw new Error(`Failed to fetch deal data: ${dealDataResult.error.message}`);
     }
 
+    if (fundDataResult.error) {
+      throw new Error(`Failed to fetch fund data: ${fundDataResult.error.message}`);
+    }
+
     const dealData = dealDataResult.data;
+    const fundData = fundDataResult.data;
     const datapointsData = datapointsResult.data;
     const documentsData = documentsResult.data || [];
     const strategyData = strategyResult.data;
@@ -285,7 +318,7 @@ serve(async (req) => {
       datapoints: datapointsData,
       documents: documentsData,
       fund_strategy: strategyData?.enhanced_criteria || {},
-      fund_type: dealData.fund_id?.fund_type,
+      fund_type: fundData.fund_type,
       perplexity_market: perplexityMarketData,
       data_quality_score: perplexityMarketData?.data_quality_score || 0,
       confidence_level: perplexityMarketData?.confidence_level || 'medium'
