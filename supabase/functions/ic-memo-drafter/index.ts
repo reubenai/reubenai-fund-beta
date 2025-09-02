@@ -318,11 +318,20 @@ async function generateMemoSections(
   // Executive Summary
   sections.push(await generateExecutiveSummary(deal_data, features, scores, context_chunks));
   
-  // Investment Thesis - now includes investment strategy
-  sections.push(await generateInvestmentThesis(template_variant, deal_data, investment_strategy, features, scores, context_chunks));
+  // Company Overview
+  sections.push(await generateCompanyOverview(deal_data, features, scores, context_chunks));
   
-  // Market Analysis - enhanced with specific VC data points
-  sections.push(await generateMarketAnalysis(deal_data, features, scores, context_chunks));
+  // Market Opportunity
+  sections.push(await generateMarketOpportunity(deal_data, features, scores, context_chunks));
+  
+  // Product & Service
+  sections.push(await generateProductService(deal_data, features, scores, context_chunks));
+  
+  // Business Model
+  sections.push(await generateBusinessModel(deal_data, features, scores, context_chunks));
+  
+  // Competitive Landscape
+  sections.push(await generateCompetitiveLandscape(deal_data, features, scores, context_chunks));
   
   // Financial Analysis
   sections.push(await generateFinancialAnalysis(template_variant, deal_data, features, scores, context_chunks));
@@ -330,18 +339,19 @@ async function generateMemoSections(
   // Management Team
   sections.push(await generateTeamAnalysis(deal_data, features, scores, context_chunks));
   
-  // Risk Assessment
-  sections.push(await generateRiskAssessment(deal_data, features, scores, context_chunks));
+  // Risks & Mitigants
+  sections.push(await generateRisksAndMitigants(deal_data, features, scores, context_chunks));
   
-  // Investment Terms (if VC) or Value Creation Plan (if PE)
+  // Exit Strategy
+  sections.push(await generateExitStrategy(deal_data, features, scores, context_chunks));
+  
+  // Investment Terms (if VC)
   if (template_variant === 'vc') {
     sections.push(await generateInvestmentTerms(deal_data, features, scores, context_chunks));
-  } else {
-    sections.push(await generateValueCreationPlan(deal_data, features, scores, context_chunks));
   }
   
-  // Recommendation
-  sections.push(await generateRecommendation(deal_data, features, scores, context_chunks));
+  // Investment Recommendation
+  sections.push(await generateInvestmentRecommendation(deal_data, features, scores, context_chunks));
   
   return sections;
 }
@@ -540,36 +550,91 @@ Write investment thesis:`
   }
 }
 
-// Enhanced market analysis with specific VC data points
-async function generateMarketAnalysis(deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> {
-  // Extract market-specific features
-  const marketFeatures = features.filter(f => f.feature_value?.category === 'market');
-  const competitiveFeatures = features.filter(f => f.feature_value?.category === 'competitive');
+// Company Overview section
+async function generateCompanyOverview(deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> {
+  const businessFeatures = features.filter(f => f.feature_value?.category === 'business');
+  const operationsFeatures = features.filter(f => f.feature_value?.category === 'operations');
   
-  // Build market data context
+  const employeeCountFeature = operationsFeatures.find(f => f.feature_name === 'employee_count');
+  const fundingStageFeature = features.find(f => f.feature_name === 'funding_stage');
+  
+  return {
+    title: 'Company Overview',
+    content: `${deal_data.company_name} is a ${deal_data.industry || 'Unknown'} company. Employee count: ${employeeCountFeature ? employeeCountFeature.feature_value.value : 'Unknown'}. Funding stage: ${fundingStageFeature ? fundingStageFeature.feature_value.value : 'Unknown'}. Founded: ${deal_data.founding_year || 'Unknown'}. Company overview analysis requires additional research.`,
+    citations: [
+      ...businessFeatures.map((f, i) => ({ id: i + 1, source: f.extraction_method, quote: `${f.feature_name}: ${f.feature_value.value}` })),
+      ...operationsFeatures.map((f, i) => ({ id: businessFeatures.length + i + 1, source: f.extraction_method, quote: `${f.feature_name}: ${f.feature_value.value}` }))
+    ]
+  };
+}
+
+// Market Opportunity section with enhanced VC data points
+async function generateMarketOpportunity(deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> {
+  const marketFeatures = features.filter(f => f.feature_value?.category === 'market');
+  
   const tamFeature = marketFeatures.find(f => f.feature_name === 'tam');
   const samFeature = marketFeatures.find(f => f.feature_name === 'sam');
   const somFeature = marketFeatures.find(f => f.feature_name === 'som');
   const cagrFeature = marketFeatures.find(f => f.feature_name === 'cagr');
   const growthDriversFeature = marketFeatures.find(f => f.feature_name === 'growth_drivers');
-  const competitorsFeature = competitiveFeatures.find(f => f.feature_name === 'competitors');
   
-  const marketContext = `
-TAM: ${tamFeature ? tamFeature.feature_value.value : 'Unknown'}
-SAM: ${samFeature ? samFeature.feature_value.value : 'Unknown'}  
-SOM: ${somFeature ? somFeature.feature_value.value : 'Unknown'}
-CAGR: ${cagrFeature ? cagrFeature.feature_value.value : 'Unknown'}
-Growth Drivers: ${growthDriversFeature ? JSON.stringify(growthDriversFeature.feature_value.value) : 'Unknown'}
-Key Competitors: ${competitorsFeature ? JSON.stringify(competitorsFeature.feature_value.value) : 'Unknown'}
-  `.trim();
+  const marketData = `TAM: ${tamFeature ? `$${tamFeature.feature_value.value}` : 'Unknown'}, SAM: ${samFeature ? `$${samFeature.feature_value.value}` : 'Unknown'}, SOM: ${somFeature ? `$${somFeature.feature_value.value}` : 'Unknown'}, Market Growth (CAGR): ${cagrFeature ? `${cagrFeature.feature_value.value}%` : 'Unknown'}`;
   
   return {
-    title: 'Market Analysis',
-    content: `Market analysis for ${deal_data.company_name} in the ${deal_data.industry || 'Unknown'} sector. ${marketContext}. Competitive landscape analysis pending.`,
+    title: 'Market Opportunity',
+    content: `Market opportunity analysis for ${deal_data.company_name} in the ${deal_data.industry || 'Unknown'} sector. ${marketData}. Growth drivers: ${growthDriversFeature ? JSON.stringify(growthDriversFeature.feature_value.value) : 'Analysis pending'}. Market timing and competitive dynamics require further evaluation.`,
+    citations: marketFeatures.map((f, i) => ({ id: i + 1, source: f.extraction_method, quote: `${f.feature_name}: ${f.feature_value.value}` }))
+  };
+}
+
+// Product & Service section
+async function generateProductService(deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> {
+  const productFeatures = features.filter(f => f.feature_value?.category === 'product');
+  const technologyFeatures = features.filter(f => f.feature_name === 'technology_stack');
+  
+  const techStack = technologyFeatures.length > 0 ? 
+    technologyFeatures[0].feature_value.value : 'Unknown';
+  
+  return {
+    title: 'Product & Service',
+    content: `Product and service analysis for ${deal_data.company_name}. Technology stack: ${Array.isArray(techStack) ? techStack.join(', ') : techStack}. Product differentiation and competitive advantages require detailed analysis. Service delivery model and scalability assessment pending.`,
     citations: [
-      ...marketFeatures.map((f, i) => ({ id: i + 1, source: f.extraction_method, quote: `${f.feature_name}: ${f.feature_value.value}` })),
-      ...competitiveFeatures.map((f, i) => ({ id: marketFeatures.length + i + 1, source: f.extraction_method, quote: `${f.feature_name}: ${f.feature_value.value}` }))
+      ...productFeatures.map((f, i) => ({ id: i + 1, source: f.extraction_method, quote: `${f.feature_name}: ${f.feature_value.value}` })),
+      ...technologyFeatures.map((f, i) => ({ id: productFeatures.length + i + 1, source: f.extraction_method, quote: `${f.feature_name}: ${f.feature_value.value}` }))
     ]
+  };
+}
+
+// Business Model section
+async function generateBusinessModel(deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> {
+  const businessModelFeature = features.find(f => f.feature_name === 'business_model');
+  const revenueFeatures = features.filter(f => f.feature_value?.category === 'financial');
+  
+  const ltvCacFeature = revenueFeatures.find(f => f.feature_name === 'ltv_cac_ratio');
+  const retentionFeature = revenueFeatures.find(f => f.feature_name === 'retention_rate');
+  
+  return {
+    title: 'Business Model',
+    content: `Business model for ${deal_data.company_name}: ${businessModelFeature ? businessModelFeature.feature_value.value : 'Analysis pending'}. Unit economics - LTV/CAC: ${ltvCacFeature ? ltvCacFeature.feature_value.value : 'Unknown'}, Customer retention: ${retentionFeature ? `${retentionFeature.feature_value.value}%` : 'Unknown'}. Revenue streams and scalability metrics require validation.`,
+    citations: [
+      businessModelFeature && { id: 1, source: businessModelFeature.extraction_method, quote: `business_model: ${businessModelFeature.feature_value.value}` },
+      ...revenueFeatures.map((f, i) => ({ id: i + 2, source: f.extraction_method, quote: `${f.feature_name}: ${f.feature_value.value}` }))
+    ].filter(Boolean)
+  };
+}
+
+// Competitive Landscape section
+async function generateCompetitiveLandscape(deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> {
+  const competitiveFeatures = features.filter(f => f.feature_value?.category === 'competitive');
+  const competitorsFeature = competitiveFeatures.find(f => f.feature_name === 'competitors');
+  
+  const competitors = competitorsFeature ? competitorsFeature.feature_value.value : [];
+  const competitorsList = Array.isArray(competitors) ? competitors.join(', ') : 'Unknown';
+  
+  return {
+    title: 'Competitive Landscape',
+    content: `Competitive landscape analysis for ${deal_data.company_name}. Key competitors: ${competitorsList}. Market positioning and competitive advantages require detailed analysis. Differentiation strategy and market share assessment pending.`,
+    citations: competitiveFeatures.map((f, i) => ({ id: i + 1, source: f.extraction_method, quote: `${f.feature_name}: ${f.feature_value.value}` }))
   };
 }
 
@@ -609,16 +674,57 @@ async function generateTeamAnalysis(deal_data: any, features: any[], scores: any
   };
 }
 
-async function generateRiskAssessment(deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> {
+// Risks & Mitigants section
+async function generateRisksAndMitigants(deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> {
   const risk_features = features.filter(f => f.feature_type === 'risk');
+  const marketFeatures = features.filter(f => f.feature_value?.category === 'market');
+  const competitiveFeatures = features.filter(f => f.feature_value?.category === 'competitive');
+  
+  // Generate common risk categories based on available data
+  const risks = [];
+  
+  if (competitiveFeatures.length > 0) {
+    const competitors = competitiveFeatures.find(f => f.feature_name === 'competitors');
+    if (competitors && Array.isArray(competitors.feature_value.value) && competitors.feature_value.value.length > 3) {
+      risks.push('Market Risk: High competitive intensity');
+    }
+  }
+  
+  risks.push('Execution Risk: Team and operational scaling challenges');
+  risks.push('Market Risk: Market adoption and timing uncertainties');
+  risks.push('Financial Risk: Capital requirements and burn rate management');
+  
   const risk_content = risk_features.length > 0 ?
     risk_features.map(f => `${f.feature_value.category}: ${f.feature_value.description}`).join('. ') :
-    'Risk assessment pending';
+    risks.join('. ');
     
   return {
-    title: 'Risk Assessment',
-    content: `Risk assessment for ${deal_data.company_name}. ${risk_content}`,
+    title: 'Risks & Mitigants',
+    content: `Key risks and mitigation strategies for ${deal_data.company_name}. ${risk_content}. Mitigation strategies require detailed due diligence and management team discussions.`,
     citations: risk_features.map((f, i) => ({ id: i + 1, source: f.extraction_method, quote: f.feature_value.source_quote || '' }))
+  };
+}
+
+// Exit Strategy section
+async function generateExitStrategy(deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> {
+  const marketFeatures = features.filter(f => f.feature_value?.category === 'market');
+  const tamFeature = marketFeatures.find(f => f.feature_name === 'tam');
+  
+  // Estimate exit timeline based on funding stage
+  const fundingStageFeature = features.find(f => f.feature_name === 'funding_stage');
+  const fundingStage = fundingStageFeature ? fundingStageFeature.feature_value.value : 'Unknown';
+  
+  const exitTimeline = fundingStage.toLowerCase().includes('seed') ? '5-7 years' :
+                      fundingStage.toLowerCase().includes('series a') ? '4-6 years' :
+                      fundingStage.toLowerCase().includes('series b') ? '3-5 years' : '3-7 years';
+  
+  return {
+    title: 'Exit Strategy',
+    content: `Exit strategy for ${deal_data.company_name}. Target timeline: ${exitTimeline}. Market size supports ${tamFeature && tamFeature.feature_value.value > 1000000000 ? 'IPO or strategic acquisition' : 'strategic acquisition'} exit. Potential acquirers and exit multiples require market analysis. Exit strategy alignment with fund lifecycle: Under evaluation.`,
+    citations: [
+      fundingStageFeature && { id: 1, source: fundingStageFeature.extraction_method, quote: `funding_stage: ${fundingStageFeature.feature_value.value}` },
+      tamFeature && { id: 2, source: tamFeature.extraction_method, quote: `tam: ${tamFeature.feature_value.value}` }
+    ].filter(Boolean)
   };
 }
 
@@ -638,13 +744,32 @@ async function generateValueCreationPlan(deal_data: any, features: any[], scores
   };
 }
 
-async function generateRecommendation(deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> {
+// Investment Recommendation section
+async function generateInvestmentRecommendation(deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> {
   const overall_score = scores.reduce((sum, s) => sum + (s.weighted_score || 0), 0) / scores.length;
   const recommendation = overall_score >= 75 ? 'PROCEED' : overall_score >= 60 ? 'PROCEED WITH CAUTION' : 'PASS';
   
+  // Extract key metrics for recommendation rationale
+  const marketFeatures = features.filter(f => f.feature_value?.category === 'market');
+  const financialFeatures = features.filter(f => f.feature_value?.category === 'financial');
+  
+  const tamFeature = marketFeatures.find(f => f.feature_name === 'tam');
+  const ltvCacFeature = financialFeatures.find(f => f.feature_name === 'ltv_cac_ratio');
+  
+  const rationale = [];
+  if (tamFeature && tamFeature.feature_value.value > 1000000000) rationale.push('Large addressable market');
+  if (ltvCacFeature && ltvCacFeature.feature_value.value > 3) rationale.push('Strong unit economics');
+  if (overall_score >= 70) rationale.push('High overall scoring across criteria');
+  
+  const nextSteps = recommendation === 'PROCEED' ? 
+    'Initiate formal due diligence, term sheet preparation, management presentations' :
+    recommendation === 'PROCEED WITH CAUTION' ?
+    'Additional due diligence required, risk mitigation planning, follow-up analysis' :
+    'Pass on opportunity, archive analysis, provide feedback to management';
+  
   return {
-    title: 'Recommendation',
-    content: `Investment recommendation for ${deal_data.company_name}: ${recommendation}. Overall score: ${overall_score.toFixed(1)}. Next steps: ${recommendation === 'PROCEED' ? 'Due diligence' : 'Additional analysis required'}.`,
+    title: 'Investment Recommendation',
+    content: `Investment Committee recommendation for ${deal_data.company_name}: **${recommendation}**. Overall score: ${overall_score.toFixed(1)}/100. Rationale: ${rationale.length > 0 ? rationale.join(', ') : 'Comprehensive analysis completed'}. Next steps: ${nextSteps}. Investment committee decision required by: [Date TBD].`,
     citations: []
   };
 }
