@@ -3,9 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DocumentUpload } from './DocumentUpload';
 import { DocumentList } from './DocumentList';
 import { DocumentViewer } from './DocumentViewer';
-import { DocumentAnalysisIntegration } from './DocumentAnalysisIntegration';
 import { Database } from '@/integrations/supabase/types';
-import { Brain } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 
 type DealDocument = Database['public']['Tables']['deal_documents']['Row'];
@@ -32,7 +30,7 @@ export const DocumentManager = React.memo(function DocumentManager({ dealId, com
       return { gridCols: 'grid-cols-2', showUpload: false };
     }
     return {
-      gridCols: permissions.canUploadDocuments ? 'grid-cols-3' : 'grid-cols-2',
+      gridCols: permissions.canUploadDocuments ? 'grid-cols-2' : 'grid-cols-1',
       showUpload: permissions.canUploadDocuments
     };
   }, [permissions.loading, permissions.canUploadDocuments]);
@@ -56,10 +54,6 @@ export const DocumentManager = React.memo(function DocumentManager({ dealId, com
           {tabsConfig.showUpload && (
             <TabsTrigger value="upload">Upload</TabsTrigger>
           )}
-          <TabsTrigger value="analysis" className="flex items-center gap-2">
-            <Brain className="w-4 h-4" />
-            AI Analysis
-          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="list" className="space-y-4">
@@ -81,14 +75,6 @@ export const DocumentManager = React.memo(function DocumentManager({ dealId, com
             />
           </TabsContent>
         )}
-
-        <TabsContent value="analysis" className="space-y-4">
-          <DocumentAnalysisIntegration
-            dealId={dealId}
-            documents={documents}
-            onAnalysisTrigger={handleUploadComplete}
-          />
-        </TabsContent>
       </Tabs>
 
       {/* Document Viewer Modal */}
