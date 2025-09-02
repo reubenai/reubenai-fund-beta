@@ -518,13 +518,15 @@ OUTPUT FORMAT (JSON only):
       .from('deal_analysisresult_vc')
       .upsert({
         deal_id: deal_id,
-        total_score: overallScore,
+        fund_id: fundId,
+        organization_id: fundData.organization_id,
+        overall_score: overallScore,
         ...scoreData,
         ...summaries,
         confidence_score: Math.min(95, Math.max(60, validScores.length * 5)),
         processing_status: 'completed',
-        last_updated: new Date().toISOString(),
-        analysis_version: '2.0'
+        analyzed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       });
 
     if (upsertError) {
