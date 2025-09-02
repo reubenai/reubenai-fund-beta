@@ -24,6 +24,7 @@ import Help from "./pages/Help";
 import Admin from "./pages/Admin";
 import Analytics from "./pages/Analytics";
 import FundMemory from "./pages/FundMemory";
+import ReubenAIAnalysis from "./pages/ReubenAIAnalysis";
 import WhatIsReubenAI from "./pages/WhatIsReubenAI";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -143,6 +144,13 @@ const App = () => {
               <AuthGuard>
                 <Layout>
                   <FundMemory />
+                </Layout>
+              </AuthGuard>
+            } />
+            <Route path="/reuben-analysis" element={
+              <AuthGuard>
+                <Layout>
+                  <ReubenAIAnalysis />
                 </Layout>
               </AuthGuard>
             } />

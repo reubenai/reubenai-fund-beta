@@ -62,7 +62,7 @@ import { GrowthPotentialAssessment } from '@/components/analysis/GrowthPotential
 import { RiskAssessmentSection } from '@/components/analysis/RiskAssessmentSection';
 import { StrategicTimingAssessment } from '@/components/analysis/StrategicTimingAssessment';
 import { TrustTransparencyAssessment } from '@/components/analysis/TrustTransparencyAssessment';
-import { ReubenAISummaryScore } from '@/components/analysis/ReubenAISummaryScore';
+import { ReubenAISummaryScoreBridge } from '@/components/analysis/ReubenAISummaryScoreBridge';
 import { BlueprintVCMarketOpportunity } from '@/components/analysis/blueprint/BlueprintVCMarketOpportunity';
 import { BlueprintVCTeamLeadership } from '@/components/analysis/blueprint/BlueprintVCTeamLeadership';
 import { BlueprintVCProductTechnology } from '@/components/analysis/blueprint/BlueprintVCProductTechnology';
@@ -417,7 +417,7 @@ export function EnhancedDealDetailsModal({
               </Card>
               
               {/* ReubenAI Summary Score */}
-              <ReubenAISummaryScore
+              <ReubenAISummaryScoreBridge
                 deal={deal}
                 fundType={fundType}
                 onScoreCalculated={(score) => {
