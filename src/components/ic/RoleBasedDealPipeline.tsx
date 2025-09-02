@@ -188,7 +188,7 @@ export const RoleBasedDealPipeline: React.FC<RoleBasedDealPipelineProps> = ({
           className="gap-2"
         >
           <FileText className="h-4 w-4" />
-          Create Memo
+          Update Memo
         </Button>
       );
     }
