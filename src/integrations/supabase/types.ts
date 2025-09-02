@@ -2132,7 +2132,7 @@ export type Database = {
           organization_id: string
           overall_score: number | null
           portfolio_synergies_score: number | null
-          processing_status: Database["public"]["Enums"]["processing_status"]
+          processing_status: string
           product_innovation_score: number | null
           product_market_fit_score: number | null
           product_technology_summary: string | null
@@ -2176,7 +2176,7 @@ export type Database = {
           organization_id: string
           overall_score?: number | null
           portfolio_synergies_score?: number | null
-          processing_status?: Database["public"]["Enums"]["processing_status"]
+          processing_status: string
           product_innovation_score?: number | null
           product_market_fit_score?: number | null
           product_technology_summary?: string | null
@@ -2220,7 +2220,7 @@ export type Database = {
           organization_id?: string
           overall_score?: number | null
           portfolio_synergies_score?: number | null
-          processing_status?: Database["public"]["Enums"]["processing_status"]
+          processing_status?: string
           product_innovation_score?: number | null
           product_market_fit_score?: number | null
           product_technology_summary?: string | null
@@ -2440,7 +2440,7 @@ export type Database = {
           organization_id: string
           overall_score: number | null
           portfolio_synergies_score: number | null
-          processing_status: Database["public"]["Enums"]["processing_status"]
+          processing_status: string
           product_innovation_score: number | null
           product_market_fit_score: number | null
           product_technology_summary: string | null
@@ -2484,7 +2484,7 @@ export type Database = {
           organization_id: string
           overall_score?: number | null
           portfolio_synergies_score?: number | null
-          processing_status?: Database["public"]["Enums"]["processing_status"]
+          processing_status: string
           product_innovation_score?: number | null
           product_market_fit_score?: number | null
           product_technology_summary?: string | null
@@ -2528,7 +2528,7 @@ export type Database = {
           organization_id?: string
           overall_score?: number | null
           portfolio_synergies_score?: number | null
-          processing_status?: Database["public"]["Enums"]["processing_status"]
+          processing_status?: string
           product_innovation_score?: number | null
           product_market_fit_score?: number | null
           product_technology_summary?: string | null
