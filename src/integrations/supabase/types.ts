@@ -2515,6 +2515,7 @@ export type Database = {
           created_at: string
           customer_metrics: string | null
           data_completeness_score: number | null
+          deal_enrichment_perplexity_market_export_vc_json: Json | null
           deal_id: string
           error_message: string | null
           financial_performance: string | null
@@ -2547,6 +2548,7 @@ export type Database = {
           created_at?: string
           customer_metrics?: string | null
           data_completeness_score?: number | null
+          deal_enrichment_perplexity_market_export_vc_json?: Json | null
           deal_id: string
           error_message?: string | null
           financial_performance?: string | null
@@ -2579,6 +2581,7 @@ export type Database = {
           created_at?: string
           customer_metrics?: string | null
           data_completeness_score?: number | null
+          deal_enrichment_perplexity_market_export_vc_json?: Json | null
           deal_id?: string
           error_message?: string | null
           financial_performance?: string | null
