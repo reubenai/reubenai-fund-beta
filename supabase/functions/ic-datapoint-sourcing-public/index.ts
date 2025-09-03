@@ -407,7 +407,6 @@ serve(async (req) => {
     }
 
     // 6. Log activity with enhanced tracking
-    const hasExistingContent = contextData.existingICContent;
     await supabaseClient.from('activity_events').insert({
       user_id: '00000000-0000-0000-0000-000000000000',
       fund_id: fundId,
