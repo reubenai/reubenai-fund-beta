@@ -73,14 +73,26 @@ class ICMemoService {
    */
   async getSessions(fundId: string): Promise<any[]> {
     try {
-      const { data, error } = await supabase
+      const response = await supabase
         .from('ic_sessions')
         .select('*')
         .eq('fund_id', fundId)
         .order('session_date', { ascending: false });
 
-      if (error) throw error;
-      return data || [];
+      if (response.error) throw response.error;
+      
+      // Transform database results to match expected interface
+      const sessions = (response.data || []).map((session: any) => ({
+        ...session,
+        title: session.name || 'Untitled Session',
+        scheduled_date: session.session_date,
+        agenda: typeof session.agenda === 'string' ? session.agenda : JSON.stringify(session.agenda || {}),
+        participants: Array.isArray(session.participants) 
+          ? (session.participants as any[]).map(p => String(p)) 
+          : []
+      }));
+      
+      return sessions;
     } catch (error) {
       console.error('Error fetching IC sessions:', error);
       return [];
@@ -92,14 +104,24 @@ class ICMemoService {
    */
   async getVotingDecisions(fundId: string): Promise<any[]> {
     try {
-      const { data, error } = await supabase
-        .from('ic_memo_votes')
+      const { data, error } = await (supabase as any)
+        .from('ic_memo_votes') 
         .select('*')
         .eq('fund_id', fundId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform database results to match expected interface
+      const decisions = (data || []).map((vote: any) => ({
+        ...vote,
+        title: vote.decision_id || 'Voting Decision',
+        voting_deadline: vote.created_at,
+        status: vote.vote || 'pending',
+        description: vote.reasoning || ''
+      }));
+      
+      return decisions;
     } catch (error) {
       console.error('Error fetching voting decisions:', error);
       return [];
@@ -109,15 +131,29 @@ class ICMemoService {
   /**
    * Create a new IC session - simplified version
    */
-  async createSession(sessionData: any): Promise<any> {
+  async createSession(sessionData: Record<string, any>): Promise<any> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ic_sessions')
         .insert(sessionData)
         .select()
         .single();
 
       if (error) throw error;
+      
+      // Transform result to match expected interface
+      if (data) {
+        return {
+          ...data,
+          title: data.name || 'Untitled Session',
+          scheduled_date: data.session_date,
+          agenda: typeof data.agenda === 'string' ? data.agenda : JSON.stringify(data.agenda || {}),
+          participants: Array.isArray(data.participants) 
+            ? (data.participants as any[]).map(p => String(p)) 
+            : []
+        };
+      }
+      
       return data;
     } catch (error) {
       console.error('Error creating IC session:', error);
@@ -128,15 +164,27 @@ class ICMemoService {
   /**
    * Create a new voting decision - simplified version
    */
-  async createVotingDecision(votingData: any): Promise<any> {
+  async createVotingDecision(votingData: Record<string, any>): Promise<any> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ic_memo_votes')
         .insert(votingData)
         .select()
         .single();
 
       if (error) throw error;
+      
+      // Transform result to match expected interface
+      if (data) {
+        return {
+          ...data,
+          title: data.decision_id || 'Voting Decision',
+          voting_deadline: data.created_at,
+          status: data.vote || 'pending',
+          description: data.reasoning || ''
+        };
+      }
+      
       return data;
     } catch (error) {
       console.error('Error creating voting decision:', error);
