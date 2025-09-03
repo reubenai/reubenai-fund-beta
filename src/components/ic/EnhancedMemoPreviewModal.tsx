@@ -726,6 +726,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                           setLocalMemoState(prev => ({ ...prev, status }));
                         }}
                         onViewMemo={() => setShowPreview(true)}
+                        onSubmissionSuccess={onClose}
                       />
                     )}
                   
@@ -739,6 +740,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                       onStatusUpdate={() => {
                         loadMemo();
                       }}
+                      onSubmissionSuccess={onClose}
                     />
                   )}
                </div>

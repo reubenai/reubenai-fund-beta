@@ -26,6 +26,7 @@ interface MemoWorkflowControlsProps {
   createdBy?: string;
   reviewedBy?: string;
   onStatusUpdate: () => void;
+  onSubmissionSuccess?: () => void;
 }
 
 export const MemoWorkflowControls: React.FC<MemoWorkflowControlsProps> = ({
@@ -35,7 +36,8 @@ export const MemoWorkflowControls: React.FC<MemoWorkflowControlsProps> = ({
   fundId,
   createdBy,
   reviewedBy,
-  onStatusUpdate
+  onStatusUpdate,
+  onSubmissionSuccess
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
@@ -73,6 +75,9 @@ export const MemoWorkflowControls: React.FC<MemoWorkflowControlsProps> = ({
       });
 
       onStatusUpdate();
+      
+      // Call success callback to close modal
+      onSubmissionSuccess?.();
     } catch (error) {
       console.error('Error submitting memo for review:', error);
       toast({

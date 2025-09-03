@@ -16,6 +16,7 @@ interface MemoPublishingControlsProps {
   isPublished: boolean;
   dealName: string;
   onStatusUpdate: () => void;
+  onSubmissionSuccess?: () => void;
 }
 
 export function MemoPublishingControls({ 
@@ -23,7 +24,8 @@ export function MemoPublishingControls({
   currentStatus, 
   isPublished, 
   dealName,
-  onStatusUpdate
+  onStatusUpdate,
+  onSubmissionSuccess
 }: MemoPublishingControlsProps) {
   const { canSubmitForReview, loading } = usePermissions();
   const [isPublishing, setIsPublishing] = useState(false);
@@ -91,6 +93,9 @@ export function MemoPublishingControls({
 
       onStatusUpdate();
       setReviewerNotes('');
+      
+      // Call success callback to close modal
+      onSubmissionSuccess?.();
     } catch (error) {
       console.error('Error submitting for review:', error);
       toast({

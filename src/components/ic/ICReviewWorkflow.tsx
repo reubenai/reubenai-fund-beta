@@ -23,6 +23,7 @@ interface ReviewWorkflowProps {
   currentStatus: string;
   onStatusChange: (newStatus: string) => void;
   onViewMemo: () => void;
+  onSubmissionSuccess?: () => void;
 }
 
 export const ICReviewWorkflow: React.FC<ReviewWorkflowProps> = ({
@@ -30,7 +31,8 @@ export const ICReviewWorkflow: React.FC<ReviewWorkflowProps> = ({
   dealName,
   currentStatus,
   onStatusChange,
-  onViewMemo
+  onViewMemo,
+  onSubmissionSuccess
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -59,6 +61,9 @@ export const ICReviewWorkflow: React.FC<ReviewWorkflowProps> = ({
         title: "Memo Submitted for Review",
         description: `${dealName} memo has been submitted to the review queue`,
       });
+      
+      // Call success callback to close modal
+      onSubmissionSuccess?.();
     } catch (error) {
       toast({
         title: "Error",
