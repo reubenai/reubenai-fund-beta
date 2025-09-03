@@ -300,8 +300,8 @@ serve(async (req) => {
       confidence_level: perplexityMarketData?.confidence_level || 'medium'
     };
 
-    // 3. Generate GPT-4 analysis for each scoring criterion
-    console.log('🤖 Starting GPT-4 analysis for all scoring criteria (parallel processing)...');
+    // 3. Generate GPT-4 analysis for each scoring criterion in parallel batches
+    console.log('🤖 Starting GPT-4 analysis for all scoring criteria (batch parallel processing)...');
     const scoringResults = [];
     const summaryData = {
       team_leadership: [],
@@ -312,8 +312,9 @@ serve(async (req) => {
       strategic_fit: []
     };
 
-    for (const criteria of VC_SCORING_CRITERIA) {
-      console.log(`🔍 Analyzing ${criteria.name} for ${analysisContext.company_name} (attempt 1)`);
+    // Helper function to analyze a single criterion
+    const analyzeCriterion = async (criteria) => {
+      console.log(`🔍 Analyzing ${criteria.name} for ${analysisContext.company_name}`);
 
       const prompt = `
 You are a venture capital analyst conducting due diligence. Analyze the following deal using ONLY the provided evidence.
@@ -383,10 +384,10 @@ OUTPUT FORMAT (JSON only):
         const data = await response.json();
         const result = JSON.parse(data.choices[0].message.content);
         
-        scoringResults.push({
+        const scoringResult = {
           field: criteria.name,
           ...result
-        });
+        };
 
         // Categorize insights for summaries
         const criteriaName = criteria.name.toLowerCase();
@@ -405,16 +406,61 @@ OUTPUT FORMAT (JSON only):
         }
 
         console.log(`✅ ${criteria.name}: ${result.score} (${result.category}) - "${result.evidence.substring(0, 60)}..."`);
+        return scoringResult;
         
       } catch (error) {
         console.error(`❌ Error analyzing ${criteria.name}:`, error);
-        scoringResults.push({
+        return {
           field: criteria.name,
           score: criteria.poorScore,
           evidence: "Analysis failed - insufficient data",
           reasoning: "Could not complete analysis due to technical error",
           category: "poor",
           insights: ["Analysis could not be completed"]
+        };
+      }
+    };
+
+    // Process criteria in batches of 3 for optimal parallel processing
+    const batchSize = 3;
+    const batches = [];
+    for (let i = 0; i < VC_SCORING_CRITERIA.length; i += batchSize) {
+      batches.push(VC_SCORING_CRITERIA.slice(i, i + batchSize));
+    }
+
+    console.log(`📊 Processing ${VC_SCORING_CRITERIA.length} criteria in ${batches.length} parallel batches of ${batchSize}`);
+
+    // Process each batch in parallel
+    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+      const batch = batches[batchIndex];
+      const batchStartTime = Date.now();
+      
+      console.log(`🚀 Starting batch ${batchIndex + 1}/${batches.length} with ${batch.length} criteria...`);
+      
+      try {
+        // Process all criteria in this batch simultaneously
+        const batchResults = await Promise.all(
+          batch.map(criteria => analyzeCriterion(criteria))
+        );
+        
+        // Add results to main array
+        scoringResults.push(...batchResults);
+        
+        const batchTime = ((Date.now() - batchStartTime) / 1000).toFixed(1);
+        console.log(`✅ Batch ${batchIndex + 1} completed in ${batchTime}s`);
+        
+      } catch (error) {
+        console.error(`❌ Batch ${batchIndex + 1} failed:`, error);
+        // Add fallback results for failed batch
+        batch.forEach(criteria => {
+          scoringResults.push({
+            field: criteria.name,
+            score: criteria.poorScore,
+            evidence: "Batch analysis failed",
+            reasoning: "Could not complete batch analysis due to technical error",
+            category: "poor",
+            insights: ["Analysis could not be completed"]
+          });
         });
       }
     }
