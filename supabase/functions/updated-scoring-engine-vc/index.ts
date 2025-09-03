@@ -206,127 +206,198 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
+  // Timeout handling - wrap the entire analysis in a timeout
+  const timeout = new Promise((_, reject) => 
+    setTimeout(() => reject(new Error('Analysis timeout - function exceeded 45 seconds')), 45000)
+  );
 
-    const openAIAPIKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIAPIKey) {
-      throw new Error('OpenAI API key not configured');
-    }
+  const analysisPromise = (async () => {
+    try {
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
 
-    const { deal_id } = await req.json();
-    
-    if (!deal_id) {
-      throw new Error('deal_id is required');
-    }
+      const openAIAPIKey = Deno.env.get('OPENAI_API_KEY');
+      if (!openAIAPIKey) {
+        throw new Error('OpenAI API key not configured');
+      }
 
-    console.log(`🚀 Updated Scoring Engine VC - Starting analysis for deal: ${deal_id}`);
-
-    // 1. Get deal data first to avoid relationship ambiguity
-    console.log('📊 Gathering deal data from multiple sources...');
-    
-    // First, get the deal data which includes fund_id
-    const dealDataResult = await supabaseClient
-      .from('deals')
-      .select('*')
-      .eq('id', deal_id)
-      .single();
-
-    if (dealDataResult.error) {
-      throw new Error(`Failed to fetch deal data: ${dealDataResult.error.message}`);
-    }
-
-    const dealData = dealDataResult.data;
-    const fundId = dealData.fund_id;
-
-    if (!fundId) {
-      throw new Error('Deal does not have a fund_id');
-    }
-
-    // Now use the fund_id to get all other data in parallel
-    const [fundDataResult, datapointsResult, documentsResult, strategyResult, perplexityMarketResult] = await Promise.all([
-      supabaseClient
-        .from('funds')
-        .select('fund_type, organization_id')
-        .eq('id', fundId)
-        .single(),
+      const { deal_id } = await req.json();
       
-      supabaseClient
-        .from('deal_analysis_datapoints_vc')
+      if (!deal_id) {
+        throw new Error('deal_id is required');
+      }
+
+      console.log(`🚀 Updated Scoring Engine VC - Starting analysis for deal: ${deal_id}`);
+
+      // 1. Get deal data first to avoid relationship ambiguity
+      console.log('📊 Gathering deal data from multiple sources...');
+      
+      // First, get the deal data which includes fund_id
+      const dealDataResult = await supabaseClient
+        .from('deals')
         .select('*')
-        .eq('deal_id', deal_id)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle(),
+        .eq('id', deal_id)
+        .single();
+
+      if (dealDataResult.error) {
+        throw new Error(`Failed to fetch deal data: ${dealDataResult.error.message}`);
+      }
+
+      const dealData = dealDataResult.data;
+      const fundId = dealData.fund_id;
+
+      if (!fundId) {
+        throw new Error('Deal does not have a fund_id');
+      }
+
+      // Now use the fund_id to get all other data in parallel
+      const [fundDataResult, datapointsResult, documentsResult, strategyResult, perplexityMarketResult] = await Promise.all([
+        supabaseClient
+          .from('funds')
+          .select('fund_type, organization_id')
+          .eq('id', fundId)
+          .single(),
+        
+        supabaseClient
+          .from('deal_analysis_datapoints_vc')
+          .select('*')
+          .eq('deal_id', deal_id)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        
+        supabaseClient
+          .from('deal_documents')
+          .select('extracted_text, document_summary')
+          .eq('deal_id', deal_id)
+          .limit(10),
+        
+        supabaseClient
+          .from('investment_strategies')
+          .select('*')
+          .eq('fund_id', fundId)
+          .maybeSingle(),
+        
+        supabaseClient
+          .from('deal_enrichment_perplexity_market_export_vc')
+          .select('*')
+          .eq('deal_id', deal_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      ]);
+
+      if (fundDataResult.error) {
+        throw new Error(`Failed to fetch fund data: ${fundDataResult.error.message}`);
+      }
+
+      const fundData = fundDataResult.data;
+      const datapointsData = datapointsResult.data;
+      const documentsData = documentsResult.data || [];
+      const strategyData = strategyResult.data;
+      const perplexityMarketData = perplexityMarketResult.data;
+
+      console.log(`✅ Data gathered: Deal found, ${datapointsData ? '1' : '0'} datapoints, ${documentsData.length} documents, ${perplexityMarketData ? '1' : '0'} perplexity market data`);
+
+      // 2. Prepare analysis context
+      const analysisContext = {
+        company_name: dealData.company_name,
+        industry: dealData.industry,
+        deal_size: dealData.deal_size,
+        valuation: dealData.valuation,
+        datapoints: datapointsData,
+        documents: documentsData,
+        fund_strategy: strategyData?.enhanced_criteria || {},
+        fund_type: fundData.fund_type,
+        perplexity_market: perplexityMarketData,
+        data_quality_score: perplexityMarketData?.data_quality_score || 0,
+        confidence_level: perplexityMarketData?.confidence_level || 'medium'
+      };
+
+      // 3. Generate GPT-4 analysis for each scoring criterion (OPTIMIZED - PARALLEL PROCESSING)
+      console.log('🤖 Starting GPT-4 analysis for all scoring criteria (parallel processing)...');
       
-      supabaseClient
-        .from('deal_documents')
-        .select('extracted_text, document_summary')
-        .eq('deal_id', deal_id)
-        .limit(10),
-      
-      supabaseClient
-        .from('investment_strategies')
-        .select('*')
-        .eq('fund_id', fundId)
-        .maybeSingle(),
-      
-      supabaseClient
-        .from('deal_enrichment_perplexity_market_export_vc')
-        .select('*')
-        .eq('deal_id', deal_id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-    ]);
+      const summaryData = {
+        team_leadership: [],
+        market_opportunity: [],
+        product_technology: [],
+        business_traction: [],
+        financial_health: [],
+        strategic_fit: []
+      };
 
-    if (fundDataResult.error) {
-      throw new Error(`Failed to fetch fund data: ${fundDataResult.error.message}`);
-    }
+      // Helper function to extract relevant data for each criterion type
+      const getRelevantContext = (criteria: ScoringCriteria) => {
+        const criteriaName = criteria.name.toLowerCase();
+        const baseContext = {
+          company_name: analysisContext.company_name,
+          industry: analysisContext.industry,
+          deal_size: analysisContext.deal_size,
+          valuation: analysisContext.valuation
+        };
 
-    const fundData = fundDataResult.data;
-    const datapointsData = datapointsResult.data;
-    const documentsData = documentsResult.data || [];
-    const strategyData = strategyResult.data;
-    const perplexityMarketData = perplexityMarketResult.data;
+        // Extract only relevant datapoints to reduce prompt size
+        let relevantDatapoints = {};
+        if (analysisContext.datapoints) {
+          if (criteriaName.includes('founder') || criteriaName.includes('team')) {
+            relevantDatapoints = {
+              founder_backgrounds: analysisContext.datapoints.founder_backgrounds,
+              key_team_members: analysisContext.datapoints.key_team_members,
+              advisory_board: analysisContext.datapoints.advisory_board
+            };
+          } else if (criteriaName.includes('market')) {
+            relevantDatapoints = {
+              tam: analysisContext.datapoints.tam,
+              sam: analysisContext.datapoints.sam,
+              som: analysisContext.datapoints.som,
+              cagr: analysisContext.datapoints.cagr,
+              competitors: analysisContext.datapoints.competitors,
+              market_trends: analysisContext.datapoints.market_trends
+            };
+          } else if (criteriaName.includes('product') || criteriaName.includes('technology')) {
+            relevantDatapoints = {
+              technology_stack: analysisContext.datapoints.technology_stack,
+              technology_moats: analysisContext.datapoints.technology_moats,
+              product_features: analysisContext.datapoints.product_features,
+              intellectual_property: analysisContext.datapoints.intellectual_property
+            };
+          } else if (criteriaName.includes('revenue') || criteriaName.includes('customer') || criteriaName.includes('financial')) {
+            relevantDatapoints = {
+              revenue_model: analysisContext.datapoints.revenue_model,
+              ltv_cac_ratio: analysisContext.datapoints.ltv_cac_ratio,
+              retention_rate: analysisContext.datapoints.retention_rate,
+              key_customers: analysisContext.datapoints.key_customers,
+              revenue_growth: analysisContext.datapoints.revenue_growth
+            };
+          }
+          // Remove null/undefined values
+          relevantDatapoints = Object.fromEntries(
+            Object.entries(relevantDatapoints).filter(([_, v]) => v != null)
+          );
+        }
 
-    console.log(`✅ Data gathered: Deal found, ${datapointsData ? '1' : '0'} datapoints, ${documentsData.length} documents, ${perplexityMarketData ? '1' : '0'} perplexity market data`);
+        // Extract only key document summaries (first 500 chars each)
+        const compactDocuments = analysisContext.documents.slice(0, 3).map(doc => ({
+          summary: doc.document_summary,
+          text_preview: doc.extracted_text?.substring(0, 500)
+        }));
 
-    // 2. Prepare analysis context
-    const analysisContext = {
-      company_name: dealData.company_name,
-      industry: dealData.industry,
-      deal_size: dealData.deal_size,
-      valuation: dealData.valuation,
-      datapoints: datapointsData,
-      documents: documentsData,
-      fund_strategy: strategyData?.enhanced_criteria || {},
-      fund_type: fundData.fund_type,
-      perplexity_market: perplexityMarketData,
-      data_quality_score: perplexityMarketData?.data_quality_score || 0,
-      confidence_level: perplexityMarketData?.confidence_level || 'medium'
-    };
+        return {
+          ...baseContext,
+          datapoints: relevantDatapoints,
+          documents: compactDocuments,
+          perplexity_market: criteriaName.includes('market') ? analysisContext.perplexity_market : null,
+          fund_strategy: analysisContext.fund_strategy
+        };
+      };
 
-    // 3. Generate GPT-4 analysis for each scoring criterion
-    console.log('🤖 Starting GPT-4 analysis for all scoring criteria...');
-    
-    const scoringResults = [];
-    const summaryData = {
-      team_leadership: [],
-      market_opportunity: [],
-      product_technology: [],
-      business_traction: [],
-      financial_health: [],
-      strategic_fit: []
-    };
-
-    for (const criteria of VC_SCORING_CRITERIA) {
-      console.log(`📝 Analyzing: ${criteria.name}`);
-      
-      const prompt = `
+      // Helper function to analyze a single criterion
+      const analyzeCriteria = async (criteria: ScoringCriteria) => {
+        const relevantContext = getRelevantContext(criteria);
+        
+        const prompt = `
 You are a venture capital analyst conducting due diligence. Analyze the following deal using ONLY the provided evidence.
 
 SCORING INSTRUCTIONS:
@@ -344,21 +415,7 @@ RUBRIC FOR ${criteria.name.toUpperCase()}:
 - POOR (${criteria.poorScore}): ${criteria.poorDescription}
 
 COMPANY DATA:
-Company: ${analysisContext.company_name}
-Industry: ${analysisContext.industry}
-Deal Size: $${analysisContext.deal_size?.toLocaleString() || 'N/A'}
-Valuation: $${analysisContext.valuation?.toLocaleString() || 'N/A'}
-
-DATAPOINTS: ${JSON.stringify(analysisContext.datapoints || {}, null, 2)}
-
-PERPLEXITY MARKET INTELLIGENCE: ${JSON.stringify(analysisContext.perplexity_market || {}, null, 2)}
-
-DOCUMENTS: ${analysisContext.documents.map(doc => `
-Document Summary: ${JSON.stringify(doc.document_summary || {})}
-Text: ${doc.extracted_text?.substring(0, 2000) || 'No text available'}
-`).join('\n---\n')}
-
-FUND STRATEGY: ${JSON.stringify(analysisContext.fund_strategy, null, 2)}
+${JSON.stringify(relevantContext, null, 2)}
 
 OUTPUT FORMAT (JSON only):
 {
@@ -369,67 +426,89 @@ OUTPUT FORMAT (JSON only):
   "insights": "[2-3 bullet points about this criterion]"
 }`;
 
-      try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${openAIAPIKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'gpt-4.1-2025-04-14',
-            messages: [{ role: 'user', content: prompt }],
-            max_completion_tokens: 800,
-            response_format: { type: "json_object" }
-          }),
-        });
+        try {
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openAIAPIKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4.1-2025-04-14',
+              messages: [{ role: 'user', content: prompt }],
+              max_completion_tokens: 600,
+              response_format: { type: "json_object" }
+            }),
+          });
 
-        if (!response.ok) {
-          throw new Error(`OpenAI API error: ${response.status}`);
+          if (!response.ok) {
+            throw new Error(`OpenAI API error: ${response.status}`);
+          }
+
+          const data = await response.json();
+          const result = JSON.parse(data.choices[0].message.content);
+          
+          return {
+            field: criteria.name,
+            ...result
+          };
+        } catch (error) {
+          console.error(`❌ Error analyzing ${criteria.name}:`, error);
+          return {
+            field: criteria.name,
+            score: criteria.poorScore,
+            evidence: "Analysis failed - insufficient data",
+            reasoning: "Could not complete analysis due to technical error",
+            category: "poor",
+            insights: ["Analysis could not be completed"]
+          };
         }
+      };
 
-        const data = await response.json();
-        const result = JSON.parse(data.choices[0].message.content);
+      // Process criteria in parallel batches of 6 to avoid overwhelming OpenAI API
+      const batchSize = 6;
+      const scoringResults = [];
+      
+      for (let i = 0; i < VC_SCORING_CRITERIA.length; i += batchSize) {
+        const batch = VC_SCORING_CRITERIA.slice(i, i + batchSize);
+        console.log(`📝 Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(VC_SCORING_CRITERIA.length/batchSize)} (${batch.length} criteria)`);
         
-        scoringResults.push({
-          field: criteria.name,
-          ...result
+        const batchPromises = batch.map(criteria => analyzeCriteria(criteria));
+        const batchResults = await Promise.all(batchPromises);
+        
+        scoringResults.push(...batchResults);
+        
+        // Log progress
+        batchResults.forEach(result => {
+          console.log(`✅ ${result.field}: ${result.score} (${result.category})`);
+          
+          // Categorize insights for summaries
+          const criteriaName = result.field.toLowerCase();
+          if (criteriaName.includes('founder') || criteriaName.includes('team') || criteriaName.includes('vision')) {
+            summaryData.team_leadership.push(result.insights);
+          } else if (criteriaName.includes('market') && !criteriaName.includes('product')) {
+            summaryData.market_opportunity.push(result.insights);
+          } else if (criteriaName.includes('product') || criteriaName.includes('technology') || criteriaName.includes('innovation')) {
+            summaryData.product_technology.push(result.insights);
+          } else if (criteriaName.includes('revenue') || criteriaName.includes('customer') || criteriaName.includes('validation')) {
+            summaryData.business_traction.push(result.insights);
+          } else if (criteriaName.includes('financial') || criteriaName.includes('capital')) {
+            summaryData.financial_health.push(result.insights);
+          } else if (criteriaName.includes('portfolio') || criteriaName.includes('thesis') || criteriaName.includes('value')) {
+            summaryData.strategic_fit.push(result.insights);
+          }
         });
-
-        // Categorize insights for summaries
-        const criteriaName = criteria.name.toLowerCase();
-        if (criteriaName.includes('founder') || criteriaName.includes('team') || criteriaName.includes('vision')) {
-          summaryData.team_leadership.push(result.insights);
-        } else if (criteriaName.includes('market') && !criteriaName.includes('product')) {
-          summaryData.market_opportunity.push(result.insights);
-        } else if (criteriaName.includes('product') || criteriaName.includes('technology') || criteriaName.includes('innovation')) {
-          summaryData.product_technology.push(result.insights);
-        } else if (criteriaName.includes('revenue') || criteriaName.includes('customer') || criteriaName.includes('validation')) {
-          summaryData.business_traction.push(result.insights);
-        } else if (criteriaName.includes('financial') || criteriaName.includes('capital')) {
-          summaryData.financial_health.push(result.insights);
-        } else if (criteriaName.includes('portfolio') || criteriaName.includes('thesis') || criteriaName.includes('value')) {
-          summaryData.strategic_fit.push(result.insights);
+        
+        // Small delay between batches to respect rate limits
+        if (i + batchSize < VC_SCORING_CRITERIA.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
-
-        console.log(`✅ ${criteria.name}: ${result.score} (${result.category})`);
-      } catch (error) {
-        console.error(`❌ Error analyzing ${criteria.name}:`, error);
-        scoringResults.push({
-          field: criteria.name,
-          score: criteria.poorScore,
-          evidence: "Analysis failed - insufficient data",
-          reasoning: "Could not complete analysis due to technical error",
-          category: "poor",
-          insights: ["Analysis could not be completed"]
-        });
       }
-    }
 
-    // 4. Generate detailed summaries
-    console.log('📝 Generating comprehensive summaries...');
-    
-    const summaryPrompt = `
+      // 4. Generate detailed summaries
+      console.log('📝 Generating comprehensive summaries...');
+      
+      const summaryPrompt = `
 Based on the venture capital analysis conducted, generate comprehensive summaries for each category.
 
 ANALYSIS RESULTS: ${JSON.stringify(scoringResults, null, 2)}
@@ -481,160 +560,181 @@ OUTPUT FORMAT (JSON only):
   }
 }`;
 
-    let summaries = {};
-    try {
-      const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIAPIKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4.1-2025-04-14',
-          messages: [{ role: 'user', content: summaryPrompt }],
-          max_completion_tokens: 1200,
-          response_format: { type: "json_object" }
-        }),
+      let summaries = {};
+      try {
+        const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIAPIKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4.1-2025-04-14',
+            messages: [{ role: 'user', content: summaryPrompt }],
+            max_completion_tokens: 1200,
+            response_format: { type: "json_object" }
+          }),
+        });
+
+        if (summaryResponse.ok) {
+          const summaryData = await summaryResponse.json();
+          summaries = JSON.parse(summaryData.choices[0].message.content);
+          console.log('✅ Summaries generated successfully');
+        }
+      } catch (error) {
+        console.error('❌ Error generating summaries:', error);
+        summaries = {
+          deal_executive_summary: "Analysis completed with mixed results.",
+          team_leadership_summary: "Team analysis conducted.",
+          market_opportunity_summary: "Market analysis conducted.",
+          product_technology_summary: "Product analysis conducted.",
+          business_traction_summary: "Traction analysis conducted.",
+          financial_health_summary: "Financial analysis conducted.",
+          strategic_fit_summary: "Strategic analysis conducted.",
+          key_strengths: ["Analysis pending"],
+          key_concerns: ["Analysis pending"],
+          recommendations: ["Further analysis required"],
+          risk_factors: {
+            market_risk: "Assessment pending",
+            execution_risk: "Assessment pending",
+            competitive_risk: "Assessment pending",
+            financial_risk: "Assessment pending"
+          }
+        };
+      }
+
+      // 5. Calculate overall score (sum of all individual scores)
+      const validScores = scoringResults.filter(r => typeof r.score === 'number');
+      const totalScore = validScores.reduce((sum, r) => sum + r.score, 0);
+      const overallScore = validScores.length > 0 ? Math.round(totalScore * 10) / 10 : 0;
+
+      console.log(`📊 Overall Score Calculated: ${overallScore} (from ${validScores.length} criteria)`);
+
+      // 6. Prepare data for database
+      const scoreData = {};
+      scoringResults.forEach(result => {
+        scoreData[result.field] = result.score;
       });
 
-      if (summaryResponse.ok) {
-        const summaryData = await summaryResponse.json();
-        summaries = JSON.parse(summaryData.choices[0].message.content);
-        console.log('✅ Summaries generated successfully');
+      // 7. UPSERT results into deal_analysisresult_vc
+      console.log('💾 Saving results to database...');
+      
+      const { data: upsertResult, error: upsertError } = await supabaseClient
+        .from('deal_analysisresult_vc')
+        .update({
+          fund_id: fundId,
+          organization_id: fundData.organization_id,
+          overall_score: overallScore,
+          ...scoreData,
+          ...summaries,
+          confidence_score: Math.min(95, Math.max(60, validScores.length * 5)),
+          processing_status: 'completed',
+          analyzed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('deal_id', deal_id);
+
+      if (upsertError) {
+        throw new Error(`Failed to save results: ${upsertError.message}`);
       }
-    } catch (error) {
-      console.error('❌ Error generating summaries:', error);
-      summaries = {
-        deal_executive_summary: "Analysis completed with mixed results.",
-        team_leadership_summary: "Team analysis conducted.",
-        market_opportunity_summary: "Market analysis conducted.",
-        product_technology_summary: "Product analysis conducted.",
-        business_traction_summary: "Traction analysis conducted.",
-        financial_health_summary: "Financial analysis conducted.",
-        strategic_fit_summary: "Strategic analysis conducted.",
-        key_strengths: ["Analysis pending"],
-        key_concerns: ["Analysis pending"],
-        recommendations: ["Further analysis required"],
-        risk_factors: {
-          market_risk: "Assessment pending",
-          execution_risk: "Assessment pending",
-          competitive_risk: "Assessment pending",
-          financial_risk: "Assessment pending"
+
+      console.log('✅ Results saved successfully to deal_analysisresult_vc');
+
+      // 8. Update deals table with the overall score
+      console.log('💾 Updating deals table with overall score...');
+
+      const { error: dealsUpdateError } = await supabaseClient
+        .from('deals')
+        .update({
+          overall_score: overallScore,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', deal_id);
+
+      if (dealsUpdateError) {
+        console.error('❌ Failed to update deals table:', dealsUpdateError.message);
+        // Note: We don't throw here as the main analysis was successful
+      } else {
+        console.log('✅ Deals table updated successfully with overall score');
+      }
+
+      // 9. Trigger IC Memo generation in background (non-blocking)
+      console.log('📝 Scheduling IC memo generation in background...');
+      
+      const backgroundMemoGeneration = async () => {
+        try {
+          console.log(`🔄 [Background] Starting IC memo generation for deal: ${deal_id}`);
+          
+          const memoResponse = await supabaseClient.functions.invoke('ic-memo-drafter', {
+            body: {
+              deal_id: deal_id,
+              fund_id: fundId,
+              organization_id: fundData.organization_id
+            }
+          });
+          
+          if (memoResponse.error) {
+            throw new Error(`Memo generation failed: ${memoResponse.error.message}`);
+          }
+          
+          const memoData = memoResponse.data;
+          if (memoData?.success) {
+            console.log(`✅ [Background] IC memo generated successfully: ${memoData.sections_generated || 0} sections, ${memoData.word_count || 0} words`);
+          } else {
+            throw new Error(memoData?.error || 'Unknown memo generation error'); 
+          }
+        } catch (memoError) {
+          console.error('❌ [Background] IC memo generation failed:', memoError);
         }
       };
-    }
 
-    // 5. Calculate overall score (sum of all individual scores)
-    const validScores = scoringResults.filter(r => typeof r.score === 'number');
-    const totalScore = validScores.reduce((sum, r) => sum + r.score, 0);
-    const overallScore = validScores.length > 0 ? Math.round(totalScore * 10) / 10 : 0;
-
-    console.log(`📊 Overall Score Calculated: ${overallScore} (from ${validScores.length} criteria)`);
-
-    // 6. Prepare data for database
-    const scoreData = {};
-    scoringResults.forEach(result => {
-      scoreData[result.field] = result.score;
-    });
-
-    // 7. UPSERT results into deal_analysisresult_vc
-    console.log('💾 Saving results to database...');
-    
-    const { data: upsertResult, error: upsertError } = await supabaseClient
-      .from('deal_analysisresult_vc')
-      .update({
-        fund_id: fundId,
-        organization_id: fundData.organization_id,
-        overall_score: overallScore,
-        ...scoreData,
-        ...summaries,
-        confidence_score: Math.min(95, Math.max(60, validScores.length * 5)),
-        processing_status: 'completed',
-        analyzed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('deal_id', deal_id);
-
-    if (upsertError) {
-      throw new Error(`Failed to save results: ${upsertError.message}`);
-    }
-
-    console.log('✅ Results saved successfully to deal_analysisresult_vc');
-
-    // 8. Update deals table with the overall score
-    console.log('💾 Updating deals table with overall score...');
-
-    const { error: dealsUpdateError } = await supabaseClient
-      .from('deals')
-      .update({
-        overall_score: overallScore,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', deal_id);
-
-    if (dealsUpdateError) {
-      console.error('❌ Failed to update deals table:', dealsUpdateError.message);
-      // Note: We don't throw here as the main analysis was successful
-    } else {
-      console.log('✅ Deals table updated successfully with overall score');
-    }
-
-    // 9. Generate IC Memo after successful analysis
-    console.log('📝 Initiating IC memo generation...');
-    let memoGenerationStatus = {
-      success: false,
-      sections_generated: 0,
-      word_count: 0,
-      error: null
-    };
-    
-    try {
-      const memoResponse = await supabaseClient.functions.invoke('ic-memo-drafter', {
-        body: {
-          deal_id: deal_id,
-          fund_id: fundId,
-          organization_id: fundData.organization_id
-        }
-      });
-      
-      if (memoResponse.error) {
-        throw new Error(`Memo generation failed: ${memoResponse.error.message}`);
-      }
-      
-      const memoData = memoResponse.data;
-      if (memoData?.success) {
-        memoGenerationStatus = {
-          success: true,
-          sections_generated: memoData.sections_generated || 0,
-          word_count: memoData.word_count || 0,
-          error: null
-        };
-        console.log(`✅ IC memo generated successfully: ${memoGenerationStatus.sections_generated} sections, ${memoGenerationStatus.word_count} words`);
+      // Use EdgeRuntime.waitUntil to run memo generation in background
+      if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
+        EdgeRuntime.waitUntil(backgroundMemoGeneration());
+        console.log('📤 IC memo generation scheduled in background');
       } else {
-        throw new Error(memoData?.error || 'Unknown memo generation error');
+        // Fallback: run in background without blocking (for environments without EdgeRuntime.waitUntil)
+        backgroundMemoGeneration();
+        console.log('📤 IC memo generation started in background (fallback)');
       }
-    } catch (memoError) {
-      console.error('❌ IC memo generation failed:', memoError);
-      memoGenerationStatus.error = memoError.message;
-      // Continue with analysis response even if memo generation fails
-    }
 
-    // 10. Return success response with memo status
-    return new Response(JSON.stringify({
-      success: true,
-      deal_id: deal_id,
-      overall_score: overallScore,
-      scores_analyzed: validScores.length,
-      total_criteria: VC_SCORING_CRITERIA.length,
-      memo_generation: memoGenerationStatus,
-      message: `VC deal analysis completed successfully${memoGenerationStatus.success ? ' with IC memo generated' : ' (memo generation failed)'}`
-    }), {
+      // 10. Return success response immediately (without waiting for memo)
+      return {
+        success: true,
+        deal_id: deal_id,
+        overall_score: overallScore,
+        scores_analyzed: validScores.length,
+        total_criteria: VC_SCORING_CRITERIA.length,
+        memo_generation: {
+          success: true,
+          status: 'scheduled_background',
+          message: 'IC memo generation scheduled in background'
+        },
+        message: 'VC deal analysis completed successfully. IC memo generation in progress.'
+      };
+
+    } catch (error) {
+      console.error('❌ Updated Scoring Engine VC Error:', error);
+      throw error;
+    }
+  })();
+
+  try {
+    // Race between analysis and timeout
+    const result = await Promise.race([analysisPromise, timeout]);
+    
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200
     });
 
   } catch (error) {
     console.error('❌ Updated Scoring Engine VC Error:', error);
+    
+    // Handle timeout specifically
+    if (error.message.includes('timeout')) {
+      console.error('⏰ Function timed out - returning partial results if available');
+    }
     
     return new Response(JSON.stringify({
       success: false,
