@@ -57,7 +57,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { MemoPreviewRenderer } from './MemoPreviewRenderer';
 import { ICReviewWorkflow } from './ICReviewWorkflow';
 import { icMemoService } from '@/services/ICMemoService';
-import { triggerICDatapointSourcing } from '@/services/icDatapointSourcingService';
+import { triggerICDatapointSourcingPublic } from '@/services/icDatapointSourcingService';
 
 interface Deal {
   id: string;
@@ -326,7 +326,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
       
       console.log('🎯 Starting IC datapoint sourcing for deal:', deal.id);
       
-      const result = await triggerICDatapointSourcing(deal.id);
+      const result = await triggerICDatapointSourcingPublic(deal.id);
       
       if (result.success) {
         showToast({

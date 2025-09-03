@@ -47,7 +47,7 @@ import { QueuePositionIndicator } from './QueuePositionIndicator';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useDealDataIntegration } from '@/hooks/useDealDataIntegration';
-import { triggerICDatapointSourcing } from '@/services/icDatapointSourcingService';
+import { triggerICDatapointSourcingPublic, validateICDeal } from '@/services/icDatapointSourcingService';
 import { useEnhancedToast } from '@/hooks/useEnhancedToast';
 
 interface EnhancedDealCardProps {
@@ -159,7 +159,7 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
   const handleICAnalysis = async () => {
     setIsICAnalyzing(true);
     try {
-      const result = await triggerICDatapointSourcing(deal.id);
+      const result = await triggerICDatapointSourcingPublic(deal.id);
       showToast({
         title: "IC Content Generated Successfully",
         description: `Generated ${result.sections_generated} sections for ${deal.company_name || 'the deal'}`,

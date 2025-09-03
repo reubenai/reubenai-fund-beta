@@ -257,4 +257,7 @@ verify_jwt = false
 [functions.ic-memo-drafter]
 verify_jwt = false
 
+[functions.ic-datapoint-sourcing-public]
+verify_jwt = false
+
 

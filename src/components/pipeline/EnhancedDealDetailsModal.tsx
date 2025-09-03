@@ -82,7 +82,7 @@ import { useFund } from '@/contexts/FundContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useToast } from '@/hooks/use-toast';
 import { triggerVCScoring, validateVCDeal } from '@/services/vcScoringService';
-import { triggerICDatapointSourcing, validateICDeal } from '@/services/icDatapointSourcingService';
+import { triggerICDatapointSourcingPublic, validateICDeal } from '@/services/icDatapointSourcingService';
 
 // Extend the Deal type to include enhanced_analysis
 type Deal = BaseDeal & {
@@ -320,7 +320,7 @@ export function EnhancedDealDetailsModal({
 
     setIsICAnalyzing(true);
     try {
-      const result = await triggerICDatapointSourcing(deal.id);
+      const result = await triggerICDatapointSourcingPublic(deal.id);
       
       toast({
         title: "IC Content Generated",

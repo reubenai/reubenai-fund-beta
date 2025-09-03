@@ -40,6 +40,30 @@ export const triggerICDatapointSourcing = async (dealId: string): Promise<ICData
   }
 };
 
+export const triggerICDatapointSourcingPublic = async (dealId: string): Promise<ICDatapointSourcingResult> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('ic-datapoint-sourcing-public', {
+      body: { 
+        deal_id: dealId,
+        manual_trigger: true
+      }
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to invoke IC datapoint sourcing (public)');
+    }
+
+    if (!data?.success) {
+      throw new Error(data?.error || 'IC datapoint sourcing (public) returned failure');
+    }
+
+    return data as ICDatapointSourcingResult;
+  } catch (error) {
+    console.error('IC Datapoint Sourcing (Public) Service Error:', error);
+    throw error;
+  }
+};
+
 export const validateICDeal = (deal: { fund_id: string }, fundType?: string): boolean => {
   // IC analysis can work for any fund type, but deal must exist
   return !!deal.fund_id;
