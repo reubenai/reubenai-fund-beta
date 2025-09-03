@@ -300,27 +300,74 @@ serve(async (req) => {
       confidence_level: perplexityMarketData?.confidence_level || 'medium'
     };
 
-    // 3. Generate GPT-4 analysis for each scoring criterion
-    console.log('🤖 Starting GPT-4 analysis for all scoring criteria (parallel processing)...');
+    // 3. Generate GPT-4 analysis using 6-batch scoring architecture
+    console.log('🤖 Starting GPT-4 batch analysis (6 batches instead of 18 individual calls)...');
     const scoringResults = [];
-    const summaryData = {
-      team_leadership: [],
-      market_opportunity: [],
-      product_technology: [],
-      business_traction: [],
-      financial_health: [],
-      strategic_fit: []
-    };
+    
+    // Define the 6 logical batches
+    const scoringBatches = [
+      {
+        name: 'Team & Leadership',
+        criteria: [
+          VC_SCORING_CRITERIA.find(c => c.name === 'founder_experience_score'),
+          VC_SCORING_CRITERIA.find(c => c.name === 'team_composition_score'),
+          VC_SCORING_CRITERIA.find(c => c.name === 'vision_communication_score')
+        ]
+      },
+      {
+        name: 'Market & Opportunity', 
+        criteria: [
+          VC_SCORING_CRITERIA.find(c => c.name === 'market_size_score'),
+          VC_SCORING_CRITERIA.find(c => c.name === 'market_timing_score'),
+          VC_SCORING_CRITERIA.find(c => c.name === 'competitive_landscape_score')
+        ]
+      },
+      {
+        name: 'Product & Technology',
+        criteria: [
+          VC_SCORING_CRITERIA.find(c => c.name === 'product_innovation_score'),
+          VC_SCORING_CRITERIA.find(c => c.name === 'technology_advantage_score'),
+          VC_SCORING_CRITERIA.find(c => c.name === 'product_market_fit_score')
+        ]
+      },
+      {
+        name: 'Business & Traction',
+        criteria: [
+          VC_SCORING_CRITERIA.find(c => c.name === 'revenue_growth_score'),
+          VC_SCORING_CRITERIA.find(c => c.name === 'customer_metrics_score'),
+          VC_SCORING_CRITERIA.find(c => c.name === 'market_validation_score')
+        ]
+      },
+      {
+        name: 'Financial Health',
+        criteria: [
+          VC_SCORING_CRITERIA.find(c => c.name === 'financial_performance_score'),
+          VC_SCORING_CRITERIA.find(c => c.name === 'capital_efficiency_score'),
+          VC_SCORING_CRITERIA.find(c => c.name === 'financial_planning_score')
+        ]
+      },
+      {
+        name: 'Strategic Fit & Risk',
+        criteria: [
+          VC_SCORING_CRITERIA.find(c => c.name === 'portfolio_synergies_score'),
+          VC_SCORING_CRITERIA.find(c => c.name === 'investment_thesis_alignment_score'),
+          VC_SCORING_CRITERIA.find(c => c.name === 'value_creation_potential_score')
+        ]
+      }
+    ];
 
-    // Simple sequential processing like the working version
-    for (const criteria of VC_SCORING_CRITERIA) {
-      console.log(`🔍 Analyzing ${criteria.name} for ${analysisContext.company_name} (attempt 1)`);
+    // Process each batch
+    for (const batch of scoringBatches) {
+      console.log(`🔍 Analyzing ${batch.name} batch for ${analysisContext.company_name}...`);
 
-      const prompt = `
+      const batchPrompt = `
 You are a venture capital analyst conducting due diligence. Analyze the following deal using ONLY the provided evidence.
 
+BATCH ANALYSIS: ${batch.name.toUpperCase()}
+Analyze all 3 criteria in this batch together to provide context and consistency.
+
 SCORING INSTRUCTIONS:
-1) Ask the guiding question exactly as written: "${criteria.question}"
+1) For each criterion, ask the guiding question exactly as written
 2) Extract evidence from the provided source data only. Do not infer or fabricate.
 3) Map the evidence to the rubric definitions. Choose the single best match.
 4) Assign the corresponding numeric score exactly as specified.
@@ -328,10 +375,16 @@ SCORING INSTRUCTIONS:
 6) Prefer recent, primary evidence. If conflicting, state the conflict briefly.
 7) Prioritize Perplexity market intelligence when available for market-related criteria.
 
-RUBRIC FOR ${criteria.name.toUpperCase()}:
+CRITERIA TO ANALYZE:
+
+${batch.criteria.map((criteria, index) => `
+CRITERION ${index + 1}: ${criteria.name.toUpperCase()}
+Question: "${criteria.question}"
+Rubric:
 - GREAT (${criteria.greatScore}): ${criteria.greatDescription}
 - GOOD (${criteria.goodScore}): ${criteria.goodDescription}  
 - POOR (${criteria.poorScore}): ${criteria.poorDescription}
+`).join('\n')}
 
 COMPANY DATA:
 Company: ${analysisContext.company_name}
@@ -345,18 +398,34 @@ PERPLEXITY MARKET INTELLIGENCE: ${JSON.stringify(analysisContext.perplexity_mark
 
 DOCUMENTS: ${analysisContext.documents.map(doc => `
 Document Summary: ${JSON.stringify(doc.document_summary || {})}
-Text: ${doc.extracted_text?.substring(0, 2000) || 'No text available'}
+Text: ${doc.extracted_text?.substring(0, 1500) || 'No text available'}
 `).join('\n---\n')}
 
 FUND STRATEGY: ${JSON.stringify(analysisContext.fund_strategy, null, 2)}
 
 OUTPUT FORMAT (JSON only):
 {
-  "score": [exact score from rubric: ${criteria.greatScore}, ${criteria.goodScore}, or ${criteria.poorScore}],
-  "evidence": "[extracted evidence from source data only]",
-  "reasoning": "[map evidence to rubric level and explain score assignment]",
-  "category": "[great/good/poor]",
-  "insights": "[2-3 bullet points about this criterion]"
+  "${batch.criteria[0].name}": {
+    "score": [exact score from rubric],
+    "evidence": "[extracted evidence from source data only]", 
+    "reasoning": "[map evidence to rubric level and explain score assignment]",
+    "category": "[great/good/poor]",
+    "insights": "[2-3 bullet points about this criterion]"
+  },
+  "${batch.criteria[1].name}": {
+    "score": [exact score from rubric],
+    "evidence": "[extracted evidence from source data only]",
+    "reasoning": "[map evidence to rubric level and explain score assignment]", 
+    "category": "[great/good/poor]",
+    "insights": "[2-3 bullet points about this criterion]"
+  },
+  "${batch.criteria[2].name}": {
+    "score": [exact score from rubric],
+    "evidence": "[extracted evidence from source data only]",
+    "reasoning": "[map evidence to rubric level and explain score assignment]",
+    "category": "[great/good/poor]", 
+    "insights": "[2-3 bullet points about this criterion]"
+  }
 }`;
 
       try {
@@ -370,9 +439,9 @@ OUTPUT FORMAT (JSON only):
             model: 'gpt-4o-mini',
             messages: [{
               role: 'user',
-              content: prompt
+              content: batchPrompt
             }],
-            max_tokens: 800,
+            max_tokens: 1500,
             response_format: { type: "json_object" }
           })
         });
@@ -382,41 +451,47 @@ OUTPUT FORMAT (JSON only):
         }
 
         const data = await response.json();
-        const result = JSON.parse(data.choices[0].message.content);
+        const batchResults = JSON.parse(data.choices[0].message.content);
         
-        scoringResults.push({
-          field: criteria.name,
-          ...result
-        });
-
-        // Categorize insights for summaries
-        const criteriaName = criteria.name.toLowerCase();
-        if (criteriaName.includes('founder') || criteriaName.includes('team') || criteriaName.includes('vision')) {
-          summaryData.team_leadership.push(result.insights);
-        } else if (criteriaName.includes('market') && !criteriaName.includes('product')) {
-          summaryData.market_opportunity.push(result.insights);
-        } else if (criteriaName.includes('product') || criteriaName.includes('technology') || criteriaName.includes('innovation')) {
-          summaryData.product_technology.push(result.insights);
-        } else if (criteriaName.includes('revenue') || criteriaName.includes('customer') || criteriaName.includes('validation')) {
-          summaryData.business_traction.push(result.insights);
-        } else if (criteriaName.includes('financial') || criteriaName.includes('capital')) {
-          summaryData.financial_health.push(result.insights);
-        } else if (criteriaName.includes('portfolio') || criteriaName.includes('thesis') || criteriaName.includes('value')) {
-          summaryData.strategic_fit.push(result.insights);
+        // Extract individual results from batch response
+        for (const criteria of batch.criteria) {
+          const result = batchResults[criteria.name];
+          if (result) {
+            scoringResults.push({
+              field: criteria.name,
+              ...result
+            });
+            console.log(`✅ ${criteria.name}: ${result.score} (${result.category}) - "${result.evidence?.substring(0, 50) || 'No evidence'}..."`);
+          } else {
+            // Fallback if batch parsing fails
+            scoringResults.push({
+              field: criteria.name,
+              score: criteria.poorScore,
+              evidence: "Batch analysis failed - insufficient data",
+              reasoning: "Could not complete batch analysis", 
+              category: "poor",
+              insights: ["Analysis could not be completed"]
+            });
+            console.error(`❌ Missing result for ${criteria.name} in batch response`);
+          }
         }
 
-        console.log(`✅ ${criteria.name}: ${result.score} (${result.category}) - "${result.evidence?.substring(0, 50) || 'No evidence'}..."`);
+        console.log(`✅ ${batch.name} batch completed: 3 criteria analyzed`);
 
       } catch (error) {
-        console.error(`❌ Error analyzing ${criteria.name}:`, error);
-        scoringResults.push({
-          field: criteria.name,
-          score: criteria.poorScore,
-          evidence: "Analysis failed - insufficient data",
-          reasoning: "Could not complete analysis due to technical error",
-          category: "poor",
-          insights: ["Analysis could not be completed"]
-        });
+        console.error(`❌ Error analyzing ${batch.name} batch:`, error);
+        
+        // Fallback: add poor scores for all criteria in failed batch
+        for (const criteria of batch.criteria) {
+          scoringResults.push({
+            field: criteria.name,
+            score: criteria.poorScore,
+            evidence: "Batch analysis failed - insufficient data",
+            reasoning: "Could not complete batch analysis due to technical error",
+            category: "poor", 
+            insights: ["Analysis could not be completed"]
+          });
+        }
       }
     }
 
@@ -599,7 +674,7 @@ OUTPUT FORMAT (JSON only):
         word_count: 0,
         error: "IC memo generation available via manual trigger"
       },
-      message: `VC deal analysis completed successfully with overall score ${overallScore}`
+      message: `VC deal analysis completed successfully with 6-batch architecture (7 total OpenAI calls vs previous 19) - Overall score: ${overallScore}`
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200
