@@ -5,7 +5,6 @@ import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { useDealsCache } from '@/hooks/useCache';
 import { Database } from '@/integrations/supabase/types';
 import { activityService } from '@/services/ActivityService';
-import { icMemoService } from '@/services/ICMemoService';
 import { usePipelineStages } from './usePipelineStages';
 import { stageNameToStatus, statusToDisplayName, createStageKey, stageKeyToStatus } from '@/utils/pipelineMapping';
 
@@ -202,45 +201,18 @@ export const useOptimizedPipelineDeals = (fundId?: string) => {
       }
 
       // 🎯 TRIGGER IC MEMO GENERATION when deal moves to Investment Committee
-      if (toStageStatus === 'investment_committee') {
+      if (toStageStatus === 'investment_committee' && fundId) {
         console.log(`🎯 [Pipeline] Deal ${dealId} moved to Investment Committee - triggering memo generation`);
         
-        // Validate fundId availability
-        if (!fundId) {
-          console.error('❌ [Pipeline] Cannot trigger IC memo: fundId is missing');
-          toast({
-            title: 'IC Memo Generation Failed',
-            description: 'Missing fund information. Please try again.',
-            variant: 'destructive'
-          });
-          return;
-        }
-
-        // Show immediate feedback that memo generation started
-        toast({
-          title: 'IC Memo Generation Started',
-          description: 'Generating investment committee memo in the background...'
-        });
-
-        // Trigger memo generation with better error handling
-        try {
-          // Non-blocking background memo generation with comprehensive error handling
+        // Import and trigger memo generation in background (non-blocking)
+        import('@/services/ICMemoService').then(({ icMemoService }) => {
+          // Non-blocking background memo generation
           icMemoService.triggerMemoGeneration(dealId, fundId).catch(error => {
-            console.error('❌ [Pipeline] Background IC memo generation failed:', error);
-            toast({
-              title: 'IC Memo Generation Failed',
-              description: 'Failed to generate IC memo. Please check the IC page to retry.',
-              variant: 'destructive'
-            });
+            console.error('Background IC memo generation failed:', error);
           });
-        } catch (error) {
-          console.error('❌ [Pipeline] Failed to initiate IC memo generation:', error);
-          toast({
-            title: 'IC Memo Generation Failed',
-            description: 'Failed to start memo generation. Please try again.',
-            variant: 'destructive'
-          });
-        }
+        }).catch(error => {
+          console.error('Failed to import IC Memo Service:', error);
+        });
       }
       
       // Invalidate cache
