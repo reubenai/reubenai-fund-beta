@@ -317,83 +317,121 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     return content;
   };
 
-  // Function to capture data from ic-memo-drafter
+  // Function to capture data from IC analysis
   const handleCaptureData = async () => {
     try {
       setIsCapturingData(true);
       
       console.log('🎬 Starting memo data capture for deal:', deal.id);
       console.log('🔍 Current fund type:', fundType);
+      console.log('🔍 No edge function calls - fetching from database directly');
       
       const result = await icMemoService.triggerMemoGeneration(deal.id, fundId);
       
-      console.log('📨 Raw API response success:', result.success);
-      console.log('📨 Raw API result structure:', {
+      console.log('📨 Raw service response:', {
+        success: result.success,
         has_memo: !!result.memo,
-        memo_keys: result.memo ? Object.keys(result.memo) : [],
+        memo_structure: result.memo ? Object.keys(result.memo) : [],
         error: result.error
       });
       
       if (result.success && result.memo) {
-        console.log('📥 Raw memo result full structure:', result.memo);
-        
-        // Access the sections array from the memo (ic-memo-drafter returns different structure than ICMemo interface)
         const memoData = result.memo as any;
         const sections = memoData.sections;
+        const metadata = memoData.metadata;
         
-        console.log('🔍 Memo data structure analysis:', {
-          memo_type: typeof memoData,
+        console.log('📊 Data quality analysis:', {
           has_sections: !!sections,
-          sections_is_array: Array.isArray(sections),
-          sections_length: Array.isArray(sections) ? sections.length : 'N/A',
-          sections_preview: Array.isArray(sections) ? sections.slice(0, 3).map(s => ({ title: s.title, content_length: s.content?.length })) : 'N/A'
+          sections_count: Array.isArray(sections) ? sections.length : 0,
+          completeness: metadata?.completenessPercentage || 'unknown',
+          complete_sections: metadata?.completeSections || 0,
+          empty_sections: metadata?.emptySectionTitles || []
         });
         
         if (sections && Array.isArray(sections)) {
-          console.log('📋 All section titles received:', sections.map(s => s.title));
+          // Analyze section quality
+          const qualitySections = sections.filter(s => s.hasContent && s.quality !== 'low');
+          const placeholderSections = sections.filter(s => !s.hasContent);
+          
+          console.log('📋 Section quality breakdown:', {
+            total_sections: sections.length,
+            quality_sections: qualitySections.length,
+            placeholder_sections: placeholderSections.length,
+            quality_titles: qualitySections.map(s => s.title),
+            placeholder_titles: placeholderSections.map(s => s.title)
+          });
           
           // Transform sections array to flat key-value structure
           const transformedContent = transformSectionsToContent(sections, fundType);
           
-          console.log('🔄 Transformation result:', {
+          console.log('🔄 Content transformation result:', {
             transformed_keys: Object.keys(transformedContent),
-            content_lengths: Object.entries(transformedContent).map(([key, content]) => 
-              ({ key, length: typeof content === 'string' ? content.length : 0 }))
+            content_quality: Object.entries(transformedContent).map(([key, content]) => ({
+              key,
+              length: typeof content === 'string' ? content.length : 0,
+              is_placeholder: typeof content === 'string' && 
+                (content.includes('not yet available') || content.includes('No ') || content.length < 50)
+            }))
           });
           
           // Update each section with the captured content
           Object.entries(transformedContent).forEach(([key, content]) => {
             if (content && typeof content === 'string') {
-              console.log(`🔄 Updating section "${key}" with content length: ${content.length}`);
+              console.log(`🔄 Updating section "${key}" (${content.length} chars)`);
               updateContent(key, content);
-            } else {
-              console.warn(`⚠️ Skipping section "${key}" - invalid content type:`, typeof content);
             }
           });
           
-          showToast({
-            title: "Data Captured Successfully", 
-            description: `Investment memo data captured for ${deal.company_name} (${Object.keys(transformedContent).length} sections)`,
-            variant: "default"
-          });
+          // Show detailed completion status
+          if (metadata?.completenessPercentage >= 80) {
+            showToast({
+              title: "IC Memo Data Loaded", 
+              description: `Complete memo for ${deal.company_name} (${qualitySections.length}/${sections.length} sections with content)`,
+              variant: "default"
+            });
+          } else if (metadata?.completenessPercentage >= 50) {
+            showToast({
+              title: "Partial IC Memo Data", 
+              description: `${qualitySections.length}/${sections.length} sections available. Missing: ${placeholderSections.map(s => s.title).join(', ')}`,
+              variant: "default"
+            });
+          } else {
+            showToast({
+              title: "Limited IC Memo Data", 
+              description: `Only ${qualitySections.length}/${sections.length} sections available. Run VC scoring engine for complete analysis.`,
+              variant: "destructive"
+            });
+          }
           
           // Refresh the memo to show updated content
           await loadMemo(false);
         } else {
-          throw new Error('No sections found in memo data');
+          throw new Error('No sections array found in memo data structure');
         }
       } else {
+        const errorMessage = result.error || 'Failed to capture memo data';
+        console.error('❌ Service returned error:', errorMessage);
         showMemoErrorToast(
-          'Failed to capture memo data',
+          errorMessage,
           () => handleCaptureData()
         );
       }
     } catch (error) {
       console.error('💥 Error in handleCaptureData:', error);
-      showMemoErrorToast(
-        `Error capturing data: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        () => handleCaptureData()
-      );
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      if (errorMessage.includes('No IC analysis found')) {
+        showToast({
+          title: "IC Analysis Required",
+          description: "Please run the VC scoring engine first to generate IC memo sections",
+          variant: "destructive"
+        });
+      } else {
+        showMemoErrorToast(
+          `Error loading memo: ${errorMessage}`,
+          () => handleCaptureData()
+        );
+      }
     } finally {
       setIsCapturingData(false);
     }

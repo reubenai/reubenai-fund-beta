@@ -8,6 +8,26 @@ export interface ICMemoGenerationStatus {
   error?: string;
 }
 
+export interface ICMemoServiceResult {
+  success: boolean;
+  message: string;
+  memo?: {
+    sections: Array<{
+      title: string;
+      content: string;
+      hasContent: boolean;
+      quality: string;
+    }>;
+    metadata?: {
+      completenessPercentage: number;
+      completeSections: number;
+      totalSections: number;
+      emptySectionTitles: string[];
+    };
+  };
+  error?: string;
+}
+
 class ICMemoService {
   private generationStatus = new Map<string, ICMemoGenerationStatus>();
   private statusCallbacks = new Map<string, ((status: ICMemoGenerationStatus) => void)[]>();
@@ -15,7 +35,7 @@ class ICMemoService {
   /**
    * Trigger IC memo generation by fetching existing sections from deal_analysisresult_vc
    */
-  async triggerMemoGeneration(dealId: string, fundId: string) {
+  async triggerMemoGeneration(dealId: string, fundId: string): Promise<ICMemoServiceResult> {
     console.log(`🎯 [IC Memo Service] Fetching IC memo sections for deal: ${dealId}`);
     
     try {
@@ -24,10 +44,10 @@ class ICMemoService {
 
       // Show user notification
       toast.info('Loading IC Memo', {
-        description: 'Fetching investment committee memo sections...'
+        description: 'Validating investment committee memo data...'
       });
 
-      // Query deal_analysisresult_vc for IC sections
+      // Query deal_analysisresult_vc for IC sections using maybeSingle for better error handling
       const { data: analysisResult, error } = await supabase
         .from('deal_analysisresult_vc')
         .select(`
@@ -45,45 +65,102 @@ class ICMemoService {
           ic_investment_recommendation
         `)
         .eq('deal_id', dealId)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-
-      if (!analysisResult) {
-        throw new Error('No IC analysis found for this deal');
+      if (error) {
+        console.error(`🚨 [IC Memo Service] Database query error:`, error);
+        throw error;
       }
 
-      // Map database fields to memo sections array (expected format)
-      const sections = [
-        { title: 'Executive Summary', content: analysisResult.ic_executive_summary || 'No executive summary available' },
-        { title: 'Company Overview', content: analysisResult.ic_company_overview || 'No company overview available' },
-        { title: 'Market Opportunity', content: analysisResult.ic_market_opportunity || 'No market opportunity analysis available' },
-        { title: 'Product/Service Analysis', content: analysisResult.ic_product_service || 'No product/service analysis available' },
-        { title: 'Business Model & Strategy', content: analysisResult.ic_business_model || 'No business model analysis available' },
-        { title: 'Competitive Landscape', content: analysisResult.ic_competitive_landscape || 'No competitive analysis available' },
-        { title: 'Financial Analysis', content: analysisResult.ic_financial_analysis || 'No financial analysis available' },
-        { title: 'Management Team', content: analysisResult.ic_management_team || 'No management team analysis available' },
-        { title: 'Risk Assessment & Mitigants', content: analysisResult.ic_risks_mitigants || 'No risk analysis available' },
-        { title: 'Exit Strategy & Value Realization', content: analysisResult.ic_exit_strategy || 'No exit strategy analysis available' },
-        { title: 'Investment Terms & Structure', content: analysisResult.ic_investment_terms || 'No investment terms available' },
-        { title: 'Investment Recommendation', content: analysisResult.ic_investment_recommendation || 'No investment recommendation available' }
+      if (!analysisResult) {
+        console.warn(`⚠️ [IC Memo Service] No IC analysis found for deal: ${dealId}`);
+        throw new Error('No IC analysis found for this deal. Please run the VC scoring engine first.');
+      }
+
+      // Analyze data completeness and quality
+      const sectionData = [
+        { key: 'ic_executive_summary', title: 'Executive Summary', content: analysisResult.ic_executive_summary },
+        { key: 'ic_company_overview', title: 'Company Overview', content: analysisResult.ic_company_overview },
+        { key: 'ic_market_opportunity', title: 'Market Opportunity', content: analysisResult.ic_market_opportunity },
+        { key: 'ic_product_service', title: 'Product/Service Analysis', content: analysisResult.ic_product_service },
+        { key: 'ic_business_model', title: 'Business Model & Strategy', content: analysisResult.ic_business_model },
+        { key: 'ic_competitive_landscape', title: 'Competitive Landscape', content: analysisResult.ic_competitive_landscape },
+        { key: 'ic_financial_analysis', title: 'Financial Analysis', content: analysisResult.ic_financial_analysis },
+        { key: 'ic_management_team', title: 'Management Team', content: analysisResult.ic_management_team },
+        { key: 'ic_risks_mitigants', title: 'Risk Assessment & Mitigants', content: analysisResult.ic_risks_mitigants },
+        { key: 'ic_exit_strategy', title: 'Exit Strategy & Value Realization', content: analysisResult.ic_exit_strategy },
+        { key: 'ic_investment_terms', title: 'Investment Terms & Structure', content: analysisResult.ic_investment_terms },
+        { key: 'ic_investment_recommendation', title: 'Investment Recommendation', content: analysisResult.ic_investment_recommendation }
       ];
+
+      // Calculate completeness metrics
+      const completeSections = sectionData.filter(section => 
+        section.content && 
+        section.content.trim().length > 0 && 
+        !section.content.includes('No ') && 
+        !section.content.includes('not available')
+      );
+      
+      const emptySections = sectionData.filter(section => 
+        !section.content || 
+        section.content.trim().length === 0 || 
+        section.content.includes('No ') || 
+        section.content.includes('not available')
+      );
+
+      const completenessPercentage = Math.round((completeSections.length / sectionData.length) * 100);
+
+      console.log(`📊 [IC Memo Service] Data quality analysis for deal ${dealId}:`, {
+        totalSections: sectionData.length,
+        completeSections: completeSections.length,
+        emptySections: emptySections.length,
+        completenessPercentage,
+        completeSectionTitles: completeSections.map(s => s.title),
+        emptySectionTitles: emptySections.map(s => s.title)
+      });
+
+      // Map database fields to memo sections array with quality indicators
+      const sections = sectionData.map(section => ({
+        title: section.title,
+        content: section.content || `${section.title} analysis not yet available. Please run the VC scoring engine to generate this section.`,
+        hasContent: !!section.content && section.content.trim().length > 0 && !section.content.includes('No '),
+        quality: section.content && section.content.trim().length > 200 ? 'high' : 
+                section.content && section.content.trim().length > 50 ? 'medium' : 'low'
+      }));
 
       // Update status to completed
       this.updateStatus(dealId, { dealId, status: 'completed', progress: 100 });
 
-      // Show success notification
-      toast.success('IC Memo Loaded', {
-        description: 'Investment committee memo sections have been loaded successfully!'
-      });
+      // Show completion notification with quality metrics
+      if (completenessPercentage >= 80) {
+        toast.success('IC Memo Loaded Successfully', {
+          description: `Complete memo available (${completeSections.length}/${sectionData.length} sections populated)`
+        });
+      } else if (completenessPercentage >= 50) {
+        toast.warning('IC Memo Partially Available', {
+          description: `${completeSections.length}/${sectionData.length} sections available. Consider running VC analysis for missing sections.`
+        });
+      } else {
+        toast.error('Limited IC Memo Data', {
+          description: `Only ${completeSections.length}/${sectionData.length} sections available. Please run VC scoring engine first.`
+        });
+      }
 
-      console.log(`✅ [IC Memo Service] Memo sections loaded for deal: ${dealId}`);
+      console.log(`✅ [IC Memo Service] Memo sections loaded for deal: ${dealId} (${completenessPercentage}% complete)`);
       
-      // Return data in expected format with sections array
+      // Return data in expected format with enhanced metadata
       return {
         success: true,
-        message: 'IC memo sections loaded successfully',
-        memo: { sections }
+        message: `IC memo sections loaded (${completenessPercentage}% complete)`,
+        memo: { 
+          sections,
+          metadata: {
+            completenessPercentage,
+            completeSections: completeSections.length,
+            totalSections: sectionData.length,
+            emptySectionTitles: emptySections.map(s => s.title)
+          }
+        }
       };
       
     } catch (error) {
@@ -96,12 +173,32 @@ class ICMemoService {
         error: error instanceof Error ? error.message : 'Unknown error' 
       });
 
-      // Show error notification
-      toast.error('IC Memo Load Failed', {
-        description: 'Failed to load investment committee memo sections. Please try again.'
-      });
+      // Show specific error notification
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      if (errorMessage.includes('No IC analysis found')) {
+        toast.error('IC Analysis Missing', {
+          description: 'No IC analysis found. Please run the VC scoring engine first to generate memo sections.',
+          action: {
+            label: 'Learn More',
+            onClick: () => console.log('Should show help about VC scoring engine')
+          }
+        });
+      } else {
+        toast.error('IC Memo Load Failed', {
+          description: `Failed to load memo: ${errorMessage}`,
+          action: {
+            label: 'Retry',
+            onClick: () => this.triggerMemoGeneration(dealId, fundId)
+          }
+        });
+      }
 
-      throw error;
+      return {
+        success: false,
+        message: errorMessage,
+        error: errorMessage
+      };
     }
   }
 
