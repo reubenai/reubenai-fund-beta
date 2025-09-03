@@ -737,8 +737,8 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 <Badge variant="outline" className="bg-primary/10 text-primary">
                   {deal.company_name}
                 </Badge>
-                 {getStatusBadge()}
-                {getWorkflowStatusDisplay()}
+                {/* {getStatusBadge()} */}
+                {/* {getWorkflowStatusDisplay()} */}
                 {deal.overall_score && (
                   <Badge variant="outline">
                     Score: {deal.overall_score}/100
@@ -750,11 +750,11 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                     Outdated
                   </Badge>
                 )}
-                {isAutoSaveEnabled && isEditing && (
+                {/* {isAutoSaveEnabled && isEditing && (
                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                     Auto-save enabled
                   </Badge>
-                )}
+                )} */}
                 {versionState.versions.length > 0 && (
                   <Badge variant="outline">
                     v{versionState.currentVersion}
@@ -948,7 +948,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
           {/* Main Content */}
           <div className="flex-1 flex flex-col overflow-hidden min-h-0 min-w-0">
             {/* Collapsible Data Quality Indicator */}
-            {contentValidation && (
+            {/* {contentValidation && (
               <Collapsible open={showDataQuality} onOpenChange={setShowDataQuality}>
                 <CollapsibleTrigger className="w-full">
                   <div className="flex items-center justify-between p-4 border-b bg-muted/20 hover:bg-muted/30 transition-colors">
@@ -969,7 +969,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foregreen">
                         {showDataQuality ? 'Hide' : 'Show'} Details
                       </span>
                       {showDataQuality ? (
@@ -989,7 +989,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                   </div>
                 </CollapsibleContent>
               </Collapsible>
-            )}
+            )} */}
             {memoState.isGenerating ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
