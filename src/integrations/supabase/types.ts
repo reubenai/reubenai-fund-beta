@@ -947,6 +947,51 @@ export type Database = {
         }
         Relationships: []
       }
+      artifacts_duplicate: {
+        Row: {
+          artifact_data: Json
+          artifact_kind: string
+          artifact_type: string
+          citations: Json | null
+          created_at: string
+          deal_id: string | null
+          fund_id: string
+          id: string
+          org_id: string
+          provenance: Json | null
+          updated_at: string
+          validation_status: string | null
+        }
+        Insert: {
+          artifact_data: Json
+          artifact_kind: string
+          artifact_type: string
+          citations?: Json | null
+          created_at?: string
+          deal_id?: string | null
+          fund_id: string
+          id?: string
+          org_id: string
+          provenance?: Json | null
+          updated_at?: string
+          validation_status?: string | null
+        }
+        Update: {
+          artifact_data?: Json
+          artifact_kind?: string
+          artifact_type?: string
+          citations?: Json | null
+          created_at?: string
+          deal_id?: string | null
+          fund_id?: string
+          id?: string
+          org_id?: string
+          provenance?: Json | null
+          updated_at?: string
+          validation_status?: string | null
+        }
+        Relationships: []
+      }
       blueprint_v2_scores_pe: {
         Row: {
           analysis_version: number | null
