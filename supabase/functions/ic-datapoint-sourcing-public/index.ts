@@ -23,14 +23,13 @@ const truncateText = (text: string, maxLength: number): string => {
 const aggregateICContextData = async (dealId: string, supabaseClient: any) => {
   console.log('📊 Aggregating comprehensive context data...');
   
-  // Parallel data extraction from all 6 tables (including existing IC content)
+  // Parallel data extraction from all 5 tables
   const [
     dealDataResult,
     fundDataResult,
     documentsResult,
     investmentStrategyResult,
-    perplexityResult,
-    existingICContentResult
+    perplexityResult
   ] = await Promise.all([
     // 1. Deal basic info
     supabaseClient.from('deals').select('*').eq('id', dealId).single(),
@@ -95,14 +94,6 @@ const aggregateICContextData = async (dealId: string, supabaseClient: any) => {
       .eq('deal_id', dealId)
       .order('updated_at', { ascending: false })
       .limit(1)
-      .maybeSingle(),
-      
-    // 6. Existing IC memo content for iterative improvement
-    supabaseClient.from('deal_analysisresult_vc')
-      .select('ic_executive_summary, ic_company_overview, ic_market_opportunity, ic_product_service, ic_business_model, ic_competitive_landscape, ic_financial_analysis, ic_management_team, ic_risks_mitigants, ic_exit_strategy, ic_investment_terms, ic_investment_recommendation, updated_at')
-      .eq('deal_id', dealId)
-      .order('updated_at', { ascending: false })
-      .limit(1)
       .maybeSingle()
   ]);
 
@@ -112,27 +103,25 @@ const aggregateICContextData = async (dealId: string, supabaseClient: any) => {
   const documentsData = documentsResult.data || [];
   const investmentStrategy = investmentStrategyResult.data;
   const perplexityData = perplexityResult.data;
-  const existingICContent = existingICContentResult.data;
 
   if (!dealData) {
     throw new Error('Deal data not found');
   }
 
-  console.log(`📋 Context aggregated - Fund: ${fundData ? 'Found' : 'Missing'}, Documents: ${documentsData.length}, Strategy: ${investmentStrategy ? 'Found' : 'Missing'}, Perplexity: ${perplexityData ? 'Found' : 'Missing'}, Previous IC Content: ${existingICContent ? 'Found' : 'Missing'}`);
+  console.log(`📋 Context aggregated - Fund: ${fundData ? 'Found' : 'Missing'}, Documents: ${documentsData.length}, Strategy: ${investmentStrategy ? 'Found' : 'Missing'}, Perplexity: ${perplexityData ? 'Found' : 'Missing'}`);
 
   return {
     dealData,
     fundData,
     documentsData,
     investmentStrategy,
-    perplexityData,
-    existingICContent
+    perplexityData
   };
 };
 
 // AI-powered content generation using GPT-4o-mini
 const generateAIContent = async (sectionType: string, contextData: any, openAIKey: string): Promise<string> => {
-  const { dealData, fundData, documentsData, investmentStrategy, perplexityData, existingICContent } = contextData;
+  const { dealData, fundData, documentsData, investmentStrategy, perplexityData } = contextData;
 
   // Build comprehensive context string for AI
   const buildContextString = () => {
@@ -176,42 +165,28 @@ const generateAIContent = async (sectionType: string, contextData: any, openAIKe
       context += docContext;
     }
 
-    // Add existing IC memo content as reference for iterative improvement
-    if (existingICContent && existingICContent[sectionType]) {
-      context += `\n\nPrevious Analysis (for reference and improvement):\n`;
-      context += `Section: ${sectionType}\n`;
-      const previousContent = truncateText(existingICContent[sectionType], 1500);
-      context += `Previous Content: ${previousContent}\n`;
-      context += `Last Updated: ${existingICContent.updated_at ? new Date(existingICContent.updated_at).toLocaleDateString() : 'Unknown'}\n`;
-      context += `Note: Build upon, refine, or enhance this existing analysis with new insights while maintaining consistency.\n`;
-    }
-
     return context;
   };
 
   const contextString = buildContextString();
-
-  // Determine content generation strategy
-  const hasPreviousContent = existingICContent && existingICContent[sectionType];
-  const contentStrategy = hasPreviousContent ? 'enhance' : 'create';
   
-  // Section-specific prompts with iterative improvement logic
+  // Section-specific prompts for new content creation
   const sectionPrompts: { [key: string]: string } = {
-    ic_executive_summary: `${contentStrategy === 'enhance' ? 'ENHANCE EXISTING ANALYSIS: Review the previous executive summary and build upon it with new insights, updated data, and refined analysis. Maintain consistency while improving depth and accuracy.' : 'CREATE NEW ANALYSIS:'} Generate a professional executive summary for this investment opportunity. Focus on key investment highlights, financial metrics, market opportunity, and overall assessment. Be concise but comprehensive, highlighting the most compelling aspects of the deal.`,
-    ic_company_overview: `${contentStrategy === 'enhance' ? 'ENHANCE EXISTING ANALYSIS: Build upon the previous company overview with updated information and deeper insights.' : 'CREATE NEW ANALYSIS:'} Create a detailed company overview covering the business fundamentals, operational status, team size, funding history, and current position in the market. Focus on factual information and company positioning.`,
-    ic_market_opportunity: `${contentStrategy === 'enhance' ? 'ENHANCE EXISTING ANALYSIS: Refine the previous market analysis with new market data and updated trends.' : 'CREATE NEW ANALYSIS:'} Analyze the market opportunity including market size (TAM/SAM/SOM), growth rates, market trends, competitive dynamics, and timing. Assess the addressable market and growth potential.`,
-    ic_product_service: `${contentStrategy === 'enhance' ? 'ENHANCE EXISTING ANALYSIS: Improve upon the previous product analysis with new features and competitive insights.' : 'CREATE NEW ANALYSIS:'} Evaluate the product/service offering, technology differentiation, competitive advantages, scalability, and market fit. Focus on what makes this solution unique and defensible.`,
-    ic_business_model: `${contentStrategy === 'enhance' ? 'ENHANCE EXISTING ANALYSIS: Update the business model assessment with new metrics and performance data.' : 'CREATE NEW ANALYSIS:'} Assess the business model sustainability, unit economics, revenue streams, customer acquisition, retention metrics, and scalability. Focus on financial viability and growth potential.`,
-    ic_competitive_landscape: `${contentStrategy === 'enhance' ? 'ENHANCE EXISTING ANALYSIS: Update competitive analysis with new market entrants and positioning changes.' : 'CREATE NEW ANALYSIS:'} Analyze the competitive environment, key players, market positioning, differentiation factors, and competitive advantages. Evaluate barriers to entry and competitive moats.`,
-    ic_financial_analysis: `${contentStrategy === 'enhance' ? 'ENHANCE EXISTING ANALYSIS: Refine financial analysis with updated metrics and performance trends.' : 'CREATE NEW ANALYSIS:'} Provide financial analysis covering key metrics, unit economics, growth trajectories, capital efficiency, and financial health. Focus on quantitative assessment of the investment opportunity.`,
-    ic_management_team: `${contentStrategy === 'enhance' ? 'ENHANCE EXISTING ANALYSIS: Update management assessment with new team developments and performance insights.' : 'CREATE NEW ANALYSIS:'} Evaluate the management team's experience, track record, relevant expertise, and execution capability. Assess leadership strength and team composition.`,
-    ic_risks_mitigants: `${contentStrategy === 'enhance' ? 'ENHANCE EXISTING ANALYSIS: Update risk assessment with new risks and refined mitigation strategies.' : 'CREATE NEW ANALYSIS:'} Identify key investment risks including market, execution, financial, regulatory, and competitive risks. Provide potential mitigation strategies for each major risk category.`,
-    ic_exit_strategy: `${contentStrategy === 'enhance' ? 'ENHANCE EXISTING ANALYSIS: Refine exit strategy with updated market conditions and acquisition landscape.' : 'CREATE NEW ANALYSIS:'} Analyze potential exit opportunities, timeline, valuation scenarios, strategic acquirers, IPO potential, and value creation path. Focus on realistic exit strategies and value realization.`,
-    ic_investment_terms: `${contentStrategy === 'enhance' ? 'ENHANCE EXISTING ANALYSIS: Update investment terms based on new valuation data and market conditions.' : 'CREATE NEW ANALYSIS:'} Structure appropriate investment terms based on the deal characteristics, valuation, funding needs, and risk profile. Include deal size, valuation, and key terms.`,
-    ic_investment_recommendation: `${contentStrategy === 'enhance' ? 'ENHANCE EXISTING ANALYSIS: Update investment recommendation based on new analysis and market developments.' : 'CREATE NEW ANALYSIS:'} Provide a clear investment committee recommendation with rationale based on the overall analysis. Include recommendation (STRONG BUY/BUY/HOLD/PASS), supporting reasons, and next steps.`
+    ic_executive_summary: `Generate a professional executive summary for this investment opportunity. Focus on key investment highlights, financial metrics, market opportunity, and overall assessment. Be concise but comprehensive, highlighting the most compelling aspects of the deal.`,
+    ic_company_overview: `Create a detailed company overview covering the business fundamentals, operational status, team size, funding history, and current position in the market. Focus on factual information and company positioning.`,
+    ic_market_opportunity: `Analyze the market opportunity including market size (TAM/SAM/SOM), growth rates, market trends, competitive dynamics, and timing. Assess the addressable market and growth potential.`,
+    ic_product_service: `Evaluate the product/service offering, technology differentiation, competitive advantages, scalability, and market fit. Focus on what makes this solution unique and defensible.`,
+    ic_business_model: `Assess the business model sustainability, unit economics, revenue streams, customer acquisition, retention metrics, and scalability. Focus on financial viability and growth potential.`,
+    ic_competitive_landscape: `Analyze the competitive environment, key players, market positioning, differentiation factors, and competitive advantages. Evaluate barriers to entry and competitive moats.`,
+    ic_financial_analysis: `Provide financial analysis covering key metrics, unit economics, growth trajectories, capital efficiency, and financial health. Focus on quantitative assessment of the investment opportunity.`,
+    ic_management_team: `Evaluate the management team's experience, track record, relevant expertise, and execution capability. Assess leadership strength and team composition.`,
+    ic_risks_mitigants: `Identify key investment risks including market, execution, financial, regulatory, and competitive risks. Provide potential mitigation strategies for each major risk category.`,
+    ic_exit_strategy: `Analyze potential exit opportunities, timeline, valuation scenarios, strategic acquirers, IPO potential, and value creation path. Focus on realistic exit strategies and value realization.`,
+    ic_investment_terms: `Structure appropriate investment terms based on the deal characteristics, valuation, funding needs, and risk profile. Include deal size, valuation, and key terms.`,
+    ic_investment_recommendation: `Provide a clear investment committee recommendation with rationale based on the overall analysis. Include recommendation (STRONG BUY/BUY/HOLD/PASS), supporting reasons, and next steps.`
   };
 
-  const systemPrompt = `You are an expert investment analyst generating professional Investment Committee memo content. ${hasPreviousContent ? 'You are enhancing existing analysis - build upon previous insights while adding new information and improved analysis.' : 'Create comprehensive new analysis based on available data.'} Create detailed, analytical content based on the provided data context. Focus on insights, implications, and actionable intelligence. Format your response as professional investment analysis suitable for IC review. Be specific, use data points when available, and provide clear reasoning.`;
+  const systemPrompt = `You are an expert investment analyst generating professional Investment Committee memo content. Create comprehensive new analysis based on available data. Create detailed, analytical content based on the provided data context. Focus on insights, implications, and actionable intelligence. Format your response as professional investment analysis suitable for IC review. Be specific, use data points when available, and provide clear reasoning.`;
 
   const userPrompt = `${sectionPrompts[sectionType]}
 
@@ -363,10 +338,7 @@ serve(async (req) => {
     
     console.log(`✅ Generated ${Object.keys(icMemoContent).length} IC memo sections`);
     
-    // Log content strategy used
-    const hasExistingContent = contextData.existingICContent;
-    const contentStrategy = hasExistingContent ? 'enhancement' : 'creation';
-    console.log(`📝 Content strategy: ${contentStrategy} ${hasExistingContent ? `(building upon existing content from ${new Date(contextData.existingICContent.updated_at).toLocaleDateString()})` : '(creating new content)'}`);
+    console.log('📝 Content strategy: creation (creating new IC memo content)');
 
     // 4. Check if deal_analysisresult_vc record exists
     const existingResult = await supabaseClient
@@ -412,18 +384,15 @@ serve(async (req) => {
       fund_id: fundId,
       deal_id: deal_id,
       activity_type: 'ic_analysis_completed',
-      title: hasExistingContent ? 'AI-Powered IC Analysis Enhanced' : 'AI-Powered IC Analysis Generated',
-      description: `IC memo sections ${hasExistingContent ? 'enhanced' : 'generated'} using GPT-4o-mini AI analysis${manual_trigger ? ' (manual trigger)' : ' (automatic trigger)'}${hasExistingContent ? ` - built upon existing content from ${new Date(contextData.existingICContent.updated_at).toLocaleDateString()}` : ''}`,
+      title: 'AI-Powered IC Analysis Generated',
+      description: `IC memo sections generated using GPT-4o-mini AI analysis${manual_trigger ? ' (manual trigger)' : ' (automatic trigger)'}`,
       context_data: {
         trigger_type: manual_trigger ? 'manual' : 'automatic',
         sections_generated: Object.keys(icMemoContent).length,
         deal_company_name: dealData.company_name,
         ai_powered: true,
         model_used: 'gpt-4o-mini',
-        content_strategy: hasExistingContent ? 'enhancement' : 'creation',
-        had_existing_content: !!hasExistingContent,
-        existing_content_date: hasExistingContent ? contextData.existingICContent.updated_at : null,
-        iterative_improvement: hasExistingContent
+        content_strategy: 'creation'
       },
       priority: 'high'
     });
