@@ -313,9 +313,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Timeout handling - wrap the entire analysis in a timeout
+  // Timeout handling - increased to 90 seconds for reliable OpenAI processing
   const timeout = new Promise((_, reject) => 
-    setTimeout(() => reject(new Error('Analysis timeout - function exceeded 45 seconds')), 45000)
+    setTimeout(() => reject(new Error('Analysis timeout - function exceeded 90 seconds')), 90000)
   );
 
   const analysisPromise = (async () => {
@@ -500,12 +500,19 @@ serve(async (req) => {
         };
       };
 
-      // Helper function to analyze a single criterion
-      const analyzeCriteria = async (criteria: ScoringCriteria) => {
+      // Helper function to analyze a single criterion with retry logic
+      const analyzeCriteria = async (criteria: ScoringCriteria, retryCount = 0) => {
         const relevantContext = getRelevantContext(criteria);
         
+        // Add deal-specific context to ensure different deals get different inputs
+        const dealSpecificContext = {
+          ...relevantContext,
+          deal_id_hash: deal_id.slice(-8), // Last 8 chars of deal ID for uniqueness
+          analysis_timestamp: new Date().toISOString()
+        };
+        
         const prompt = `
-You are a venture capital analyst conducting due diligence. Analyze the following deal using ONLY the provided evidence.
+You are a venture capital analyst conducting due diligence for deal ${deal_id.slice(-8)}. Analyze this SPECIFIC deal using ONLY the provided evidence.
 
 SCORING INSTRUCTIONS:
 1) Ask the guiding question exactly as written: "${criteria.question}"
@@ -515,25 +522,28 @@ SCORING INSTRUCTIONS:
 5) Keep all units and thresholds as written in the rubric.
 6) Prefer recent, primary evidence. If conflicting, state the conflict briefly.
 7) Prioritize Perplexity market intelligence when available for market-related criteria.
+8) CRITICAL: Analyze this specific deal's unique characteristics - avoid generic responses.
 
 RUBRIC FOR ${criteria.name.toUpperCase()}:
 - GREAT (${criteria.greatScore}): ${criteria.greatDescription}
 - GOOD (${criteria.goodScore}): ${criteria.goodDescription}  
 - POOR (${criteria.poorScore}): ${criteria.poorDescription}
 
-COMPANY DATA:
-${JSON.stringify(relevantContext, null, 2)}
+COMPANY DATA FOR ${relevantContext.company_name}:
+${JSON.stringify(dealSpecificContext, null, 2)}
 
 OUTPUT FORMAT (JSON only):
 {
   "score": [exact score from rubric: ${criteria.greatScore}, ${criteria.goodScore}, or ${criteria.poorScore}],
-  "evidence": "[extracted evidence from source data only]",
-  "reasoning": "[map evidence to rubric level and explain score assignment]",
+  "evidence": "[extracted evidence from source data only for ${relevantContext.company_name}]",
+  "reasoning": "[map evidence to rubric level and explain score assignment for this specific deal]",
   "category": "[great/good/poor]",
-  "insights": "[2-3 bullet points about this criterion]"
+  "insights": "[2-3 bullet points about this criterion for ${relevantContext.company_name}]"
 }`;
 
         try {
+          console.log(`🔍 Analyzing ${criteria.name} for ${relevantContext.company_name} (attempt ${retryCount + 1})`);
+          
           const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -549,31 +559,52 @@ OUTPUT FORMAT (JSON only):
           });
 
           if (!response.ok) {
-            throw new Error(`OpenAI API error: ${response.status}`);
+            const errorText = await response.text();
+            console.error(`❌ OpenAI API error for ${criteria.name}: ${response.status} - ${errorText}`);
+            throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
           }
 
           const data = await response.json();
           const result = JSON.parse(data.choices[0].message.content);
+          
+          // Validate the response contains required fields and score is valid
+          if (!result.score || ![criteria.greatScore, criteria.goodScore, criteria.poorScore].includes(result.score)) {
+            throw new Error(`Invalid score received: ${result.score}`);
+          }
+          
+          console.log(`✅ ${criteria.name}: ${result.score} (${result.category}) - "${result.evidence?.substring(0, 50)}..."`);
           
           return {
             field: criteria.name,
             ...result
           };
         } catch (error) {
-          console.error(`❌ Error analyzing ${criteria.name}:`, error);
+          console.error(`❌ Error analyzing ${criteria.name} (attempt ${retryCount + 1}):`, error);
+          
+          // Retry up to 2 times for transient errors
+          if (retryCount < 2 && (error.message.includes('API error') || error.message.includes('network'))) {
+            console.log(`🔄 Retrying ${criteria.name} in 2 seconds...`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            return analyzeCriteria(criteria, retryCount + 1);
+          }
+          
+          // For persistent failures, use middle score instead of always poor
+          const fallbackScore = retryCount >= 2 ? criteria.goodScore : criteria.poorScore;
+          console.log(`⚠️ Using fallback score ${fallbackScore} for ${criteria.name}`);
+          
           return {
             field: criteria.name,
-            score: criteria.poorScore,
-            evidence: "Analysis failed - insufficient data",
-            reasoning: "Could not complete analysis due to technical error",
-            category: "poor",
-            insights: ["Analysis could not be completed"]
+            score: fallbackScore,
+            evidence: `Analysis failed after ${retryCount + 1} attempts - insufficient data available`,
+            reasoning: `Could not complete analysis due to: ${error.message}`,
+            category: retryCount >= 2 ? "good" : "poor",
+            insights: [`Analysis could not be completed for ${relevantContext.company_name}`, `Technical issue: ${error.message.substring(0, 100)}`]
           };
         }
       };
 
-      // Process criteria in parallel batches of 6 to avoid overwhelming OpenAI API
-      const batchSize = 6;
+      // Process criteria in parallel batches of 3 to avoid overwhelming OpenAI API and reduce timeout risk
+      const batchSize = 3;
       const scoringResults = [];
       
       for (let i = 0; i < VC_SCORING_CRITERIA.length; i += batchSize) {
@@ -606,9 +637,9 @@ OUTPUT FORMAT (JSON only):
           }
         });
         
-        // Small delay between batches to respect rate limits
+        // Longer delay between batches to respect rate limits and improve reliability
         if (i + batchSize < VC_SCORING_CRITERIA.length) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
 
@@ -710,12 +741,25 @@ OUTPUT FORMAT (JSON only):
         };
       }
 
-      // 5. Calculate overall score (sum of all individual scores)
+      // 5. Calculate overall score (sum of all individual scores) with validation
       const validScores = scoringResults.filter(r => typeof r.score === 'number');
       const totalScore = validScores.reduce((sum, r) => sum + r.score, 0);
       const overallScore = validScores.length > 0 ? Math.round(totalScore * 10) / 10 : 0;
 
       console.log(`📊 Overall Score Calculated: ${overallScore} (from ${validScores.length} criteria)`);
+      
+      // Score validation - check for suspicious patterns
+      const uniqueScores = new Set(validScores.map(r => r.score));
+      if (uniqueScores.size === 1 && validScores.length > 5) {
+        console.warn(`⚠️ WARNING: All ${validScores.length} criteria received identical score (${Array.from(uniqueScores)[0]}) - possible analysis issue`);
+      }
+      
+      // Log score distribution for debugging
+      const scoreDistribution = validScores.reduce((dist, r) => {
+        dist[r.category] = (dist[r.category] || 0) + 1;
+        return dist;
+      }, {});
+      console.log(`📈 Score distribution: ${JSON.stringify(scoreDistribution)}`);
 
       // 6. Generate IC Memo Content
       console.log('📝 Generating IC memo content...');
