@@ -3,8 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download, X, FileText } from 'lucide-react';
+import { Download, X, FileText, FileType } from 'lucide-react';
 import { exportMemoToPDF } from '@/utils/pdfClient';
+import { exportMemoToWord } from '@/utils/wordClient';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface Deal {
   id: string;
@@ -39,6 +41,8 @@ export const MemoPreviewRenderer: React.FC<MemoPreviewRendererProps> = ({
   sections
 }) => {
   const [isExporting, setIsExporting] = React.useState(false);
+  const [isExportingWord, setIsExportingWord] = React.useState(false);
+  const { isSuperAdmin } = useUserRole();
 
   const handleExportPDF = async () => {
     setIsExporting(true);
@@ -55,6 +59,21 @@ export const MemoPreviewRenderer: React.FC<MemoPreviewRendererProps> = ({
     }
   };
 
+  const handleExportWord = async () => {
+    setIsExportingWord(true);
+    try {
+      await exportMemoToWord({
+        companyName: deal.company_name,
+        sections,
+        fileName: `IC_Memo_${deal.company_name.replace(/\s+/g, '_')}.docx`
+      });
+    } catch (error) {
+      console.error('Word export failed:', error);
+    } finally {
+      setIsExportingWord(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[90vw] h-[90vh] flex flex-col">
@@ -66,7 +85,7 @@ export const MemoPreviewRenderer: React.FC<MemoPreviewRendererProps> = ({
             <div className="flex items-center gap-2">
               <Button 
                 onClick={handleExportPDF}
-                disabled={isExporting}
+                disabled={isExporting || isExportingWord}
                 className="gap-2"
               >
                 {isExporting ? (
@@ -78,6 +97,23 @@ export const MemoPreviewRenderer: React.FC<MemoPreviewRendererProps> = ({
                   </>
                 )}
               </Button>
+              {isSuperAdmin && (
+                <Button 
+                  onClick={handleExportWord}
+                  disabled={isExporting || isExportingWord}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  {isExportingWord ? (
+                    <>Exporting...</>
+                  ) : (
+                    <>
+                      <FileType className="h-4 w-4" />
+                      Export Word
+                    </>
+                  )}
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
