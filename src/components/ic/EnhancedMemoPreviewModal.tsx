@@ -325,7 +325,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
       console.log('🎬 Starting memo data capture for deal:', deal.id);
       console.log('🔍 Current fund type:', fundType);
       
-      const result = await icMemoService.generateMemo(deal.id);
+      const result = await icMemoService.triggerMemoGeneration(deal.id, fundId);
       
       console.log('📨 Raw API response success:', result.success);
       console.log('📨 Raw API result structure:', {
