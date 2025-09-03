@@ -823,6 +823,20 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={handleCaptureData}
+                    disabled={memoState.isGenerating || isCapturingData}
+                  >
+                    {isCapturingData ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                    )}
+                    Sync Data
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={handleSaveMemo}
                     disabled={isSaving || memoState.isGenerating}
                   >
