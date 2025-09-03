@@ -82,6 +82,7 @@ import { useFund } from '@/contexts/FundContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useToast } from '@/hooks/use-toast';
 import { triggerVCScoring, validateVCDeal } from '@/services/vcScoringService';
+import { triggerICDatapointSourcing, validateICDeal } from '@/services/icDatapointSourcingService';
 
 // Extend the Deal type to include enhanced_analysis
 type Deal = BaseDeal & {
@@ -131,6 +132,7 @@ export function EnhancedDealDetailsModal({
   const [dealFund, setDealFund] = useState<any>(null);
   const [fundTypeLoading, setFundTypeLoading] = useState(true);
   const [isVCScoring, setIsVCScoring] = useState(false);
+  const [isICAnalyzing, setIsICAnalyzing] = useState(false);
   const { toast } = useToast();
   const { getRAGCategory } = useStrategyThresholds();
   const { canViewActivities, canViewAnalysis, role, loading } = usePermissions();
@@ -304,6 +306,47 @@ export function EnhancedDealDetailsModal({
     }
   };
 
+  const handleICAnalysis = async () => {
+    if (!deal) return;
+    
+    if (!validateICDeal(deal, dealFund?.fund_type)) {
+      toast({
+        title: "Invalid Deal",
+        description: "IC analysis requires a valid deal with fund information",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsICAnalyzing(true);
+    try {
+      const result = await triggerICDatapointSourcing(deal.id);
+      
+      toast({
+        title: "IC Content Generated",
+        description: `IC memo content generated for ${deal.company_name}. ${result.sections_generated} sections created successfully.`,
+        variant: "default"
+      });
+      
+      // Refresh the modal data
+      loadEnhancedData();
+      
+      // Notify parent component
+      if (onDealUpdated) {
+        onDealUpdated();
+      }
+    } catch (error) {
+      console.error('IC Analysis failed:', error);
+      toast({
+        title: "IC Generation Failed",
+        description: error instanceof Error ? error.message : "Failed to generate IC content",
+        variant: "destructive"
+      });
+    } finally {
+      setIsICAnalyzing(false);
+    }
+  };
+
 
   if (!deal) return null;
 
@@ -349,16 +392,28 @@ export function EnhancedDealDetailsModal({
             </div>
             <div className="flex items-center gap-2">
               {isSuperAdmin && (
-                <Button
-                  onClick={handleVCScoring}
-                  disabled={isVCScoring}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                >
-                  <Zap className="h-4 w-4 mr-1" />
-                  {isVCScoring ? 'Analyzing...' : 'Run VC Analysis'}
-                </Button>
+                <>
+                  <Button
+                    onClick={handleVCScoring}
+                    disabled={isVCScoring}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    <Zap className="h-4 w-4 mr-1" />
+                    {isVCScoring ? 'Analyzing...' : 'Run VC Analysis'}
+                  </Button>
+                  <Button
+                    onClick={handleICAnalysis}
+                    disabled={isICAnalyzing}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    <FileText className="h-4 w-4 mr-1" />
+                    {isICAnalyzing ? 'Generating IC Content...' : 'Generate IC Content'}
+                  </Button>
+                </>
               )}
               <DealActionGuard dealId={deal.id} action="manage">
                 {(canManage) => canManage && (
