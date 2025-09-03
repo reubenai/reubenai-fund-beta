@@ -300,7 +300,7 @@ serve(async (req) => {
 
     console.log(`🎯 IC Datapoint Sourcing (AI-Powered) - Starting analysis for deal: ${deal_id}, manual: ${manual_trigger}`);
 
-    // Check if this is a manual trigger by reuben admin
+    // Check if this is a manual trigger - require authentication but allow all users
     if (manual_trigger) {
       const authHeader = req.headers.get('authorization');
       if (authHeader) {
@@ -308,17 +308,19 @@ serve(async (req) => {
           const token = authHeader.replace('Bearer ', '');
           const payload = JSON.parse(atob(token.split('.')[1]));
           const userEmail = payload.email;
+          const userId = payload.sub;
           
-          if (!userEmail || (!userEmail.includes('@goreuben.com') && !userEmail.includes('@reuben.com'))) {
-            throw new Error('Manual trigger only available for Reuben admins');
+          if (!userEmail || !userId) {
+            throw new Error('Invalid user token - missing email or user ID');
           }
-          console.log(`✅ Manual trigger authorized for: ${userEmail}`);
+          
+          console.log(`✅ Manual trigger authorized for user: ${userEmail} (${userId})`);
         } catch (e) {
           console.error('Token verification failed:', e);
-          throw new Error('Invalid authorization token');
+          throw new Error('Invalid authorization token - please sign in again');
         }
       } else {
-        throw new Error('Authorization required for manual trigger');
+        throw new Error('Authorization required for manual trigger - please sign in');
       }
     }
 
