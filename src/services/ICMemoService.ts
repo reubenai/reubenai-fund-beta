@@ -93,20 +93,46 @@ class ICMemoService {
         { key: 'ic_investment_recommendation', title: 'Investment Recommendation', content: analysisResult.ic_investment_recommendation }
       ];
 
-      // Calculate completeness metrics
-      const completeSections = sectionData.filter(section => 
-        section.content && 
-        section.content.trim().length > 0 && 
-        !section.content.includes('No ') && 
-        !section.content.includes('not available')
-      );
-      
-      const emptySections = sectionData.filter(section => 
-        !section.content || 
-        section.content.trim().length === 0 || 
-        section.content.includes('No ') || 
-        section.content.includes('not available')
-      );
+      // Enhanced content quality detection
+      const isValidContent = (content: string | null): boolean => {
+        if (!content || content.trim().length === 0) return false;
+        
+        const trimmedContent = content.trim().toLowerCase();
+        
+        // Check for actual empty/placeholder content patterns
+        const invalidPatterns = [
+          'not available',
+          'no data available',
+          'analysis not yet available',
+          'please run the vc scoring engine',
+          'content not generated',
+          'no information provided',
+          'data pending'
+        ];
+        
+        // Content is invalid only if it's mostly placeholder text
+        const hasInvalidPattern = invalidPatterns.some(pattern => 
+          trimmedContent.includes(pattern) && trimmedContent.length < 100
+        );
+        
+        // Valid content should have substantial length (more than basic placeholder)
+        return !hasInvalidPattern && trimmedContent.length > 50;
+      };
+
+      // Calculate completeness metrics with improved logic
+      const completeSections = sectionData.filter(section => isValidContent(section.content));
+      const emptySections = sectionData.filter(section => !isValidContent(section.content));
+
+      // Debug logging for troubleshooting
+      console.log(`🔍 [IC Memo Service] Section analysis for deal ${dealId}:`);
+      sectionData.forEach(section => {
+        const contentLength = section.content?.trim().length || 0;
+        const hasValidContent = isValidContent(section.content);
+        console.log(`  ${section.title}: ${contentLength} chars, valid: ${hasValidContent}${
+          section.content && contentLength > 0 && !hasValidContent ? 
+          ` (filtered: ${section.content.substring(0, 100)}...)` : ''
+        }`);
+      });
 
       const completenessPercentage = Math.round((completeSections.length / sectionData.length) * 100);
 
@@ -119,14 +145,21 @@ class ICMemoService {
         emptySectionTitles: emptySections.map(s => s.title)
       });
 
-      // Map database fields to memo sections array with quality indicators
-      const sections = sectionData.map(section => ({
-        title: section.title,
-        content: section.content || `${section.title} analysis not yet available. Please run the VC scoring engine to generate this section.`,
-        hasContent: !!section.content && section.content.trim().length > 0 && !section.content.includes('No '),
-        quality: section.content && section.content.trim().length > 200 ? 'high' : 
-                section.content && section.content.trim().length > 50 ? 'medium' : 'low'
-      }));
+      // Map database fields to memo sections array with enhanced quality indicators
+      const sections = sectionData.map(section => {
+        const hasValidContent = isValidContent(section.content);
+        const contentLength = section.content?.trim().length || 0;
+        
+        return {
+          title: section.title,
+          content: section.content || `${section.title} analysis not yet available. Please run the VC scoring engine to generate this section.`,
+          hasContent: hasValidContent,
+          quality: hasValidContent ? (
+            contentLength > 1000 ? 'high' : 
+            contentLength > 300 ? 'medium' : 'low'
+          ) : 'none'
+        };
+      });
 
       // Update status to completed
       this.updateStatus(dealId, { dealId, status: 'completed', progress: 100 });
