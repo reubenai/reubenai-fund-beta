@@ -398,18 +398,19 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     try {
       setIsSaving(true);
       
-      const { error } = await supabase.from('ic_memos').upsert({
-        deal_id: deal.id,
-        fund_id: fundId,
-        title: `IC Memo - ${deal.company_name}`,
-        memo_content: memoState.content as any,
-        custom_sections: customSections,
-        status: memoState.status || 'draft',
-        is_published: false,
-        overall_score: deal.overall_score,
-        rag_status: deal.rag_status,
-        created_by: (await supabase.auth.getUser()).data.user?.id
-      });
+      const { error } = await supabase.from('ic_memos')
+        .update({
+          title: `IC Memo - ${deal.company_name}`,
+          memo_content: memoState.content as any,
+          custom_sections: customSections,
+          status: memoState.status || 'draft',
+          is_published: false,
+          overall_score: deal.overall_score,
+          rag_status: deal.rag_status,
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('deal_id', deal.id)
+        .eq('fund_id', fundId);
 
       if (error) throw error;
 
@@ -455,18 +456,19 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     
     // Auto-save custom sections to database
     try {
-      await supabase.from('ic_memos').upsert({
-        deal_id: deal.id,
-        fund_id: fundId,
-        title: `IC Memo - ${deal.company_name}`,
-        memo_content: memoState.content as any,
-        custom_sections: updatedSections,
-        status: memoState.status || 'draft',
-        is_published: false,
-        overall_score: deal.overall_score,
-        rag_status: deal.rag_status,
-        created_by: (await supabase.auth.getUser()).data.user?.id
-      });
+      await supabase.from('ic_memos')
+        .update({
+          title: `IC Memo - ${deal.company_name}`,
+          memo_content: memoState.content as any,
+          custom_sections: updatedSections,
+          status: memoState.status || 'draft',
+          is_published: false,
+          overall_score: deal.overall_score,
+          rag_status: deal.rag_status,
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('deal_id', deal.id)
+        .eq('fund_id', fundId);
     } catch (error) {
       console.error('Error saving custom section:', error);
     }
@@ -480,18 +482,19 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     
     // Auto-save to database
     try {
-      await supabase.from('ic_memos').upsert({
-        deal_id: deal.id,
-        fund_id: fundId,
-        title: `IC Memo - ${deal.company_name}`,
-        memo_content: memoState.content as any,
-        custom_sections: updatedSections,
-        status: memoState.status || 'draft',
-        is_published: false,
-        overall_score: deal.overall_score,
-        rag_status: deal.rag_status,
-        created_by: (await supabase.auth.getUser()).data.user?.id
-      });
+      await supabase.from('ic_memos')
+        .update({
+          title: `IC Memo - ${deal.company_name}`,
+          memo_content: memoState.content as any,
+          custom_sections: updatedSections,
+          status: memoState.status || 'draft',
+          is_published: false,
+          overall_score: deal.overall_score,
+          rag_status: deal.rag_status,
+          created_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('deal_id', deal.id)
+        .eq('fund_id', fundId);
     } catch (error) {
       console.error('Error updating custom section:', error);
     }
