@@ -118,8 +118,37 @@ export default function EnhancedICPage() {
       ]);
       
       setDeals(dealsData || []);
-      setSessions(sessionsData);
-      setVotingDecisions(votingData);
+      
+      // Transform sessions data to match ICSession interface
+      const transformedSessions = (sessionsData || []).map((session: any): ICSession => ({
+        id: session.id,
+        fund_id: session.fund_id,
+        name: session.name,
+        title: session.title || session.name || 'Untitled Session', // Map name to title
+        scheduled_date: session.scheduled_date || session.session_date, // Map session_date to scheduled_date
+        session_date: session.session_date,
+        status: session.status,
+        agenda: typeof session.agenda === 'string' ? session.agenda : 
+                typeof session.agenda === 'object' ? JSON.stringify(session.agenda) : '',
+        participants: Array.isArray(session.participants) ? 
+                     (session.participants as any[]).map(p => String(p)) : 
+                     typeof session.participants === 'string' ? [session.participants] : [],
+        notes: session.notes
+      }));
+      setSessions(transformedSessions);
+      
+      // Transform voting decisions data to match ICVotingDecision interface  
+      const transformedVotingDecisions = (votingData || []).map((vote: any): ICVotingDecision => ({
+        id: vote.id,
+        title: vote.title || `Voting Decision ${vote.id}`, // Provide default title
+        description: vote.description,
+        voting_deadline: vote.voting_deadline || new Date().toISOString(), // Provide default deadline
+        status: vote.status || 'pending', // Provide default status
+        memo_id: vote.memo_id,
+        vote_summary: vote.vote_summary
+      }));
+      setVotingDecisions(transformedVotingDecisions);
+      
       setCommitteeMembers(membersData || []);
       setReviewQueue(reviewData || []);
 
@@ -313,7 +342,23 @@ export default function EnhancedICPage() {
 
       const newSession = await icMemoService.createSession(sessionData);
       if (newSession) {
-        setSessions([...sessions, newSession]);
+        // Transform the new session to match ICSession interface
+        const transformedSession: ICSession = {
+          id: newSession.id,
+          fund_id: newSession.fund_id,
+          name: newSession.name,
+          title: (newSession as any).title || newSession.name || sessionForm.name,
+          scheduled_date: (newSession as any).scheduled_date || newSession.session_date,
+          session_date: newSession.session_date,
+          status: newSession.status,
+          agenda: typeof newSession.agenda === 'string' ? newSession.agenda : 
+                  typeof newSession.agenda === 'object' ? JSON.stringify(newSession.agenda) : '',
+          participants: Array.isArray(newSession.participants) ? 
+                       (newSession.participants as any[]).map(p => String(p)) : 
+                       typeof newSession.participants === 'string' ? [newSession.participants] : [],
+          notes: (newSession as any).notes
+        };
+        setSessions([...sessions, transformedSession]);
         setShowSessionModal(false);
         setSessionForm({ name: '', session_date: '', agenda: '', participants: [] });
         toast({
@@ -347,7 +392,17 @@ export default function EnhancedICPage() {
 
       const newVoting = await icMemoService.createVotingDecision(votingData);
       if (newVoting) {
-        setVotingDecisions([...votingDecisions, newVoting]);
+        // Transform the new voting decision to match ICVotingDecision interface
+        const transformedVoting: ICVotingDecision = {
+          id: newVoting.id,
+          title: (newVoting as any).title || votingForm.title,
+          description: (newVoting as any).description || votingForm.description,
+          voting_deadline: (newVoting as any).voting_deadline || votingForm.voting_deadline,
+          status: (newVoting as any).status || 'active',
+          memo_id: (newVoting as any).memo_id || votingForm.memo_id,
+          vote_summary: (newVoting as any).vote_summary || {}
+        };
+        setVotingDecisions([...votingDecisions, transformedVoting]);
         setShowCreateVotingModal(false);
         setVotingForm({ title: '', description: '', voting_deadline: '', memo_id: '' });
         toast({
