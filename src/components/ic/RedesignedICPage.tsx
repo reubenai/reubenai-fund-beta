@@ -207,7 +207,7 @@ export default function RedesignedICPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Main Content Area */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="lg:col-span-4 space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="h-12 w-auto bg-background border rounded-lg p-1">
               <TabsTrigger value="pipeline" className="h-10 px-6 rounded-md">
