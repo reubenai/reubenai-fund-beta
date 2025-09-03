@@ -15,20 +15,39 @@ class ICMemoService {
   /**
    * Trigger IC memo generation when a deal moves to Investment Committee stage
    */
-  async triggerMemoGeneration(dealId: string, fundId: string) {
-    console.log(`🎯 [IC Memo Service] Triggering memo generation for deal: ${dealId}`);
+  async triggerMemoGeneration(dealId: string, fundId: string): Promise<any> {
+    console.log(`🚀 [IC Memo Service] Starting memo generation for deal: ${dealId}, fund: ${fundId}`);
     
-    try {
-      // Update status to generating
-      this.updateStatus(dealId, { dealId, status: 'generating', progress: 0 });
-
-      // Show user notification
-      toast.info('IC Memo Generation Started', {
-        description: 'Generating investment committee memo in the background...'
+    // Validate inputs
+    if (!dealId || !fundId) {
+      const errorMsg = `Invalid inputs: dealId=${dealId}, fundId=${fundId}`;
+      console.error(`❌ [IC Memo Service] ${errorMsg}`);
+      toast.error('IC Memo Generation Failed', {
+        description: 'Invalid deal or fund information provided.'
       });
+      throw new Error(errorMsg);
+    }
+    
+    // Update status to generating
+    this.updateStatus(dealId, { dealId, status: 'generating', progress: 10 });
 
-      // Call the IC memo drafter edge function
-      const { data, error } = await supabase.functions.invoke('ic-memo-drafter', {
+    // Show initial notification
+    toast.info('IC Memo Generation', {
+      description: 'Starting investment committee memo generation...'
+    });
+
+    try {
+      // Update progress
+      this.updateStatus(dealId, { dealId, status: 'generating', progress: 30 });
+
+      console.log(`📡 [IC Memo Service] Calling ic-memo-drafter edge function with dealId: ${dealId}, fundId: ${fundId}`);
+      
+      // Call the IC memo drafter edge function with timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('IC memo generation timeout')), 120000) // 2 minutes
+      );
+      
+      const memoPromise = supabase.functions.invoke('ic-memo-drafter', {
         body: {
           dealId,
           fundId,
@@ -36,7 +55,15 @@ class ICMemoService {
         }
       });
 
-      if (error) throw error;
+      // Race between timeout and actual function call
+      const { data, error } = await Promise.race([memoPromise, timeoutPromise]) as any;
+
+      if (error) {
+        console.error(`❌ [IC Memo Service] Edge function returned error:`, error);
+        throw error;
+      }
+
+      console.log(`📄 [IC Memo Service] Edge function response:`, data);
 
       // Update status to completed
       this.updateStatus(dealId, { dealId, status: 'completed', progress: 100 });
@@ -61,7 +88,7 @@ class ICMemoService {
 
       // Show error notification
       toast.error('IC Memo Generation Failed', {
-        description: 'Failed to generate investment committee memo. Please try again.'
+        description: `Failed to generate investment committee memo: ${error instanceof Error ? error.message : 'Unknown error'}`
       });
 
       throw error;
