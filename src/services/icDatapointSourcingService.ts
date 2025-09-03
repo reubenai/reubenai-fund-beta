@@ -9,6 +9,8 @@ export interface ICDatapointSourcingResult {
     sections_generated: number;
     word_count: number;
     error: string | null;
+    ai_powered?: boolean;
+    model_used?: string;
   };
   message: string;
   error?: string;
