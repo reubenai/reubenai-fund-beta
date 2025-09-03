@@ -434,16 +434,44 @@ serve(async (req) => {
       'ic_investment_recommendation': 'investment_recommendation'
     };
 
-    // Build memo content JSON structure
+    // Build memo content JSON structure - DEBUG VERSION
     const memoContent = {};
+    console.log(`🐛 DEBUG - icMemoContent keys:`, Object.keys(icMemoContent));
+    console.log(`🐛 DEBUG - icMemoContent sample:`, Object.keys(icMemoContent).slice(0, 3).map(k => `${k}: "${icMemoContent[k]?.slice(0, 50)}..."`));
+    
     Object.entries(icMemoContent).forEach(([key, value]) => {
       const memoKey = memoContentMapping[key];
-      if (memoKey) {
+      console.log(`🐛 DEBUG - Mapping ${key} → ${memoKey}, value length: ${value?.length || 0}`);
+      if (memoKey && value) {
         memoContent[memoKey] = value;
       }
     });
 
     console.log(`📝 Transformed ${Object.keys(memoContent).length} sections for memo display`);
+    console.log(`🐛 DEBUG - Final memoContent keys:`, Object.keys(memoContent));
+    console.log(`🐛 DEBUG - Final memoContent sample:`, Object.keys(memoContent).slice(0, 3).map(k => `${k}: "${memoContent[k]?.slice(0, 50)}..."`));
+
+    // Only proceed if we have content to save
+    if (Object.keys(memoContent).length === 0) {
+      console.error('❌ No content to save to ic_memos - memoContent is empty');
+      console.log('🐛 DEBUG - icMemoContent for verification:', Object.keys(icMemoContent).map(k => `${k}: ${icMemoContent[k]?.length || 0} chars`));
+      
+      // Skip memo table population but continue with the response
+      return Response.json({
+        success: true,
+        deal_id: deal_id,
+        sections_generated: Object.keys(icMemoContent).length,
+        memo_generation: {
+          success: false,
+          sections_generated: Object.keys(icMemoContent).length,
+          word_count: totalWordCount,
+          error: "Generated content could not be mapped to memo format",
+          ai_powered: true,
+          model_used: 'gpt-4o-mini'
+        },
+        message: `IC analysis generated for ${Object.keys(icMemoContent).length} sections, but memo format mapping failed`
+      }, { headers: corsHeaders });
+    }
 
     // Check if ic_memo record exists for this deal
     const existingMemo = await supabaseClient
@@ -458,6 +486,8 @@ serve(async (req) => {
       title: `IC Memo - ${dealData.company_name}`,
       status: 'draft',
       memo_content: memoContent,
+      // Also store the raw IC content as backup
+      raw_ic_content: icMemoContent,
       executive_summary: icMemoContent.ic_executive_summary || null,
       investment_recommendation: icMemoContent.ic_investment_recommendation || null,
       rag_status: dealData.rag_status || 'GREEN',
