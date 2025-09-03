@@ -270,29 +270,7 @@ serve(async (req) => {
       throw new Error('deal_id is required');
     }
 
-    console.log(`🎯 IC Datapoint Sourcing (AI-Powered) - Starting analysis for deal: ${deal_id}, manual: ${manual_trigger}`);
-
-    // Check if this is a manual trigger by reuben admin
-    if (manual_trigger) {
-      const authHeader = req.headers.get('authorization');
-      if (authHeader) {
-        try {
-          const token = authHeader.replace('Bearer ', '');
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          const userEmail = payload.email;
-          
-          if (!userEmail || (!userEmail.includes('@goreuben.com') && !userEmail.includes('@reuben.com'))) {
-            throw new Error('Manual trigger only available for Reuben admins');
-          }
-          console.log(`✅ Manual trigger authorized for: ${userEmail}`);
-        } catch (e) {
-          console.error('Token verification failed:', e);
-          throw new Error('Invalid authorization token');
-        }
-      } else {
-        throw new Error('Authorization required for manual trigger');
-      }
-    }
+    console.log(`🎯 IC Datapoint Sourcing (AI-Powered) - Starting analysis for deal: ${deal_id}`);
 
     // 1. Aggregate comprehensive context data from all 5 tables
     console.log('📊 Gathering comprehensive context data...');

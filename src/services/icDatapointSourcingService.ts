@@ -20,8 +20,7 @@ export const triggerICDatapointSourcing = async (dealId: string): Promise<ICData
   try {
     const { data, error } = await supabase.functions.invoke('ic-datapoint-sourcing', {
       body: { 
-        deal_id: dealId,
-        manual_trigger: true
+        deal_id: dealId
       }
     });
 
@@ -44,8 +43,7 @@ export const triggerICDatapointSourcingPublic = async (dealId: string): Promise<
   try {
     const { data, error } = await supabase.functions.invoke('ic-datapoint-sourcing-public', {
       body: { 
-        deal_id: dealId,
-        manual_trigger: true
+        deal_id: dealId
       }
     });
 
