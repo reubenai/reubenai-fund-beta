@@ -837,48 +837,43 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 History ({versionState.versions.length})
               </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportWord}
-                disabled={isExportingWord || !hasContent}
-                className="flex items-center gap-2"
-              >
-                {isExportingWord ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <FileType className="w-4 h-4" />
-                )}
-                Export to Word
-              </Button>
-              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="outline" 
                     size="sm"
-                    disabled={true}
-                    className="gap-2"
+                    disabled={!hasContent}
+                    className="flex items-center gap-2"
                   >
-                    <MoreHorizontal className="w-4 h-4" />
-                    Quick Actions
-                    <Badge variant="secondary" className="ml-2 text-xs">Soon</Badge>
+                    <Download className="w-4 h-4" />
+                    Export
+                    <ChevronDown className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuLabel>Quick Actions</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem disabled>
-                    <Download className="w-4 h-4 mr-2" />
-                    Export PDF
+                  <DropdownMenuItem 
+                    onClick={handleExportPDF}
+                    disabled={isExporting || !hasContent}
+                    className="flex items-center gap-2"
+                  >
+                    {isExporting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <FileText className="w-4 h-4" />
+                    )}
+                    Export as PDF
                   </DropdownMenuItem>
-                  <DropdownMenuItem disabled>
-                    <Mail className="w-4 h-4 mr-2" />
-                    Email Memo
-                  </DropdownMenuItem>
-                  <DropdownMenuItem disabled>
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Add to IC Meeting
+                  <DropdownMenuItem 
+                    onClick={handleExportWord}
+                    disabled={isExportingWord || !hasContent}
+                    className="flex items-center gap-2"
+                  >
+                    {isExportingWord ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <FileType className="w-4 h-4" />
+                    )}
+                    Export as DOC
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
