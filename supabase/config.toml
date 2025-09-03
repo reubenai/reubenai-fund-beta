@@ -254,4 +254,7 @@ verify_jwt = false
 [functions.updated-scoring-engine-vc]
 verify_jwt = false
 
+[functions.ic-memo-drafter]
+verify_jwt = false
+
 
