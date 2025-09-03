@@ -415,7 +415,121 @@ serve(async (req) => {
 
     console.log(`✅ Investment Committee Memo successfully populated with ${Object.keys(icMemoContent).length} sections`);
 
-    // 6. Log activity with enhanced tracking
+    // 8. Copy content to IC Memo tables for display in UI
+    console.log('📋 Step 8: Copying content to IC Memo tables...');
+    
+    // Transform IC content to memo format using proper mapping
+    const memoContentMapping = {
+      'ic_executive_summary': 'executive_summary',
+      'ic_company_overview': 'company_overview', 
+      'ic_market_opportunity': 'market_opportunity',
+      'ic_product_service': 'product_service',
+      'ic_business_model': 'business_model',
+      'ic_competitive_landscape': 'competitive_landscape',
+      'ic_financial_analysis': 'financial_analysis',
+      'ic_management_team': 'management_team',
+      'ic_risks_mitigants': 'risks_mitigants',
+      'ic_exit_strategy': 'exit_strategy',
+      'ic_investment_terms': 'investment_terms',
+      'ic_investment_recommendation': 'investment_recommendation'
+    };
+
+    // Build memo content JSON structure
+    const memoContent = {};
+    Object.entries(icMemoContent).forEach(([key, value]) => {
+      const memoKey = memoContentMapping[key];
+      if (memoKey) {
+        memoContent[memoKey] = value;
+      }
+    });
+
+    console.log(`📝 Transformed ${Object.keys(memoContent).length} sections for memo display`);
+
+    // Check if ic_memo record exists for this deal
+    const existingMemo = await supabaseClient
+      .from('ic_memos')
+      .select('id, version')
+      .eq('deal_id', deal_id)
+      .maybeSingle();
+
+    const memoData = {
+      deal_id: deal_id,
+      fund_id: fundId,
+      title: `IC Memo - ${dealData.company_name}`,
+      status: 'draft',
+      memo_content: memoContent,
+      executive_summary: icMemoContent.ic_executive_summary || null,
+      investment_recommendation: icMemoContent.ic_investment_recommendation || null,
+      rag_status: dealData.rag_status || 'GREEN',
+      overall_score: dealData.overall_score || null,
+      content_quality_score: contentQualityScore,
+      content_word_count: totalWordCount,
+      data_richness_score: Math.min(100, Object.keys(memoContent).length * 8),
+      generation_metadata: {
+        model_used: 'gpt-4o-mini',
+        generated_at: new Date().toISOString(),
+        sections_generated: Object.keys(memoContent).length,
+        word_count: totalWordCount,
+        ai_powered: true
+      },
+      workflow_state: 'generated',
+      created_by: '00000000-0000-0000-0000-000000000000' // System user
+    };
+
+    let memoResult;
+    if (existingMemo.data) {
+      console.log(`🔄 Updating existing IC memo record`);
+      memoResult = await supabaseClient
+        .from('ic_memos')
+        .update({
+          ...memoData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingMemo.data.id)
+        .select()
+        .single();
+    } else {
+      console.log('🆕 Creating new IC memo record');
+      memoResult = await supabaseClient
+        .from('ic_memos')
+        .insert({
+          ...memoData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+    }
+
+    if (memoResult.error) {
+      console.error('Failed to create/update IC memo:', memoResult.error);
+    } else {
+      console.log(`✅ IC memo record ${existingMemo.data ? 'updated' : 'created'} successfully`);
+      
+      // Create version entry in ic_memo_versions
+      const nextVersion = (existingMemo.data?.version || 0) + 1;
+      
+      const versionResult = await supabaseClient
+        .from('ic_memo_versions')
+        .insert({
+          deal_id: deal_id,
+          fund_id: fundId,
+          version: nextVersion,
+          content: memoContent,
+          description: `AI-generated memo v${nextVersion} using GPT-4o-mini`,
+          created_by: '00000000-0000-0000-0000-000000000000',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (versionResult.error) {
+        console.error('Failed to create memo version:', versionResult.error);
+      } else {
+        console.log(`✅ Created memo version ${nextVersion} successfully`);
+      }
+    }
+
+    // 9. Log activity with enhanced tracking
     await supabaseClient.from('activity_events').insert({
       user_id: '00000000-0000-0000-0000-000000000000',
       fund_id: fundId,
