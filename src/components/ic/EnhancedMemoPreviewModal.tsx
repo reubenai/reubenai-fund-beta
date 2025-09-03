@@ -403,8 +403,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
             });
           }
           
-          // Refresh the memo to show updated content
-          await loadMemo(false);
+          // Don't reload from database - content is already updated in memory
         } else {
           throw new Error('No sections array found in memo data structure');
         }
