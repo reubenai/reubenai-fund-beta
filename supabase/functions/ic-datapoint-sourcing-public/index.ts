@@ -318,32 +318,89 @@ serve(async (req) => {
     
     console.log('📝 Content strategy: creation (creating new IC memo content)');
 
-    // 4. Check if deal_analysisresult_vc record exists
+    // 4. Enhanced Investment Committee Memo Population Step
+    console.log('📋 Step 4: Populating Investment Committee Memo sections...');
+    
+    // Define comprehensive IC memo section mapping
+    const icMemoMapping = {
+      ic_company_overview: 'Company Overview',
+      ic_executive_summary: 'Executive Summary', 
+      ic_market_opportunity: 'Market Opportunity',
+      ic_product_service: 'Product & Service Analysis',
+      ic_business_model: 'Business Model Assessment',
+      ic_competitive_landscape: 'Competitive Landscape',
+      ic_financial_analysis: 'Financial Analysis',
+      ic_management_team: 'Management Team Evaluation',
+      ic_risks_mitigants: 'Risks & Mitigants',
+      ic_exit_strategy: 'Exit Strategy',
+      ic_investment_terms: 'Investment Terms',
+      ic_investment_recommendation: 'Investment Recommendation'
+    };
+
+    // Validate all required sections are present
+    const missingSections = Object.keys(icMemoMapping).filter(section => !icMemoContent[section]);
+    if (missingSections.length > 0) {
+      console.warn(`⚠️ Missing IC memo sections: ${missingSections.join(', ')}`);
+      
+      // Generate fallback content for missing sections
+      for (const section of missingSections) {
+        console.log(`🔄 Generating fallback content for: ${icMemoMapping[section]}`);
+        icMemoContent[section] = generateFallbackContent(section, contextData);
+      }
+    }
+
+    // Calculate content quality metrics
+    const totalWordCount = Object.values(icMemoContent).join(' ').split(/\s+/).filter(w => w.length > 0).length;
+    const avgSectionLength = totalWordCount / Object.keys(icMemoContent).length;
+    const contentQualityScore = Math.min(100, Math.max(0, Math.round((avgSectionLength / 150) * 100))); // Target ~150 words per section
+
+    console.log(`📊 IC Memo Quality Metrics:
+    - Sections Generated: ${Object.keys(icMemoContent).length}/${Object.keys(icMemoMapping).length}
+    - Total Word Count: ${totalWordCount}
+    - Average Section Length: ${Math.round(avgSectionLength)} words
+    - Content Quality Score: ${contentQualityScore}%`);
+
+    // 5. Check if deal_analysisresult_vc record exists
     const existingResult = await supabaseClient
       .from('deal_analysisresult_vc')
-      .select('id')
+      .select('id, created_at')
       .eq('deal_id', deal_id)
       .maybeSingle();
 
-    // 5. Create or update deal_analysisresult_vc record
+    // 6. Create comprehensive result data with enhanced metadata
     const resultData = {
       deal_id: deal_id,
       fund_id: fundId,
       organization_id: fundData?.organization_id,
+      // Map all IC memo sections
       ...icMemoContent,
+      // Enhanced metadata
       processing_status: 'processed',
+      analyzed_at: new Date().toISOString(),
+      confidence_score: Math.round((contentQualityScore + (contextData.dataCompleteness || 50)) / 2),
+      model_executions: {
+        ic_memo_generation: {
+          model: 'gpt-4o-mini',
+          timestamp: new Date().toISOString(),
+          sections_generated: Object.keys(icMemoContent).length,
+          total_word_count: totalWordCount,
+          quality_score: contentQualityScore,
+          data_sources_used: ['deals', 'funds', 'documents', 'investment_strategies', 'perplexity_vc']
+        }
+      },
       updated_at: new Date().toISOString()
     };
 
+    // 7. Populate Investment Committee Memo in database
     let updateResult;
     if (existingResult.data) {
-      // Update existing record
+      console.log(`🔄 Updating existing IC memo record (created: ${existingResult.data.created_at})`);
       updateResult = await supabaseClient
         .from('deal_analysisresult_vc')
         .update(resultData)
         .eq('id', existingResult.data.id);
     } else {
-      // Create new record
+      console.log('🆕 Creating new IC memo record');
       updateResult = await supabaseClient
         .from('deal_analysisresult_vc')
         .insert({
@@ -353,8 +410,10 @@ serve(async (req) => {
     }
 
     if (updateResult.error) {
-      throw new Error(`Failed to update deal_analysisresult_vc: ${updateResult.error.message}`);
+      throw new Error(`Failed to populate Investment Committee Memo: ${updateResult.error.message}`);
     }
+
+    console.log(`✅ Investment Committee Memo successfully populated with ${Object.keys(icMemoContent).length} sections`);
 
     // 6. Log activity with enhanced tracking
     await supabaseClient.from('activity_events').insert({
