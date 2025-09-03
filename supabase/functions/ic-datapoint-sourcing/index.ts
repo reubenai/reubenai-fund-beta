@@ -304,12 +304,26 @@ serve(async (req) => {
 
     console.log(`✅ IC Analysis completed for deal: ${deal_id}`);
 
+    // Calculate word count from generated content
+    const wordCount = Object.values(icMemoContent)
+      .join('\n')
+      .split(/\s+/)
+      .filter(word => word.length > 0)
+      .length;
+
+    const sectionsGenerated = Object.keys(icMemoContent).length;
+
     return new Response(JSON.stringify({
       success: true,
-      message: 'IC analysis completed successfully',
       deal_id: deal_id,
-      sections_updated: Object.keys(icMemoContent).length,
-      processing_status: 'processed'
+      sections_generated: sectionsGenerated,
+      memo_generation: {
+        success: true,
+        sections_generated: sectionsGenerated,
+        word_count: wordCount,
+        error: null
+      },
+      message: 'IC analysis completed successfully'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -319,6 +333,15 @@ serve(async (req) => {
     
     return new Response(JSON.stringify({
       success: false,
+      deal_id: deal_id || 'unknown',
+      sections_generated: 0,
+      memo_generation: {
+        success: false,
+        sections_generated: 0,
+        word_count: 0,
+        error: error.message
+      },
+      message: 'IC analysis failed',
       error: error.message
     }), {
       status: 500,
