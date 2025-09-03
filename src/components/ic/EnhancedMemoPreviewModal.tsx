@@ -720,21 +720,23 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                  )}
                  
                     {/* IC Review Workflow */}
-                    {memoState.existsInDb && (
-                      <ICReviewWorkflow
-                        memoId={memoState.id || ''}
-                        dealName={deal.company_name}
-                        currentStatus={memoState.status || 'draft'}
-                        onStatusChange={(status) => {
-                          setLocalMemoState(prev => ({ ...prev, status }));
-                        }}
-                        onViewMemo={() => setShowPreview(true)}
-                        onSubmissionSuccess={onClose}
-                      />
-                    )}
+                     {memoState.existsInDb && (
+                       <ICReviewWorkflow
+                         memoId={memoState.id || ''}
+                         dealName={deal.company_name}
+                         currentStatus={memoState.workflow_state || 'draft'}
+                         onStatusChange={(workflow_state) => {
+                           setLocalMemoState(prev => ({ ...prev, workflow_state }));
+                           // Also update the main memo state
+                           loadMemo();
+                         }}
+                         onViewMemo={() => setShowPreview(true)}
+                         onSubmissionSuccess={onClose}
+                       />
+                     )}
                   
                   {/* Memo Publishing Controls */}
-                  {memoState.existsInDb && memoState.status === 'approved' && (
+                  {memoState.existsInDb && memoState.workflow_state === 'approved' && (
                   <MemoPublishingControls
                       memoId={memoState.id || ''}
                       currentStatus={memoState.status || 'draft'}

@@ -47,6 +47,7 @@ interface MemoState {
   lastGenerated?: string;
   id?: string;
   status?: string;
+  workflow_state?: string;
   isPublished?: boolean;
 }
 
@@ -137,7 +138,7 @@ export function useMemoCache(dealId: string, fundId: string) {
 
       const { data: existingMemos } = await supabase
         .from('ic_memos')
-        .select('id, status, is_published, memo_content, updated_at')
+        .select('id, status, workflow_state, is_published, memo_content, updated_at')
         .eq('deal_id', dealId)
         .eq('fund_id', fundId)
         .order('updated_at', { ascending: false })
@@ -170,6 +171,7 @@ export function useMemoCache(dealId: string, fundId: string) {
           lastGenerated: existingMemo.updated_at,
           id: existingMemo.id,
           status: existingMemo.status,
+          workflow_state: existingMemo.workflow_state,
           isPublished: existingMemo.is_published,
           isLoading: false
         }));
@@ -262,6 +264,7 @@ export function useMemoCache(dealId: string, fundId: string) {
         canCancel: false,
         id: data?.memo?.id,
         status: data?.memo?.status || 'draft',
+        workflow_state: data?.memo?.workflow_state || 'draft',
         isPublished: !!data?.memo?.is_published,
       }));
 

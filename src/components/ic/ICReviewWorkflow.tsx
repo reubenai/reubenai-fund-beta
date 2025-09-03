@@ -142,7 +142,7 @@ export const ICReviewWorkflow: React.FC<ReviewWorkflowProps> = ({
     switch (status) {
       case 'draft':
         return <Badge variant="outline" className="gap-1"><Clock className="w-3 h-3" />Draft</Badge>;
-      case 'review':
+      case 'submitted':
         return <Badge className="bg-amber-50 text-amber-700 border-amber-200 gap-1"><Eye className="w-3 h-3" />Under Review</Badge>;
       case 'approved':
         return <Badge className="bg-green-50 text-green-700 border-green-200 gap-1"><CheckCircle className="w-3 h-3" />Approved</Badge>;
