@@ -792,20 +792,6 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleCaptureData}
-                    disabled={isCapturingData || memoState.isGenerating}
-                  >
-                    {isCapturingData ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Brain className="w-4 h-4 mr-2" />
-                    )}
-                    Capture Data
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
                     onClick={handleSaveMemo}
                     disabled={isSaving || memoState.isGenerating}
                   >
