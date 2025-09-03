@@ -16,7 +16,11 @@ export async function exportMemoToWord({
   sections,
   fileName
 }: ExportMemoToWordParams): Promise<void> {
+  console.log('📄 exportMemoToWord called with:', { companyName, fileName, sectionsCount: sections.length });
+  console.log('📋 Sections data:', sections);
+  
   try {
+    console.log('🔧 Creating Word document...');
     // Create document with professional formatting
     const doc = new Document({
       sections: [{
@@ -109,22 +113,35 @@ export async function exportMemoToWord({
       }],
     });
 
+    console.log('📦 Generating Word document buffer...');
     // Generate and download the document
     const buffer = await Packer.toBuffer(doc);
+    console.log('✅ Buffer generated, size:', buffer.byteLength, 'bytes');
+    
     const blob = new Blob([buffer], { 
       type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
     });
+    console.log('🗂️ Blob created, size:', blob.size, 'bytes');
     
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName;
+    console.log('⬇️ Triggering download for file:', fileName);
+    
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    
+    console.log('✅ Word export completed successfully');
   } catch (error) {
-    console.error('Word export failed:', error);
-    throw new Error('Failed to export memo to Word document');
+    console.error('❌ Word export failed:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    });
+    throw new Error(`Failed to export memo to Word document: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

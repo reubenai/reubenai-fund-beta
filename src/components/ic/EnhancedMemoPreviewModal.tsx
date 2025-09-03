@@ -538,7 +538,11 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   };
 
   const handleExportWord = async () => {
+    console.log('🔍 Starting Word export...');
+    console.log('📊 hasContent:', hasContent);
+    
     if (!hasContent) {
+      console.log('❌ No content available for export');
       showToast({
         title: 'No memo content yet',
         description: 'Generate the memo first to export.',
@@ -550,25 +554,52 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
       setIsExportingWord(true);
       
       // Transform content to sections format for Word export
-      const sections = getSections().filter(section => section.content?.trim());
+      const allSections = getSections();
+      console.log('📋 All sections from getSections():', allSections);
+      console.log('📝 Total sections found:', allSections.length);
       
-      await exportMemoToWord({
+      const sections = allSections.filter(section => section.content?.trim());
+      console.log('✅ Filtered sections with content:', sections);
+      console.log('📄 Sections to export:', sections.length);
+      
+      if (sections.length === 0) {
+        console.log('❌ No sections with content found after filtering');
+        showToast({
+          title: 'No exportable content',
+          description: 'No sections contain content to export.',
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const exportParams = {
         companyName: deal.company_name,
         sections,
         fileName: `IC_Memo_${deal.company_name.replace(/\s+/g, '_')}.docx`
-      });
+      };
+      
+      console.log('📤 Calling exportMemoToWord with params:', exportParams);
+      
+      await exportMemoToWord(exportParams);
 
+      console.log('✅ Word export completed successfully');
       showToast({
         title: "Word Export Complete",
         description: `Successfully exported memo for ${deal.company_name}`,
         variant: "default"
       });
     } catch (error) {
-      console.error('Word export failed:', error);
-      showMemoErrorToast(
-        'Failed to export to Word. Please try again.',
-        () => handleExportWord()
-      );
+      console.error('❌ Word export failed:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
+      showToast({
+        title: 'Export Failed',
+        description: `Failed to export Word document: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
     } finally {
       setIsExportingWord(false);
     }
