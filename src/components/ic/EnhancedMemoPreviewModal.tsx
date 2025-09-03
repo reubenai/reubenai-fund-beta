@@ -36,7 +36,8 @@ import {
   Mail,
   Calendar,
   Plus,
-  Clock
+  Clock,
+  FileType
 } from 'lucide-react';
 import { useMemoCache } from '@/hooks/useMemoCache';
 import { useEnhancedToast } from '@/hooks/useEnhancedToast';
@@ -50,6 +51,8 @@ import { MemoPublishingControls } from './MemoPublishingControls';
 import { MemoWorkflowControls } from './MemoWorkflowControls';
 import { supabase } from '@/integrations/supabase/client';
 import { exportMemoToPDF, openMemoPrintPreview } from '@/utils/pdfClient';
+import { exportMemoToWord } from '@/utils/wordClient';
+import { useUserRole } from '@/hooks/useUserRole';
 import { usePermissions } from '@/hooks/usePermissions';
 import { MemoPreviewRenderer } from './MemoPreviewRenderer';
 import { ICReviewWorkflow } from './ICReviewWorkflow';
@@ -143,6 +146,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   const [isExporting, setIsExporting] = useState(false); // Server (Pro PDF)
   const [isClientDownloading, setIsClientDownloading] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
+  const [isExportingWord, setIsExportingWord] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('executive_summary');
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [showDataQuality, setShowDataQuality] = useState(false);
@@ -164,6 +168,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   } = useEnhancedToast();
   const { validateMemoContent } = useContentValidation();
   const { canEditICMemos, canSubmitForReview, canReviewMemos } = usePermissions();
+  const { isSuperAdmin } = useUserRole();
 
   // Track changes to show unsaved confirmation
   useEffect(() => {
@@ -531,6 +536,43 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
       setIsClientDownloading(false);
     }
   };
+
+  const handleExportWord = async () => {
+    if (!hasContent) {
+      showToast({
+        title: 'No memo content yet',
+        description: 'Generate the memo first to export.',
+      });
+      return;
+    }
+    
+    try {
+      setIsExportingWord(true);
+      
+      // Transform content to sections format for Word export
+      const sections = getSections().filter(section => section.content?.trim());
+      
+      await exportMemoToWord({
+        companyName: deal.company_name,
+        sections,
+        fileName: `IC_Memo_${deal.company_name.replace(/\s+/g, '_')}.docx`
+      });
+
+      showToast({
+        title: "Word Export Complete",
+        description: `Successfully exported memo for ${deal.company_name}`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Word export failed:', error);
+      showMemoErrorToast(
+        'Failed to export to Word. Please try again.',
+        () => handleExportWord()
+      );
+    } finally {
+      setIsExportingWord(false);
+    }
+  };
   
   const handleExportPDF = async () => {
     if (!memoState.id && !hasContent) {
@@ -719,35 +761,6 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                   </Badge>
                  )}
                  
-                    {/* IC Review Workflow */}
-                     {memoState.existsInDb && (
-                       <ICReviewWorkflow
-                         memoId={memoState.id || ''}
-                         dealName={deal.company_name}
-                         currentStatus={memoState.workflow_state || 'draft'}
-                         onStatusChange={(workflow_state) => {
-                           setLocalMemoState(prev => ({ ...prev, workflow_state }));
-                           // Also update the main memo state
-                           loadMemo();
-                         }}
-                         onViewMemo={() => setShowPreview(true)}
-                         onSubmissionSuccess={onClose}
-                       />
-                     )}
-                  
-                  {/* Memo Publishing Controls */}
-                  {memoState.existsInDb && memoState.workflow_state === 'approved' && (
-                  <MemoPublishingControls
-                      memoId={memoState.id || ''}
-                      currentStatus={memoState.status || 'draft'}
-                      isPublished={memoState.isPublished || false}
-                      dealName={deal.company_name}
-                      onStatusUpdate={() => {
-                        loadMemo();
-                      }}
-                      onSubmissionSuccess={onClose}
-                    />
-                  )}
                </div>
              </div>
              
@@ -823,6 +836,23 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 <History className="h-4 w-4" />
                 History ({versionState.versions.length})
               </Button>
+
+              {isSuperAdmin && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportWord}
+                  disabled={isExportingWord || !hasContent}
+                  className="flex items-center gap-2"
+                >
+                  {isExportingWord ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <FileType className="w-4 h-4" />
+                  )}
+                  Export to Word
+                </Button>
+              )}
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
