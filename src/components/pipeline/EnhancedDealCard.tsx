@@ -20,7 +20,8 @@ import {
   ExternalLink,
   Star,
   Zap,
-  Database
+  Database,
+  FileText
 } from 'lucide-react';
 import { Deal as BaseDeal } from '@/hooks/usePipelineDeals';
 import { EnhancedDealAnalysis } from '@/types/enhanced-deal-analysis';
@@ -46,6 +47,8 @@ import { QueuePositionIndicator } from './QueuePositionIndicator';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useDealDataIntegration } from '@/hooks/useDealDataIntegration';
+import { triggerICDatapointSourcing } from '@/services/icDatapointSourcingService';
+import { useEnhancedToast } from '@/hooks/useEnhancedToast';
 
 interface EnhancedDealCardProps {
   deal: Deal;
@@ -91,6 +94,8 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
   const { selectedFund } = useFund();
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessingData, setIsProcessingData] = useState(false);
+  const [isICAnalyzing, setIsICAnalyzing] = useState(false);
+  const { showToast } = useEnhancedToast();
   
   const formatAmount = (amount?: number, currency = 'USD') => {
     return formatCurrency(amount, currency, { compact: true });
@@ -148,6 +153,29 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
       console.error('Failed to process deal data:', error);
     } finally {
       setIsProcessingData(false);
+    }
+  };
+
+  const handleICAnalysis = async () => {
+    setIsICAnalyzing(true);
+    try {
+      const result = await triggerICDatapointSourcing(deal.id);
+      showToast({
+        title: "IC Content Generated Successfully",
+        description: `Generated ${result.sections_generated} sections for ${deal.company_name || 'the deal'}`,
+        variant: "default",
+        duration: 6000
+      });
+    } catch (error) {
+      console.error('Failed to generate IC content:', error);
+      showToast({
+        title: "IC Content Generation Failed",
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        variant: "destructive",
+        duration: 6000
+      });
+    } finally {
+      setIsICAnalyzing(false);
     }
   };
 
@@ -234,13 +262,22 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
                       </>
                     )}
                     {isSuperAdmin && (
-                      <DropdownMenuItem 
-                        onClick={handleProcessDealData}
-                        disabled={isProcessingData}
-                      >
-                        <Database className="w-3 h-3 mr-2" />
-                        Process Deal Data
-                      </DropdownMenuItem>
+                      <>
+                        <DropdownMenuItem 
+                          onClick={handleICAnalysis}
+                          disabled={isICAnalyzing}
+                        >
+                          <FileText className="w-3 h-3 mr-2" />
+                          {isICAnalyzing ? 'Generating IC Content...' : 'Generate IC Content'}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={handleProcessDealData}
+                          disabled={isProcessingData}
+                        >
+                          <Database className="w-3 h-3 mr-2" />
+                          Process Deal Data
+                        </DropdownMenuItem>
+                      </>
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
