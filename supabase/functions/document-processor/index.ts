@@ -922,6 +922,59 @@ serve(async (req) => {
 
     console.log(`Document ${documentId} analysis completed successfully`);
 
+    // Phase 5: Trigger VC Scoring Engine (for VC funds only)
+    if (document.deal_id) {
+      try {
+        // Check if this is a VC fund
+        const { data: fundData, error: fundError } = await supabaseClient
+          .from('funds')
+          .select('fund_type')
+          .eq('id', document.fund_id)
+          .single();
+
+        if (fundError) {
+          console.warn('Failed to fetch fund data for VC scoring check:', fundError);
+        } else if (fundData?.fund_type === 'venture_capital' || fundData?.fund_type === 'vc') {
+          console.log(`Triggering VC scoring engine for deal: ${document.deal_id}`);
+          
+          const vcScoringResponse = await supabaseClient.functions.invoke('updated-scoring-engine-vc', {
+            body: { deal_id: document.deal_id }
+          });
+
+          if (vcScoringResponse.error) {
+            console.warn('VC scoring engine failed:', vcScoringResponse.error);
+          } else {
+            console.log('✅ VC scoring engine triggered successfully');
+            
+            // Log VC scoring trigger activity
+            await supabaseClient.from('activity_events').insert({
+              fund_id: document.fund_id,
+              user_id: (await supabaseClient.auth.getUser()).data.user?.id || '',
+              activity_type: 'vc_scoring_triggered',
+              title: 'VC Scoring Triggered from Document Processing',
+              description: `VC scoring analysis triggered for ${document.name} processing`,
+              deal_id: document.deal_id,
+              resource_type: 'document',
+              resource_id: document.id,
+              context_data: {
+                document_name: document.name,
+                trigger_source: 'document_processor',
+                vc_scoring_response: vcScoringResponse.data
+              },
+              priority: 'high',
+              tags: ['vc-scoring', 'document', 'analysis'],
+              is_system_event: true
+            });
+          }
+        } else {
+          console.log('Skipping VC scoring - not a VC fund');
+        }
+      } catch (vcScoringError) {
+        console.warn('Failed to trigger VC scoring engine:', vcScoringError);
+        // Don't fail the document processing if VC scoring fails
+      }
+    }
+
     // Trigger ReubenOrchestrator for deal re-analysis
     if (document.deal_id) {
       try {
