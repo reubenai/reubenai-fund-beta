@@ -778,9 +778,9 @@ OUTPUT FORMAT (JSON only):
         console.log('✅ Deals table updated successfully with overall score');
       }
 
-      // 📝 IC memo generation is now handled by pipeline stage changes
-      // When a deal moves to "Investment Committee" stage, memo generation is triggered automatically
-      console.log('📝 IC memo generation will be triggered when deal moves to Investment Committee stage');
+      // 📝 IC memo generation is now manual-only via button trigger
+      // Automatic generation when deals move to Investment Committee stage has been disabled
+      console.log('📝 IC memo generation is available via manual button trigger only');
 
       // 10. Return success response
       return {
