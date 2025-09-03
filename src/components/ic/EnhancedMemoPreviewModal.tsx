@@ -675,7 +675,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   const canEditMemo = () => {
     if (!canEditICMemos) return false;
     const status = memoState.status || 'draft';
-    return !['review', 'approved', 'published'].includes(status);
+    return !['review', 'submitted', 'approved', 'published'].includes(status);
   };
 
   return (
