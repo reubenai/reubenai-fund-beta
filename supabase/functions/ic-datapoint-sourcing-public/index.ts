@@ -434,16 +434,21 @@ serve(async (req) => {
       'ic_investment_recommendation': 'investment_recommendation'
     };
 
-    // Build memo content JSON structure - DEBUG VERSION
+    // Build memo content JSON structure with proper mapping
     const memoContent = {};
     console.log(`🐛 DEBUG - icMemoContent keys:`, Object.keys(icMemoContent));
-    console.log(`🐛 DEBUG - icMemoContent sample:`, Object.keys(icMemoContent).slice(0, 3).map(k => `${k}: "${icMemoContent[k]?.slice(0, 50)}..."`));
+    console.log(`🐛 DEBUG - icMemoContent has content:`, Object.keys(icMemoContent).map(k => `${k}: ${icMemoContent[k]?.length || 0} chars`));
     
+    // Ensure we're working with the correct data structure
     Object.entries(icMemoContent).forEach(([key, value]) => {
       const memoKey = memoContentMapping[key];
-      console.log(`🐛 DEBUG - Mapping ${key} → ${memoKey}, value length: ${value?.length || 0}`);
-      if (memoKey && value) {
+      console.log(`🐛 DEBUG - Processing ${key} → ${memoKey}, has value: ${!!value}, length: ${value?.length || 0}`);
+      
+      if (memoKey && value && typeof value === 'string' && value.trim().length > 0) {
         memoContent[memoKey] = value;
+        console.log(`✅ Mapped ${key} → ${memoKey} successfully`);
+      } else {
+        console.log(`❌ Skipped ${key} → ${memoKey}: ${!memoKey ? 'no mapping' : !value ? 'no value' : 'empty content'}`);
       }
     });
 

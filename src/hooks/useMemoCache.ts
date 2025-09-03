@@ -153,29 +153,112 @@ export function useMemoCache(dealId: string, fundId: string) {
         // Extract content correctly - check for nested sections or use direct content
         const content = memoContent?.sections || memoContent;
         
-        const { needsRefresh, dealLastUpdated, analysisVersion } = await checkAnalysisFreshness(dealId);
+        // Check if content is actually populated (not empty objects)
+        const hasValidContent = content && typeof content === 'object' && 
+          Object.keys(content).some(key => content[key] && typeof content[key] === 'string' && content[key].trim().length > 0);
         
-        // Cache the loaded memo
-        cacheRef.current.set(cacheKey, {
-          content,
-          lastGenerated: existingMemo.updated_at,
-          dealLastUpdated,
-          analysisVersion
+        if (hasValidContent) {
+          const { needsRefresh, dealLastUpdated, analysisVersion } = await checkAnalysisFreshness(dealId);
+          
+          // Cache the loaded memo
+          cacheRef.current.set(cacheKey, {
+            content,
+            lastGenerated: existingMemo.updated_at,
+            dealLastUpdated,
+            analysisVersion
+          });
+
+          setMemoState(prev => ({
+            ...prev,
+            content,
+            existsInDb: true,
+            needsRefresh,
+            lastGenerated: existingMemo.updated_at,
+            id: existingMemo.id,
+            status: existingMemo.status,
+            workflow_state: existingMemo.workflow_state,
+            isPublished: existingMemo.is_published,
+            isLoading: false
+          }));
+          return;
+        } else {
+          console.log('⚠️ ic_memos content is empty, trying fallback to deal_analysisresult_vc');
+        }
+      }
+
+      // Fallback: Try to load content directly from deal_analysisresult_vc if ic_memos is empty
+      console.log('🔄 Attempting fallback: Reading IC content from deal_analysisresult_vc');
+      const { data: analysisResult } = await supabase
+        .from('deal_analysisresult_vc')
+        .select(`
+          ic_executive_summary,
+          ic_company_overview,
+          ic_market_opportunity,
+          ic_product_service,
+          ic_business_model,
+          ic_competitive_landscape,
+          ic_financial_analysis,
+          ic_management_team,
+          ic_risks_mitigants,
+          ic_exit_strategy,
+          ic_investment_terms,
+          ic_investment_recommendation
+        `)
+        .eq('deal_id', dealId)
+        .maybeSingle();
+
+      if (analysisResult) {
+        console.log('✅ Found IC content in deal_analysisresult_vc, converting to memo format');
+        
+        // Map IC columns to memo content format
+        const fallbackContent = {
+          executive_summary: analysisResult.ic_executive_summary,
+          company_overview: analysisResult.ic_company_overview,
+          market_opportunity: analysisResult.ic_market_opportunity,
+          product_service: analysisResult.ic_product_service,
+          business_model: analysisResult.ic_business_model,
+          competitive_landscape: analysisResult.ic_competitive_landscape,
+          financial_analysis: analysisResult.ic_financial_analysis,
+          management_team: analysisResult.ic_management_team,
+          risks_mitigants: analysisResult.ic_risks_mitigants,
+          exit_strategy: analysisResult.ic_exit_strategy,
+          investment_terms: analysisResult.ic_investment_terms,
+          investment_recommendation: analysisResult.ic_investment_recommendation
+        };
+
+        // Filter out empty sections
+        const validContent = {};
+        Object.entries(fallbackContent).forEach(([key, value]) => {
+          if (value && typeof value === 'string' && value.trim().length > 0) {
+            validContent[key] = value;
+          }
         });
 
-        setMemoState(prev => ({
-          ...prev,
-          content,
-          existsInDb: true,
-          needsRefresh,
-          lastGenerated: existingMemo.updated_at,
-          id: existingMemo.id,
-          status: existingMemo.status,
-          workflow_state: existingMemo.workflow_state,
-          isPublished: existingMemo.is_published,
-          isLoading: false
-        }));
-        return;
+        if (Object.keys(validContent).length > 0) {
+          const { needsRefresh, dealLastUpdated, analysisVersion } = await checkAnalysisFreshness(dealId);
+          
+          // Cache the fallback content
+          cacheRef.current.set(cacheKey, {
+            content: validContent,
+            lastGenerated: new Date().toISOString(),
+            dealLastUpdated,
+            analysisVersion
+          });
+
+          setMemoState(prev => ({
+            ...prev,
+            content: validContent,
+            existsInDb: true, // We found content, just in a different table
+            needsRefresh,
+            lastGenerated: new Date().toISOString(),
+            id: existingMemo?.id,
+            status: existingMemo?.status || 'draft',
+            workflow_state: existingMemo?.workflow_state || 'draft',
+            isPublished: existingMemo?.is_published || false,
+            isLoading: false
+          }));
+          return;
+        }
       }
 
       // If no existing memo and auto-generate is requested
@@ -183,6 +266,7 @@ export function useMemoCache(dealId: string, fundId: string) {
         await generateMemo();
       } else {
         // No memo exists, set state to indicate this
+        console.log('❌ No IC content found in either ic_memos or deal_analysisresult_vc');
         setMemoState(prev => ({
           ...prev,
           content: {},
