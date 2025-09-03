@@ -13,44 +13,81 @@ class ICMemoService {
   private statusCallbacks = new Map<string, ((status: ICMemoGenerationStatus) => void)[]>();
 
   /**
-   * Trigger IC memo generation when a deal moves to Investment Committee stage
+   * Trigger IC memo generation by fetching existing sections from deal_analysisresult_vc
    */
   async triggerMemoGeneration(dealId: string, fundId: string) {
-    console.log(`🎯 [IC Memo Service] Triggering memo generation for deal: ${dealId}`);
+    console.log(`🎯 [IC Memo Service] Fetching IC memo sections for deal: ${dealId}`);
     
     try {
       // Update status to generating
       this.updateStatus(dealId, { dealId, status: 'generating', progress: 0 });
 
       // Show user notification
-      toast.info('IC Memo Generation Started', {
-        description: 'Generating investment committee memo in the background...'
+      toast.info('Loading IC Memo', {
+        description: 'Fetching investment committee memo sections...'
       });
 
-      // Call the IC memo drafter edge function
-      const { data, error } = await supabase.functions.invoke('ic-memo-drafter', {
-        body: {
-          dealId,
-          fundId,
-          forceRefresh: true
-        }
-      });
+      // Query deal_analysisresult_vc for IC sections
+      const { data: analysisResult, error } = await supabase
+        .from('deal_analysisresult_vc')
+        .select(`
+          ic_executive_summary,
+          ic_company_overview,
+          ic_market_opportunity,
+          ic_product_service,
+          ic_business_model,
+          ic_competitive_landscape,
+          ic_financial_analysis,
+          ic_management_team,
+          ic_risks_mitigants,
+          ic_exit_strategy,
+          ic_investment_terms,
+          ic_investment_recommendation
+        `)
+        .eq('deal_id', dealId)
+        .single();
 
       if (error) throw error;
+
+      if (!analysisResult) {
+        throw new Error('No IC analysis found for this deal');
+      }
+
+      // Map database fields to memo sections array (expected format)
+      const sections = [
+        { title: 'Executive Summary', content: analysisResult.ic_executive_summary || 'No executive summary available' },
+        { title: 'Company Overview', content: analysisResult.ic_company_overview || 'No company overview available' },
+        { title: 'Market Opportunity', content: analysisResult.ic_market_opportunity || 'No market opportunity analysis available' },
+        { title: 'Product/Service Analysis', content: analysisResult.ic_product_service || 'No product/service analysis available' },
+        { title: 'Business Model & Strategy', content: analysisResult.ic_business_model || 'No business model analysis available' },
+        { title: 'Competitive Landscape', content: analysisResult.ic_competitive_landscape || 'No competitive analysis available' },
+        { title: 'Financial Analysis', content: analysisResult.ic_financial_analysis || 'No financial analysis available' },
+        { title: 'Management Team', content: analysisResult.ic_management_team || 'No management team analysis available' },
+        { title: 'Risk Assessment & Mitigants', content: analysisResult.ic_risks_mitigants || 'No risk analysis available' },
+        { title: 'Exit Strategy & Value Realization', content: analysisResult.ic_exit_strategy || 'No exit strategy analysis available' },
+        { title: 'Investment Terms & Structure', content: analysisResult.ic_investment_terms || 'No investment terms available' },
+        { title: 'Investment Recommendation', content: analysisResult.ic_investment_recommendation || 'No investment recommendation available' }
+      ];
 
       // Update status to completed
       this.updateStatus(dealId, { dealId, status: 'completed', progress: 100 });
 
       // Show success notification
-      toast.success('IC Memo Generated', {
-        description: 'Investment committee memo has been generated successfully!'
+      toast.success('IC Memo Loaded', {
+        description: 'Investment committee memo sections have been loaded successfully!'
       });
 
-      console.log(`✅ [IC Memo Service] Memo generation completed for deal: ${dealId}`);
-      return data;
+      console.log(`✅ [IC Memo Service] Memo sections loaded for deal: ${dealId}`);
+      
+      // Return data in expected format with sections array
+      return {
+        success: true,
+        message: 'IC memo sections loaded successfully',
+        memo: { sections }
+      };
       
     } catch (error) {
-      console.error(`❌ [IC Memo Service] Memo generation failed for deal: ${dealId}`, error);
+      console.error(`❌ [IC Memo Service] Failed to load memo sections for deal: ${dealId}`, error);
       
       // Update status to failed
       this.updateStatus(dealId, { 
@@ -60,8 +97,8 @@ class ICMemoService {
       });
 
       // Show error notification
-      toast.error('IC Memo Generation Failed', {
-        description: 'Failed to generate investment committee memo. Please try again.'
+      toast.error('IC Memo Load Failed', {
+        description: 'Failed to load investment committee memo sections. Please try again.'
       });
 
       throw error;

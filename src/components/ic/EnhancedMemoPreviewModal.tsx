@@ -384,7 +384,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
         }
       } else {
         showMemoErrorToast(
-          result.error || 'Failed to capture memo data',
+          'Failed to capture memo data',
           () => handleCaptureData()
         );
       }
