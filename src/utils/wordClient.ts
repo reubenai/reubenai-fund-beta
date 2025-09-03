@@ -113,15 +113,10 @@ export async function exportMemoToWord({
       }],
     });
 
-    console.log('📦 Generating Word document buffer...');
+    console.log('📦 Generating Word document blob...');
     // Generate and download the document
-    const buffer = await Packer.toBuffer(doc);
-    console.log('✅ Buffer generated, size:', buffer.byteLength, 'bytes');
-    
-    const blob = new Blob([buffer], { 
-      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
-    });
-    console.log('🗂️ Blob created, size:', blob.size, 'bytes');
+    const blob = await Packer.toBlob(doc);
+    console.log('✅ Blob generated, size:', blob.size, 'bytes');
     
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
