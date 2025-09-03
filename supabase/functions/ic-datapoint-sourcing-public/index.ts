@@ -127,12 +127,14 @@ const prepareScores = (contextData: any): any[] => {
   return scores;
 };
 
-// Generate structured memo sections (from ic-memo-drafter)
+// Generate structured memo sections with AI-powered content
 const generateMemoSections = async (
   deal_data: any,
   features: any[],
   scores: any[],
-  context_chunks: any[]
+  context_chunks: any[],
+  contextData?: any,
+  openAIKey?: string
 ): Promise<ICMemoSection[]> => {
   console.log(`📑 [IC Memo] Generating structured sections...`);
   console.log(`🔍 [IC Memo] Debug data - Features count: ${features.length}, Scores count: ${scores.length}`);
@@ -140,40 +142,40 @@ const generateMemoSections = async (
   const sections: ICMemoSection[] = [];
   
   // Executive Summary
-  sections.push(await generateExecutiveSummary(deal_data, features, scores, context_chunks));
+  sections.push(await generateExecutiveSummary(deal_data, features, scores, context_chunks, contextData, openAIKey));
   
   // Company Overview
-  sections.push(await generateCompanyOverview(deal_data, features, scores, context_chunks));
+  sections.push(await generateCompanyOverview(deal_data, features, scores, context_chunks, contextData, openAIKey));
   
   // Market Opportunity
-  sections.push(await generateMarketOpportunity(deal_data, features, scores, context_chunks));
+  sections.push(await generateMarketOpportunity(deal_data, features, scores, context_chunks, contextData, openAIKey));
   
   // Product & Service
-  sections.push(await generateProductService(deal_data, features, scores, context_chunks));
+  sections.push(await generateProductService(deal_data, features, scores, context_chunks, contextData, openAIKey));
   
   // Business Model
-  sections.push(await generateBusinessModel(deal_data, features, scores, context_chunks));
+  sections.push(await generateBusinessModel(deal_data, features, scores, context_chunks, contextData, openAIKey));
   
   // Competitive Landscape
-  sections.push(await generateCompetitiveLandscape(deal_data, features, scores, context_chunks));
+  sections.push(await generateCompetitiveLandscape(deal_data, features, scores, context_chunks, contextData, openAIKey));
   
   // Financial Analysis
-  sections.push(await generateFinancialAnalysis(deal_data, features, scores, context_chunks));
+  sections.push(await generateFinancialAnalysis(deal_data, features, scores, context_chunks, contextData, openAIKey));
   
   // Management Team
-  sections.push(await generateTeamAnalysis(deal_data, features, scores, context_chunks));
+  sections.push(await generateTeamAnalysis(deal_data, features, scores, context_chunks, contextData, openAIKey));
   
   // Risks & Mitigants
-  sections.push(await generateRisksAndMitigants(deal_data, features, scores, context_chunks));
+  sections.push(await generateRisksAndMitigants(deal_data, features, scores, context_chunks, contextData, openAIKey));
   
   // Exit Strategy
-  sections.push(await generateExitStrategy(deal_data, features, scores, context_chunks));
+  sections.push(await generateExitStrategy(deal_data, features, scores, context_chunks, contextData, openAIKey));
   
   // Investment Terms
-  sections.push(await generateInvestmentTerms(deal_data, features, scores, context_chunks));
+  sections.push(await generateInvestmentTerms(deal_data, features, scores, context_chunks, contextData, openAIKey));
   
   // Investment Recommendation
-  sections.push(await generateInvestmentRecommendation(deal_data, features, scores, context_chunks));
+  sections.push(await generateInvestmentRecommendation(deal_data, features, scores, context_chunks, contextData, openAIKey));
   
   console.log(`📋 [IC Memo] Generated ${sections.length} structured sections`);
   
@@ -202,22 +204,33 @@ const compileMemo = (sections: ICMemoSection[], deal_data: any, scores: any[]): 
   };
 };
 
-// Individual section generators (simplified versions from ic-memo-drafter)
-const generateExecutiveSummary = async (deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> => {
-  const overall_score = scores.find(s => s.category === 'overall')?.raw_score || deal_data.overall_score || 50;
+// Individual section generators using AI-powered content generation
+const generateExecutiveSummary = async (deal_data: any, features: any[], scores: any[], context_chunks: any[], contextData?: any, openAIKey?: string): Promise<ICMemoSection> => {
+  let content = '';
   
-  const key_features = features
-    .slice(0, 3)
-    .map(f => `${f.feature_name}: ${JSON.stringify(f.feature_value.value || f.feature_value)}`)
-    .join('; ');
+  if (contextData && openAIKey) {
+    try {
+      content = await generateAIContent('ic_executive_summary', contextData, openAIKey);
+    } catch (error) {
+      console.error('AI generation failed for executive summary:', error);
+      // Fallback to enhanced template
+      const overall_score = scores.find(s => s.category === 'overall')?.raw_score || deal_data.overall_score || 50;
+      const key_features = features
+        .slice(0, 3)
+        .map(f => `${f.feature_name}: ${JSON.stringify(f.feature_value.value || f.feature_value)}`)
+        .join('; ');
 
-  const content = `${deal_data.company_name} is a ${deal_data.industry || 'Unknown'} company with an overall score of ${overall_score?.toFixed(1) || 'Unknown'}/100. 
+      content = `${deal_data.company_name} is a ${deal_data.industry || 'Unknown'} company with an overall score of ${overall_score?.toFixed(1) || 'Unknown'}/100. 
 
 Key highlights: ${key_features || 'Analysis pending'}. 
 
 Investment opportunity analysis shows ${overall_score >= 70 ? 'strong potential' : overall_score >= 50 ? 'moderate potential' : 'requires additional evaluation'} based on current data. 
 
 Deal size: ${deal_data.deal_size ? `$${(deal_data.deal_size / 1000000).toFixed(1)}M` : 'Unknown'}. Valuation: ${deal_data.valuation ? `$${(deal_data.valuation / 1000000).toFixed(1)}M` : 'Unknown'}.`;
+    }
+  } else {
+    content = generateFallbackContent('ic_executive_summary', { dealData: deal_data });
+  }
 
   return {
     title: 'Executive Summary',
@@ -226,61 +239,135 @@ Deal size: ${deal_data.deal_size ? `$${(deal_data.deal_size / 1000000).toFixed(1
   };
 };
 
-const generateCompanyOverview = async (deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> => {
+const generateCompanyOverview = async (deal_data: any, features: any[], scores: any[], context_chunks: any[], contextData?: any, openAIKey?: string): Promise<ICMemoSection> => {
+  let content = '';
+  
+  if (contextData && openAIKey) {
+    try {
+      content = await generateAIContent('ic_company_overview', contextData, openAIKey);
+    } catch (error) {
+      console.error('AI generation failed for company overview:', error);
+      content = `${deal_data.company_name} operates in the ${deal_data.industry || 'Unknown'} sector. Founded: ${deal_data.founding_year || 'Unknown'}. The company's current operational status and team composition require further analysis to provide comprehensive overview.`;
+    }
+  } else {
+    content = generateFallbackContent('ic_company_overview', { dealData: deal_data });
+  }
+
   return {
     title: 'Company Overview',
-    content: `${deal_data.company_name} operates in the ${deal_data.industry || 'Unknown'} sector. Founded: ${deal_data.founding_year || 'Unknown'}. The company's current operational status and team composition require further analysis to provide comprehensive overview.`,
+    content: content,
     citations: []
   };
 };
 
-const generateMarketOpportunity = async (deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> => {
+const generateMarketOpportunity = async (deal_data: any, features: any[], scores: any[], context_chunks: any[], contextData?: any, openAIKey?: string): Promise<ICMemoSection> => {
+  let content = '';
   const marketFeatures = features.filter(f => f.feature_value?.category === 'market');
   const growthDrivers = marketFeatures.find(f => f.feature_name === 'growth_drivers');
   
+  if (contextData && openAIKey) {
+    try {
+      content = await generateAIContent('ic_market_opportunity', contextData, openAIKey);
+    } catch (error) {
+      console.error('AI generation failed for market opportunity:', error);
+      content = `Market opportunity analysis for ${deal_data.company_name} in the ${deal_data.industry || 'Unknown'} sector. ${growthDrivers ? `Key growth drivers: ${JSON.stringify(growthDrivers.feature_value.value)}.` : ''} Market sizing and competitive dynamics analysis is pending comprehensive market research.`;
+    }
+  } else {
+    content = generateFallbackContent('ic_market_opportunity', { dealData: deal_data });
+  }
+  
   return {
     title: 'Market Opportunity',
-    content: `Market opportunity analysis for ${deal_data.company_name} in the ${deal_data.industry || 'Unknown'} sector. ${growthDrivers ? `Key growth drivers: ${JSON.stringify(growthDrivers.feature_value.value)}.` : ''} Market sizing and competitive dynamics analysis is pending comprehensive market research.`,
+    content: content,
     citations: marketFeatures.map((f, i) => ({ id: i + 1, source: f.extraction_method, quote: `${f.feature_name}: ${f.feature_value.value}` }))
   };
 };
 
-const generateProductService = async (deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> => {
+const generateProductService = async (deal_data: any, features: any[], scores: any[], context_chunks: any[], contextData?: any, openAIKey?: string): Promise<ICMemoSection> => {
+  let content = '';
+  
+  if (contextData && openAIKey) {
+    try {
+      content = await generateAIContent('ic_product_service', contextData, openAIKey);
+    } catch (error) {
+      console.error('AI generation failed for product service:', error);
+      content = `Product and service analysis for ${deal_data.company_name}. Product differentiation, competitive advantages, and technical specifications require detailed assessment. Service delivery model and scalability factors are under evaluation.`;
+    }
+  } else {
+    content = generateFallbackContent('ic_product_service', { dealData: deal_data });
+  }
+
   return {
     title: 'Product & Service',
-    content: `Product and service analysis for ${deal_data.company_name}. Product differentiation, competitive advantages, and technical specifications require detailed assessment. Service delivery model and scalability factors are under evaluation.`,
+    content: content,
     citations: []
   };
 };
 
-const generateBusinessModel = async (deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> => {
+const generateBusinessModel = async (deal_data: any, features: any[], scores: any[], context_chunks: any[], contextData?: any, openAIKey?: string): Promise<ICMemoSection> => {
+  let content = '';
+  
+  if (contextData && openAIKey) {
+    try {
+      content = await generateAIContent('ic_business_model', contextData, openAIKey);
+    } catch (error) {
+      console.error('AI generation failed for business model:', error);
+      content = `Business model assessment for ${deal_data.company_name}. Revenue streams, unit economics, and scalability metrics require validation through detailed financial analysis and management discussion.`;
+    }
+  } else {
+    content = generateFallbackContent('ic_business_model', { dealData: deal_data });
+  }
+
   return {
     title: 'Business Model',
-    content: `Business model assessment for ${deal_data.company_name}. Revenue streams, unit economics, and scalability metrics require validation through detailed financial analysis and management discussion.`,
+    content: content,
     citations: []
   };
 };
 
-const generateCompetitiveLandscape = async (deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> => {
+const generateCompetitiveLandscape = async (deal_data: any, features: any[], scores: any[], context_chunks: any[], contextData?: any, openAIKey?: string): Promise<ICMemoSection> => {
+  let content = '';
   const competitiveFeatures = features.filter(f => f.feature_value?.category === 'competitive');
   const competitors = competitiveFeatures.find(f => f.feature_name === 'competitors');
   
-  const competitorsList = competitors && Array.isArray(competitors.feature_value.value) ? 
-    competitors.feature_value.value.join(', ') : 'Analysis pending';
+  if (contextData && openAIKey) {
+    try {
+      content = await generateAIContent('ic_competitive_landscape', contextData, openAIKey);
+    } catch (error) {
+      console.error('AI generation failed for competitive landscape:', error);
+      const competitorsList = competitors && Array.isArray(competitors.feature_value.value) ? 
+        competitors.feature_value.value.join(', ') : 'Analysis pending';
+      content = `Competitive landscape analysis for ${deal_data.company_name}. Key market players: ${competitorsList}. Market positioning and competitive advantages require detailed competitive intelligence gathering.`;
+    }
+  } else {
+    content = generateFallbackContent('ic_competitive_landscape', { dealData: deal_data });
+  }
   
   return {
     title: 'Competitive Landscape',
-    content: `Competitive landscape analysis for ${deal_data.company_name}. Key market players: ${competitorsList}. Market positioning and competitive advantages require detailed competitive intelligence gathering.`,
+    content: content,
     citations: competitiveFeatures.map((f, i) => ({ id: i + 1, source: f.extraction_method, quote: `${f.feature_name}: ${f.feature_value.value}` }))
   };
 };
 
-const generateFinancialAnalysis = async (deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> => {
+const generateFinancialAnalysis = async (deal_data: any, features: any[], scores: any[], context_chunks: any[], contextData?: any, openAIKey?: string): Promise<ICMemoSection> => {
+  let content = '';
   const financialFeatures = features.filter(f => f.feature_value?.category === 'financial');
+  
+  if (contextData && openAIKey) {
+    try {
+      content = await generateAIContent('ic_financial_analysis', contextData, openAIKey);
+    } catch (error) {
+      console.error('AI generation failed for financial analysis:', error);
+      content = `Financial analysis for ${deal_data.company_name}. Deal size: ${deal_data.deal_size ? `$${(deal_data.deal_size / 1000000).toFixed(1)}M` : 'Unknown'}. Valuation: ${deal_data.valuation ? `$${(deal_data.valuation / 1000000).toFixed(1)}M` : 'Unknown'}. Unit economics, growth metrics, and capital efficiency require detailed financial due diligence.`;
+    }
+  } else {
+    content = generateFallbackContent('ic_financial_analysis', { dealData: deal_data });
+  }
   
   return {
     title: 'Financial Analysis',
-    content: `Financial analysis for ${deal_data.company_name}. Deal size: ${deal_data.deal_size ? `$${(deal_data.deal_size / 1000000).toFixed(1)}M` : 'Unknown'}. Valuation: ${deal_data.valuation ? `$${(deal_data.valuation / 1000000).toFixed(1)}M` : 'Unknown'}. Unit economics, growth metrics, and capital efficiency require detailed financial due diligence.`,
+    content: content,
     citations: financialFeatures.map((f, i) => ({ 
       id: i + 1, 
       source: f.extraction_method, 
@@ -289,54 +376,119 @@ const generateFinancialAnalysis = async (deal_data: any, features: any[], scores
   };
 };
 
-const generateTeamAnalysis = async (deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> => {
+const generateTeamAnalysis = async (deal_data: any, features: any[], scores: any[], context_chunks: any[], contextData?: any, openAIKey?: string): Promise<ICMemoSection> => {
+  let content = '';
+  
+  if (contextData && openAIKey) {
+    try {
+      content = await generateAIContent('ic_management_team', contextData, openAIKey);
+    } catch (error) {
+      console.error('AI generation failed for management team:', error);
+      content = `Management team assessment for ${deal_data.company_name}. Leadership experience, team composition, and execution track record require comprehensive evaluation through management presentations and reference checks.`;
+    }
+  } else {
+    content = generateFallbackContent('ic_management_team', { dealData: deal_data });
+  }
+
   return {
     title: 'Management Team',
-    content: `Management team assessment for ${deal_data.company_name}. Leadership experience, team composition, and execution track record require comprehensive evaluation through management presentations and reference checks.`,
+    content: content,
     citations: []
   };
 };
 
-const generateRisksAndMitigants = async (deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> => {
+const generateRisksAndMitigants = async (deal_data: any, features: any[], scores: any[], context_chunks: any[], contextData?: any, openAIKey?: string): Promise<ICMemoSection> => {
+  let content = '';
+  
+  if (contextData && openAIKey) {
+    try {
+      content = await generateAIContent('ic_risks_mitigants', contextData, openAIKey);
+    } catch (error) {
+      console.error('AI generation failed for risks and mitigants:', error);
+      content = `Key risks for ${deal_data.company_name} include market adoption challenges, execution risks, competitive pressure, and capital requirements. Mitigation strategies require detailed due diligence and management team collaboration.`;
+    }
+  } else {
+    content = generateFallbackContent('ic_risks_mitigants', { dealData: deal_data });
+  }
+
   return {
     title: 'Risks & Mitigants',
-    content: `Key risks for ${deal_data.company_name} include market adoption challenges, execution risks, competitive pressure, and capital requirements. Mitigation strategies require detailed due diligence and management team collaboration.`,
+    content: content,
     citations: []
   };
 };
 
-const generateExitStrategy = async (deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> => {
+const generateExitStrategy = async (deal_data: any, features: any[], scores: any[], context_chunks: any[], contextData?: any, openAIKey?: string): Promise<ICMemoSection> => {
+  let content = '';
+  
+  if (contextData && openAIKey) {
+    try {
+      content = await generateAIContent('ic_exit_strategy', contextData, openAIKey);
+    } catch (error) {
+      console.error('AI generation failed for exit strategy:', error);
+      content = `Exit strategy for ${deal_data.company_name}. Multiple exit pathways available including strategic acquisition and potential public offering. Timeline and valuation scenarios require market analysis and industry dynamics assessment.`;
+    }
+  } else {
+    content = generateFallbackContent('ic_exit_strategy', { dealData: deal_data });
+  }
+
   return {
     title: 'Exit Strategy',
-    content: `Exit strategy for ${deal_data.company_name}. Multiple exit pathways available including strategic acquisition and potential public offering. Timeline and valuation scenarios require market analysis and industry dynamics assessment.`,
+    content: content,
     citations: []
   };
 };
 
-const generateInvestmentTerms = async (deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> => {
+const generateInvestmentTerms = async (deal_data: any, features: any[], scores: any[], context_chunks: any[], contextData?: any, openAIKey?: string): Promise<ICMemoSection> => {
+  let content = '';
+  
+  if (contextData && openAIKey) {
+    try {
+      content = await generateAIContent('ic_investment_terms', contextData, openAIKey);
+    } catch (error) {
+      console.error('AI generation failed for investment terms:', error);
+      content = `Proposed investment terms for ${deal_data.company_name}. Deal size: ${deal_data.deal_size ? `$${(deal_data.deal_size / 1000000).toFixed(1)}M` : 'Unknown'}. Valuation: ${deal_data.valuation ? `$${(deal_data.valuation / 1000000).toFixed(1)}M` : 'Unknown'}. Term sheet structure and protective provisions under negotiation.`;
+    }
+  } else {
+    content = generateFallbackContent('ic_investment_terms', { dealData: deal_data });
+  }
+
   return {
     title: 'Investment Terms',
-    content: `Proposed investment terms for ${deal_data.company_name}. Deal size: ${deal_data.deal_size ? `$${(deal_data.deal_size / 1000000).toFixed(1)}M` : 'Unknown'}. Valuation: ${deal_data.valuation ? `$${(deal_data.valuation / 1000000).toFixed(1)}M` : 'Unknown'}. Term sheet structure and protective provisions under negotiation.`,
+    content: content,
     citations: []
   };
 };
 
-const generateInvestmentRecommendation = async (deal_data: any, features: any[], scores: any[], context_chunks: any[]): Promise<ICMemoSection> => {
-  const overall_score = scores.length > 0 ? 
-    scores.reduce((sum, s) => sum + (s.weighted_score || 0), 0) / scores.length :
-    deal_data.overall_score || 50;
-    
-  const recommendation = overall_score >= 75 ? 'PROCEED' : overall_score >= 60 ? 'PROCEED WITH CAUTION' : 'PASS';
+const generateInvestmentRecommendation = async (deal_data: any, features: any[], scores: any[], context_chunks: any[], contextData?: any, openAIKey?: string): Promise<ICMemoSection> => {
+  let content = '';
   
-  const nextSteps = recommendation === 'PROCEED' ? 
-    'Initiate formal due diligence, term sheet preparation, management presentations' :
-    recommendation === 'PROCEED WITH CAUTION' ?
-    'Additional due diligence required, risk mitigation planning, follow-up analysis' :
-    'Pass on opportunity, provide feedback to management team';
-  
+  if (contextData && openAIKey) {
+    try {
+      content = await generateAIContent('ic_investment_recommendation', contextData, openAIKey);
+    } catch (error) {
+      console.error('AI generation failed for investment recommendation:', error);
+      const overall_score = scores.length > 0 ? 
+        scores.reduce((sum, s) => sum + (s.weighted_score || 0), 0) / scores.length :
+        deal_data.overall_score || 50;
+        
+      const recommendation = overall_score >= 75 ? 'PROCEED' : overall_score >= 60 ? 'PROCEED WITH CAUTION' : 'PASS';
+      
+      const nextSteps = recommendation === 'PROCEED' ? 
+        'Initiate formal due diligence, term sheet preparation, management presentations' :
+        recommendation === 'PROCEED WITH CAUTION' ?
+        'Additional due diligence required, risk mitigation planning, follow-up analysis' :
+        'Pass on opportunity, provide feedback to management team';
+      
+      content = `Investment Committee recommendation for ${deal_data.company_name}: **${recommendation}**. Overall score: ${overall_score.toFixed(1)}/100. Next steps: ${nextSteps}. Investment committee decision timeline: [To be determined].`;
+    }
+  } else {
+    content = generateFallbackContent('ic_investment_recommendation', { dealData: deal_data });
+  }
+
   return {
     title: 'Investment Recommendation',
-    content: `Investment Committee recommendation for ${deal_data.company_name}: **${recommendation}**. Overall score: ${overall_score.toFixed(1)}/100. Next steps: ${nextSteps}. Investment committee decision timeline: [To be determined].`,
+    content: content,
     citations: []
   };
 };
@@ -634,8 +786,8 @@ serve(async (req) => {
       
       console.log(`📊 [IC] Prepared data - Features: ${features.length}, Scores: ${scores.length}`);
       
-      // Step 2: Generate memo sections using structured approach
-      const memo_sections = await generateMemoSections(dealData, features, scores, []);
+      // Step 2: Generate memo sections using structured approach with AI
+      const memo_sections = await generateMemoSections(dealData, features, scores, [], contextData, openAIKey);
       
       console.log(`📋 [IC] Generated ${memo_sections.length} structured sections`);
       
