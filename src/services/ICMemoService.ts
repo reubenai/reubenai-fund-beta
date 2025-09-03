@@ -220,18 +220,38 @@ class ICMemoService {
   }
 
   /**
-   * Generate memo for a deal - returns expected structure for compatibility
+   * Generate memo for a deal - re-enabled for manual generation
    */
   async generateMemo(dealId: string) {
-    console.log(`📝 [Legacy] generateMemo called for deal: ${dealId}`);
+    console.log(`📝 ICMemoService.generateMemo called for deal: ${dealId}`);
     
-    // Return expected structure for backward compatibility
-    return {
-      success: false,
-      message: 'Memo generation is now triggered automatically when deals move to Investment Committee stage',
-      memo: null,
-      error: 'Auto-generation disabled - move deal to Investment Committee stage instead'
-    };
+    try {
+      const { data, error } = await supabase.functions.invoke('ic-memo-drafter', {
+        body: { 
+          dealId,
+          type: 'manual_generation'
+        }
+      });
+
+      if (error) {
+        console.error('❌ Error invoking ic-memo-drafter:', error);
+        throw error;
+      }
+
+      console.log('✅ ic-memo-drafter response:', data);
+      return {
+        success: true,
+        memo: data,
+        message: 'Memo generated successfully'
+      };
+    } catch (error) {
+      console.error('💥 Error in generateMemo:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to generate memo',
+        memo: null
+      };
+    }
   }
 
   /**

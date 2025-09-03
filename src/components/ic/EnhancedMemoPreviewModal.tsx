@@ -250,10 +250,33 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     }
   };
 
-  // Disabled AI memo generation
+  // Re-enabled memo generation using ic-memo-drafter
   const handleGenerateMemo = async () => {
-    // AI generation disabled - users should manually create memos
-    return;
+    try {
+      console.log('🎬 Starting manual memo generation for deal:', deal.id);
+      showLoadingToast('Generating IC memo...', 'This may take a few minutes');
+      
+      const result = await icMemoService.triggerMemoGeneration(deal.id, fundId);
+      
+      if (result.success) {
+        showToast({
+          title: "Memo Generation Started",
+          description: `IC memo generation initiated for ${deal.company_name}`,
+          variant: "default"
+        });
+        
+        // Refresh the memo to show updated content
+        setTimeout(() => loadMemo(false), 2000);
+      } else {
+        throw new Error(result.error || 'Generation failed');
+      }
+    } catch (error) {
+      console.error('💥 Error in manual memo generation:', error);
+      showMemoErrorToast(
+        `Failed to generate memo: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        () => handleGenerateMemo()
+      );
+    }
   };
 
   // Create mapping from section titles to database keys

@@ -532,8 +532,7 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
             {paginatedDeals.map((deal) => (
               <tr 
                 key={deal.id}
-                className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer border-b border-border"
-                onClick={() => onDealClick(deal)}
+                className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted border-b border-border"
               >
                 <td className="p-4 align-middle sticky left-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-40 border-r border-border" onClick={(e) => e.stopPropagation()}>
                   <input
@@ -552,31 +551,35 @@ export const EnhancedDealTableView: React.FC<EnhancedDealTableViewProps> = ({
                   />
                 </td>
                 
-                <td className="p-4 align-middle sticky left-12 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-40 min-w-[200px] border-r border-border">
+                <td className="p-4 align-middle sticky left-12 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-40 border-r border-border min-w-[200px]">
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2">
                       <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <span className="font-medium text-foreground">
-                        {(deal.company_name && deal.company_name !== 'undefined') 
-                          ? deal.company_name 
-                          : 'Unnamed Company'}
-                      </span>
-                      {deal.website && (
-                        <a
-                          href={deal.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-primary"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      )}
+                      <button
+                        onClick={() => onDealClick(deal)}
+                        className="font-medium text-foreground hover:text-primary transition-colors text-left cursor-pointer"
+                      >
+                        {deal.company_name || 'Unnamed Company'}
+                      </button>
                     </div>
                     {deal.founder && (
-                      <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                      <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                         <Users className="h-3 w-3" />
                         <span>{deal.founder}</span>
+                      </div>
+                    )}
+                    {deal.website && (
+                      <div className="flex items-center space-x-1 text-sm">
+                        <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                        <a 
+                          href={deal.website.startsWith('http') ? deal.website : `https://${deal.website}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline truncate"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {deal.website.replace(/^https?:\/\//, '')}
+                        </a>
                       </div>
                     )}
                   </div>
