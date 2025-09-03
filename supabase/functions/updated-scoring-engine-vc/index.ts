@@ -322,81 +322,29 @@ Write a concise executive summary (2-3 sentences) highlighting the investment op
   }
 
   return {
-    ic_executive_summary: { summary: icExecutiveSummary, score: overallScore },
+    ic_executive_summary: icExecutiveSummary,
     
-    ic_company_overview: {
-      company_name: dealData.company_name,
-      industry: dealData.industry || 'Unknown',
-      employee_count: employeeCountFeature || 'Unknown',
-      funding_stage: fundingStageFeature || 'Unknown',
-      founded: dealData.founding_year || 'Unknown',
-      overview: `${dealData.company_name} is a ${dealData.industry || 'Unknown'} company. Employee count: ${employeeCountFeature || 'Unknown'}. Funding stage: ${fundingStageFeature || 'Unknown'}. Founded: ${dealData.founding_year || 'Unknown'}. Company overview analysis requires additional research.`
-    },
+    ic_company_overview: `${dealData.company_name} is a ${dealData.industry || 'Unknown'} company. Employee count: ${employeeCountFeature || 'Unknown'}. Funding stage: ${fundingStageFeature || 'Unknown'}. Founded: ${dealData.founding_year || 'Unknown'}. Company overview analysis requires additional research.`,
     
-    ic_market_opportunity: {
-      tam: tamFeature ? `$${tamFeature}` : 'Unknown',
-      sam: samFeature ? `$${samFeature}` : 'Unknown',
-      som: somFeature ? `$${somFeature}` : 'Unknown',
-      cagr: cagrFeature ? `${cagrFeature}%` : 'Unknown',
-      growth_drivers: growthDriversFeature || 'Analysis pending',
-      analysis: `Market opportunity analysis for ${dealData.company_name} in the ${dealData.industry || 'Unknown'} sector. TAM: ${tamFeature ? `$${tamFeature}` : 'Unknown'}, SAM: ${samFeature ? `$${samFeature}` : 'Unknown'}, SOM: ${somFeature ? `$${somFeature}` : 'Unknown'}, Market Growth (CAGR): ${cagrFeature ? `${cagrFeature}%` : 'Unknown'}. Growth drivers: ${Array.isArray(growthDriversFeature) ? growthDriversFeature.join(', ') : 'Analysis pending'}. Market timing and competitive dynamics require further evaluation.`
-    },
+    ic_market_opportunity: `Market opportunity analysis for ${dealData.company_name} in the ${dealData.industry || 'Unknown'} sector. TAM: ${tamFeature ? `$${tamFeature}` : 'Unknown'}, SAM: ${samFeature ? `$${samFeature}` : 'Unknown'}, SOM: ${somFeature ? `$${somFeature}` : 'Unknown'}, Market Growth (CAGR): ${cagrFeature ? `${cagrFeature}%` : 'Unknown'}. Growth drivers: ${Array.isArray(growthDriversFeature) ? growthDriversFeature.join(', ') : 'Analysis pending'}. Market timing and competitive dynamics require further evaluation.`,
     
-    ic_product_service: {
-      technology_stack: Array.isArray(techStack) ? techStack.join(', ') : techStack || 'Analysis pending',
-      analysis: `Product and service analysis for ${dealData.company_name}. Technology stack: ${Array.isArray(techStack) ? techStack.join(', ') : techStack || 'Analysis pending'}. Product differentiation and competitive advantages require detailed analysis. Service delivery model and scalability assessment pending.`
-    },
+    ic_product_service: `Product and service analysis for ${dealData.company_name}. Technology stack: ${Array.isArray(techStack) ? techStack.join(', ') : techStack || 'Analysis pending'}. Product differentiation and competitive advantages require detailed analysis. Service delivery model and scalability assessment pending.`,
     
-    ic_business_model: {
-      model: businessModelFeature || 'Analysis pending',
-      ltv_cac: ltvCacFeature || 'Unknown',
-      retention: retentionFeature ? `${retentionFeature}%` : 'Unknown',
-      analysis: `Business model for ${dealData.company_name}: ${businessModelFeature || 'Analysis pending'}. Unit economics - LTV/CAC: ${ltvCacFeature || 'Unknown'}, Customer retention: ${retentionFeature ? `${retentionFeature}%` : 'Unknown'}. Revenue streams and scalability metrics require validation.`
-    },
+    ic_business_model: `Business model for ${dealData.company_name}: ${businessModelFeature || 'Analysis pending'}. Unit economics - LTV/CAC: ${ltvCacFeature || 'Unknown'}, Customer retention: ${retentionFeature ? `${retentionFeature}%` : 'Unknown'}. Revenue streams and scalability metrics require validation.`,
     
-    ic_competitive_landscape: {
-      competitors: competitorsList,
-      analysis: `Competitive landscape analysis for ${dealData.company_name}. Key competitors: ${competitorsList}. Market positioning and competitive advantages require detailed analysis. Differentiation strategy and market share assessment pending.`
-    },
+    ic_competitive_landscape: `Competitive landscape analysis for ${dealData.company_name}. Key competitors: ${competitorsList}. Market positioning and competitive advantages require detailed analysis. Differentiation strategy and market share assessment pending.`,
     
-    ic_financial_analysis: {
-      ltv_cac_ratio: ltvCacFeature || 'Unknown',
-      retention_rate: retentionFeature ? `${retentionFeature}%` : 'Unknown',
-      funding_stage: fundingStageFeature || 'Unknown',
-      valuation: dealData.valuation ? `$${(dealData.valuation / 1000000).toFixed(1)}M` : 'Unknown',
-      deal_size: dealData.deal_size ? `$${(dealData.deal_size / 1000000).toFixed(1)}M` : 'Unknown',
-      analysis: `Financial analysis for ${dealData.company_name}. LTV/CAC Ratio: ${ltvCacFeature || 'Unknown'}, Customer Retention: ${retentionFeature ? `${retentionFeature}%` : 'Unknown'}, Funding Stage: ${fundingStageFeature || 'Unknown'}, Valuation: ${dealData.valuation ? `$${(dealData.valuation / 1000000).toFixed(1)}M` : 'Unknown'}, Deal Size: ${dealData.deal_size ? `$${(dealData.deal_size / 1000000).toFixed(1)}M` : 'Unknown'}. Unit economics and growth metrics require further validation.`
-    },
+    ic_financial_analysis: `Financial analysis for ${dealData.company_name}. LTV/CAC Ratio: ${ltvCacFeature || 'Unknown'}, Customer Retention: ${retentionFeature ? `${retentionFeature}%` : 'Unknown'}, Funding Stage: ${fundingStageFeature || 'Unknown'}, Valuation: ${dealData.valuation ? `$${(dealData.valuation / 1000000).toFixed(1)}M` : 'Unknown'}, Deal Size: ${dealData.deal_size ? `$${(dealData.deal_size / 1000000).toFixed(1)}M` : 'Unknown'}. Unit economics and growth metrics require further validation.`,
     
-    ic_management_team: {
-      founder: dealData.founder || 'Unknown',
-      team_size: 'Unknown',
-      analysis: `Management team assessment for ${dealData.company_name}. Founder: ${dealData.founder || 'Unknown'}. Team size: Unknown. Leadership experience: Requires analysis.`
-    },
+    ic_management_team: `Management team assessment for ${dealData.company_name}. Founder: ${dealData.founder || 'Unknown'}. Team size: Unknown. Leadership experience: Requires analysis.`,
     
-    ic_risks_mitigants: {
-      risk_categories: riskCategories,
-      analysis: `Key risks and mitigation strategies for ${dealData.company_name}. ${riskContent}. Mitigation strategies require detailed due diligence and management team discussions.`,
-      standard_risks: ['Market Risk', 'Execution Risk', 'Financial Risk']
-    },
+    ic_risks_mitigants: `Key risks and mitigation strategies for ${dealData.company_name}. ${riskContent}. Mitigation strategies require detailed due diligence and management team discussions.`,
     
-    ic_exit_strategy: {
-      analysis: `Exit strategy analysis for ${dealData.company_name}. Potential exit opportunities include strategic acquisition by industry players, IPO pathway for scaled revenue, or secondary sale to growth equity. Industry consolidation trends and comparable exit multiples require evaluation. Target exit timeline: 5-7 years with strategic value creation initiatives.`
-    },
+    ic_exit_strategy: `Exit strategy analysis for ${dealData.company_name}. Potential exit opportunities include strategic acquisition by industry players, IPO pathway for scaled revenue, or secondary sale to growth equity. Industry consolidation trends and comparable exit multiples require evaluation. Target exit timeline: 5-7 years with strategic value creation initiatives.`,
     
-    ic_investment_terms: {
-      deal_size: dealData.deal_size ? `$${(dealData.deal_size / 1000000).toFixed(1)}M` : 'Unknown',
-      valuation: dealData.valuation ? `$${(dealData.valuation / 1000000).toFixed(1)}M` : 'Unknown',
-      analysis: `Proposed investment terms for ${dealData.company_name}. Deal size: ${dealData.deal_size ? `$${(dealData.deal_size / 1000000).toFixed(1)}M` : 'Unknown'}. Valuation: ${dealData.valuation ? `$${(dealData.valuation / 1000000).toFixed(1)}M` : 'Unknown'}. Terms: Standard Series A terms.`
-    },
+    ic_investment_terms: `Proposed investment terms for ${dealData.company_name}. Deal size: ${dealData.deal_size ? `$${(dealData.deal_size / 1000000).toFixed(1)}M` : 'Unknown'}. Valuation: ${dealData.valuation ? `$${(dealData.valuation / 1000000).toFixed(1)}M` : 'Unknown'}. Terms: Standard Series A terms.`,
     
-    ic_investment_recommendation: {
-      recommendation: recommendation,
-      overall_score: overallScore.toFixed(1),
-      rationale: rationale,
-      next_steps: nextSteps,
-      analysis: `Investment Committee recommendation for ${dealData.company_name}: **${recommendation}**. Overall score: ${overallScore.toFixed(1)}/100. Rationale: ${rationale.length > 0 ? rationale.join(', ') : 'Comprehensive analysis completed'}. Next steps: ${nextSteps}. Investment committee decision required by: [Date TBD].`
-    }
+    ic_investment_recommendation: `Investment Committee recommendation for ${dealData.company_name}: **${recommendation}**. Overall score: ${overallScore.toFixed(1)}/100. Rationale: ${rationale.length > 0 ? rationale.join(', ') : 'Comprehensive analysis completed'}. Next steps: ${nextSteps}. Investment committee decision required by: [Date TBD].`
   };
 };
 

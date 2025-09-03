@@ -2473,18 +2473,18 @@ export type Database = {
           financial_planning_score: number | null
           founder_experience_score: number | null
           fund_id: string
-          ic_business_model: Json | null
-          ic_company_overview: Json | null
-          ic_competitive_landscape: Json | null
-          ic_executive_summary: Json | null
-          ic_exit_strategy: Json | null
-          ic_financial_analysis: Json | null
-          ic_investment_recommendation: Json | null
-          ic_investment_terms: Json | null
-          ic_management_team: Json | null
-          ic_market_opportunity: Json | null
-          ic_product_service: Json | null
-          ic_risks_mitigants: Json | null
+          ic_business_model: string | null
+          ic_company_overview: string | null
+          ic_competitive_landscape: string | null
+          ic_executive_summary: string | null
+          ic_exit_strategy: string | null
+          ic_financial_analysis: string | null
+          ic_investment_recommendation: string | null
+          ic_investment_terms: string | null
+          ic_management_team: string | null
+          ic_market_opportunity: string | null
+          ic_product_service: string | null
+          ic_risks_mitigants: string | null
           id: string
           investment_thesis_alignment_score: number | null
           key_concerns: string[] | null
@@ -2529,18 +2529,18 @@ export type Database = {
           financial_planning_score?: number | null
           founder_experience_score?: number | null
           fund_id: string
-          ic_business_model?: Json | null
-          ic_company_overview?: Json | null
-          ic_competitive_landscape?: Json | null
-          ic_executive_summary?: Json | null
-          ic_exit_strategy?: Json | null
-          ic_financial_analysis?: Json | null
-          ic_investment_recommendation?: Json | null
-          ic_investment_terms?: Json | null
-          ic_management_team?: Json | null
-          ic_market_opportunity?: Json | null
-          ic_product_service?: Json | null
-          ic_risks_mitigants?: Json | null
+          ic_business_model?: string | null
+          ic_company_overview?: string | null
+          ic_competitive_landscape?: string | null
+          ic_executive_summary?: string | null
+          ic_exit_strategy?: string | null
+          ic_financial_analysis?: string | null
+          ic_investment_recommendation?: string | null
+          ic_investment_terms?: string | null
+          ic_management_team?: string | null
+          ic_market_opportunity?: string | null
+          ic_product_service?: string | null
+          ic_risks_mitigants?: string | null
           id?: string
           investment_thesis_alignment_score?: number | null
           key_concerns?: string[] | null
@@ -2585,18 +2585,18 @@ export type Database = {
           financial_planning_score?: number | null
           founder_experience_score?: number | null
           fund_id?: string
-          ic_business_model?: Json | null
-          ic_company_overview?: Json | null
-          ic_competitive_landscape?: Json | null
-          ic_executive_summary?: Json | null
-          ic_exit_strategy?: Json | null
-          ic_financial_analysis?: Json | null
-          ic_investment_recommendation?: Json | null
-          ic_investment_terms?: Json | null
-          ic_management_team?: Json | null
-          ic_market_opportunity?: Json | null
-          ic_product_service?: Json | null
-          ic_risks_mitigants?: Json | null
+          ic_business_model?: string | null
+          ic_company_overview?: string | null
+          ic_competitive_landscape?: string | null
+          ic_executive_summary?: string | null
+          ic_exit_strategy?: string | null
+          ic_financial_analysis?: string | null
+          ic_investment_recommendation?: string | null
+          ic_investment_terms?: string | null
+          ic_management_team?: string | null
+          ic_market_opportunity?: string | null
+          ic_product_service?: string | null
+          ic_risks_mitigants?: string | null
           id?: string
           investment_thesis_alignment_score?: number | null
           key_concerns?: string[] | null
