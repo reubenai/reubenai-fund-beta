@@ -170,6 +170,11 @@ export const NextStepSummaryBar: React.FC<NextStepSummaryBarProps> = ({
     );
   }
 
+  // Hide component when no actions are required
+  if (summary.requiresAction.length === 0) {
+    return null;
+  }
+
   return (
     <Card className={`border-l-4 ${urgencyLevel === 'high' ? 'border-l-red-500' : urgencyLevel === 'medium' ? 'border-l-amber-500' : 'border-l-green-500'} shadow-sm`}>
       <CardContent className="p-4">

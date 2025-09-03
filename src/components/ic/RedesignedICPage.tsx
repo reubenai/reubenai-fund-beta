@@ -215,12 +215,11 @@ export default function RedesignedICPage() {
                 Pipeline
               </TabsTrigger>
 
-              {canReviewMemos && (
-                <TabsTrigger value="reviews" className="h-10 px-6 rounded-md">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Review Queue
-                </TabsTrigger>
-              )}
+              <TabsTrigger value="reviews" className="h-10 px-6 rounded-md" disabled>
+                <FileText className="h-4 w-4 mr-2" />
+                Review Queue
+                <Badge variant="secondary" className="ml-2 text-xs">Soon</Badge>
+              </TabsTrigger>
 
               <TabsTrigger value="schedule" className="h-10 px-6 rounded-md" disabled>
                 <Calendar className="h-4 w-4 mr-2" />
@@ -249,25 +248,6 @@ export default function RedesignedICPage() {
               />
             </TabsContent>
 
-            {canReviewMemos && (
-              <TabsContent value="reviews" className="space-y-6">
-                <div className="grid gap-6">
-                  <EnhancedReviewQueue
-                    fundId={selectedFund.id}
-                    onViewMemo={handleDealSelect}
-                  />
-                  <ICMemoApprovalFlow
-                    fundId={selectedFund.id}
-                    onStatusChange={(status) => {
-                      toast({
-                        title: "Memo Status Updated",
-                        description: `Memo status changed to ${status}`,
-                      });
-                    }}
-                  />
-                </div>
-              </TabsContent>
-            )}
 
             <TabsContent value="schedule" className="space-y-6">
               <Card className="border-0 shadow-sm">
