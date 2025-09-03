@@ -57,6 +57,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { MemoPreviewRenderer } from './MemoPreviewRenderer';
 import { ICReviewWorkflow } from './ICReviewWorkflow';
 import { icMemoService } from '@/services/ICMemoService';
+import { triggerICDatapointSourcing } from '@/services/icDatapointSourcingService';
 
 interface Deal {
   id: string;
@@ -153,6 +154,7 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
   const [serverPdfHealthy, setServerPdfHealthy] = useState<'unknown' | 'ok' | 'down'>('unknown');
   const [customSections, setCustomSections] = useState<Array<{key: string, title: string, content?: string}>>([]);
   const [isCapturingData, setIsCapturingData] = useState(false);
+  const [isGeneratingIC, setIsGeneratingIC] = useState(false);
   
   const { memoState, loadMemo, generateMemo, cancelGeneration, updateContent } = useMemoCache(deal.id, fundId);
   const { versionState, loadVersions, saveVersion, restoreVersion } = useMemoVersions(deal.id, fundId);
@@ -315,6 +317,38 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
     
     console.log('🎯 Final transformed content:', content);
     return content;
+  };
+
+  // Function to generate IC analysis
+  const handleGenerateIC = async () => {
+    try {
+      setIsGeneratingIC(true);
+      
+      console.log('🎯 Starting IC datapoint sourcing for deal:', deal.id);
+      
+      const result = await triggerICDatapointSourcing(deal.id);
+      
+      if (result.success) {
+        showToast({
+          title: "IC Analysis Generated",
+          description: `Analysis completed for ${deal.company_name} with ${result.sections_generated} sections`,
+          variant: "default"
+        });
+        
+        // Reload memo data after successful IC generation
+        await loadMemo(false);
+      } else {
+        throw new Error(result.error || 'Failed to generate IC analysis');
+      }
+    } catch (error) {
+      console.error('❌ IC Generation error:', error);
+      showMemoErrorToast(
+        error instanceof Error ? error.message : 'Failed to generate IC analysis',
+        () => handleGenerateIC()
+      );
+    } finally {
+      setIsGeneratingIC(false);
+    }
   };
 
   // Function to capture data from IC analysis
@@ -869,6 +903,20 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                       <RefreshCw className="w-4 h-4 mr-2" />
                     )}
                     Sync Data
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateIC}
+                    disabled={memoState.isGenerating || isGeneratingIC}
+                  >
+                    {isGeneratingIC ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Brain className="w-4 h-4 mr-2" />
+                    )}
+                    Generate IC
                   </Button>
                   
                   <Button
