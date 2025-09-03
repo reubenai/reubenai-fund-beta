@@ -324,12 +324,12 @@ export function EnhancedDealDetailsModal({
       
       toast({
         title: "IC Content Generated",
-        description: `IC memo content generated for ${deal.company_name}. ${result.sections_generated} sections created successfully.`,
+        description: `IC memo content generated for ${deal.company_name}. ${result.sections_generated} sections created and ready for review.`,
         variant: "default"
       });
       
-      // Refresh the modal data
-      loadEnhancedData();
+      // Force refresh the modal data to show updated IC content
+      await loadEnhancedData();
       
       // Notify parent component
       if (onDealUpdated) {

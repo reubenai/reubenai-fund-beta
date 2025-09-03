@@ -162,10 +162,11 @@ export const EnhancedDealCard: React.FC<EnhancedDealCardProps> = ({
       const result = await triggerICDatapointSourcingPublic(deal.id);
       showToast({
         title: "IC Content Generated Successfully",
-        description: `Generated ${result.sections_generated} sections for ${deal.company_name || 'the deal'}`,
+        description: `Generated ${result.sections_generated} sections for ${deal.company_name || 'the deal'}. Content now available for viewing.`,
         variant: "default",
         duration: 6000
       });
+      
     } catch (error) {
       console.error('Failed to generate IC content:', error);
       showToast({

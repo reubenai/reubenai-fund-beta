@@ -330,13 +330,14 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
       
       if (result.success) {
         showToast({
-          title: "IC Analysis Generated",
-          description: `Analysis completed for ${deal.company_name} with ${result.sections_generated} sections`,
+          title: "IC Analysis Generated", 
+          description: `Analysis completed for ${deal.company_name} with ${result.sections_generated} sections. Memo content updated.`,
           variant: "default"
         });
         
-        // Reload memo data after successful IC generation
-        await loadMemo(false);
+        // Clear any cached IC memo data and reload
+        icMemoService.clearStatus(deal.id);
+        await loadMemo(true); // Force refresh from database
       } else {
         throw new Error(result.error || 'Failed to generate IC analysis');
       }
