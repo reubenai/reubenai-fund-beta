@@ -192,8 +192,8 @@ const generateAIContent = async (sectionType: string, contextData: any, openAIKe
   const contextString = buildContextString();
 
   // Determine content generation strategy
-  const hasExistingContent = existingICContent && existingICContent[sectionType];
-  const contentStrategy = hasExistingContent ? 'enhance' : 'create';
+  const hasPreviousContent = existingICContent && existingICContent[sectionType];
+  const contentStrategy = hasPreviousContent ? 'enhance' : 'create';
   
   // Section-specific prompts with iterative improvement logic
   const sectionPrompts: { [key: string]: string } = {
@@ -211,7 +211,7 @@ const generateAIContent = async (sectionType: string, contextData: any, openAIKe
     ic_investment_recommendation: `${contentStrategy === 'enhance' ? 'ENHANCE EXISTING ANALYSIS: Update investment recommendation based on new analysis and market developments.' : 'CREATE NEW ANALYSIS:'} Provide a clear investment committee recommendation with rationale based on the overall analysis. Include recommendation (STRONG BUY/BUY/HOLD/PASS), supporting reasons, and next steps.`
   };
 
-  const systemPrompt = `You are an expert investment analyst generating professional Investment Committee memo content. ${hasExistingContent ? 'You are enhancing existing analysis - build upon previous insights while adding new information and improved analysis.' : 'Create comprehensive new analysis based on available data.'} Create detailed, analytical content based on the provided data context. Focus on insights, implications, and actionable intelligence. Format your response as professional investment analysis suitable for IC review. Be specific, use data points when available, and provide clear reasoning.`;
+  const systemPrompt = `You are an expert investment analyst generating professional Investment Committee memo content. ${hasPreviousContent ? 'You are enhancing existing analysis - build upon previous insights while adding new information and improved analysis.' : 'Create comprehensive new analysis based on available data.'} Create detailed, analytical content based on the provided data context. Focus on insights, implications, and actionable intelligence. Format your response as professional investment analysis suitable for IC review. Be specific, use data points when available, and provide clear reasoning.`;
 
   const userPrompt = `${sectionPrompts[sectionType]}
 
