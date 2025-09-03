@@ -658,53 +658,18 @@ OUTPUT FORMAT (JSON only):
         console.log('✅ Deals table updated successfully with overall score');
       }
 
-      // 9. Trigger IC Memo generation in background (non-blocking)
-      console.log('📝 Scheduling IC memo generation in background...');
-      
-      const backgroundMemoGeneration = async () => {
-        try {
-          console.log(`🔄 [Background] Starting IC memo generation for deal: ${deal_id}`);
-          
-          const memoResponse = await supabaseClient.functions.invoke('ic-memo-drafter', {
-            body: {
-              deal_id: deal_id,
-              fund_id: fundId,
-              organization_id: fundData.organization_id
-            }
-          });
-          
-          if (memoResponse.error) {
-            throw new Error(`Memo generation failed: ${memoResponse.error.message}`);
-          }
-          
-          const memoData = memoResponse.data;
-          if (memoData?.success) {
-            console.log(`✅ [Background] IC memo generated successfully: ${memoData.sections_generated || 0} sections, ${memoData.word_count || 0} words`);
-          } else {
-            throw new Error(memoData?.error || 'Unknown memo generation error'); 
-          }
-        } catch (memoError) {
-          console.error('❌ [Background] IC memo generation failed:', memoError);
-        }
-      };
+      // 📝 IC memo generation is now handled by pipeline stage changes
+      // When a deal moves to "Investment Committee" stage, memo generation is triggered automatically
+      console.log('📝 IC memo generation will be triggered when deal moves to Investment Committee stage');
 
-  // 📝 IC memo generation is now handled by pipeline stage changes
-  // When a deal moves to "Investment Committee" stage, memo generation is triggered automatically
-  console.log('📝 IC memo generation will be triggered when deal moves to Investment Committee stage');
-
-      // 10. Return success response immediately (without waiting for memo)
+      // 10. Return success response
       return {
         success: true,
         deal_id: deal_id,
         overall_score: overallScore,
         scores_analyzed: validScores.length,
         total_criteria: VC_SCORING_CRITERIA.length,
-        memo_generation: {
-          success: true,
-          status: 'scheduled_background',
-          message: 'IC memo generation scheduled in background'
-        },
-        message: 'VC deal analysis completed successfully. IC memo generation in progress.'
+        message: 'VC deal analysis completed successfully.'
       };
 
     } catch (error) {
