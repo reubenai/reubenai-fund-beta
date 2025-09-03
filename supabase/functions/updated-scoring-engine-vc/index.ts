@@ -214,8 +214,7 @@ const generateICMemoContent = async (
   documentsData: any[],
   scoringResults: any[],
   summaries: any,
-  overallScore: number,
-  openAIAPIKey: string
+  overallScore: number
 ) => {
   // Extract key features for templates
   const tamFeature = extractFeatureValue(datapointsData, 'tam');
@@ -239,60 +238,21 @@ const generateICMemoContent = async (
   if (tamFeature) keyFeatures.push(`TAM: $${tamFeature}M`);
   if (ltvCacFeature) keyFeatures.push(`LTV/CAC: ${ltvCacFeature}`);
   if (retentionFeature) keyFeatures.push(`Retention: ${retentionFeature}%`);
-  
-  // Extract first 6 context chunks from documents (up to 4000 chars)
-  let contextChunks = '';
-  documentsData.slice(0, 6).forEach((doc, index) => {
-    if (doc.document_summary && contextChunks.length < 4000) {
-      const chunk = doc.document_summary.substring(0, 500);
-      contextChunks += `${index + 1}. ${chunk}\n`;
-    }
-  });
-  if (contextChunks.length > 4000) {
-    contextChunks = contextChunks.substring(0, 4000) + '...';
-  }
 
-  // 1. Executive Summary (GPT-generated)
-  const executiveSummaryPrompt = `
-Generate an executive summary for Investment Committee review.
-
-Company: ${dealData.company_name}
-Industry: ${dealData.industry || 'Unknown'}
-Overall Score: ${overallScore || 'Unknown'}
-
-Key Features: ${keyFeatures.slice(0, 3).join(', ') || 'Analysis pending'}
-
-Supporting Context:
-${contextChunks || 'Additional context pending'}
-
-Write a concise executive summary (2-3 sentences) highlighting the investment opportunity, key strengths, and overall recommendation based on the scoring analysis.
-`;
-
+  // 1. Executive Summary - Use existing analysis data for faster response
   let icExecutiveSummary = '';
-  try {
-    const execResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIAPIKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
-        messages: [{ role: 'user', content: executiveSummaryPrompt }],
-        max_completion_tokens: 300
-      }),
-    });
-    
-    if (execResponse.ok) {
-      const execData = await execResponse.json();
-      icExecutiveSummary = execData.choices[0].message.content;
-    }
-  } catch (error) {
-    console.error('Error generating executive summary:', error);
-  }
   
-  if (!icExecutiveSummary) {
-    icExecutiveSummary = `${dealData.company_name} is a ${dealData.industry || 'Unknown'} company with an overall score of ${overallScore || 'Unknown'}. ${keyFeatures.length > 0 ? 'Key features include ' + keyFeatures.join(', ') + '.' : ''} Investment committee review required for detailed assessment.`;
+  // Use the already generated deal executive summary if available
+  if (summaries.deal_executive_summary && summaries.deal_executive_summary !== 'Analysis completed with mixed results.') {
+    icExecutiveSummary = summaries.deal_executive_summary;
+  } else {
+    // Simple template fallback using existing data
+    const recommendation = overallScore >= 70 ? 'Strong investment opportunity' : 
+                          overallScore >= 55 ? 'Promising investment candidate' :
+                          overallScore >= 40 ? 'Investment requires careful consideration' : 
+                          'Investment presents significant challenges';
+    
+    icExecutiveSummary = `${dealData.company_name} is a ${dealData.industry || 'Unknown'} company with an overall score of ${overallScore.toFixed(1)}/100. ${recommendation}. ${keyFeatures.length > 0 ? 'Key features include ' + keyFeatures.join(', ') + '.' : ''} Investment committee review recommended for final decision.`;
   }
 
   // Generate risk content for risk section
@@ -765,8 +725,7 @@ OUTPUT FORMAT (JSON only):
         documentsData,
         scoringResults,
         summaries,
-        overallScore,
-        openAIAPIKey
+        overallScore
       );
       console.log('✅ IC memo content generated successfully');
 
