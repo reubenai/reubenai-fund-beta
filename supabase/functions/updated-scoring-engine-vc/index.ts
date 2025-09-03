@@ -688,15 +688,9 @@ OUTPUT FORMAT (JSON only):
         }
       };
 
-      // Use EdgeRuntime.waitUntil to run memo generation in background
-      if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
-        EdgeRuntime.waitUntil(backgroundMemoGeneration());
-        console.log('📤 IC memo generation scheduled in background');
-      } else {
-        // Fallback: run in background without blocking (for environments without EdgeRuntime.waitUntil)
-        backgroundMemoGeneration();
-        console.log('📤 IC memo generation started in background (fallback)');
-      }
+  // 📝 IC memo generation is now handled by pipeline stage changes
+  // When a deal moves to "Investment Committee" stage, memo generation is triggered automatically
+  console.log('📝 IC memo generation will be triggered when deal moves to Investment Committee stage');
 
       // 10. Return success response immediately (without waiting for memo)
       return {

@@ -199,6 +199,21 @@ export const useOptimizedPipelineDeals = (fundId?: string) => {
         const companyName = Object.values(deals).flat().find(d => d.id === dealId)?.company_name || '';
         await activityService.logDealStageChanged(fundId, dealId, companyName, fromStageName, toStageName);
       }
+
+      // 🎯 TRIGGER IC MEMO GENERATION when deal moves to Investment Committee
+      if (toStageStatus === 'investment_committee' && fundId) {
+        console.log(`🎯 [Pipeline] Deal ${dealId} moved to Investment Committee - triggering memo generation`);
+        
+        // Import and trigger memo generation in background (non-blocking)
+        import('@/services/ICMemoService').then(({ icMemoService }) => {
+          // Non-blocking background memo generation
+          icMemoService.triggerMemoGeneration(dealId, fundId).catch(error => {
+            console.error('Background IC memo generation failed:', error);
+          });
+        }).catch(error => {
+          console.error('Failed to import IC Memo Service:', error);
+        });
+      }
       
       // Invalidate cache
       cache.invalidate(`deals_${fundId}`);

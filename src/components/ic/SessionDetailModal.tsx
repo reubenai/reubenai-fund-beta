@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Calendar, Users, Clock, Edit, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ICSession } from '@/services/ICMemoService';
+import { ICSession } from '@/types/memo';
 
 interface SessionDetailModalProps {
   isOpen: boolean;
@@ -47,7 +47,7 @@ export function SessionDetailModal({ isOpen, onClose, session, onSessionUpdated 
 
       if (error) throw error;
 
-      const updatedSession = { ...session, ...data };
+      const updatedSession = { ...session, ...data } as ICSession;
       onSessionUpdated(updatedSession);
       setIsEditing(false);
       

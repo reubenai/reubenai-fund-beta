@@ -1,288 +1,229 @@
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-export interface ICMemo {
-  id: string;
-  deal_id: string;
-  fund_id: string;
-  template_id?: string;
-  title: string;
-  status: string;
-  memo_content: any;
-  executive_summary?: string;
-  investment_recommendation?: string;
-  rag_status?: string;
-  overall_score?: number;
-  created_by: string;
-  reviewed_by?: string;
-  approved_by?: string;
-  created_at: string;
-  updated_at: string;
-  reviewed_at?: string;
-  approved_at?: string;
-}
-
-export interface ICSession {
-  id: string;
-  fund_id: string;
-  name: string;
-  session_date: string;
-  status: string;
-  agenda: any;
-  participants: any;
-  notes?: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ICVotingDecision {
-  id: string;
-  memo_id: string;
-  session_id?: string;
-  title: string;
-  description?: string;
-  status: string;
-  voting_deadline: string;
-  final_decision?: string;
-  vote_summary: any;
-  decision_rationale?: string;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  completed_at?: string;
+export interface ICMemoGenerationStatus {
+  dealId: string;
+  status: 'generating' | 'completed' | 'failed';
+  progress?: number;
+  error?: string;
 }
 
 class ICMemoService {
-  // Memo Management
-  async generateMemo(dealId: string, templateId?: string): Promise<{ success: boolean; memo?: ICMemo; error?: string }> {
+  private generationStatus = new Map<string, ICMemoGenerationStatus>();
+  private statusCallbacks = new Map<string, ((status: ICMemoGenerationStatus) => void)[]>();
+
+  /**
+   * Trigger IC memo generation when a deal moves to Investment Committee stage
+   */
+  async triggerMemoGeneration(dealId: string, fundId: string) {
+    console.log(`🎯 [IC Memo Service] Triggering memo generation for deal: ${dealId}`);
+    
     try {
-      // Get deal and fund info separately to avoid TypeScript issues
-      const { data: deal, error: dealError } = await supabase
-        .from('deals')
-        .select('fund_id')
-        .eq('id', dealId)
-        .single();
+      // Update status to generating
+      this.updateStatus(dealId, { dealId, status: 'generating', progress: 0 });
 
-      if (dealError || !deal) {
-        throw new Error('Deal not found');
-      }
+      // Show user notification
+      toast.info('IC Memo Generation Started', {
+        description: 'Generating investment committee memo in the background...'
+      });
 
-      const { data: fund, error: fundError } = await supabase
-        .from('funds')
-        .select('organization_id')
-        .eq('id', deal.fund_id)
-        .single();
-
-      if (fundError || !fund) {
-        throw new Error('Fund not found');
-      }
-
+      // Call the IC memo drafter edge function
       const { data, error } = await supabase.functions.invoke('ic-memo-drafter', {
-        body: { 
-          deal_id: dealId,
-          fund_id: deal.fund_id,
-          org_id: fund.organization_id,
-          template_variant: templateId
+        body: {
+          dealId,
+          fundId,
+          forceRefresh: true
         }
       });
 
       if (error) throw error;
 
-      return { success: true, memo: data.memo };
-    } catch (error) {
-      console.error('Error generating memo:', error);
-      return { success: false, error: error.message };
-    }
-  }
+      // Update status to completed
+      this.updateStatus(dealId, { dealId, status: 'completed', progress: 100 });
 
-  async getMemos(fundId: string): Promise<ICMemo[]> {
-    const { data, error } = await supabase
-      .from('ic_memos')
-      .select(`
-        *,
-        deals (company_name, deal_size, valuation, rag_status)
-      `)
-      .eq('fund_id', fundId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching memos:', error);
-      return [];
-    }
-
-    return data || [];
-  }
-
-  async getMemo(memoId: string): Promise<ICMemo | null> {
-    const { data, error } = await supabase
-      .from('ic_memos')
-      .select('*')
-      .eq('id', memoId)
-      .single();
-
-    if (error) {
-      console.error('Error fetching memo:', error);
-      return null;
-    }
-
-    return data;
-  }
-
-  async updateMemo(memoId: string, updates: Partial<ICMemo>): Promise<boolean> {
-    const { error } = await supabase
-      .from('ic_memos')
-      .update(updates)
-      .eq('id', memoId);
-
-    if (error) {
-      console.error('Error updating memo:', error);
-      return false;
-    }
-
-    return true;
-  }
-
-  // Session Management
-  async createSession(sessionData: Omit<ICSession, 'id' | 'created_at' | 'updated_at'>): Promise<ICSession | null> {
-    const { data, error } = await supabase
-      .from('ic_sessions')
-      .insert(sessionData)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating session:', error);
-      return null;
-    }
-
-    return data as ICSession;
-  }
-
-  async getSessions(fundId: string): Promise<ICSession[]> {
-    const { data, error } = await supabase
-      .from('ic_sessions')
-      .select(`
-        *,
-        ic_session_deals (
-          deals (company_name)
-        )
-      `)
-      .eq('fund_id', fundId)
-      .order('session_date', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching sessions:', error);
-      return [];
-    }
-
-    return (data || []) as ICSession[];
-  }
-
-  async sendInvitations(sessionId: string, emails: string[], message?: string): Promise<boolean> {
-    try {
-      const { data, error } = await supabase.functions.invoke('send-ic-invitation', {
-        body: { sessionId, recipientEmails: emails, message }
+      // Show success notification
+      toast.success('IC Memo Generated', {
+        description: 'Investment committee memo has been generated successfully!'
       });
 
-      if (error) throw error;
-
-      return data.success;
+      console.log(`✅ [IC Memo Service] Memo generation completed for deal: ${dealId}`);
+      return data;
+      
     } catch (error) {
-      console.error('Error sending invitations:', error);
-      return false;
+      console.error(`❌ [IC Memo Service] Memo generation failed for deal: ${dealId}`, error);
+      
+      // Update status to failed
+      this.updateStatus(dealId, { 
+        dealId, 
+        status: 'failed', 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+
+      // Show error notification
+      toast.error('IC Memo Generation Failed', {
+        description: 'Failed to generate investment committee memo. Please try again.'
+      });
+
+      throw error;
     }
   }
 
-  // Voting Management
-  async createVotingDecision(decisionData: Omit<ICVotingDecision, 'id' | 'created_at' | 'updated_at'>): Promise<ICVotingDecision | null> {
-    const { data, error } = await supabase
-      .from('ic_voting_decisions')
-      .insert(decisionData)
-      .select()
-      .single();
+  /**
+   * Get all IC sessions for a fund - simplified version
+   */
+  async getSessions(fundId: string): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('ic_sessions')
+        .select('*')
+        .eq('fund_id', fundId)
+        .order('session_date', { ascending: false });
 
-    if (error) {
-      console.error('Error creating voting decision:', error);
-      return null;
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching IC sessions:', error);
+      return [];
     }
-
-    return data;
   }
 
-  async getVotingDecisions(fundId: string): Promise<ICVotingDecision[]> {
-    const { data, error } = await supabase
-      .from('ic_voting_decisions')
-      .select(`
-        *,
-        ic_memos (
-          deals (company_name, fund_id)
-        )
-      `)
-      .eq('ic_memos.deals.fund_id', fundId)
-      .order('created_at', { ascending: false });
+  /**
+   * Get all voting decisions for a fund - simplified version
+   */
+  async getVotingDecisions(fundId: string): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('ic_memo_votes')
+        .select('*')
+        .eq('fund_id', fundId)
+        .order('created_at', { ascending: false });
 
-    if (error) {
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
       console.error('Error fetching voting decisions:', error);
       return [];
     }
-
-    return data || [];
   }
 
-  async submitVote(decisionId: string, vote: 'approve' | 'reject' | 'abstain', reasoning?: string): Promise<boolean> {
-    const { error } = await supabase
-      .from('ic_memo_votes')
-      .upsert({
-        decision_id: decisionId,
-        voter_id: (await supabase.auth.getUser()).data.user?.id,
-        vote,
-        reasoning
-      });
-
-    if (error) {
-      console.error('Error submitting vote:', error);
-      return false;
-    }
-
-    return true;
-  }
-
-  async finalizeDealDecision(decisionId: string, finalDecision: 'approved' | 'rejected' | 'deferred', rationale?: string): Promise<boolean> {
+  /**
+   * Create a new IC session - simplified version
+   */
+  async createSession(sessionData: any): Promise<any> {
     try {
-      const { data, error } = await supabase.functions.invoke('update-deal-from-decision', {
-        body: { decisionId, finalDecision, decisionRationale: rationale }
-      });
+      const { data, error } = await supabase
+        .from('ic_sessions')
+        .insert(sessionData)
+        .select()
+        .single();
 
       if (error) throw error;
-
-      return data.success;
+      return data;
     } catch (error) {
-      console.error('Error finalizing deal decision:', error);
+      console.error('Error creating IC session:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Create a new voting decision - simplified version
+   */
+  async createVotingDecision(votingData: any): Promise<any> {
+    try {
+      const { data, error } = await supabase
+        .from('ic_memo_votes')
+        .insert(votingData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating voting decision:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Generate memo for a deal - returns expected structure for compatibility
+   */
+  async generateMemo(dealId: string) {
+    console.log(`📝 [Legacy] generateMemo called for deal: ${dealId}`);
+    
+    // Return expected structure for backward compatibility
+    return {
+      success: false,
+      message: 'Memo generation is now triggered automatically when deals move to Investment Committee stage',
+      memo: null,
+      error: 'Auto-generation disabled - move deal to Investment Committee stage instead'
+    };
+  }
+
+  /**
+   * Check if a memo already exists for this deal
+   */
+  async hasMemo(dealId: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('ic_memos')
+        .select('id')
+        .eq('deal_id', dealId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking memo existence:', error);
+        return false;
+      }
+
+      return !!data;
+    } catch (error) {
+      console.error('Error checking memo existence:', error);
       return false;
     }
   }
 
-  // Templates
-  async getTemplates(fundId?: string): Promise<any[]> {
-    let query = supabase
-      .from('ic_memo_templates')
-      .select('*')
-      .eq('is_active', true);
+  /**
+   * Get memo generation status for a deal
+   */
+  getGenerationStatus(dealId: string): ICMemoGenerationStatus | null {
+    return this.generationStatus.get(dealId) || null;
+  }
 
-    if (fundId) {
-      query = query.or(`fund_id.eq.${fundId},fund_id.is.null`);
-    } else {
-      query = query.is('fund_id', null);
+  /**
+   * Subscribe to memo generation status updates
+   */
+  onStatusChange(dealId: string, callback: (status: ICMemoGenerationStatus) => void) {
+    if (!this.statusCallbacks.has(dealId)) {
+      this.statusCallbacks.set(dealId, []);
     }
+    this.statusCallbacks.get(dealId)!.push(callback);
 
-    const { data, error } = await query.order('is_default', { ascending: false });
+    // Return unsubscribe function
+    return () => {
+      const callbacks = this.statusCallbacks.get(dealId);
+      if (callbacks) {
+        const index = callbacks.indexOf(callback);
+        if (index > -1) {
+          callbacks.splice(index, 1);
+        }
+      }
+    };
+  }
 
-    if (error) {
-      console.error('Error fetching templates:', error);
-      return [];
-    }
+  private updateStatus(dealId: string, status: ICMemoGenerationStatus) {
+    this.generationStatus.set(dealId, status);
+    
+    // Notify subscribers
+    const callbacks = this.statusCallbacks.get(dealId) || [];
+    callbacks.forEach(callback => callback(status));
+  }
 
-    return data || [];
+  /**
+   * Clear generation status for a deal
+   */
+  clearStatus(dealId: string) {
+    this.generationStatus.delete(dealId);
+    this.statusCallbacks.delete(dealId);
   }
 }
 

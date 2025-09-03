@@ -17,8 +17,8 @@ import { SessionDetailModal } from '@/components/ic/SessionDetailModal';
 import { EnhancedReviewQueue } from '@/components/ic/EnhancedReviewQueue';
 import { AnalysisQueueResilience } from '@/components/pipeline/AnalysisQueueResilience';
 
-import { icMemoService, ICSession, ICVotingDecision } from '@/services/ICMemoService';
-import { ICCommitteeMember } from '@/types/memo';
+import { icMemoService } from '@/services/ICMemoService';
+import { ICCommitteeMember, ICSession, ICVotingDecision } from '@/types/memo';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useStrategyThresholds } from '@/hooks/useStrategyThresholds';
