@@ -23,11 +23,10 @@ const truncateText = (text: string, maxLength: number): string => {
 const aggregateICContextData = async (dealId: string, supabaseClient: any) => {
   console.log('📊 Aggregating comprehensive context data...');
   
-  // Parallel data extraction from all 6 tables
+  // Parallel data extraction from all 5 tables
   const [
     dealDataResult,
-    fundDataResult, 
-    datapointsResult,
+    fundDataResult,
     documentsResult,
     investmentStrategyResult,
     perplexityResult
@@ -67,16 +66,7 @@ const aggregateICContextData = async (dealId: string, supabaseClient: any) => {
         return result;
       }),
     
-    // 3. VC datapoints
-    supabaseClient
-      .from('deal_analysis_datapoints_vc')
-      .select('*')
-      .eq('deal_id', dealId)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    
-    // 4. Documents (limited to 10 for context)
+    // 3. Documents (limited to 10 for context)
     supabaseClient
       .from('deal_documents')
       .select('extracted_text, document_summary, name, document_type')
@@ -84,7 +74,7 @@ const aggregateICContextData = async (dealId: string, supabaseClient: any) => {
       .order('updated_at', { ascending: false })
       .limit(10),
     
-    // 5. Investment strategy
+    // 4. Investment strategy
     supabaseClient
       .from('investment_strategies')
       .select('*')
@@ -112,7 +102,7 @@ const aggregateICContextData = async (dealId: string, supabaseClient: any) => {
         return result;
       }),
     
-    // 6. Perplexity market intelligence
+    // 5. Perplexity market intelligence
     supabaseClient
       .from('deal_enrichment_perplexity_market_export_vc')
       .select('*')
@@ -125,7 +115,6 @@ const aggregateICContextData = async (dealId: string, supabaseClient: any) => {
   // Extract data with error handling
   const dealData = dealDataResult.data;
   const fundData = fundDataResult.data;
-  const datapointsData = datapointsResult.data;
   const documentsData = documentsResult.data || [];
   const investmentStrategy = investmentStrategyResult.data;
   const perplexityData = perplexityResult.data;
@@ -134,12 +123,11 @@ const aggregateICContextData = async (dealId: string, supabaseClient: any) => {
     throw new Error('Deal data not found');
   }
 
-  console.log(`📋 Context aggregated - Fund: ${fundData ? 'Found' : 'Missing'}, Datapoints: ${datapointsData ? 'Found' : 'Missing'}, Documents: ${documentsData.length}, Strategy: ${investmentStrategy ? 'Found' : 'Missing'}, Perplexity: ${perplexityData ? 'Found' : 'Missing'}`);
+  console.log(`📋 Context aggregated - Fund: ${fundData ? 'Found' : 'Missing'}, Documents: ${documentsData.length}, Strategy: ${investmentStrategy ? 'Found' : 'Missing'}, Perplexity: ${perplexityData ? 'Found' : 'Missing'}`);
 
   return {
     dealData,
     fundData,
-    datapointsData,
     documentsData,
     investmentStrategy,
     perplexityData
@@ -148,7 +136,7 @@ const aggregateICContextData = async (dealId: string, supabaseClient: any) => {
 
 // AI-powered content generation using GPT-4o-mini
 const generateAIContent = async (sectionType: string, contextData: any, openAIKey: string) => {
-  const { dealData, fundData, datapointsData, documentsData, investmentStrategy, perplexityData } = contextData;
+  const { dealData, fundData, documentsData, investmentStrategy, perplexityData } = contextData;
   
   // Build comprehensive context string for AI
   const buildContextString = () => {
@@ -163,24 +151,6 @@ const generateAIContent = async (sectionType: string, contextData: any, openAIKe
       context += `Fund Name: ${fundData.name}\n`;
     }
     
-    if (datapointsData) {
-      context += `\nKey Metrics:\n`;
-      if (datapointsData.tam) context += `TAM: $${datapointsData.tam}\n`;
-      if (datapointsData.sam) context += `SAM: $${datapointsData.sam}\n`;
-      if (datapointsData.som) context += `SOM: $${datapointsData.som}\n`;
-      if (datapointsData.cagr) context += `CAGR: ${datapointsData.cagr}%\n`;
-      if (datapointsData.ltv_cac_ratio) context += `LTV/CAC: ${datapointsData.ltv_cac_ratio}\n`;
-      if (datapointsData.retention_rate) context += `Retention: ${datapointsData.retention_rate}%\n`;
-      if (datapointsData.employee_count) context += `Employees: ${datapointsData.employee_count}\n`;
-      if (datapointsData.funding_stage) context += `Stage: ${datapointsData.funding_stage}\n`;
-      if (datapointsData.business_model) context += `Model: ${datapointsData.business_model}\n`;
-      if (datapointsData.competitors && Array.isArray(datapointsData.competitors)) {
-        context += `Competitors: ${datapointsData.competitors.join(', ')}\n`;
-      }
-      if (datapointsData.technology_stack && Array.isArray(datapointsData.technology_stack)) {
-        context += `Technology: ${datapointsData.technology_stack.join(', ')}\n`;
-      }
-    }
     
     if (perplexityData) {
       context += `\nMarket Intelligence:\n`;
@@ -285,7 +255,7 @@ Generate professional investment committee content for the ${sectionType} sectio
 
 // Fallback content generation if AI fails
 const generateFallbackContent = (sectionType: string, contextData: any) => {
-  const { dealData, datapointsData } = contextData;
+  const { dealData } = contextData;
   
   const fallbackTemplates: Record<string, string> = {
     ic_executive_summary: `Executive Summary for ${dealData.company_name}. Industry: ${dealData.industry || 'Unknown'}. Overall Score: ${dealData.overall_score || 'Unknown'}. Analysis pending AI generation.`,
@@ -352,7 +322,7 @@ serve(async (req) => {
       }
     }
 
-    // 1. Aggregate comprehensive context data from all 6 tables
+    // 1. Aggregate comprehensive context data from all 5 tables
     console.log('📊 Gathering comprehensive context data...');
     const contextData = await aggregateICContextData(deal_id, supabaseClient);
     
