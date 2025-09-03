@@ -837,22 +837,20 @@ export const EnhancedMemoPreviewModal: React.FC<EnhancedMemoPreviewModalProps> =
                 History ({versionState.versions.length})
               </Button>
 
-              {isSuperAdmin && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportWord}
-                  disabled={isExportingWord || !hasContent}
-                  className="flex items-center gap-2"
-                >
-                  {isExportingWord ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <FileType className="w-4 h-4" />
-                  )}
-                  Export to Word
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportWord}
+                disabled={isExportingWord || !hasContent}
+                className="flex items-center gap-2"
+              >
+                {isExportingWord ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileType className="w-4 h-4" />
+                )}
+                Export to Word
+              </Button>
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
