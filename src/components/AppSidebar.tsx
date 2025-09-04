@@ -42,7 +42,7 @@ const secondaryFunctions = [
 // Administration Items
 const adminItems = [
   { title: "Settings", url: "/settings", icon: Settings },
-  { title: "Integrations", url: "/integrations", icon: Plug, badge: "Soon", disabled: true },
+  { title: "Integrations", url: "/integrations", icon: Plug },
 ];
 
 // Support Items
