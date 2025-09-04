@@ -8747,6 +8747,108 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_configs: {
+        Row: {
+          config_data: Json
+          created_at: string
+          fund_id: string | null
+          id: string
+          is_active: boolean
+          organization_id: string
+          service_name: string
+          updated_at: string
+          webhook_url: string
+        }
+        Insert: {
+          config_data?: Json
+          created_at?: string
+          fund_id?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          service_name?: string
+          updated_at?: string
+          webhook_url: string
+        }
+        Update: {
+          config_data?: Json
+          created_at?: string
+          fund_id?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          service_name?: string
+          updated_at?: string
+          webhook_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_configs_fund_id_fkey"
+            columns: ["fund_id"]
+            isOneToOne: false
+            referencedRelation: "funds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_configs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_logs: {
+        Row: {
+          attempt_number: number
+          config_id: string
+          created_at: string
+          deal_id: string
+          error_message: string | null
+          id: string
+          request_payload: Json
+          response_body: string | null
+          response_status: number | null
+        }
+        Insert: {
+          attempt_number?: number
+          config_id: string
+          created_at?: string
+          deal_id: string
+          error_message?: string | null
+          id?: string
+          request_payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+        }
+        Update: {
+          attempt_number?: number
+          config_id?: string
+          created_at?: string
+          deal_id?: string
+          error_message?: string | null
+          id?: string
+          request_payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_configs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_logs_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       dashboard_stats: {
@@ -9390,10 +9492,6 @@ export type Database = {
       trigger_crunchbase_post_processor: {
         Args: Record<PropertyKey, never>
         Returns: undefined
-      }
-      trigger_ic_datapoint_sourcing_http: {
-        Args: { p_deal_id: string }
-        Returns: boolean
       }
       trigger_vc_data_aggregation_direct: {
         Args: { p_deal_id: string }
