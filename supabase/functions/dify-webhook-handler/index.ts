@@ -5,7 +5,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface DifyWebhookPayload {
+interface DifyDocument {
+  transfer_method: 'local_file';
+  upload_file_id: string;
+  type: string;
+}
+
+interface DifyDealData {
   company_name: string;
   industry: string;
   fund_type: 'vc' | 'pe';
@@ -20,6 +26,15 @@ interface DifyWebhookPayload {
   fund_id: string;
   status: string;
   event_type: string;
+}
+
+interface DifyWebhookPayload {
+  inputs: {
+    deal_data: DifyDealData;
+    documents: DifyDocument[];
+  };
+  response_mode: 'streaming' | 'blocking';
+  user: string;
 }
 
 interface WebhookConfig {
@@ -106,8 +121,25 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Prepare Dify payload
-    const difyPayload: DifyWebhookPayload = {
+    // Get documents for this deal
+    const { data: documents, error: documentsError } = await supabase
+      .from('deal_documents')
+      .select('id, name, document_type, file_path, storage_path')
+      .eq('deal_id', deal_id);
+
+    if (documentsError) {
+      console.error('Error fetching deal documents:', documentsError);
+    }
+
+    // Map documents to Dify format
+    const difyDocuments: DifyDocument[] = (documents || []).map(doc => ({
+      transfer_method: 'local_file',
+      upload_file_id: doc.storage_path || doc.id,
+      type: doc.document_type || 'document'
+    }));
+
+    // Prepare deal data for Dify
+    const difyDealData: DifyDealData = {
       company_name: deal_data.company_name || 'Unknown Company',
       industry: deal_data.industry || 'Unknown Industry',
       fund_type: fund.fund_type === 'venture_capital' ? 'vc' : 'pe',
@@ -122,6 +154,16 @@ Deno.serve(async (req) => {
       fund_id: deal_data.fund_id,
       status: deal_data.status || 'active',
       event_type: event_type || 'deal_created'
+    };
+
+    // Prepare Dify payload
+    const difyPayload: DifyWebhookPayload = {
+      inputs: {
+        deal_data: difyDealData,
+        documents: difyDocuments
+      },
+      response_mode: 'blocking',
+      user: `deal-${deal_id}`
     };
 
     console.log('Prepared Dify payload:', difyPayload);
